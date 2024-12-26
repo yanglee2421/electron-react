@@ -21,6 +21,7 @@
     "dayjs": "^1.11.13",
     "docx": "^9.1.0",
     "immer": "^10.1.1",
+    "odbc": "^2.4.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router": "^7.1.1",
@@ -46,5 +47,5 @@
     "vite-plugin-electron-renderer": "^0.14.6"
   },
   "main": "dist-electron/main.js",
-  "packageManager": "pnpm@9.15.1+sha512.1acb565e6193efbebda772702950469150cf12bcc764262e7587e71d19dc98a423dff9536e57ea44c49bdf790ff694e83c27be5faa23d67e0c033b583be4bfcf"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

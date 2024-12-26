@@ -1,10 +1,11 @@
-import { app, BrowserWindow, dialog, ipcMain, safeStorage } from "electron";
+import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { exec, execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { access, constants } from "node:fs/promises";
+import "@electron/log";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -150,3 +151,20 @@ ipcMain.on("select", async (e) => {
     r.filePaths[0],
   );
 });
+
+// 连接 Access 数据库（.mdb 或 .accdb）
+const connectionString = (path: string) =>
+  `DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=${path};`;
+
+const odbc: typeof import("odbc") = require("odbc");
+
+export async function queryDatabase() {
+  try {
+    const connection = await odbc.connect(connectionString(""));
+    const result = await connection.query("SELECT * FROM YourTable");
+    console.log(result);
+    await connection.close();
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}

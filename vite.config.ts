@@ -12,6 +12,15 @@ export default defineConfig({
       main: {
         // Shortcut of `build.lib.entry`.
         entry: "electron/main.ts",
+        vite: {
+          resolve: {
+            alias: {
+              "@electron": fileURLToPath(
+                new URL("./electron", import.meta.url),
+              ),
+            },
+          },
+        },
       },
       preload: {
         // Shortcut of `build.rollupOptions.input`.
