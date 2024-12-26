@@ -1,8 +1,10 @@
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, safeStorage } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { exec, execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { access, constants } from "node:fs/promises";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,7 +37,10 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
     },
+    autoHideMenuBar: false,
   });
+
+  win.setMenu(null);
 
   // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {
@@ -82,34 +87,56 @@ const winword365_32 =
 const winword365_64 =
   "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE";
 
-ipcMain.on("printer", (e, data: string) => {
-  const winword = process.arch === "x64" ? winword365_64 : winword365_32;
-  const cp = execFile(
-    winword,
-    [
-      data,
-      "/save",
-      "/q",
-      "/pxslt",
-      "/a",
-      "/mFilePrint",
-      "/mFileCloseOrExit",
-      "/n",
-      "/w",
-      "/x",
-    ],
-    { windowsVerbatimArguments: false, shell: false },
-    (error, stdout, stderr) => {
-      console.log(error, stdout, stderr);
+const execFileP = promisify(execFile);
+const execP = promisify(exec);
 
-      e.sender.send(
-        "printer-standby",
-      );
+const getWinword = async (path: string) => {
+  await access(path, constants.R_OK);
+  return path;
+};
 
-      cp.kill();
-    },
-  );
+ipcMain.on("printer", async (e, data: string) => {
   console.log(data);
+
+  try {
+    const winwords = await Promise.allSettled([
+      getWinword(winword_32),
+      getWinword(winword_64),
+      getWinword(winword365_32),
+      getWinword(winword365_64),
+    ]);
+
+    const winword = winwords.find((i) => i.status === "fulfilled")?.value;
+
+    if (!winword) {
+      throw new Error("Find winword failed");
+    }
+
+    const cp = await execFileP(
+      winword,
+      [
+        data,
+        "/save",
+        "/q",
+        "/pxslt",
+        "/a",
+        "/mFilePrint",
+        "/mFileCloseOrExit",
+        "/n",
+        "/w",
+        "/x",
+      ],
+      { windowsVerbatimArguments: false, shell: false },
+    ).catch(() => execP(`start ${data}`));
+
+    console.log(cp);
+  } catch (error) {
+    console.log(error);
+  } finally {
+    e.sender.send(
+      "printer-standby",
+    );
+  }
 });
 
 ipcMain.on("select", async (e) => {
