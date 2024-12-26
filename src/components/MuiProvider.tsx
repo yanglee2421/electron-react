@@ -21,7 +21,7 @@ const darkTheme = createTheme({
   spacing,
 });
 
-type Props = React.PropsWithChildren<{}>;
+type Props = React.PropsWithChildren;
 
 export const MuiProvider = (props: Props) => {
   const params = useParams();

@@ -147,7 +147,9 @@ export const AuthLayout = (props: Props) => {
             fontSize="large"
             color="primary"
             sx={{ display: { xs: "none", sm: "block" } }}
-          ></Icon>
+          >
+            R
+          </Icon>
           <IconButton
             onClick={() => update((p) => !p)}
             sx={{ display: { sm: "none" } }}
