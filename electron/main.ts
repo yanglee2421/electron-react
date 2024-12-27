@@ -1,12 +1,12 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { exec, execFile } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { access, constants } from "node:fs/promises";
 import "@electron/log";
-import { queryQuartors, queryVerifies } from "./channel";
+import * as channel from "./channel";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -94,7 +94,6 @@ const winword365_64 =
   "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE";
 
 const execFileP = promisify(execFile);
-const execP = promisify(exec);
 
 const getWinword = async (path: string) => {
   await access(path, constants.R_OK);
@@ -135,49 +134,48 @@ const runWinword = async (data: string) => {
 };
 
 ipcMain.on("printer", async (e, data: string) => {
-  console.log(data);
-
-  try {
-    const cp = await runWinword(data).catch(() => execP(`start ${data}`));
-
-    console.log(cp);
-  } catch (error) {
-    console.log(error);
-  } finally {
-    e.sender.send(
-      "printer-standby",
-    );
-  }
+  const cp = await runWinword(data).catch(() => shell.openPath(data));
+  e.sender.send(
+    "printer",
+  );
+  console.log(data, cp);
 });
 
 // 连接 Access 数据库（.mdb 或 .accdb）
-const connectionString = (path: string, password: string) =>
-  `DSN=MS Access Database;Driver={Microsoft Access Driver (*.mdb)};DBQ=${path};PWD=${password}`;
+const openDatabase = async (params: channel.DbParamsBase) => {
+  const conStr =
+    `DSN=MS Access Database;Driver={Microsoft Access Driver (*.mdb)};DBQ=${params.path};PWD=${params.password}`;
+  const connection = await odbc.connect(conStr);
+  return connection;
+};
 
 const odbc: typeof import("odbc") = require("odbc");
-const dbPwd = "Joney";
-const dbPath = "D:\\数据12\\local.mdb";
 
-ipcMain.on(queryQuartors, async (e) => {
-  const connection = await odbc.connect(connectionString(dbPath, dbPwd));
+ipcMain.on(channel.queryQuartors, async (e, params: channel.DbParamsBase) => {
+  const connection = await openDatabase(params);
   const quartors = await connection.query("SELECT * FROM quartors");
 
   e.sender.send(
-    queryQuartors,
+    channel.queryQuartors,
     { data: { rows: quartors }, errors: null },
   );
 
   await connection.close();
 });
 
-ipcMain.on(queryVerifies, async (e) => {
-  const connection = await odbc.connect(connectionString(dbPath, dbPwd));
+ipcMain.on(channel.queryVerifies, async (e, params: channel.DbParamsBase) => {
+  const connection = await openDatabase(params);
   const quartors = await connection.query("SELECT * FROM verifies");
 
   e.sender.send(
-    queryVerifies,
+    channel.queryVerifies,
     { data: { rows: quartors }, errors: null },
   );
 
   await connection.close();
+});
+
+ipcMain.on(channel.openPath, async (e, path: string) => {
+  const data = await shell.openPath(path);
+  e.sender.send(channel.openPath, data);
 });

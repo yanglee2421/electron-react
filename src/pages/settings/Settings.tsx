@@ -1,4 +1,8 @@
 import {
+  useIndexedStore,
+  useIndexedStoreHasHydrated,
+} from "@/hooks/useIndexedStore";
+import {
   FileDownloadOutlined,
   FileUploadOutlined,
   FindInPageOutlined,
@@ -14,53 +18,94 @@ import {
   IconButton,
   CardActions,
   Button,
+  CircularProgress,
 } from "@mui/material";
+import { useForm, Controller } from "react-hook-form";
+import z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 
-export const Settings = () => {
-  const [path, setPath] = React.useState("");
+const schema = z.object({
+  path: z.string().min(1),
+});
+
+const SettingsForm = () => {
+  const settings = useIndexedStore((s) => s.settings);
+  const set = useIndexedStore((s) => s.set);
+  const form = useForm({
+    defaultValues: {
+      path: settings.databasePath,
+    },
+
+    resolver: zodResolver(schema),
+  });
+
+  const formId = React.useId();
+
   return (
     <Card>
       <CardHeader title="Settings" action={null} />
       <CardContent>
-        <Grid2 container spacing={6}>
-          <Grid2 size={{ xs: 12, sm: 6 }}>
-            <TextField
-              value={path}
-              onChange={(e) => {
-                setPath(e.target.value);
-              }}
-              fullWidth
-              label="Database"
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton component="label">
-                        <input
-                          type="file"
-                          accept="application/msaccess,application/vnd.ms-access,.mdb,.accdb"
-                          hidden
-                          value={""}
-                          onChange={(e) => {
-                            console.log();
-                            const file = e.target.files?.item(0);
-                            if (!file) return;
-                            setPath(file.path);
-                          }}
-                        />
-                        <FindInPageOutlined />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
+        <form
+          id={formId}
+          action={() =>
+            form.handleSubmit((data) => {
+              set((d) => {
+                d.settings.databasePath = data.path;
+              });
+            }, console.error)()
+          }
+          onReset={() => form.reset()}
+        >
+          <Grid2 container spacing={6}>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <Controller
+                control={form.control}
+                name="path"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    fullWidth
+                    label="Database"
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton component="label">
+                              <input
+                                type="file"
+                                accept="application/msaccess,application/vnd.ms-access,.mdb,.accdb"
+                                hidden
+                                value={""}
+                                onChange={(e) => {
+                                  console.log();
+                                  const file = e.target.files?.item(0);
+                                  if (!file) return;
+                                  field.onChange(file.path);
+                                }}
+                              />
+                              <FindInPageOutlined />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+                )}
+              />
+            </Grid2>
           </Grid2>
-        </Grid2>
+        </form>
       </CardContent>
       <CardActions>
-        <Button variant="contained" startIcon={<SaveOutlined />}>
+        <Button
+          type="submit"
+          form={formId}
+          variant="contained"
+          startIcon={<SaveOutlined />}
+        >
           Save
         </Button>
         <Button
@@ -74,9 +119,15 @@ export const Settings = () => {
             hidden
             value={""}
             onChange={(e) => {
-              console.log();
               const file = e.target.files?.item(0);
               if (!file) return;
+              const reader = new FileReader();
+
+              reader.onload = (e) => {
+                console.log(e.target?.result);
+              };
+
+              reader.readAsText(file);
             }}
           />
           Import
@@ -84,14 +135,11 @@ export const Settings = () => {
         <Button
           onClick={() => {
             // 创建 JSON 数据
-            const data = {
-              name: "John Doe",
-              age: 30,
-              email: "john.doe@example.com",
-            };
+            const data = useIndexedStore.getState();
+            const version = useIndexedStore.persist.getOptions().version || 0;
 
             // 将 JSON 数据转换为字符串
-            const jsonString = JSON.stringify(data);
+            const jsonString = JSON.stringify(data, null, 2);
 
             // 创建 Blob 对象
             const blob = new Blob([jsonString], { type: "application/json" });
@@ -99,7 +147,7 @@ export const Settings = () => {
             // 创建下载链接
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "data.json"; // 下载的文件名
+            link.download = `backup-v${version}.json`; // 下载的文件名
 
             // 触发下载
             document.body.appendChild(link); // 将链接添加到 DOM
@@ -116,3 +164,11 @@ export const Settings = () => {
   );
 };
 // Joney
+
+export const Settings = () => {
+  const hasHydrated = useIndexedStoreHasHydrated();
+  if (hasHydrated) {
+    return <SettingsForm />;
+  }
+  return <CircularProgress />;
+};

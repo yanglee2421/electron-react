@@ -26,6 +26,10 @@ import {
 } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
+import {
+  useIndexedStore,
+  useIndexedStoreHasHydrated,
+} from "@/hooks/useIndexedStore";
 
 const paddMap = new Map<string, TableCellProps["padding"]>();
 paddMap.set("checkbox", "checkbox");
@@ -86,7 +90,16 @@ const checkDate = (day: null | dayjs.Dayjs, date: string | null) => {
 };
 
 export const Quartors = () => {
-  const query = useQuery({ ...fetchQuartors(), refetchInterval: 1000 * 2 });
+  const hasHydrated = useIndexedStoreHasHydrated();
+  const settings = useIndexedStore((s) => s.settings);
+  const query = useQuery({
+    ...fetchQuartors({
+      path: settings.databasePath,
+      password: settings.databasePassword,
+    }),
+    refetchInterval: 1000 * 2,
+    enabled: hasHydrated,
+  });
   const [date, setDate] = React.useState<dayjs.Dayjs | null>(null);
   const data = React.useMemo(
     () => query.data?.data.rows.filter((i) => checkDate(date, i.tmnow)) || [],

@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { queryQuartors } from "@electron/channel";
+import * as channel from "@electron/channel";
 import { IpcRendererEvent } from "electron";
 import { type NodeOdbcError } from "odbc";
 
@@ -37,9 +37,9 @@ type Res = {
   error: Error | NodeOdbcError | null;
 };
 
-export const fetchQuartors = () =>
+export const fetchQuartors = (params: channel.DbParamsBase) =>
   queryOptions({
-    queryKey: [queryQuartors],
+    queryKey: [params.path, params.password, channel.queryQuartors],
     async queryFn() {
       const data = await new Promise<Res>((resolve) => {
         const fn = (e: IpcRendererEvent, data: Res) => {
@@ -48,10 +48,10 @@ export const fetchQuartors = () =>
             throw data.error;
           }
           resolve(data);
-          window.ipcRenderer.off(queryQuartors, fn);
+          window.ipcRenderer.off(channel.queryQuartors, fn);
         };
-        window.ipcRenderer.on(queryQuartors, fn);
-        window.ipcRenderer.send(queryQuartors);
+        window.ipcRenderer.on(channel.queryQuartors, fn);
+        window.ipcRenderer.send(channel.queryQuartors, params);
       });
 
       return data;

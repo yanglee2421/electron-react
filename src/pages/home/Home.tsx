@@ -1,6 +1,7 @@
 import React from "react";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { Button, TextField, Grid2, Box } from "@mui/material";
+import * as channel from "@electron/channel";
 
 // Documents contain sections, you can have multiple sections per document, go here to learn more about sections
 // This simple example will only contain one section
@@ -51,10 +52,12 @@ export const UI = () => {
                 disabled={disabled}
                 onClick={() => {
                   setDisabled(true);
-                  window.ipcRenderer.send("printer", dir);
-                  window.ipcRenderer.on("printer-standby", () => {
+                  const fn = () => {
                     setDisabled(false);
-                  });
+                    window.ipcRenderer.off("printer", fn);
+                  };
+                  window.ipcRenderer.send("printer", dir);
+                  window.ipcRenderer.on("printer", fn);
                 }}
                 variant="outlined"
               >
@@ -76,6 +79,16 @@ export const UI = () => {
                 }}
               />
               select
+            </Button>
+            <Button
+              variant="outlined"
+              component="label"
+              onClick={() => {
+                window.ipcRenderer.send(channel.openPath, dir);
+              }}
+              disabled={!dir}
+            >
+              open
             </Button>
             <Button
               onClick={async () => {

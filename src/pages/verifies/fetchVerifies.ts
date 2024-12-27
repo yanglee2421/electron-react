@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { queryVerifies } from "@electron/channel";
+import * as channel from "@electron/channel";
 import { IpcRendererEvent } from "electron";
 import { type NodeOdbcError } from "odbc";
 
@@ -34,9 +34,9 @@ type Res = {
   error: Error | NodeOdbcError | null;
 };
 
-export const fetchVerifies = () =>
+export const fetchVerifies = (params: channel.DbParamsBase) =>
   queryOptions({
-    queryKey: [queryVerifies],
+    queryKey: [params.path, params.password, channel.queryVerifies],
     async queryFn() {
       const data = await new Promise<Res>((resolve) => {
         const fn = (e: IpcRendererEvent, data: Res) => {
@@ -45,10 +45,10 @@ export const fetchVerifies = () =>
             throw data.error;
           }
           resolve(data);
-          window.ipcRenderer.off(queryVerifies, fn);
+          window.ipcRenderer.off(channel.queryVerifies, fn);
         };
-        window.ipcRenderer.on(queryVerifies, fn);
-        window.ipcRenderer.send(queryVerifies);
+        window.ipcRenderer.on(channel.queryVerifies, fn);
+        window.ipcRenderer.send(channel.queryVerifies, params);
       });
 
       return data;
