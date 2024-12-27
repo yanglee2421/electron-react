@@ -47,8 +47,9 @@ function createWindow() {
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send(
       "main-process-message",
-      (new Date()).toLocaleString(),
+      "init msg",
     );
+    queryDatabase();
   });
 
   win.webContents.openDevTools();
@@ -160,18 +161,28 @@ ipcMain.on("select", async (e) => {
 });
 
 // 连接 Access 数据库（.mdb 或 .accdb）
-const connectionString = (path: string) =>
-  `DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=${path};`;
+const connectionString = (path: string, password: string) =>
+  `Driver={Microsoft Access Driver (*.mdb)};DBQ=${path};PWD=${password}`;
 
 const odbc: typeof import("odbc") = require("odbc");
 
-export async function queryDatabase() {
+async function queryDatabase() {
+  const dbPwd = "Joney";
+  const dbPath = "D:\\数据12\\local.mdb";
+
   try {
-    const connection = await odbc.connect(connectionString(""));
-    const result = await connection.query("SELECT * FROM YourTable");
+    const connect = connectionString(dbPath, dbPwd);
+    console.log(connect);
+
+    const connection = await odbc.connect(connectionString(dbPath, dbPwd));
+    const result = await connection.query("SELECT * FROM quartors_data");
     console.log(result);
     await connection.close();
   } catch (error) {
     console.error("Error:", error);
+    win?.webContents.send(
+      "main-process-message",
+      error,
+    );
   }
 }
