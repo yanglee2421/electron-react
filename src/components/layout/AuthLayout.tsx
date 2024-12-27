@@ -10,19 +10,15 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  CalculateOutlined,
+  CalendarMonthOutlined,
   CalendarTodayOutlined,
-  ChatOutlined,
   ChevronRightOutlined,
   CloseOutlined,
+  CloudUploadOutlined,
   DashboardOutlined,
   GitHub,
   MenuOutlined,
-  PeopleOutlineOutlined,
-  ScienceOutlined,
   SettingsOutlined,
-  SportsEsportsOutlined,
-  WalletOutlined,
 } from "@mui/icons-material";
 import { Link as RouterLink, NavLink, useParams } from "react-router";
 import React from "react";
@@ -64,45 +60,29 @@ const LinkWrapper = styled("div")(({ theme }) => ({
 
 const list = [
   {
-    to: "/dashboard",
+    to: "/",
     label: "Dashboard",
     icon: <DashboardOutlined />,
   },
   {
-    to: "/calendar",
-    label: "Calendar",
+    to: "/verifies",
+    label: "Verifies",
     icon: <CalendarTodayOutlined />,
   },
   {
-    to: "/calculator",
-    label: "Calculator",
-    icon: <CalculateOutlined />,
+    to: "/quartors",
+    label: "Quartors",
+    icon: <CalendarMonthOutlined />,
   },
   {
-    to: "/invoices",
-    label: "Invoices",
-    icon: <WalletOutlined />,
-  },
-  {
-    to: "/staff",
-    label: "Staff",
-    icon: <PeopleOutlineOutlined />,
+    to: "/hmis",
+    label: "HMIS",
+    icon: <CloudUploadOutlined />,
   },
   {
     to: "/settings",
     label: "Settings",
     icon: <SettingsOutlined />,
-  },
-  {
-    to: "/minesweeper",
-    label: "Minesweeper",
-    icon: <SportsEsportsOutlined />,
-  },
-  { to: "/chat", label: "Chat", icon: <ChatOutlined /> },
-  {
-    to: "/lab",
-    label: "Lab",
-    icon: <ScienceOutlined />,
   },
 ];
 

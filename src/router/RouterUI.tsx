@@ -78,6 +78,21 @@ const router = createHashRouter([
             lazy: () => import("@/pages/home/route"),
           },
           {
+            id: "verifies",
+            path: "verifies",
+            lazy: () => import("@/pages/verifies/route"),
+          },
+          {
+            id: "quartors",
+            path: "quartors",
+            lazy: () => import("@/pages/quartors/route"),
+          },
+          {
+            id: "hmis",
+            path: "hmis",
+            lazy: () => import("@/pages/hmis/route"),
+          },
+          {
             id: "settings",
             path: "settings",
             lazy: () => import("@/pages/settings/route"),

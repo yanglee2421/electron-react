@@ -6,6 +6,7 @@ import { exec, execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { access, constants } from "node:fs/promises";
 import "@electron/log";
+import { queryQuartors, queryVerifies } from "./channel";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -49,7 +50,6 @@ function createWindow() {
       "main-process-message",
       "init msg",
     );
-    queryDatabase();
   });
 
   win.webContents.openDevTools();
@@ -162,27 +162,32 @@ ipcMain.on("select", async (e) => {
 
 // 连接 Access 数据库（.mdb 或 .accdb）
 const connectionString = (path: string, password: string) =>
-  `Driver={Microsoft Access Driver (*.mdb)};DBQ=${path};PWD=${password}`;
+  `DSN=MS Access Database;Driver={Microsoft Access Driver (*.mdb)};DBQ=${path};PWD=${password}`;
 
 const odbc: typeof import("odbc") = require("odbc");
+const dbPwd = "Joney";
+const dbPath = "D:\\数据12\\local.mdb";
 
-async function queryDatabase() {
-  const dbPwd = "Joney";
-  const dbPath = "D:\\数据12\\local.mdb";
+ipcMain.on(queryQuartors, async (e) => {
+  const connection = await odbc.connect(connectionString(dbPath, dbPwd));
+  const quartors = await connection.query("SELECT * FROM quartors");
 
-  try {
-    const connect = connectionString(dbPath, dbPwd);
-    console.log(connect);
+  e.sender.send(
+    queryQuartors,
+    { data: { rows: quartors }, errors: null },
+  );
 
-    const connection = await odbc.connect(connectionString(dbPath, dbPwd));
-    const result = await connection.query("SELECT * FROM quartors_data");
-    console.log(result);
-    await connection.close();
-  } catch (error) {
-    console.error("Error:", error);
-    win?.webContents.send(
-      "main-process-message",
-      error,
-    );
-  }
-}
+  await connection.close();
+});
+
+ipcMain.on(queryVerifies, async (e) => {
+  const connection = await odbc.connect(connectionString(dbPath, dbPwd));
+  const quartors = await connection.query("SELECT * FROM verifies");
+
+  e.sender.send(
+    queryVerifies,
+    { data: { rows: quartors }, errors: null },
+  );
+
+  await connection.close();
+});
