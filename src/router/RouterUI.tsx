@@ -73,8 +73,14 @@ const router = createHashRouter([
             },
           },
           {
+            id: "home",
             index: true,
             lazy: () => import("@/pages/home/route"),
+          },
+          {
+            id: "settings",
+            path: "settings",
+            lazy: () => import("@/pages/settings/route"),
           },
         ],
       },

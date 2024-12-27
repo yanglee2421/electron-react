@@ -11,7 +11,6 @@ import {
 } from "@mui/material";
 import {
   CalculateOutlined,
-  CalendarMonthOutlined,
   CalendarTodayOutlined,
   ChatOutlined,
   ChevronRightOutlined,
@@ -21,6 +20,7 @@ import {
   MenuOutlined,
   PeopleOutlineOutlined,
   ScienceOutlined,
+  SettingsOutlined,
   SportsEsportsOutlined,
   WalletOutlined,
 } from "@mui/icons-material";
@@ -28,7 +28,7 @@ import { Link as RouterLink, NavLink, useParams } from "react-router";
 import React from "react";
 
 const github_url = import.meta.env.VITE_GITHUB_URL;
-const ASIDE_SIZE = 72;
+const ASIDE_SIZE = 64;
 
 const LinkWrapper = styled("div")(({ theme }) => ({
   display: "flex",
@@ -89,9 +89,9 @@ const list = [
     icon: <PeopleOutlineOutlined />,
   },
   {
-    to: "/overtime",
-    label: "Overtime",
-    icon: <CalendarMonthOutlined />,
+    to: "/settings",
+    label: "Settings",
+    icon: <SettingsOutlined />,
   },
   {
     to: "/minesweeper",

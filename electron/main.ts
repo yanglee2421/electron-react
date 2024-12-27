@@ -98,39 +98,44 @@ const getWinword = async (path: string) => {
   return path;
 };
 
+const runWinword = async (data: string) => {
+  const winwords = await Promise.allSettled([
+    getWinword(winword_32),
+    getWinword(winword_64),
+    getWinword(winword365_32),
+    getWinword(winword365_64),
+  ]);
+
+  const winword = winwords.find((i) => i.status === "fulfilled")?.value;
+
+  if (!winword) {
+    throw new Error("Find winword failed");
+  }
+
+  const cp = await execFileP(
+    winword,
+    [
+      data,
+      "/save",
+      "/q",
+      "/pxslt",
+      "/a",
+      "/mFilePrint",
+      "/mFileCloseOrExit",
+      "/n",
+      "/w",
+      "/x",
+    ],
+    { windowsVerbatimArguments: false, shell: false },
+  );
+  return cp;
+};
+
 ipcMain.on("printer", async (e, data: string) => {
   console.log(data);
 
   try {
-    const winwords = await Promise.allSettled([
-      getWinword(winword_32),
-      getWinword(winword_64),
-      getWinword(winword365_32),
-      getWinword(winword365_64),
-    ]);
-
-    const winword = winwords.find((i) => i.status === "fulfilled")?.value;
-
-    if (!winword) {
-      throw new Error("Find winword failed");
-    }
-
-    const cp = await execFileP(
-      winword,
-      [
-        data,
-        "/save",
-        "/q",
-        "/pxslt",
-        "/a",
-        "/mFilePrint",
-        "/mFileCloseOrExit",
-        "/n",
-        "/w",
-        "/x",
-      ],
-      { windowsVerbatimArguments: false, shell: false },
-    ).catch(() => execP(`start ${data}`));
+    const cp = await runWinword(data).catch(() => execP(`start ${data}`));
 
     console.log(cp);
   } catch (error) {
