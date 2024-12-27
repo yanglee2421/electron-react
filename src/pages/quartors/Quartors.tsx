@@ -110,8 +110,6 @@ export const Quartors = () => {
     },
   });
 
-  console.log(query.data);
-
   const renderBody = () => {
     if (query.isPending) {
       return (

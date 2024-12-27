@@ -61,16 +61,20 @@ export const UI = () => {
                 printer
               </Button>
             )}
-            <Button
-              onClick={() => {
-                window.ipcRenderer.send("select", {});
-                window.ipcRenderer.on("select-standby", (e, data) => {
-                  console.log(e, data);
-                  setDir(data);
-                });
-              }}
-              variant="outlined"
-            >
+            <Button variant="outlined" component="label">
+              <input
+                type="file"
+                name=""
+                hidden
+                id=""
+                accept="application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
+                value={""}
+                onChange={(e) => {
+                  const file = e.target.files?.item(0);
+                  if (!file) return;
+                  setDir(file.path);
+                }}
+              />
               select
             </Button>
             <Button

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -52,7 +52,9 @@ function createWindow() {
     );
   });
 
-  win.webContents.openDevTools();
+  if (import.meta.env.DEV) {
+    win.webContents.openDevTools();
+  }
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
@@ -146,18 +148,6 @@ ipcMain.on("printer", async (e, data: string) => {
       "printer-standby",
     );
   }
-});
-
-ipcMain.on("select", async (e) => {
-  if (!win) return;
-  const r = await dialog.showOpenDialog(win, {
-    properties: ["openFile"],
-    filters: [{ name: "Custom File Type", extensions: ["docx"] }],
-  });
-  e.sender.send(
-    "select-standby",
-    r.filePaths[0],
-  );
 });
 
 // 连接 Access 数据库（.mdb 或 .accdb）
