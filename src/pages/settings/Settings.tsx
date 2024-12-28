@@ -3,6 +3,7 @@ import {
   useIndexedStoreHasHydrated,
 } from "@/hooks/useIndexedStore";
 import {
+  BugReportOutlined,
   FileDownloadOutlined,
   FileUploadOutlined,
   FindInPageOutlined,
@@ -24,6 +25,7 @@ import { useForm, Controller } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
+import * as channel from "@electron/channel";
 
 const schema = z.object({
   path: z.string().min(1),
@@ -41,10 +43,25 @@ const SettingsForm = () => {
   });
 
   const formId = React.useId();
+  const [isPending, startTransition] = React.useTransition();
 
   return (
     <Card>
-      <CardHeader title="Settings" action={null} />
+      <CardHeader
+        title="Settings"
+        action={
+          <IconButton
+            disabled={isPending}
+            onClick={() => {
+              startTransition(() =>
+                window.ipcRenderer.invoke(channel.openDevTools)
+              );
+            }}
+          >
+            <BugReportOutlined />
+          </IconButton>
+        }
+      />
       <CardContent>
         <form
           id={formId}

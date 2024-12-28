@@ -46,15 +46,8 @@ function createWindow() {
 
   // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {
-    win?.webContents.send(
-      "main-process-message",
-      "init msg",
-    );
+    console.log("did-finish-load");
   });
-
-  if (import.meta.env.DEV) {
-    win.webContents.openDevTools();
-  }
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
@@ -133,11 +126,9 @@ const runWinword = async (data: string) => {
   return cp;
 };
 
-ipcMain.on("printer", async (e, data: string) => {
+ipcMain.handle(channel.printer, async (e, data: string) => {
   const cp = await runWinword(data).catch(() => shell.openPath(data));
-  e.sender.send(
-    "printer",
-  );
+  void e;
   console.log(data, cp);
 });
 
@@ -151,31 +142,38 @@ const openDatabase = async (params: channel.DbParamsBase) => {
 
 const odbc: typeof import("odbc") = require("odbc");
 
-ipcMain.on(channel.queryQuartors, async (e, params: channel.DbParamsBase) => {
-  const connection = await openDatabase(params);
-  const quartors = await connection.query("SELECT * FROM quartors");
+ipcMain.handle(
+  channel.queryQuartors,
+  async (e, params: channel.DbParamsBase) => {
+    const connection = await openDatabase(params);
+    const quartors = await connection.query("SELECT * FROM quartors");
 
-  e.sender.send(
-    channel.queryQuartors,
-    { data: { rows: quartors }, errors: null },
-  );
+    void e;
 
-  await connection.close();
-});
+    await connection.close();
 
-ipcMain.on(channel.queryVerifies, async (e, params: channel.DbParamsBase) => {
-  const connection = await openDatabase(params);
-  const quartors = await connection.query("SELECT * FROM verifies");
+    return { data: { rows: quartors }, errors: null };
+  },
+);
 
-  e.sender.send(
-    channel.queryVerifies,
-    { data: { rows: quartors }, errors: null },
-  );
+ipcMain.handle(
+  channel.queryVerifies,
+  async (e, params: channel.DbParamsBase) => {
+    const connection = await openDatabase(params);
+    const quartors = await connection.query("SELECT * FROM verifies");
+    void e;
+    await connection.close();
+    return { data: { rows: quartors }, errors: null };
+  },
+);
 
-  await connection.close();
-});
-
-ipcMain.on(channel.openPath, async (e, path: string) => {
+ipcMain.handle(channel.openPath, async (e, path: string) => {
   const data = await shell.openPath(path);
-  e.sender.send(channel.openPath, data);
+  void e;
+  return data;
+});
+
+ipcMain.handle(channel.openDevTools, () => {
+  if (!win) return;
+  win.webContents.openDevTools();
 });

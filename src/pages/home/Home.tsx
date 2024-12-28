@@ -29,7 +29,7 @@ const doc = new Document({
 });
 
 export const UI = () => {
-  const [disabled, setDisabled] = React.useState(false);
+  const [isPending, startTransition] = React.useTransition();
   const [dir, setDir] = React.useState("");
 
   return (
@@ -49,15 +49,11 @@ export const UI = () => {
           <Box sx={{ display: "flex", gap: 3, paddingBlock: 2 }}>
             {dir && (
               <Button
-                disabled={disabled}
+                disabled={isPending}
                 onClick={() => {
-                  setDisabled(true);
-                  const fn = () => {
-                    setDisabled(false);
-                    window.ipcRenderer.off("printer", fn);
-                  };
-                  window.ipcRenderer.send("printer", dir);
-                  window.ipcRenderer.on("printer", fn);
+                  startTransition(() =>
+                    window.ipcRenderer.invoke(channel.printer, dir)
+                  );
                 }}
                 variant="outlined"
               >
@@ -84,9 +80,11 @@ export const UI = () => {
               variant="outlined"
               component="label"
               onClick={() => {
-                window.ipcRenderer.send(channel.openPath, dir);
+                startTransition(() =>
+                  window.ipcRenderer.invoke(channel.openPath, dir)
+                );
               }}
-              disabled={!dir}
+              disabled={!dir || isPending}
             >
               open
             </Button>
