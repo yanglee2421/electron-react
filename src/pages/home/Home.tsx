@@ -1,7 +1,15 @@
 import React from "react";
 import { Document, Packer, Paragraph, TextRun } from "docx";
-import { Button, TextField, Grid2, Box } from "@mui/material";
+import {
+  Button,
+  TextField,
+  Grid2,
+  Box,
+  InputAdornment,
+  IconButton,
+} from "@mui/material";
 import * as channel from "@electron/channel";
+import { FindInPageOutlined } from "@mui/icons-material";
 
 // Documents contain sections, you can have multiple sections per document, go here to learn more about sections
 // This simple example will only contain one section
@@ -41,6 +49,33 @@ export const UI = () => {
           slotProps={{
             input: {
               readOnly: true,
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton component="label">
+                    <input
+                      type="file"
+                      name=""
+                      hidden
+                      id=""
+                      accept="application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
+                      value={""}
+                      onChange={(e) => {
+                        const file = e.target.files?.item(0);
+                        if (!file) return;
+                        setDir(file.path);
+                        const reader = new FileReader();
+
+                        reader.onload = (e) => {
+                          console.log(e.target?.result);
+                        };
+
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    <FindInPageOutlined />
+                  </IconButton>
+                </InputAdornment>
+              ),
             },
           }}
           fullWidth
@@ -60,22 +95,7 @@ export const UI = () => {
                 printer
               </Button>
             )}
-            <Button variant="outlined" component="label">
-              <input
-                type="file"
-                name=""
-                hidden
-                id=""
-                accept="application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
-                value={""}
-                onChange={(e) => {
-                  const file = e.target.files?.item(0);
-                  if (!file) return;
-                  setDir(file.path);
-                }}
-              />
-              select
-            </Button>
+
             <Button
               variant="outlined"
               component="label"
@@ -105,24 +125,6 @@ export const UI = () => {
             </Button>
           </Box>
         </Grid2>
-
-        <input
-          type="file"
-          name=""
-          id=""
-          onChange={(e) => {
-            const f = e.target.files?.item(0);
-            if (!f) return;
-            console.log(f);
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
-              console.log(e.target?.result);
-            };
-
-            reader.readAsDataURL(f);
-          }}
-        />
       </Grid2>
     </Box>
   );

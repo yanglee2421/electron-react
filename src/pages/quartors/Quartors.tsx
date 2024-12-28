@@ -13,6 +13,7 @@ import {
   TableCellProps,
   Typography,
   Grid2,
+  Link,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { fetchQuartors, Quartor } from "./fetchQuartors";
@@ -56,7 +57,11 @@ const columns = [
       );
     },
   }),
-  columnHelper.accessor("szIDs", {}),
+  columnHelper.accessor("szIDs", {
+    cell(props) {
+      return <Link href="javascript:;">{props.getValue()}</Link>;
+    },
+  }),
   columnHelper.accessor("szIDsWheel", {}),
   columnHelper.accessor("szWHModel", {}),
   columnHelper.accessor("szUsername", {}),
@@ -173,11 +178,16 @@ export const Quartors = () => {
       <CardHeader title="Quartors" action={<></>} />
       <CardContent>
         <Grid2 container spacing={6}>
-          <Grid2 size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+          <Grid2 size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
             <DatePicker
               value={date}
               onChange={setDate}
-              slotProps={{ field: { clearable: true } }}
+              slotProps={{
+                field: { clearable: true },
+                textField: {
+                  fullWidth: true,
+                },
+              }}
             />
           </Grid2>
         </Grid2>

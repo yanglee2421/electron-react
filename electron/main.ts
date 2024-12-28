@@ -40,6 +40,9 @@ function createWindow() {
       preload: path.join(__dirname, "preload.mjs"),
     },
     autoHideMenuBar: false,
+
+    width: 1024,
+    height: 768,
   });
 
   win.setMenu(null);
@@ -177,3 +180,7 @@ ipcMain.handle(channel.openDevTools, () => {
   if (!win) return;
   win.webContents.openDevTools();
 });
+
+console.log(
+  app.getPath("userData"),
+);
