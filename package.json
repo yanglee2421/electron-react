@@ -21,6 +21,7 @@
     "@tanstack/react-table": "^8.20.6",
     "dayjs": "^1.11.13",
     "docx": "^9.1.0",
+    "exceljs": "^4.4.0",
     "immer": "^10.1.1",
     "localforage": "^1.10.0",
     "odbc": "^2.4.9",
