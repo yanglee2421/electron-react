@@ -7,4 +7,5 @@ export const openDevTools = "openDevTools";
 export type DbParamsBase<TParams = unknown> = {
   path: string;
   password: string;
+  dsn: string;
 } & TParams;

@@ -137,7 +137,7 @@ ipcMain.handle(channel.printer, async (e, data: string) => {
 // 连接 Access 数据库（.mdb 或 .accdb）
 const openDatabase = async (params: channel.DbParamsBase) => {
   const conStr =
-    `DSN=MS Access Database;Driver={Microsoft Access Driver (*.mdb)};DBQ=${params.path};PWD=${params.password}`;
+    `DSN=${params.dsn};Driver={Microsoft Access Driver (*.mdb,*accdb)};DBQ=${params.path};PWD=${params.password}`;
   const connection = await odbc.connect(conStr);
   return connection;
 };

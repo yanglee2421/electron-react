@@ -98,6 +98,7 @@ export const Verifies = () => {
     ...fetchVerifies({
       path: settings.databasePath,
       password: settings.databasePassword,
+      dsn: settings.databaseDsn,
     }),
     refetchInterval: 1000 * 2,
     enabled: hasHydrated,

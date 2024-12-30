@@ -101,6 +101,7 @@ export const Quartors = () => {
     ...fetchQuartors({
       path: settings.databasePath,
       password: settings.databasePassword,
+      dsn: settings.databaseDsn,
     }),
     refetchInterval: 1000 * 2,
     enabled: hasHydrated,

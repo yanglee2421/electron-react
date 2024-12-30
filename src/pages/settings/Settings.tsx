@@ -29,6 +29,7 @@ import * as channel from "@electron/channel";
 
 const schema = z.object({
   path: z.string().min(1),
+  dsn: z.string().min(1),
 });
 
 const SettingsForm = () => {
@@ -37,6 +38,7 @@ const SettingsForm = () => {
   const form = useForm({
     defaultValues: {
       path: settings.databasePath,
+      dsn: settings.databaseDsn,
     },
 
     resolver: zodResolver(schema),
@@ -69,6 +71,7 @@ const SettingsForm = () => {
             form.handleSubmit((data) => {
               set((d) => {
                 d.settings.databasePath = data.path;
+                d.settings.databaseDsn = data.dsn;
               });
             }, console.error)()
           }
@@ -109,6 +112,21 @@ const SettingsForm = () => {
                         ),
                       },
                     }}
+                  />
+                )}
+              />
+            </Grid2>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <Controller
+                control={form.control}
+                name="dsn"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    fullWidth
+                    label="ODBC DSN"
                   />
                 )}
               />

@@ -8,6 +8,7 @@ import React from "react";
 type Settings = {
   databasePath: string;
   databasePassword: string;
+  databaseDsn: string;
 };
 
 type StoreState = {
@@ -33,6 +34,7 @@ export const useIndexedStore = create<Store>()(
         settings: {
           databasePath: "D:\\数据12\\local.mdb",
           databasePassword: "Joney",
+          databaseDsn: "MS Access Database",
         },
       }),
     ),
