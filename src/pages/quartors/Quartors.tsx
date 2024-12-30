@@ -103,7 +103,13 @@ export const Quartors = () => {
       password: settings.databasePassword,
       dsn: settings.databaseDsn,
     }),
-    refetchInterval: 1000 * 2,
+    refetchInterval(query) {
+      if (query.state.error) {
+        return false;
+      }
+
+      return 1000 * 2;
+    },
     enabled: hasHydrated,
   });
   const [date, setDate] = React.useState<dayjs.Dayjs | null>(null);
@@ -141,11 +147,13 @@ export const Quartors = () => {
     }
 
     if (query.isError) {
+      console.log(query.error);
+
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length}>
             <Typography sx={{ textAlign: "center" }} color="error">
-              Error
+              {query.error.message}
             </Typography>
           </TableCell>
         </TableRow>

@@ -1,6 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
 import * as channel from "@electron/channel";
-import { type NodeOdbcError } from "odbc";
 
 export type Verify = {
   szIDs: string;
@@ -30,7 +29,6 @@ type Res = {
   data: {
     rows: Verify[];
   };
-  error: Error | NodeOdbcError | null;
 };
 
 export const fetchVerifies = (params: channel.DbParamsBase) =>

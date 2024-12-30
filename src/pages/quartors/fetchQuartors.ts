@@ -1,6 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
 import * as channel from "@electron/channel";
-import { type NodeOdbcError } from "odbc";
 
 export type Quartor = {
   szIDs: string;
@@ -33,7 +32,6 @@ type Res = {
   data: {
     rows: Quartor[];
   };
-  error: Error | NodeOdbcError | null;
 };
 
 export const fetchQuartors = (params: channel.DbParamsBase) =>

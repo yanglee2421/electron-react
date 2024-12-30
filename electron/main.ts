@@ -6,6 +6,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { access, constants } from "node:fs/promises";
 import * as channel from "./channel";
+import type { NodeOdbcError } from "odbc";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -142,36 +143,54 @@ const openDatabase = async (params: channel.DbParamsBase) => {
   return connection;
 };
 
+const throwError = (error: unknown) => {
+  const nodeOdbcError = error as NodeOdbcError;
+  if ("odbcErrors" in nodeOdbcError) {
+    throw nodeOdbcError.odbcErrors[0].message;
+  }
+
+  if (error instanceof Error) {
+    throw error.message;
+  }
+
+  throw error;
+};
+
 const odbc: typeof import("odbc") = require("odbc");
 
 ipcMain.handle(
   channel.queryQuartors,
   async (e, params: channel.DbParamsBase) => {
-    const connection = await openDatabase(params);
-    const quartors = await connection.query("SELECT * FROM quartors");
-
     void e;
-
-    await connection.close();
-
-    return { data: { rows: quartors }, errors: null };
+    try {
+      const connection = await openDatabase(params);
+      const quartors = await connection.query("SELECT * FROM quartors");
+      await connection.close();
+      return { data: { rows: quartors } };
+    } catch (error) {
+      throwError(error);
+    }
   },
 );
 
 ipcMain.handle(
   channel.queryVerifies,
   async (e, params: channel.DbParamsBase) => {
-    const connection = await openDatabase(params);
-    const quartors = await connection.query("SELECT * FROM verifies");
     void e;
-    await connection.close();
-    return { data: { rows: quartors }, errors: null };
+    try {
+      const connection = await openDatabase(params);
+      const quartors = await connection.query("SELECT * FROM verifies");
+      await connection.close();
+      return { data: { rows: quartors } };
+    } catch (error) {
+      throwError(error);
+    }
   },
 );
 
 ipcMain.handle(channel.openPath, async (e, path: string) => {
-  const data = await shell.openPath(path);
   void e;
+  const data = await shell.openPath(path);
   return data;
 });
 
