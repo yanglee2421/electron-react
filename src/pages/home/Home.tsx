@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import * as channel from "@electron/channel";
 import { FindInPageOutlined } from "@mui/icons-material";
+import { ipcRenderer, webUtils } from "@/lib/utils";
 
 // Documents contain sections, you can have multiple sections per document, go here to learn more about sections
 // This simple example will only contain one section
@@ -62,7 +63,8 @@ export const UI = () => {
                       onChange={(e) => {
                         const file = e.target.files?.item(0);
                         if (!file) return;
-                        setDir(file.path);
+                        setDir(webUtils.getPathForFile(file));
+
                         const reader = new FileReader();
 
                         reader.onload = (e) => {
@@ -87,7 +89,7 @@ export const UI = () => {
                 disabled={isPending}
                 onClick={() => {
                   startTransition(() =>
-                    window.ipcRenderer.invoke(channel.printer, dir)
+                    ipcRenderer.invoke(channel.printer, dir)
                   );
                 }}
                 variant="outlined"
@@ -101,7 +103,7 @@ export const UI = () => {
               component="label"
               onClick={() => {
                 startTransition(() =>
-                  window.ipcRenderer.invoke(channel.openPath, dir)
+                  ipcRenderer.invoke(channel.openPath, dir)
                 );
               }}
               disabled={!dir || isPending}

@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import * as channel from "@electron/channel";
+import { ipcRenderer } from "@/lib/utils";
 
 export type Quartor = {
   szIDs: string;
@@ -38,7 +39,7 @@ export const fetchQuartors = (params: channel.DbParamsBase) =>
   queryOptions({
     queryKey: [params.path, params.password, channel.queryQuartors],
     async queryFn() {
-      const data: Res = await window.ipcRenderer.invoke(
+      const data: Res = await ipcRenderer.invoke(
         channel.queryQuartors,
         params,
       );

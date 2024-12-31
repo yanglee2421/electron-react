@@ -26,6 +26,7 @@ import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import * as channel from "@electron/channel";
+import { ipcRenderer, webUtils } from "@/lib/utils";
 
 const schema = z.object({
   path: z.string().min(1),
@@ -55,9 +56,7 @@ const SettingsForm = () => {
           <IconButton
             disabled={isPending}
             onClick={() => {
-              startTransition(() =>
-                window.ipcRenderer.invoke(channel.openDevTools)
-              );
+              startTransition(() => ipcRenderer.invoke(channel.openDevTools));
             }}
           >
             <BugReportOutlined />
@@ -100,10 +99,10 @@ const SettingsForm = () => {
                                 hidden
                                 value={""}
                                 onChange={(e) => {
-                                  console.log();
                                   const file = e.target.files?.item(0);
                                   if (!file) return;
-                                  field.onChange(file.path);
+
+                                  field.onChange(webUtils.getPathForFile(file));
                                 }}
                               />
                               <FindInPageOutlined />

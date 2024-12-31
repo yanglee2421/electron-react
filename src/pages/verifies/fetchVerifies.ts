@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import * as channel from "@electron/channel";
+import { ipcRenderer } from "@/lib/utils";
 
 export type Verify = {
   szIDs: string;
@@ -35,7 +36,7 @@ export const fetchVerifies = (params: channel.DbParamsBase) =>
   queryOptions({
     queryKey: [params.path, params.password, channel.queryVerifies],
     async queryFn() {
-      const data: Res = await window.ipcRenderer.invoke(
+      const data: Res = await ipcRenderer.invoke(
         channel.queryVerifies,
         params,
       );
