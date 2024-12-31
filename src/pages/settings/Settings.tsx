@@ -31,6 +31,7 @@ import { ipcRenderer, webUtils } from "@/lib/utils";
 const schema = z.object({
   path: z.string().min(1),
   dsn: z.string().min(1),
+  refetchInterval: z.number().int().positive(),
 });
 
 const SettingsForm = () => {
@@ -40,6 +41,7 @@ const SettingsForm = () => {
     defaultValues: {
       path: settings.databasePath,
       dsn: settings.databaseDsn,
+      refetchInterval: settings.refetchInterval,
     },
 
     resolver: zodResolver(schema),
@@ -71,6 +73,7 @@ const SettingsForm = () => {
               set((d) => {
                 d.settings.databasePath = data.path;
                 d.settings.databaseDsn = data.dsn;
+                d.settings.refetchInterval = data.refetchInterval;
               });
             }, console.error)()
           }
@@ -126,6 +129,43 @@ const SettingsForm = () => {
                     helperText={fieldState.error?.message}
                     fullWidth
                     label="ODBC DSN"
+                  />
+                )}
+              />
+            </Grid2>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <Controller
+                control={form.control}
+                name="refetchInterval"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    onChange={(e) => {
+                      const eVal = e.target.value;
+
+                      if (eVal === "") {
+                        field.onChange(eVal);
+                        return;
+                      }
+
+                      const val = Number(eVal);
+
+                      if (Number.isNaN(val)) {
+                        field.onChange(eVal);
+                      } else {
+                        field.onChange(val);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      field.onBlur();
+                      field.onChange(Number.parseInt(e.target.value, 10) || "");
+                    }}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    fullWidth
+                    label="Refetch Interval"
+                    slotProps={{ htmlInput: { inputMode: "numeric" } }}
+                    placeholder="2000"
                   />
                 )}
               />

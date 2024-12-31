@@ -9,6 +9,7 @@ type Settings = {
   databasePath: string;
   databasePassword: string;
   databaseDsn: string;
+  refetchInterval: number;
 };
 
 type StoreState = {
@@ -35,6 +36,7 @@ export const useIndexedStore = create<Store>()(
           databasePath: "D:\\数据12\\local.mdb",
           databasePassword: "Joney",
           databaseDsn: "MS Access Database",
+          refetchInterval: 1000 * 2,
         },
       }),
     ),

@@ -14,6 +14,7 @@ import {
   Typography,
   TableCellProps,
   Link,
+  IconButton,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { fetchVerifies, Verify } from "./fetchVerifies";
@@ -31,6 +32,7 @@ import {
   useIndexedStore,
   useIndexedStoreHasHydrated,
 } from "@/hooks/useIndexedStore";
+import { RefreshOutlined } from "@mui/icons-material";
 
 const paddMap = new Map<string, TableCellProps["padding"]>();
 paddMap.set("checkbox", "checkbox");
@@ -105,7 +107,7 @@ export const Verifies = () => {
         return false;
       }
 
-      return 1000 * 2;
+      return settings.refetchInterval;
     },
     enabled: hasHydrated,
   });
@@ -181,7 +183,17 @@ export const Verifies = () => {
 
   return (
     <Card>
-      <CardHeader title="Verifies" action={<></>} />
+      <CardHeader
+        title="Verifies"
+        action={
+          <IconButton
+            onClick={() => query.refetch()}
+            disabled={query.isRefetching}
+          >
+            <RefreshOutlined />
+          </IconButton>
+        }
+      />
       <CardContent>
         <Grid2 container spacing={6}>
           <Grid2 size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>

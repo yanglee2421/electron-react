@@ -14,6 +14,7 @@ import {
   Typography,
   Grid2,
   Link,
+  IconButton,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { fetchQuartors, Quartor } from "./fetchQuartors";
@@ -31,6 +32,7 @@ import {
   useIndexedStore,
   useIndexedStoreHasHydrated,
 } from "@/hooks/useIndexedStore";
+import { RefreshOutlined } from "@mui/icons-material";
 
 const paddMap = new Map<string, TableCellProps["padding"]>();
 paddMap.set("checkbox", "checkbox");
@@ -108,7 +110,7 @@ export const Quartors = () => {
         return false;
       }
 
-      return 1000 * 2;
+      return settings.refetchInterval;
     },
     enabled: hasHydrated,
   });
@@ -184,7 +186,17 @@ export const Quartors = () => {
 
   return (
     <Card>
-      <CardHeader title="Quartors" action={<></>} />
+      <CardHeader
+        title="Quartors"
+        action={
+          <IconButton
+            onClick={() => query.refetch()}
+            disabled={query.isRefetching}
+          >
+            <RefreshOutlined />
+          </IconButton>
+        }
+      />
       <CardContent>
         <Grid2 container spacing={6}>
           <Grid2 size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
