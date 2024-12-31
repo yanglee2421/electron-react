@@ -135,6 +135,8 @@ ipcMain.handle(channel.printer, async (e, data: string) => {
   console.log(data, cp);
 });
 
+const odbc: typeof import("odbc") = require("odbc");
+
 // 连接 Access 数据库（.mdb 或 .accdb）
 const openDatabase = async (params: channel.DbParamsBase) => {
   const conStr =
@@ -155,8 +157,6 @@ const throwError = (error: unknown) => {
 
   throw error;
 };
-
-const odbc: typeof import("odbc") = require("odbc");
 
 ipcMain.handle(
   channel.queryQuartors,
