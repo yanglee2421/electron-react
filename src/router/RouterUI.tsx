@@ -55,6 +55,13 @@ const router = createHashRouter([
     Component: RootRoute,
     children: [
       {
+        id: "404",
+        path: "*",
+        lazy() {
+          return import("@/pages/not-found/route");
+        },
+      },
+      {
         id: "auth_layout",
         Component() {
           const location = useLocation();
@@ -65,13 +72,6 @@ const router = createHashRouter([
           );
         },
         children: [
-          {
-            id: "404",
-            path: "*",
-            lazy() {
-              return import("@/pages/not-found/route");
-            },
-          },
           {
             id: "home",
             index: true,
