@@ -19,7 +19,7 @@
         arch: [],
       },
     ],
-    artifactName: "${productName}-Windows-${version}-Setup.${ext}",
+    artifactName: "${productName}_${version}_${arch}-Setup.${ext}",
   },
   nsis: {
     oneClick: false,
