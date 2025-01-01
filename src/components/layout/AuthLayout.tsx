@@ -1,8 +1,8 @@
 import {
   alpha,
   AppBar,
+  Avatar,
   Box,
-  Icon,
   IconButton,
   Link,
   styled,
@@ -20,7 +20,7 @@ import {
   MenuOutlined,
   SettingsOutlined,
 } from "@mui/icons-material";
-import { Link as RouterLink, NavLink, useParams } from "react-router";
+import { NavLink, useParams } from "react-router";
 import React from "react";
 
 const github_url = import.meta.env.VITE_GITHUB_URL;
@@ -121,15 +121,15 @@ export const AuthLayout = (props: Props) => {
         })}
       >
         <Toolbar>
-          <Icon
-            component={RouterLink}
-            to="/"
-            fontSize="large"
-            color="primary"
-            sx={{ display: { xs: "none", sm: "block" } }}
+          <Typography
+            variant="h6"
+            sx={{
+              display: { xs: "none", sm: "flex" },
+              color: (t) => t.palette.text.primary,
+            }}
           >
-            R
-          </Icon>
+            Reports
+          </Typography>
           <IconButton
             onClick={() => update((p) => !p)}
             sx={{ display: { sm: "none" } }}
@@ -141,6 +141,9 @@ export const AuthLayout = (props: Props) => {
           <IconButton href={github_url} target={github_url}>
             <GitHub />
           </IconButton>
+          <Avatar variant="circular" sx={{ cursor: "pointer" }}>
+            A
+          </Avatar>
         </Toolbar>
       </AppBar>
       <Aside sx={{ maxInlineSize: showMenuInMobile ? "none" : 0 }}>
