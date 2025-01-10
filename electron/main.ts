@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 import { access, constants } from "node:fs/promises";
 import * as channel from "./channel";
 import type { NodeOdbcError } from "odbc";
+import type ModbusRTU from "modbus-serial";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -202,3 +203,26 @@ ipcMain.handle(channel.openDevTools, () => {
 console.log(
   app.getPath("userData"),
 );
+
+const ModbusRTUT = require("modbus-serial");
+const client: ModbusRTU = new ModbusRTUT();
+const port = "COM1";
+const baudRate = 9600;
+const parity = "none";
+const dataBits = 8;
+const stopBits = 1;
+const address = 0;
+
+ipcMain.handle("plc", async () => {
+  await client.connectRTUBuffered(port, {
+    baudRate,
+    parity,
+    dataBits,
+    stopBits,
+  });
+
+  console.log("Modbus client connected.");
+  const data = await client.readHoldingRegisters(address, 10);
+  console.log("Received data:", data.data);
+  client.close(() => {});
+});
