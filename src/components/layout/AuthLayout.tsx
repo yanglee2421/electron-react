@@ -3,6 +3,7 @@ import {
   AppBar,
   Avatar,
   Box,
+  Container,
   IconButton,
   Link,
   styled,
@@ -152,12 +153,16 @@ export const AuthLayout = (props: Props) => {
         </Nav>
       </Aside>
       <MainWrapper sx={{ display: showMenuInMobile ? "none" : "flex" }}>
-        <Main>{props.children}</Main>
+        <Main>
+          <Container>{props.children}</Container>
+        </Main>
         <Footer>
-          &copy;2024 by{" "}
-          <Link href={github_url} target={github_url}>
-            yanglee2421
-          </Link>
+          <Container>
+            &copy; 2024 by{" "}
+            <Link href={github_url} target={github_url}>
+              yanglee2421
+            </Link>
+          </Container>
         </Footer>
       </MainWrapper>
     </>
@@ -206,10 +211,19 @@ const MainWrapper = styled("div")(({ theme }) => ({
 const Main = styled("main")(({ theme }) => ({
   flexGrow: 1,
 
-  padding: theme.spacing(3),
-  paddingBlockEnd: theme.spacing(0),
+  paddingBlock: theme.spacing(2),
+
+  [theme.breakpoints.up("sm")]: {
+    paddingInline: theme.spacing(3),
+    paddingBlock: theme.spacing(6),
+  },
 }));
 
 const Footer = styled("footer")(({ theme }) => ({
-  padding: theme.spacing(3),
+  paddingBlock: theme.spacing(2),
+
+  [theme.breakpoints.up("sm")]: {
+    paddingInline: theme.spacing(3),
+    paddingBlock: theme.spacing(6),
+  },
 }));

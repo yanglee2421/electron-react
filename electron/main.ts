@@ -204,25 +204,36 @@ console.log(
   app.getPath("userData"),
 );
 
-const ModbusRTUT = require("modbus-serial");
-const client: ModbusRTU = new ModbusRTUT();
-const port = "COM1";
-const baudRate = 9600;
-const parity = "none";
-const dataBits = 8;
-const stopBits = 1;
-const address = 0;
-
-ipcMain.handle("plc", async () => {
-  await client.connectRTUBuffered(port, {
-    baudRate,
-    parity,
-    dataBits,
-    stopBits,
-  });
-
-  console.log("Modbus client connected.");
-  const data = await client.readHoldingRegisters(address, 10);
-  console.log("Received data:", data.data);
-  client.close(() => {});
+ipcMain.handle(channel.heartbeat, async (e, params: channel.DbParamsBase) => {
+  void e;
+  try {
+    const connect = await openDatabase(params);
+    await connect.close();
+    return {};
+  } catch (error) {
+    throwError(error);
+  }
 });
+
+// const ModbusRTUT = require("modbus-serial");
+// const client: ModbusRTU = new ModbusRTUT();
+// const port = "COM1";
+// const baudRate = 9600;
+// const parity = "none";
+// const dataBits = 8;
+// const stopBits = 1;
+// const address = 0;
+
+// ipcMain.handle("plc", async () => {
+//   await client.connectRTUBuffered(port, {
+//     baudRate,
+//     parity,
+//     dataBits,
+//     stopBits,
+//   });
+
+//   console.log("Modbus client connected.");
+//   const data = await client.readHoldingRegisters(address, 10);
+//   console.log("Received data:", data.data);
+//   client.close(() => {});
+// });

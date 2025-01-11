@@ -27,6 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import * as channel from "@electron/channel";
 import { ipcRenderer, webUtils } from "@/lib/utils";
+import { useStore } from "@/hooks/useStore";
 
 const schema = z.object({
   path: z.string().min(1),
@@ -35,6 +36,10 @@ const schema = z.object({
 });
 
 const SettingsForm = () => {
+  const formId = React.useId();
+
+  const [isPending, startTransition] = React.useTransition();
+
   const settings = useIndexedStore((s) => s.settings);
   const set = useIndexedStore((s) => s.set);
   const form = useForm({
@@ -46,9 +51,7 @@ const SettingsForm = () => {
 
     resolver: zodResolver(schema),
   });
-
-  const formId = React.useId();
-  const [isPending, startTransition] = React.useTransition();
+  const setMsg = useStore((s) => s.set);
 
   return (
     <Card>
@@ -74,6 +77,9 @@ const SettingsForm = () => {
                 d.settings.databasePath = data.path;
                 d.settings.databaseDsn = data.dsn;
                 d.settings.refetchInterval = data.refetchInterval;
+              });
+              setMsg((d) => {
+                d.msg = "Save successfully!";
               });
             }, console.error)()
           }

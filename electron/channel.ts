@@ -3,6 +3,7 @@ export const queryVerifies = "verifies/get";
 export const openPath = "openPath";
 export const printer = "printer";
 export const openDevTools = "openDevTools";
+export const heartbeat = "heartbeat";
 
 export type DbParamsBase<TParams = unknown> = {
   path: string;
