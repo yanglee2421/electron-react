@@ -20,6 +20,8 @@ import {
   CardActions,
   Button,
   CircularProgress,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import z from "zod";
@@ -36,6 +38,8 @@ const schema = z.object({
 });
 
 const SettingsForm = () => {
+  const [currentTab, setCurrentTab] = React.useState("database");
+
   const formId = React.useId();
 
   const [isPending, startTransition] = React.useTransition();
@@ -53,6 +57,206 @@ const SettingsForm = () => {
   });
   const setMsg = useStore((s) => s.set);
 
+  const renderTabContent = () => {
+    switch (currentTab) {
+      case "database":
+        return (
+          <>
+            <CardContent>
+              <form
+                id={formId}
+                action={() =>
+                  form.handleSubmit((data) => {
+                    set((d) => {
+                      d.settings.databasePath = data.path;
+                      d.settings.databaseDsn = data.dsn;
+                      d.settings.refetchInterval = data.refetchInterval;
+                    });
+                    setMsg((d) => {
+                      d.msg = "Save successfully!";
+                    });
+                  }, console.error)()
+                }
+                onReset={() => form.reset()}
+              >
+                <Grid2 container spacing={6}>
+                  <Grid2 size={{ xs: 12, sm: 6 }}>
+                    <Controller
+                      control={form.control}
+                      name="path"
+                      render={({ field, fieldState }) => (
+                        <TextField
+                          {...field}
+                          error={!!fieldState.error}
+                          helperText={fieldState.error?.message}
+                          fullWidth
+                          label="Database"
+                          slotProps={{
+                            input: {
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <IconButton component="label">
+                                    <input
+                                      type="file"
+                                      accept="application/msaccess,application/vnd.ms-access,.mdb,.accdb"
+                                      hidden
+                                      value={""}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.item(0);
+                                        if (!file) return;
+
+                                        field.onChange(
+                                          webUtils.getPathForFile(file)
+                                        );
+                                      }}
+                                    />
+                                    <FindInPageOutlined />
+                                  </IconButton>
+                                </InputAdornment>
+                              ),
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid2>
+                  <Grid2 size={{ xs: 12, sm: 6 }}>
+                    <Controller
+                      control={form.control}
+                      name="dsn"
+                      render={({ field, fieldState }) => (
+                        <TextField
+                          {...field}
+                          error={!!fieldState.error}
+                          helperText={fieldState.error?.message}
+                          fullWidth
+                          label="ODBC DSN"
+                        />
+                      )}
+                    />
+                  </Grid2>
+                  <Grid2 size={{ xs: 12, sm: 6 }}>
+                    <Controller
+                      control={form.control}
+                      name="refetchInterval"
+                      render={({ field, fieldState }) => (
+                        <TextField
+                          {...field}
+                          onChange={(e) => {
+                            const eVal = e.target.value;
+
+                            if (eVal === "") {
+                              field.onChange(eVal);
+                              return;
+                            }
+
+                            const val = Number(eVal);
+
+                            if (Number.isNaN(val)) {
+                              field.onChange(eVal);
+                            } else {
+                              field.onChange(val);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            field.onChange(
+                              Number.parseInt(e.target.value, 10) || ""
+                            );
+                          }}
+                          error={!!fieldState.error}
+                          helperText={fieldState.error?.message}
+                          fullWidth
+                          label="Refetch Interval"
+                          slotProps={{ htmlInput: { inputMode: "numeric" } }}
+                          placeholder="2000"
+                        />
+                      )}
+                    />
+                  </Grid2>
+                </Grid2>
+              </form>
+            </CardContent>
+            <CardActions>
+              <Button
+                type="submit"
+                form={formId}
+                variant="contained"
+                startIcon={<SaveOutlined />}
+              >
+                Save
+              </Button>
+              <Button
+                component="label"
+                startIcon={<FileDownloadOutlined />}
+                variant="outlined"
+              >
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  hidden
+                  value={""}
+                  onChange={(e) => {
+                    const file = e.target.files?.item(0);
+                    if (!file) return;
+                    const reader = new FileReader();
+
+                    reader.onload = (e) => {
+                      console.log(e.target?.result);
+                    };
+
+                    reader.readAsText(file);
+                  }}
+                />
+                Import
+              </Button>
+              <Button
+                onClick={() => {
+                  // 创建 JSON 数据
+                  const data = useIndexedStore.getState();
+                  const version =
+                    useIndexedStore.persist.getOptions().version || 0;
+
+                  // 将 JSON 数据转换为字符串
+                  const jsonString = JSON.stringify(data, null, 2);
+
+                  // 创建 Blob 对象
+                  const blob = new Blob([jsonString], {
+                    type: "application/json",
+                  });
+
+                  // 创建下载链接
+                  const link = document.createElement("a");
+                  link.href = URL.createObjectURL(blob);
+                  link.download = `backup-v${version}.json`; // 下载的文件名
+
+                  // 触发下载
+                  document.body.appendChild(link); // 将链接添加到 DOM
+                  link.click(); // 自动点击链接
+                  document.body.removeChild(link); // 下载后移除链接
+                }}
+                startIcon={<FileUploadOutlined />}
+                variant="outlined"
+              >
+                export
+              </Button>
+            </CardActions>
+          </>
+        );
+      case "hmis":
+        return (
+          <>
+            <CardContent></CardContent>
+            <CardActions>
+              <Button startIcon={<SaveOutlined />} variant="contained">
+                Save
+              </Button>
+            </CardActions>
+          </>
+        );
+    }
+  };
+
   return (
     <Card>
       <CardHeader
@@ -68,178 +272,18 @@ const SettingsForm = () => {
           </IconButton>
         }
       />
-      <CardContent>
-        <form
-          id={formId}
-          action={() =>
-            form.handleSubmit((data) => {
-              set((d) => {
-                d.settings.databasePath = data.path;
-                d.settings.databaseDsn = data.dsn;
-                d.settings.refetchInterval = data.refetchInterval;
-              });
-              setMsg((d) => {
-                d.msg = "Save successfully!";
-              });
-            }, console.error)()
-          }
-          onReset={() => form.reset()}
-        >
-          <Grid2 container spacing={6}>
-            <Grid2 size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="path"
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    fullWidth
-                    label="Database"
-                    slotProps={{
-                      input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton component="label">
-                              <input
-                                type="file"
-                                accept="application/msaccess,application/vnd.ms-access,.mdb,.accdb"
-                                hidden
-                                value={""}
-                                onChange={(e) => {
-                                  const file = e.target.files?.item(0);
-                                  if (!file) return;
-
-                                  field.onChange(webUtils.getPathForFile(file));
-                                }}
-                              />
-                              <FindInPageOutlined />
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      },
-                    }}
-                  />
-                )}
-              />
-            </Grid2>
-            <Grid2 size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="dsn"
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    fullWidth
-                    label="ODBC DSN"
-                  />
-                )}
-              />
-            </Grid2>
-            <Grid2 size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="refetchInterval"
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    onChange={(e) => {
-                      const eVal = e.target.value;
-
-                      if (eVal === "") {
-                        field.onChange(eVal);
-                        return;
-                      }
-
-                      const val = Number(eVal);
-
-                      if (Number.isNaN(val)) {
-                        field.onChange(eVal);
-                      } else {
-                        field.onChange(val);
-                      }
-                    }}
-                    onBlur={(e) => {
-                      field.onBlur();
-                      field.onChange(Number.parseInt(e.target.value, 10) || "");
-                    }}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    fullWidth
-                    label="Refetch Interval"
-                    slotProps={{ htmlInput: { inputMode: "numeric" } }}
-                    placeholder="2000"
-                  />
-                )}
-              />
-            </Grid2>
-          </Grid2>
-        </form>
-      </CardContent>
-      <CardActions>
-        <Button
-          type="submit"
-          form={formId}
-          variant="contained"
-          startIcon={<SaveOutlined />}
-        >
-          Save
-        </Button>
-        <Button
-          component="label"
-          startIcon={<FileDownloadOutlined />}
-          variant="outlined"
-        >
-          <input
-            type="file"
-            accept="application/json,.json"
-            hidden
-            value={""}
-            onChange={(e) => {
-              const file = e.target.files?.item(0);
-              if (!file) return;
-              const reader = new FileReader();
-
-              reader.onload = (e) => {
-                console.log(e.target?.result);
-              };
-
-              reader.readAsText(file);
-            }}
-          />
-          Import
-        </Button>
-        <Button
-          onClick={() => {
-            // 创建 JSON 数据
-            const data = useIndexedStore.getState();
-            const version = useIndexedStore.persist.getOptions().version || 0;
-
-            // 将 JSON 数据转换为字符串
-            const jsonString = JSON.stringify(data, null, 2);
-
-            // 创建 Blob 对象
-            const blob = new Blob([jsonString], { type: "application/json" });
-
-            // 创建下载链接
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `backup-v${version}.json`; // 下载的文件名
-
-            // 触发下载
-            document.body.appendChild(link); // 将链接添加到 DOM
-            link.click(); // 自动点击链接
-            document.body.removeChild(link); // 下载后移除链接
-          }}
-          startIcon={<FileUploadOutlined />}
-          variant="outlined"
-        >
-          export
-        </Button>
-      </CardActions>
+      <Tabs
+        value={currentTab}
+        onChange={(e, val) => {
+          void e;
+          setCurrentTab(val);
+        }}
+        variant="scrollable"
+      >
+        <Tab label="Database" value="database" />
+        <Tab label="HMIS" value="hmis" />
+      </Tabs>
+      {renderTabContent()}
     </Card>
   );
 };

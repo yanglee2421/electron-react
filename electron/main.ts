@@ -40,13 +40,14 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
     },
+
     autoHideMenuBar: false,
 
     width: 1024,
     height: 768,
   });
 
-  win.setMenu(null);
+  win.menuBarVisible = false;
 
   // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {

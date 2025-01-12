@@ -3,7 +3,6 @@ import {
   AppBar,
   Avatar,
   Box,
-  Container,
   IconButton,
   Link,
   styled,
@@ -153,16 +152,12 @@ export const AuthLayout = (props: Props) => {
         </Nav>
       </Aside>
       <MainWrapper sx={{ display: showMenuInMobile ? "none" : "flex" }}>
-        <Main>
-          <Container>{props.children}</Container>
-        </Main>
+        <Main>{props.children}</Main>
         <Footer>
-          <Container>
-            &copy; 2024 by{" "}
-            <Link href={github_url} target={github_url}>
-              yanglee2421
-            </Link>
-          </Container>
+          &copy; 2024 by{" "}
+          <Link href={github_url} target={github_url}>
+            yanglee2421
+          </Link>
         </Footer>
       </MainWrapper>
     </>
