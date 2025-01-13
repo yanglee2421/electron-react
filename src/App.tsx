@@ -1,5 +1,5 @@
 import { RouterUI } from "./router/RouterUI";
-import { QueryProvider } from "./components/QueryProvider";
+import { QueryProvider } from "./components/query";
 
 export default function App() {
   return (
