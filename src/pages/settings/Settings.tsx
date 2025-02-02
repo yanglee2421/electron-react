@@ -297,7 +297,11 @@ const MemCard = () => {
 
   const theme = useTheme();
   const [size] = useSize(divRef);
-  const mem = useQuery(fetchMem());
+  const mem = useQuery({
+    ...fetchMem(),
+    refetchInterval: 16,
+    refetchIntervalInBackground: false,
+  });
 
   const width = size?.contentBoxSize.at(0)?.inlineSize || 0;
   const height = 300;
@@ -307,22 +311,6 @@ const MemCard = () => {
 
     React.startTransition(() => setData((p) => [...p, mem.data].slice(-width)));
   }, [mem.data, width]);
-
-  const refetch = mem.refetch;
-  React.useEffect(() => {
-    let timer = 0;
-    const fn = () => {
-      timer = requestAnimationFrame(fn);
-
-      refetch();
-    };
-
-    fn();
-
-    return () => {
-      cancelAnimationFrame(timer);
-    };
-  }, [refetch]);
 
   return (
     <Card>
