@@ -183,19 +183,10 @@ const SettingsForm = () => {
               </form>
             </CardContent>
             <CardActions>
-              <Button
-                type="submit"
-                form={formId}
-                variant="contained"
-                startIcon={<SaveOutlined />}
-              >
+              <Button type="submit" form={formId} startIcon={<SaveOutlined />}>
                 Save
               </Button>
-              <Button
-                component="label"
-                startIcon={<FileDownloadOutlined />}
-                variant="outlined"
-              >
+              <Button component="label" startIcon={<FileDownloadOutlined />}>
                 <input
                   type="file"
                   accept="application/json,.json"
@@ -241,7 +232,6 @@ const SettingsForm = () => {
                   document.body.removeChild(link); // 下载后移除链接
                 }}
                 startIcon={<FileUploadOutlined />}
-                variant="outlined"
               >
                 export
               </Button>
@@ -253,9 +243,7 @@ const SettingsForm = () => {
           <>
             <CardContent></CardContent>
             <CardActions>
-              <Button startIcon={<SaveOutlined />} variant="contained">
-                Save
-              </Button>
+              <Button startIcon={<SaveOutlined />}>Save</Button>
             </CardActions>
           </>
         );
@@ -361,12 +349,27 @@ const MemCard = () => {
               y2={height}
             />
             <circle cx={0} cy={height} r={4} fill={theme.palette.error.main} />
+            <polyline
+              points={data
+                .map(
+                  (i, idx) =>
+                    `${idx},${Math.floor((i.freemem / i.totalmem) * height)}`
+                )
+                .join(" ")}
+              fill="none"
+              pointsAtZ={50}
+              z={50}
+              stroke={theme.palette.primary.main}
+              strokeWidth={1}
+            />
             {mem.isSuccess && (
               <text
                 x={12}
                 y={0 + 9}
+                z={100}
                 fill={theme.palette.action.disabled}
                 font-size="12"
+                height={9}
               >
                 100% ({Math.floor(mem.data.totalmem / 1024 / 1024 / 1024) + "G"}
                 )
@@ -377,12 +380,14 @@ const MemCard = () => {
               y={height / 2}
               fill={theme.palette.action.disabled}
               font-size="12"
+              z={100}
             >
               50%
             </text>
             <text
               x={12}
               y={height / 4}
+              z={100}
               fill={theme.palette.action.disabled}
               font-size="12"
             >
@@ -391,22 +396,12 @@ const MemCard = () => {
             <text
               x={12}
               y={(height / 4) * 3}
+              z={100}
               fill={theme.palette.action.disabled}
               font-size="12"
             >
               25%
             </text>
-            <polyline
-              points={data
-                .map(
-                  (i, idx) =>
-                    `${idx},${Math.floor((i.freemem / i.totalmem) * height)}`
-                )
-                .join(" ")}
-              fill="none"
-              stroke={theme.palette.primary.main}
-              strokeWidth={1}
-            />
           </svg>
         </Box>
       </CardContent>
