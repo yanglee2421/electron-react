@@ -7,7 +7,8 @@ import { promisify } from "node:util";
 import { access, constants } from "node:fs/promises";
 import * as channel from "./channel";
 import type { NodeOdbcError } from "odbc";
-import type ModbusRTU from "modbus-serial";
+import * as os from "node:os";
+// import type ModbusRTU from "modbus-serial";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -126,7 +127,7 @@ const runWinword = async (data: string) => {
       "/w",
       "/x",
     ],
-    { windowsVerbatimArguments: false, shell: false },
+    { windowsVerbatimArguments: false, shell: false }
   );
   return cp;
 };
@@ -141,8 +142,7 @@ const odbc: typeof import("odbc") = require("odbc");
 
 // 连接 Access 数据库（.mdb 或 .accdb）
 const openDatabase = async (params: channel.DbParamsBase) => {
-  const conStr =
-    `DSN=${params.dsn};Driver={Microsoft Access Driver (*.mdb,*accdb)};DBQ=${params.path};PWD=${params.password}`;
+  const conStr = `DSN=${params.dsn};Driver={Microsoft Access Driver (*.mdb,*accdb)};DBQ=${params.path};PWD=${params.password}`;
   const connection = await odbc.connect(conStr);
   return connection;
 };
@@ -172,7 +172,7 @@ ipcMain.handle(
     } catch (error) {
       throwError(error);
     }
-  },
+  }
 );
 
 ipcMain.handle(
@@ -187,7 +187,7 @@ ipcMain.handle(
     } catch (error) {
       throwError(error);
     }
-  },
+  }
 );
 
 ipcMain.handle(channel.openPath, async (e, path: string) => {
@@ -201,9 +201,7 @@ ipcMain.handle(channel.openDevTools, () => {
   win.webContents.openDevTools();
 });
 
-console.log(
-  app.getPath("userData"),
-);
+console.log(app.getPath("userData"));
 
 ipcMain.handle(channel.heartbeat, async (e, params: channel.DbParamsBase) => {
   void e;
@@ -238,3 +236,9 @@ ipcMain.handle(channel.heartbeat, async (e, params: channel.DbParamsBase) => {
 //   console.log("Received data:", data.data);
 //   client.close(() => {});
 // });
+ipcMain.handle(channel.mem, async () => {
+  return {
+    totalmem: os.totalmem(),
+    freemem: os.freemem(),
+  };
+});

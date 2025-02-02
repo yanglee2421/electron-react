@@ -4,6 +4,7 @@ export const openPath = "openPath";
 export const printer = "printer";
 export const openDevTools = "openDevTools";
 export const heartbeat = "heartbeat";
+export const mem = "mem";
 
 export type DbParamsBase<TParams = unknown> = {
   path: string;

@@ -22,6 +22,9 @@ import {
   CircularProgress,
   Tabs,
   Tab,
+  Stack,
+  Box,
+  useTheme,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import z from "zod";
@@ -30,6 +33,8 @@ import React from "react";
 import * as channel from "@electron/channel";
 import { ipcRenderer, webUtils } from "@/lib/utils";
 import { useStore } from "@/hooks/useStore";
+import { useSize } from "@/hooks/useSize";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 
 const schema = z.object({
   path: z.string().min(1),
@@ -288,11 +293,137 @@ const SettingsForm = () => {
   );
 };
 // Joney
+type Mem = { totalmem: number; freemem: number };
+const fetchMem = () =>
+  queryOptions<Mem>({
+    queryKey: [channel.mem],
+    queryFn() {
+      return ipcRenderer.invoke(channel.mem);
+    },
+  });
+
+const MemCard = () => {
+  const [data, setData] = React.useState<Mem[]>([]);
+
+  const divRef = React.useRef(null);
+
+  const theme = useTheme();
+  const [size] = useSize(divRef);
+  const mem = useQuery(fetchMem());
+
+  const width = size?.contentBoxSize.at(0)?.inlineSize || 0;
+  const height = 300;
+
+  React.useEffect(() => {
+    if (!mem.data) return;
+
+    React.startTransition(() => setData((p) => [...p, mem.data].slice(-width)));
+  }, [mem.data, width]);
+
+  const refetch = mem.refetch;
+  React.useEffect(() => {
+    let timer = 0;
+    const fn = () => {
+      timer = requestAnimationFrame(fn);
+
+      refetch();
+    };
+
+    fn();
+
+    return () => {
+      cancelAnimationFrame(timer);
+    };
+  }, [refetch]);
+
+  return (
+    <Card>
+      <CardHeader title="Memory" />
+      <CardContent>
+        <Box ref={divRef} sx={{ position: "relative", height }}>
+          <svg
+            height={height}
+            width={width}
+            style={{ position: "absolute", top: 0, left: 0 }}
+          >
+            <line
+              stroke={theme.palette.divider}
+              x1={0}
+              y1={0}
+              x2={0}
+              y2={height}
+            />
+            <line
+              stroke={theme.palette.divider}
+              x1={0}
+              y1={height}
+              x2={width}
+              y2={height}
+            />
+            <circle cx={0} cy={height} r={4} fill={theme.palette.error.main} />
+            {mem.isSuccess && (
+              <text
+                x={12}
+                y={0 + 9}
+                fill={theme.palette.action.disabled}
+                font-size="12"
+              >
+                100% ({Math.floor(mem.data.totalmem / 1024 / 1024 / 1024) + "G"}
+                )
+              </text>
+            )}
+            <text
+              x={12}
+              y={height / 2}
+              fill={theme.palette.action.disabled}
+              font-size="12"
+            >
+              50%
+            </text>
+            <text
+              x={12}
+              y={height / 4}
+              fill={theme.palette.action.disabled}
+              font-size="12"
+            >
+              75%
+            </text>
+            <text
+              x={12}
+              y={(height / 4) * 3}
+              fill={theme.palette.action.disabled}
+              font-size="12"
+            >
+              25%
+            </text>
+            <polyline
+              points={data
+                .map(
+                  (i, idx) =>
+                    `${idx},${Math.floor((i.freemem / i.totalmem) * height)}`
+                )
+                .join(" ")}
+              fill="none"
+              stroke={theme.palette.primary.main}
+              strokeWidth={1}
+            />
+          </svg>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const Settings = () => {
   const hasHydrated = useIndexedStoreHasHydrated();
-  if (hasHydrated) {
-    return <SettingsForm />;
+  if (!hasHydrated) {
+    return <CircularProgress />;
   }
-  return <CircularProgress />;
+
+  return (
+    <Stack spacing={6}>
+      <SettingsForm />
+      <MemCard />
+    </Stack>
+  );
 };
