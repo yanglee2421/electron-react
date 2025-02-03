@@ -359,8 +359,7 @@ const MemCard = () => {
                 font-size="12"
                 height={9}
               >
-                100% ({Math.floor(mem.data.totalmem / 1024 / 1024 / 1024) + "G"}
-                )
+                100% ({Number(mem.data.totalmem / 1024 ** 3).toFixed(1) + "G"})
               </text>
             )}
             <text
