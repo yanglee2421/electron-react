@@ -285,8 +285,9 @@ type Mem = { totalmem: number; freemem: number };
 const fetchMem = () =>
   queryOptions<Mem>({
     queryKey: [channel.mem],
-    queryFn() {
-      return ipcRenderer.invoke(channel.mem);
+    async queryFn() {
+      const data = await ipcRenderer.invoke(channel.mem);
+      return data;
     },
   });
 
@@ -299,7 +300,7 @@ const MemCard = () => {
   const [size] = useSize(divRef);
   const mem = useQuery({
     ...fetchMem(),
-    refetchInterval: 16,
+    refetchInterval: 200,
     refetchIntervalInBackground: false,
   });
 

@@ -6,6 +6,9 @@ export const openDevTools = "openDevTools";
 export const heartbeat = "heartbeat";
 export const mem = "mem";
 
+export const ipcRenderer = "ipcRenderer";
+export const webUtils = "webUtils";
+
 export type DbParamsBase<TParams = unknown> = {
   path: string;
   password: string;
