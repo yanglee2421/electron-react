@@ -5,6 +5,7 @@ export const printer = "printer";
 export const openDevTools = "openDevTools";
 export const heartbeat = "heartbeat";
 export const mem = "mem";
+export const queryDetections = "queryDetections";
 
 export const ipcRenderer = "ipcRenderer";
 export const webUtils = "webUtils";

@@ -1,133 +1,85 @@
 import React from "react";
-import { Document, Packer, Paragraph, TextRun } from "docx";
 import {
-  Button,
-  TextField,
-  Grid2,
-  Box,
-  InputAdornment,
-  IconButton,
+  Card,
+  CardHeader,
+  CardContent,
+  Alert,
+  AlertTitle,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
 } from "@mui/material";
 import * as channel from "@electron/channel";
-import { FindInPageOutlined } from "@mui/icons-material";
-import { ipcRenderer, webUtils } from "@/lib/utils";
+import { ipcRenderer } from "@/lib/utils";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import { useIndexedStore } from "@/hooks/useIndexedStore";
 
-// Documents contain sections, you can have multiple sections per document, go here to learn more about sections
-// This simple example will only contain one section
-const doc = new Document({
-  sections: [
-    {
-      properties: {},
-      children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              text: "Foo Bar",
-              bold: true,
-            }),
-            new TextRun({
-              text: "Github is the best",
-              bold: true,
-            }),
-          ],
-        }),
-      ],
+type Res = {
+  data: {
+    rows: [];
+  };
+};
+
+const fetchQuartors = (params: channel.DbParamsBase) =>
+  queryOptions({
+    queryKey: [params.path, params.password, channel.queryQuartors],
+    async queryFn() {
+      const data: Res = await ipcRenderer.invoke(channel.queryQuartors, params);
+
+      return data;
     },
-  ],
-});
+    networkMode: "offlineFirst",
+  });
 
 export const UI = () => {
-  const [isPending, startTransition] = React.useTransition();
-  const [dir, setDir] = React.useState("");
+  const settings = useIndexedStore((s) => s.settings);
+
+  const query = useQuery(
+    fetchQuartors({
+      path: settings.databasePath,
+      password: settings.databasePassword,
+      dsn: settings.databaseDsn,
+    })
+  );
+
+  const data = React.useMemo(() => query.data?.data.rows || [], [query.data]);
+
+  const render = () => {
+    if (query.isPending) {
+      return <></>;
+    }
+
+    if (query.isError) {
+      return (
+        <>
+          <Alert severity="error">
+            <AlertTitle>Error</AlertTitle>
+            {query.error.message}
+          </Alert>
+        </>
+      );
+    }
+
+    return query.data.data.rows.length;
+  };
 
   return (
-    <Box sx={{ padding: 3 }}>
-      <Grid2 size={{ xs: 12, md: 6 }}>
-        <TextField
-          value={dir}
-          onChange={Boolean}
-          slotProps={{
-            input: {
-              readOnly: true,
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton component="label">
-                    <input
-                      type="file"
-                      name=""
-                      hidden
-                      id=""
-                      accept="application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
-                      value={""}
-                      onChange={(e) => {
-                        const file = e.target.files?.item(0);
-                        if (!file) return;
-                        setDir(webUtils.getPathForFile(file));
-
-                        const reader = new FileReader();
-
-                        reader.onload = (e) => {
-                          console.log(e.target?.result);
-                        };
-
-                        reader.readAsDataURL(file);
-                      }}
-                    />
-                    <FindInPageOutlined />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            },
-          }}
-          fullWidth
-        />
-        <Grid2 size={{ xs: 12 }}>
-          <Box sx={{ display: "flex", gap: 3, paddingBlock: 2 }}>
-            {dir && (
-              <Button
-                disabled={isPending}
-                onClick={() => {
-                  startTransition(() =>
-                    ipcRenderer.invoke(channel.printer, dir)
-                  );
-                }}
-                variant="outlined"
-              >
-                printer
-              </Button>
-            )}
-
-            <Button
-              variant="outlined"
-              component="label"
-              onClick={() => {
-                startTransition(() =>
-                  ipcRenderer.invoke(channel.openPath, dir)
-                );
-              }}
-              disabled={!dir || isPending}
-            >
-              open
-            </Button>
-            <Button
-              onClick={async () => {
-                const blob = await Packer.toBlob(doc, false);
-                const href = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.download = Date.now() + ".docx";
-                link.href = href;
-                link.click();
-                link.remove();
-                URL.revokeObjectURL(href);
-              }}
-              variant="outlined"
-            >
-              export
-            </Button>
-          </Box>
-        </Grid2>
-      </Grid2>
-    </Box>
+    <Card>
+      <CardHeader title="Data" />
+      <CardContent></CardContent>
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>ID</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody></TableBody>
+        </Table>
+      </TableContainer>
+    </Card>
   );
 };

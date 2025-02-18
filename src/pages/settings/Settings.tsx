@@ -289,10 +289,16 @@ const fetchMem = () =>
       const data = await ipcRenderer.invoke(channel.mem);
       return data;
     },
+    networkMode: "offlineFirst",
   });
+
+const minmax = (val: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, val));
 
 const MemCard = () => {
   const [data, setData] = React.useState<Mem[]>([]);
+  const [cursorX, setCursorX] = React.useState(0);
+  const [showCursor, setShowCursor] = React.useState(false);
 
   const divRef = React.useRef(null);
 
@@ -313,6 +319,112 @@ const MemCard = () => {
     React.startTransition(() => setData((p) => [...p, mem.data].slice(-width)));
   }, [mem.data, width]);
 
+  const handleCursorChange = (e: React.PointerEvent<HTMLDivElement>) => {
+    const hasCapture = e.currentTarget.hasPointerCapture(e.pointerId);
+
+    if (!hasCapture) {
+      setShowCursor(false);
+      setCursorX(0);
+      return;
+    }
+
+    const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
+
+    setShowCursor(true);
+    setCursorX(minmax(x, 0, width));
+  };
+
+  const renderAxis = () => {
+    if (!mem.isSuccess) return null;
+
+    return (
+      <g>
+        <line stroke={theme.palette.divider} x1={0} y1={0} x2={0} y2={height} />
+        <line
+          stroke={theme.palette.divider}
+          x1={0}
+          y1={height}
+          x2={width}
+          y2={height}
+        />
+        <text
+          x={12}
+          y={0 + 9}
+          z={100}
+          fill={theme.palette.action.disabled}
+          font-size="12"
+          height={9}
+        >
+          100% ({Number(mem.data.totalmem / 1024 ** 3).toFixed(1) + "G"})
+        </text>
+        <text
+          x={12}
+          y={height / 2}
+          fill={theme.palette.action.disabled}
+          font-size="12"
+          z={100}
+        >
+          50%
+        </text>
+        <text
+          x={12}
+          y={height / 4}
+          z={100}
+          fill={theme.palette.action.disabled}
+          font-size="12"
+        >
+          75%
+        </text>
+        <text
+          x={12}
+          y={(height / 4) * 3}
+          z={100}
+          fill={theme.palette.action.disabled}
+          font-size="12"
+        >
+          25%
+        </text>
+        <circle cx={0} cy={height} r={4} fill={theme.palette.error.main} />
+      </g>
+    );
+  };
+
+  const renderCursorText = () => {
+    if (!mem.isSuccess) return null;
+
+    const totalmem = mem.data.totalmem;
+    const freemem = data.find((i, idx) => {
+      void i;
+      return Object.is(idx, Math.floor(cursorX));
+    })?.freemem;
+
+    if (!freemem) return null;
+
+    const val = totalmem - freemem;
+
+    return (val / 1024 ** 3).toFixed(2);
+  };
+
+  const renderCursor = () => {
+    if (!showCursor) return null;
+
+    return (
+      <g>
+        <line
+          x1={cursorX}
+          x2={cursorX}
+          y1={0}
+          y2={height}
+          stroke={theme.palette.error.main}
+          strokeWidth={1}
+        />
+        <text x={cursorX + 12} y={64} fill={theme.palette.error.main}>
+          {renderCursorText()}
+        </text>
+      </g>
+    );
+  };
+
   return (
     <Card>
       <CardHeader title="Memory" />
@@ -321,23 +433,13 @@ const MemCard = () => {
           <svg
             height={height}
             width={width}
-            style={{ position: "absolute", top: 0, left: 0 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+            }}
           >
-            <line
-              stroke={theme.palette.divider}
-              x1={0}
-              y1={0}
-              x2={0}
-              y2={height}
-            />
-            <line
-              stroke={theme.palette.divider}
-              x1={0}
-              y1={height}
-              x2={width}
-              y2={height}
-            />
-            <circle cx={0} cy={height} r={4} fill={theme.palette.error.main} />
+            {renderAxis()}
             <polyline
               points={data
                 .map(
@@ -351,46 +453,27 @@ const MemCard = () => {
               stroke={theme.palette.primary.main}
               strokeWidth={1}
             />
-            {mem.isSuccess && (
-              <text
-                x={12}
-                y={0 + 9}
-                z={100}
-                fill={theme.palette.action.disabled}
-                font-size="12"
-                height={9}
-              >
-                100% ({Number(mem.data.totalmem / 1024 ** 3).toFixed(1) + "G"})
-              </text>
-            )}
-            <text
-              x={12}
-              y={height / 2}
-              fill={theme.palette.action.disabled}
-              font-size="12"
-              z={100}
-            >
-              50%
-            </text>
-            <text
-              x={12}
-              y={height / 4}
-              z={100}
-              fill={theme.palette.action.disabled}
-              font-size="12"
-            >
-              75%
-            </text>
-            <text
-              x={12}
-              y={(height / 4) * 3}
-              z={100}
-              fill={theme.palette.action.disabled}
-              font-size="12"
-            >
-              25%
-            </text>
+            {renderCursor()}
           </svg>
+          <Box
+            sx={{
+              touchAction: "none",
+              position: "absolute",
+              zIndex: (t) => t.zIndex.modal,
+              inset: 0,
+            }}
+            onPointerDown={(e) => {
+              if (!e.isPrimary) return;
+
+              e.currentTarget.setPointerCapture(e.pointerId);
+              handleCursorChange(e);
+            }}
+            onPointerMove={handleCursorChange}
+            onPointerUp={(e) => {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+              handleCursorChange(e);
+            }}
+          ></Box>
         </Box>
       </CardContent>
     </Card>

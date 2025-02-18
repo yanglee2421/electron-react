@@ -36,11 +36,9 @@ export const fetchVerifies = (params: channel.DbParamsBase) =>
   queryOptions({
     queryKey: [params.path, params.password, channel.queryVerifies],
     async queryFn() {
-      const data: Res = await ipcRenderer.invoke(
-        channel.queryVerifies,
-        params,
-      );
+      const data: Res = await ipcRenderer.invoke(channel.queryVerifies, params);
 
       return data;
     },
+    networkMode: "offlineFirst",
   });

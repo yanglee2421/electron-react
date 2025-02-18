@@ -34,10 +34,11 @@ import {
 } from "@mui/material";
 import {
   GitHub,
-  ChatOutlined,
   ChevronRightOutlined,
   DashboardOutlined,
-  ScienceOutlined,
+  CalendarTodayOutlined,
+  CalendarMonthOutlined,
+  SettingsOutlined,
 } from "@mui/icons-material";
 import { useStore } from "@/hooks/useStore";
 import React from "react";
@@ -172,6 +173,7 @@ const fetchHeartbeat = (params: channel.DbParamsBase) =>
     queryFn() {
       return ipcRenderer.invoke(channel.heartbeat, params);
     },
+    networkMode: "offlineFirst",
   });
 
 const FULL_YEAR = new Date().getFullYear();
@@ -248,19 +250,19 @@ export const LinkWrapper = styled("div")(({ theme }) => ({
 const list = [
   {
     to: "/",
-    label: "Home",
+    label: "Decetions",
     icon: <DashboardOutlined />,
   },
   {
     to: "/verifies",
     label: "Verifies",
-    icon: <DashboardOutlined />,
+    icon: <CalendarTodayOutlined />,
   },
-  { to: "/quartors", label: "Quartors", icon: <ChatOutlined /> },
+  { to: "/quartors", label: "Quartors", icon: <CalendarMonthOutlined /> },
   {
     to: "/settings",
     label: "Settings",
-    icon: <ScienceOutlined />,
+    icon: <SettingsOutlined />,
   },
 ];
 

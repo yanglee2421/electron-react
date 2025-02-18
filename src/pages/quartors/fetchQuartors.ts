@@ -39,11 +39,9 @@ export const fetchQuartors = (params: channel.DbParamsBase) =>
   queryOptions({
     queryKey: [params.path, params.password, channel.queryQuartors],
     async queryFn() {
-      const data: Res = await ipcRenderer.invoke(
-        channel.queryQuartors,
-        params,
-      );
+      const data: Res = await ipcRenderer.invoke(channel.queryQuartors, params);
 
       return data;
     },
+    networkMode: "offlineFirst",
   });

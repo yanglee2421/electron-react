@@ -242,3 +242,17 @@ ipcMain.handle(channel.mem, async () => {
     freemem: os.freemem(),
   };
 });
+ipcMain.handle(
+  channel.queryDetections,
+  async (e, params: channel.DbParamsBase) => {
+    void e;
+    try {
+      const connect = await openDatabase(params);
+      const rows = await connect.query("SELECT * FROM detections");
+      await connect.close();
+      return { data: { rows } };
+    } catch (error) {
+      throwError(error);
+    }
+  }
+);
