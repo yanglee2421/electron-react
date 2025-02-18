@@ -389,13 +389,13 @@ const MemCard = () => {
     );
   };
 
-  const renderCursorText = () => {
+  const renderMemVal = (x: number) => {
     if (!mem.isSuccess) return null;
 
     const totalmem = mem.data.totalmem;
     const freemem = data.find((i, idx) => {
       void i;
-      return Object.is(idx, Math.floor(cursorX));
+      return Object.is(idx, Math.floor(x));
     })?.freemem;
 
     if (!freemem) return null;
@@ -419,7 +419,7 @@ const MemCard = () => {
           strokeWidth={1}
         />
         <text x={cursorX + 12} y={64} fill={theme.palette.error.main}>
-          {renderCursorText()}
+          {renderMemVal(cursorX)}
         </text>
       </g>
     );
@@ -427,7 +427,10 @@ const MemCard = () => {
 
   return (
     <Card>
-      <CardHeader title="Memory" />
+      <CardHeader
+        title="Memory"
+        action={<Button>{renderMemVal(data.length - 1)}</Button>}
+      />
       <CardContent>
         <Box ref={divRef} sx={{ position: "relative", height }}>
           <svg
