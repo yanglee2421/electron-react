@@ -321,16 +321,14 @@ const MemCard = () => {
 
   const handleCursorChange = (e: React.PointerEvent<HTMLDivElement>) => {
     const hasCapture = e.currentTarget.hasPointerCapture(e.pointerId);
+    setShowCursor(hasCapture);
 
     if (!hasCapture) {
-      setShowCursor(false);
       setCursorX(0);
       return;
     }
 
     const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
-
-    setShowCursor(true);
     setCursorX(minmax(x, 0, width));
   };
 
