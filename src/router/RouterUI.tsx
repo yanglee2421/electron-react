@@ -39,6 +39,7 @@ import {
   CalendarTodayOutlined,
   CalendarMonthOutlined,
   SettingsOutlined,
+  TrainOutlined,
 } from "@mui/icons-material";
 import { useStore } from "@/hooks/useStore";
 import React from "react";
@@ -259,6 +260,7 @@ const list = [
     icon: <CalendarTodayOutlined />,
   },
   { to: "/quartors", label: "Quartors", icon: <CalendarMonthOutlined /> },
+  { to: "/hmis", label: "HMIS", icon: <TrainOutlined /> },
   {
     to: "/settings",
     label: "Settings",
@@ -320,6 +322,11 @@ const routes: RouteObject[] = [
                 id: "quartors",
                 path: "quartors",
                 lazy: () => import("@/pages/quartors/route"),
+              },
+              {
+                id: "hmis",
+                path: "hmis",
+                lazy: () => import("@/pages/hmis/route"),
               },
             ],
           },
