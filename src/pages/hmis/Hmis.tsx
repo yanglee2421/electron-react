@@ -30,16 +30,24 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Tabs,
+  Tab,
+  TablePagination,
+  Pagination,
+  Box,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import React from "react";
 
 const schema = z.object({
   barCode: z.string().min(1),
 });
 
 export const Hmis = () => {
+  const [activeTab, setActiveTab] = React.useState(0);
+
   const form = useForm({
     defaultValues: {
       barCode: "",
@@ -47,16 +55,85 @@ export const Hmis = () => {
     resolver: zodResolver(schema),
   });
 
-  return (
-    <Card>
-      <CardHeader
-        title="HMIS"
-        action={
-          <IconButton>
-            <RefreshOutlined />
-          </IconButton>
-        }
-      />
+  const renderHistory = () => {
+    return (
+      <>
+        <CardContent>
+          <Grid2 container spacing={6}>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <DatePicker slotProps={{ textField: { fullWidth: true } }} />
+            </Grid2>
+          </Grid2>
+        </CardContent>
+        <TableContainer sx={{ maxHeight: 560 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>单号</TableCell>
+                <TableCell>轴号</TableCell>
+                <TableCell>时间</TableCell>
+                <TableCell>已上传</TableCell>
+                <TableCell>操作</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              <TableRow>
+                <TableCell>#1</TableCell>
+                <TableCell>43513511354131</TableCell>
+                <TableCell>29171</TableCell>
+                <TableCell>{new Date().toLocaleString()}</TableCell>
+                <TableCell>
+                  <CheckBoxOutlineBlankOutlined />
+                </TableCell>
+                <TableCell>
+                  <IconButton>
+                    <UploadOutlined />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>#2</TableCell>
+                <TableCell>43513511354131</TableCell>
+                <TableCell>29171</TableCell>
+                <TableCell>{new Date().toLocaleString()}</TableCell>
+                <TableCell>
+                  <CheckBoxOutlined />
+                </TableCell>
+                <TableCell>
+                  <IconButton>
+                    <UploadOutlined />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell>Footer</TableCell>
+                <TableCell>Footer</TableCell>
+                <TableCell>Footer</TableCell>
+                <TableCell>Footer</TableCell>
+                <TableCell>Footer</TableCell>
+                <TableCell>Footer</TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </TableContainer>
+        <TablePagination
+          component={"div"}
+          page={0}
+          count={100}
+          rowsPerPage={10}
+          rowsPerPageOptions={[10, 20, 30]}
+          onPageChange={() => {}}
+          onRowsPerPageChange={() => {}}
+        />
+      </>
+    );
+  };
+
+  const renderBarCodeScanner = () => {
+    return (
       <CardContent>
         <Grid2 container spacing={6}>
           <Grid2 size={12}>
@@ -86,6 +163,7 @@ export const Hmis = () => {
                             </IconButton>
                           </InputAdornment>
                         ),
+                        autoFocus: true,
                       },
                     }}
                     variant="standard"
@@ -94,65 +172,6 @@ export const Hmis = () => {
                 )}
               />
             </form>
-          </Grid2>
-          <Grid2 size={{ xs: 12, sm: 6 }}>
-            <DatePicker slotProps={{ textField: { fullWidth: true } }} />
-          </Grid2>
-          <Grid2 size={12}>
-            <TableContainer sx={{ maxHeight: 560 }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>ID</TableCell>
-                    <TableCell>单号</TableCell>
-                    <TableCell>轴号</TableCell>
-                    <TableCell>时间</TableCell>
-                    <TableCell>已上传</TableCell>
-                    <TableCell>操作</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  <TableRow>
-                    <TableCell>#1</TableCell>
-                    <TableCell>43513511354131</TableCell>
-                    <TableCell>29171</TableCell>
-                    <TableCell>{new Date().toLocaleString()}</TableCell>
-                    <TableCell>
-                      <CheckBoxOutlineBlankOutlined />
-                    </TableCell>
-                    <TableCell>
-                      <IconButton>
-                        <UploadOutlined />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>#2</TableCell>
-                    <TableCell>43513511354131</TableCell>
-                    <TableCell>29171</TableCell>
-                    <TableCell>{new Date().toLocaleString()}</TableCell>
-                    <TableCell>
-                      <CheckBoxOutlined />
-                    </TableCell>
-                    <TableCell>
-                      <IconButton>
-                        <UploadOutlined />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-                <TableFooter>
-                  <TableRow>
-                    <TableCell>Footer</TableCell>
-                    <TableCell>Footer</TableCell>
-                    <TableCell>Footer</TableCell>
-                    <TableCell>Footer</TableCell>
-                    <TableCell>Footer</TableCell>
-                    <TableCell>Footer</TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </TableContainer>
           </Grid2>
           <Grid2 size={12}>
             <List>
@@ -187,9 +206,51 @@ export const Hmis = () => {
                 <ListItemText primary="error message" />
               </ListItem>
             </List>
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <Pagination
+                count={10}
+                page={1}
+                onChange={() => {}}
+                color="primary"
+                shape="circular"
+              />
+            </Box>
           </Grid2>
         </Grid2>
       </CardContent>
+    );
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 0:
+        return renderBarCodeScanner();
+      case 1:
+        return renderHistory();
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader
+        title="HMIS"
+        action={
+          <IconButton>
+            <RefreshOutlined />
+          </IconButton>
+        }
+      />
+      <Tabs
+        value={activeTab}
+        onChange={(_, value) => setActiveTab(value)}
+        sx={(t) => ({ borderBottom: `1px solid ${t.palette.divider}` })}
+      >
+        <Tab label="Bar Code Scanner" value={0} />
+        <Tab label="History" value={1} />
+      </Tabs>
+      {renderTabContent()}
     </Card>
   );
 };
