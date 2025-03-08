@@ -55,6 +55,15 @@ export const Hmis = () => {
     resolver: zodResolver(schema),
   });
 
+  const renderRefreshButton = () => {
+    if (activeTab !== 1) return null;
+    return (
+      <IconButton>
+        <RefreshOutlined />
+      </IconButton>
+    );
+  };
+
   const renderHistory = () => {
     return (
       <>
@@ -234,14 +243,7 @@ export const Hmis = () => {
 
   return (
     <Card>
-      <CardHeader
-        title="HMIS"
-        action={
-          <IconButton>
-            <RefreshOutlined />
-          </IconButton>
-        }
-      />
+      <CardHeader title="HMIS" action={renderRefreshButton()} />
       <Tabs
         value={activeTab}
         onChange={(_, value) => setActiveTab(value)}
