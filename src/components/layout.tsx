@@ -66,8 +66,7 @@ const AuthMainWrapper = styled("div")(({ theme }) => ({
   paddingBlock: theme.spacing(2),
 
   [theme.breakpoints.up("sm")]: {
-    paddingInline: theme.spacing(3),
-    paddingBlock: theme.spacing(6),
+    paddingBlock: theme.spacing(3),
   },
 }));
 
