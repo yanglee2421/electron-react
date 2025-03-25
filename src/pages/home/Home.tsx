@@ -45,29 +45,17 @@ export const UI = () => {
     })
   );
 
-  const data = React.useMemo(() => query.data?.data.rows || [], [query.data]);
+  try {
+    console.log(query.data);
 
-  const render = () => {
-    if (query.isPending) {
-      return <></>;
-    }
-
-    if (query.isError) {
-      return (
-        <>
-          <Alert severity="error">
-            <AlertTitle>Error</AlertTitle>
-            {query.error.message}
-          </Alert>
-        </>
-      );
-    }
-
-    return query.data.data.rows.length;
-  };
+    console.log(JSON.parse(query.data?.data.stdout));
+  } catch (error) {
+    console.error(error);
+  }
 
   return (
     <Card>
+      <p>{query.data?.data.stdout}</p>
       <CardHeader title="Data" />
       <CardContent></CardContent>
       <TableContainer>

@@ -10,19 +10,9 @@ import {
 } from "react-router";
 import { MuiProvider } from "@/components/mui";
 import { AuthLayout } from "@/components/layout";
-import * as channel from "@electron/channel";
-import { queryOptions, useQuery } from "@tanstack/react-query";
-import { ipcRenderer } from "@/lib/utils";
+import { useIndexedStoreHasHydrated } from "@/hooks/useIndexedStore";
 import {
-  useIndexedStore,
-  useIndexedStoreHasHydrated,
-} from "@/hooks/useIndexedStore";
-import {
-  Alert,
-  AlertTitle,
-  Button,
   CircularProgress,
-  Skeleton,
   Snackbar,
   IconButton,
   Icon,
@@ -91,48 +81,6 @@ export const RootRoute = () => {
   );
 };
 
-const Heartbeat = () => {
-  const settings = useIndexedStore((s) => s.settings);
-  const heartbeat = useQuery({
-    ...fetchHeartbeat({
-      dsn: settings.databaseDsn,
-      path: settings.databasePath,
-      password: settings.databasePassword,
-    }),
-    refetchInterval(query) {
-      if (query.state.error) {
-        return false;
-      }
-
-      return settings.refetchInterval;
-    },
-  });
-
-  if (heartbeat.isPending) {
-    return (
-      <>
-        <Skeleton />
-        <Skeleton />
-        <Skeleton />
-      </>
-    );
-  }
-
-  if (heartbeat.isError) {
-    return (
-      <Alert severity="error">
-        <AlertTitle>Connect to Database failed</AlertTitle>
-        <p>{heartbeat.error.message}</p>
-        <Button component={NavLink} to={{ pathname: "settings" }} color="error">
-          Settings
-        </Button>
-      </Alert>
-    );
-  }
-
-  return <Outlet />;
-};
-
 const AuthWrapper = () => {
   const [key, update] = React.useState("");
 
@@ -167,15 +115,6 @@ const AuthWrapper = () => {
     </AuthLayout>
   );
 };
-
-const fetchHeartbeat = (params: channel.DbParamsBase) =>
-  queryOptions({
-    queryKey: [channel.heartbeat, params],
-    queryFn() {
-      return ipcRenderer.invoke(channel.heartbeat, params);
-    },
-    networkMode: "offlineFirst",
-  });
 
 const FULL_YEAR = new Date().getFullYear();
 
@@ -304,31 +243,24 @@ const routes: RouteObject[] = [
         Component: AuthWrapper,
         children: [
           {
-            id: "heartbeat",
-            path: "",
-            Component: Heartbeat,
-            children: [
-              {
-                id: "home",
-                index: true,
-                lazy: () => import("@/pages/home/route"),
-              },
-              {
-                id: "verifies",
-                path: "verifies",
-                lazy: () => import("@/pages/verifies/route"),
-              },
-              {
-                id: "quartors",
-                path: "quartors",
-                lazy: () => import("@/pages/quartors/route"),
-              },
-              {
-                id: "hmis",
-                path: "hmis",
-                lazy: () => import("@/pages/hmis/route"),
-              },
-            ],
+            id: "home",
+            index: true,
+            lazy: () => import("@/pages/home/route"),
+          },
+          {
+            id: "verifies",
+            path: "verifies",
+            lazy: () => import("@/pages/verifies/route"),
+          },
+          {
+            id: "quartors",
+            path: "quartors",
+            lazy: () => import("@/pages/quartors/route"),
+          },
+          {
+            id: "hmis",
+            path: "hmis",
+            lazy: () => import("@/pages/hmis/route"),
           },
           {
             id: "settings",

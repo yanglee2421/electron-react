@@ -6,9 +6,8 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { access, constants } from "node:fs/promises";
 import * as channel from "./channel";
-import type { NodeOdbcError } from "odbc";
 import * as os from "node:os";
-// import type ModbusRTU from "modbus-serial";
+import dayjs from "dayjs";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -138,57 +137,49 @@ ipcMain.handle(channel.printer, async (e, data: string) => {
   console.log(data, cp);
 });
 
-const odbc: typeof import("odbc") = require("odbc");
-
-// 连接 Access 数据库（.mdb 或 .accdb）
-const openDatabase = async (params: channel.DbParamsBase) => {
-  const conStr = `DSN=${params.dsn};Driver={Microsoft Access Driver (*.mdb,*accdb)};DBQ=${params.path};PWD=${params.password}`;
-  const connection = await odbc.connect(conStr);
-  return connection;
-};
-
 const throwError = (error: unknown) => {
-  const nodeOdbcError = error as NodeOdbcError;
-  if ("odbcErrors" in nodeOdbcError) {
-    throw nodeOdbcError.odbcErrors[0].message;
-  }
-
   if (error instanceof Error) {
     throw error.message;
   }
 
-  throw error;
+  if (typeof error === "string") {
+    throw error;
+  }
+
+  throw String(error);
 };
 
 ipcMain.handle(
   channel.queryQuartors,
   async (e, params: channel.DbParamsBase) => {
     void e;
+
+    const startDate = dayjs().year(2023).month(5).date(7).startOf("day");
+    const endDate = dayjs().year(2023).month(5).date(7).endOf("day");
+    const start = startDate.format("YYYY/MM/DD HH:mm:ss");
+    const end = endDate.format("YYYY/MM/DD HH:mm:ss");
+    console.log(start);
+
+    const query = `SELECT * FROM quartors WHERE tmnow BETWEEN #${start}# AND #${end}#`;
+    const input = {
+      dbPath: params.path,
+      query: query,
+    };
+
+    const exePath =
+      "C:\\Users\\yangl\\Documents\\Visual Studio 2017\\Projects\\ConsoleApp1\\ConsoleApp1\\bin\\Debug\\ConsoleApp1.exe";
+
     try {
-      const connection = await openDatabase(params);
-      const quartors = await connection.query("SELECT * FROM quartors");
-      await connection.close();
-      return { data: { rows: quartors } };
-    } catch (error) {
-      throwError(error);
+      const data = await execFileP(exePath, [input.dbPath, input.query]);
+
+      return { rows: [], data };
+    } catch (e) {
+      throwError(e);
     }
   }
 );
 
-ipcMain.handle(
-  channel.queryVerifies,
-  async (e, params: channel.DbParamsBase) => {
-    void e;
-    try {
-      const connection = await openDatabase(params);
-      const quartors = await connection.query("SELECT * FROM verifies");
-      await connection.close();
-      return { data: { rows: quartors } };
-    } catch (error) {
-      throwError(error);
-    }
-  }
-);
+ipcMain.handle(channel.queryVerifies, async () => {});
 
 ipcMain.handle(channel.openPath, async (e, path: string) => {
   void e;
@@ -201,58 +192,11 @@ ipcMain.handle(channel.openDevTools, () => {
   win.webContents.openDevTools();
 });
 
-console.log(app.getPath("userData"));
-
-ipcMain.handle(channel.heartbeat, async (e, params: channel.DbParamsBase) => {
-  void e;
-  try {
-    const connect = await openDatabase(params);
-    await connect.close();
-    return {};
-  } catch (error) {
-    throwError(error);
-  }
-});
-
-// const ModbusRTUT = require("modbus-serial");
-// const client: ModbusRTU = new ModbusRTUT();
-// const port = "COM1";
-// const baudRate = 9600;
-// const parity = "none";
-// const dataBits = 8;
-// const stopBits = 1;
-// const address = 0;
-
-// ipcMain.handle("plc", async () => {
-//   await client.connectRTUBuffered(port, {
-//     baudRate,
-//     parity,
-//     dataBits,
-//     stopBits,
-//   });
-
-//   console.log("Modbus client connected.");
-//   const data = await client.readHoldingRegisters(address, 10);
-//   console.log("Received data:", data.data);
-//   client.close(() => {});
-// });
 ipcMain.handle(channel.mem, async () => {
   return {
     totalmem: os.totalmem(),
     freemem: os.freemem(),
   };
 });
-ipcMain.handle(
-  channel.queryDetections,
-  async (e, params: channel.DbParamsBase) => {
-    void e;
-    try {
-      const connect = await openDatabase(params);
-      const rows = await connect.query("SELECT * FROM detections");
-      await connect.close();
-      return { data: { rows } };
-    } catch (error) {
-      throwError(error);
-    }
-  }
-);
+
+ipcMain.handle(channel.queryDetections, async () => {});
