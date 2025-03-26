@@ -3,8 +3,6 @@ import {
   Card,
   CardHeader,
   CardContent,
-  Alert,
-  AlertTitle,
   TableContainer,
   Table,
   TableHead,
@@ -17,45 +15,11 @@ import { ipcRenderer } from "@/lib/utils";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 
-type Res = {
-  data: {
-    rows: [];
-  };
-};
-
-const fetchQuartors = (params: channel.DbParamsBase) =>
-  queryOptions({
-    queryKey: [params.path, params.password, channel.queryQuartors],
-    async queryFn() {
-      const data: Res = await ipcRenderer.invoke(channel.queryQuartors, params);
-
-      return data;
-    },
-    networkMode: "offlineFirst",
-  });
-
 export const UI = () => {
   const settings = useIndexedStore((s) => s.settings);
 
-  const query = useQuery(
-    fetchQuartors({
-      path: settings.databasePath,
-      password: settings.databasePassword,
-      dsn: settings.databaseDsn,
-    })
-  );
-
-  try {
-    console.log(query.data);
-
-    console.log(JSON.parse(query.data?.data.stdout));
-  } catch (error) {
-    console.error(error);
-  }
-
   return (
     <Card>
-      <p>{query.data?.data.stdout}</p>
       <CardHeader title="Data" />
       <CardContent></CardContent>
       <TableContainer>

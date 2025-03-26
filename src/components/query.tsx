@@ -16,7 +16,7 @@ const queryClient = new QueryClient({
         return Math.min(1000 * 2 ** attemptIndex, 1000 * 8);
       },
 
-      experimental_prefetchInRender: true,
+      networkMode: "offlineFirst",
     },
   },
 });
