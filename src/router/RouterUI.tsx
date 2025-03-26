@@ -6,34 +6,10 @@ import {
   RouterProvider,
   useLocation,
   useParams,
-  NavLink,
 } from "react-router";
-import { MuiProvider } from "@/components/mui";
 import { AuthLayout } from "@/components/layout";
-import { useIndexedStoreHasHydrated } from "@/hooks/useIndexedStore";
-import {
-  CircularProgress,
-  Snackbar,
-  IconButton,
-  Icon,
-  Typography,
-  Box,
-  alpha,
-  styled,
-  Link,
-} from "@mui/material";
-import {
-  GitHub,
-  ChevronRightOutlined,
-  DashboardOutlined,
-  CalendarTodayOutlined,
-  CalendarMonthOutlined,
-  SettingsOutlined,
-  TrainOutlined,
-} from "@mui/icons-material";
-import { useStore } from "@/hooks/useStore";
 import React from "react";
-import * as conf from "@/lib/conf";
+import { NprogressBar } from "@/components/NprogressBar";
 
 const LANGS = new Set(["en", "zh"]);
 const FALLBACK_LANG = "en";
@@ -73,155 +49,18 @@ export const LangWrapper = (props: React.PropsWithChildren) => {
 
 export const RootRoute = () => {
   return (
-    <MuiProvider>
-      <LangWrapper>
-        <Outlet />
-      </LangWrapper>
-    </MuiProvider>
+    <LangWrapper>
+      <Outlet />
+    </LangWrapper>
   );
 };
 
 const AuthWrapper = () => {
-  const [key, update] = React.useState("");
-
-  const location = useLocation();
-  const showMenuInMobile = Object.is(key, location.key);
-  const hasHydrated = useIndexedStoreHasHydrated();
-  const msg = useStore((s) => s.msg);
-  const set = useStore((s) => s.set);
-
   return (
-    <AuthLayout
-      aside={<NavMenu />}
-      header={header}
-      footer={footer}
-      logo={logo}
-      showMenuInMobile={showMenuInMobile}
-      onShowMenuInMobileChange={() => {
-        update((prev) => (prev === location.key ? "" : location.key));
-      }}
-    >
-      {hasHydrated ? <Outlet /> : <CircularProgress />}
-      <Snackbar
-        open={!!msg}
-        autoHideDuration={1000 * 6}
-        message={msg}
-        onClose={() =>
-          set((s) => {
-            s.msg = "";
-          })
-        }
-      />
+    <AuthLayout>
+      <NprogressBar />
+      <Outlet />
     </AuthLayout>
-  );
-};
-
-const FULL_YEAR = new Date().getFullYear();
-
-const logo = (
-  <>
-    <Icon fontSize="large" color="primary"></Icon>
-    <Typography
-      component={"span"}
-      variant="h6"
-      sx={{
-        fontSize: (t) => t.spacing(5),
-        fontWeight: 600,
-        textTransform: "uppercase",
-        color: (t) => t.palette.text.primary,
-      }}
-    >
-      github io
-    </Typography>
-  </>
-);
-
-const header = (
-  <>
-    <Box sx={{ marginInlineStart: "auto" }}></Box>
-
-    <IconButton href={conf.GITHUB_URL} target={conf.GITHUB_URL}>
-      <GitHub />
-    </IconButton>
-  </>
-);
-
-const footer = (
-  <>
-    &copy; {FULL_YEAR} by{" "}
-    <Link href={conf.GITHUB_URL} target={conf.GITHUB_URL}>
-      yanglee2421
-    </Link>
-  </>
-);
-
-export const LinkWrapper = styled("div")(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  gap: theme.spacing(2),
-
-  "& a": {
-    textDecoration: "none",
-    color: theme.palette.text.primary,
-
-    display: "flex",
-    gap: theme.spacing(3),
-    alignItem: "center",
-
-    padding: theme.spacing(5),
-
-    [theme.breakpoints.up("sm")]: {
-      paddingInline: theme.spacing(3),
-      paddingBlock: theme.spacing(3),
-    },
-  },
-  "& a:hover": {
-    backgroundColor: theme.palette.action.hover,
-  },
-  "& a[aria-current=page]": {
-    color: theme.palette.primary.main,
-    backgroundColor: alpha(
-      theme.palette.primary.main,
-      theme.palette.action.activatedOpacity
-    ),
-  },
-}));
-
-const list = [
-  {
-    to: "/",
-    label: "Decetions",
-    icon: <DashboardOutlined />,
-  },
-  {
-    to: "/verifies",
-    label: "Verifies",
-    icon: <CalendarTodayOutlined />,
-  },
-  { to: "/quartors", label: "Quartors", icon: <CalendarMonthOutlined /> },
-  { to: "/hmis", label: "HMIS", icon: <TrainOutlined /> },
-  {
-    to: "/settings",
-    label: "Settings",
-    icon: <SettingsOutlined />,
-  },
-];
-
-export const NavMenu = () => {
-  const params = useParams();
-
-  return (
-    <LinkWrapper>
-      {list.map((i) => (
-        <NavLink key={i.to} to={`/${params.lang + i.to}`} end>
-          {i.icon}
-          <Typography variant="body1" component="span">
-            {i.label}
-          </Typography>
-          <ChevronRightOutlined sx={{ marginInlineStart: "auto" }} />
-        </NavLink>
-      ))}
-    </LinkWrapper>
   );
 };
 

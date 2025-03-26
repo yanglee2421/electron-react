@@ -1,1 +1,2 @@
-export { UI as Component } from "./Home";
+export { Home as Component } from "./Home";
+export { loader } from "./loader";

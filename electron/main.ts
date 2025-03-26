@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
-import { createRequire } from "node:module";
+// import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { execFile } from "node:child_process";
@@ -8,8 +8,9 @@ import { access, constants } from "node:fs/promises";
 import * as channel from "./channel";
 import * as os from "node:os";
 import dayjs from "dayjs";
+import { throwError, getCpuSerial, getMotherboardSerial } from "./lib";
 
-const require = createRequire(import.meta.url);
+// const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The built directory structure
@@ -82,6 +83,30 @@ app.on("activate", () => {
 
 app.whenReady().then(createWindow);
 
+ipcMain.handle(channel.openDevTools, () => {
+  if (!win) return;
+  win.webContents.openDevTools();
+});
+
+ipcMain.handle(channel.openPath, async (e, path: string) => {
+  void e;
+  const data = await shell.openPath(path);
+  return data;
+});
+
+ipcMain.handle(channel.getActivateInfo, async () => {
+  try {
+    const [cpu, motherboard] = await Promise.all([
+      getCpuSerial(),
+      getMotherboardSerial(),
+    ]);
+
+    return [cpu.trim(), motherboard.trim()].join("");
+  } catch (error) {
+    throwError(error);
+  }
+});
+
 const winword_32 =
   "C:\\Program Files (x86)\\Microsoft Office\\Office16\\WINWORD.EXE";
 const winword_64 =
@@ -91,7 +116,7 @@ const winword365_32 =
 const winword365_64 =
   "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE";
 
-const execFileP = promisify(execFile);
+const execFileAsync = promisify(execFile);
 
 const getWinword = async (path: string) => {
   await access(path, constants.R_OK);
@@ -112,7 +137,7 @@ const runWinword = async (data: string) => {
     throw new Error("Find winword failed");
   }
 
-  const cp = await execFileP(
+  const cp = await execFileAsync(
     winword,
     [
       data,
@@ -132,64 +157,32 @@ const runWinword = async (data: string) => {
 };
 
 ipcMain.handle(channel.printer, async (e, data: string) => {
-  const cp = await runWinword(data).catch(() => shell.openPath(data));
   void e;
-  console.log(data, cp);
+  try {
+    const cp = await runWinword(data).catch(() => shell.openPath(data));
+    return cp;
+  } catch (error) {
+    throwError(error);
+  }
 });
 
-const throwError = (error: unknown) => {
-  if (error instanceof Error) {
-    throw error.message;
+ipcMain.handle(channel.queryVerifies, async () => {
+  const startDate = dayjs().year(2023).month(5).date(7).startOf("day");
+  const endDate = dayjs().year(2023).month(5).date(7).endOf("day");
+  const start = startDate.format("YYYY/MM/DD HH:mm:ss");
+  const end = endDate.format("YYYY/MM/DD HH:mm:ss");
+
+  const query = `SELECT * FROM quartors WHERE tmnow BETWEEN #${start}# AND #${end}#`;
+
+  const exePath = "";
+
+  try {
+    const data = await execFileAsync(exePath, ["", query]);
+
+    return { rows: [], data };
+  } catch (e) {
+    throwError(e);
   }
-
-  if (typeof error === "string") {
-    throw error;
-  }
-
-  throw String(error);
-};
-
-ipcMain.handle(
-  channel.queryQuartors,
-  async (e, params: channel.DbParamsBase) => {
-    void e;
-
-    const startDate = dayjs().year(2023).month(5).date(7).startOf("day");
-    const endDate = dayjs().year(2023).month(5).date(7).endOf("day");
-    const start = startDate.format("YYYY/MM/DD HH:mm:ss");
-    const end = endDate.format("YYYY/MM/DD HH:mm:ss");
-    console.log(start);
-
-    const query = `SELECT * FROM quartors WHERE tmnow BETWEEN #${start}# AND #${end}#`;
-    const input = {
-      dbPath: params.path,
-      query: query,
-    };
-
-    const exePath =
-      "C:\\Users\\yangl\\Documents\\Visual Studio 2017\\Projects\\ConsoleApp1\\ConsoleApp1\\bin\\Debug\\ConsoleApp1.exe";
-
-    try {
-      const data = await execFileP(exePath, [input.dbPath, input.query]);
-
-      return { rows: [], data };
-    } catch (e) {
-      throwError(e);
-    }
-  }
-);
-
-ipcMain.handle(channel.queryVerifies, async () => {});
-
-ipcMain.handle(channel.openPath, async (e, path: string) => {
-  void e;
-  const data = await shell.openPath(path);
-  return data;
-});
-
-ipcMain.handle(channel.openDevTools, () => {
-  if (!win) return;
-  win.webContents.openDevTools();
 });
 
 ipcMain.handle(channel.mem, async () => {
@@ -198,5 +191,3 @@ ipcMain.handle(channel.mem, async () => {
     freemem: os.freemem(),
   };
 });
-
-ipcMain.handle(channel.queryDetections, async () => {});

@@ -5,7 +5,5 @@ export const ipcRenderer: IpcRenderer = Reflect.get(
   window,
   channel.ipcRenderer
 );
-export const webUtils: WebUtils = Reflect.get(window, channel.webUtils);
 
-export const redirect_key = "redirect_path";
-export const login_path = "/login";
+export const webUtils: WebUtils = Reflect.get(window, channel.webUtils);

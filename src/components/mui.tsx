@@ -9,7 +9,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import "dayjs/locale/zh";
 import "dayjs/locale/en";
 import React from "react";
-import { useParams } from "react-router";
 import { useIsDark } from "@/hooks/useIsDark";
 
 const spacing = (abs: number) => `${abs * 0.25}rem`;
@@ -24,19 +23,30 @@ const darkTheme = createTheme({
 type Props = React.PropsWithChildren;
 
 export const MuiProvider = (props: Props) => {
-  const params = useParams();
   const isDark = useIsDark();
+  const theme = isDark ? darkTheme : lightTheme;
 
   return (
-    <ThemeProvider theme={isDark ? darkTheme : lightTheme}>
-      <LocalizationProvider
-        dateAdapter={AdapterDayjs}
-        adapterLocale={params.lang}
-      >
+    <ThemeProvider theme={theme}>
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="zh">
         {props.children}
       </LocalizationProvider>
       <CssBaseline />
-      <GlobalStyles styles={{}} />
+      <GlobalStyles
+        styles={{
+          "#nprogress": {
+            position: "fixed",
+            top: 0,
+            inlineSize: "100dvw",
+
+            zIndex: theme.zIndex.drawer + 1,
+          },
+          "#nprogress .bar": {
+            backgroundColor: theme.palette.primary.main,
+            blockSize: theme.spacing(1),
+          },
+        }}
+      />
     </ThemeProvider>
   );
 };

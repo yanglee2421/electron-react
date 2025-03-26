@@ -1,50 +1,52 @@
 import {
   Card,
-  CardContent,
   CardHeader,
   Table,
   TableBody,
   TableCell,
   TableContainer,
+  TableFooter,
   TableHead,
-  TableRow,
   TablePagination,
-  Checkbox,
-  TableCellProps,
-  Typography,
-  Grid2,
-  Link,
-  IconButton,
+  TableRow,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import React from "react";
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  getPaginationRowModel,
-} from "@tanstack/react-table";
-import dayjs from "dayjs";
-import { DatePicker } from "@mui/x-date-pickers";
-import {
-  useIndexedStore,
-  useIndexedStoreHasHydrated,
-} from "@/hooks/useIndexedStore";
-import { RefreshOutlined } from "@mui/icons-material";
-
-const paddMap = new Map<string, TableCellProps["padding"]>();
-paddMap.set("checkbox", "checkbox");
-
-const checkDate = (day: null | dayjs.Dayjs, date: string | null) => {
-  if (!day) return true;
-  if (!date) return true;
-
-  return day.toDate().toDateString() === dayjs(date).toDate().toDateString();
-};
 
 export const Quartors = () => {
-  const hasHydrated = useIndexedStoreHasHydrated();
-  const settings = useIndexedStore((s) => s.settings);
-  return null;
+  return (
+    <Card>
+      <CardHeader title="季度校验" />
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>Date</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <TableRow>
+              <TableCell>#1</TableCell>
+              <TableCell>{new Date().toLocaleDateString()}</TableCell>
+            </TableRow>
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>Date</TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        component={"div"}
+        count={0}
+        page={0}
+        rowsPerPage={20}
+        rowsPerPageOptions={[20, 50, 100]}
+        onPageChange={() => {}}
+        onRowsPerPageChange={() => {}}
+        labelRowsPerPage="每页行数"
+      />
+    </Card>
+  );
 };

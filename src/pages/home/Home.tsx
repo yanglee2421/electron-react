@@ -1,37 +1,52 @@
-import React from "react";
 import {
   Card,
   CardHeader,
-  CardContent,
-  TableContainer,
   Table,
-  TableHead,
   TableBody,
-  TableRow,
   TableCell,
+  TableContainer,
+  TableFooter,
+  TableHead,
+  TablePagination,
+  TableRow,
 } from "@mui/material";
-import * as channel from "@electron/channel";
-import { ipcRenderer } from "@/lib/utils";
-import { queryOptions, useQuery } from "@tanstack/react-query";
-import { useIndexedStore } from "@/hooks/useIndexedStore";
 
-export const UI = () => {
-  const settings = useIndexedStore((s) => s.settings);
-
+export const Home = () => {
   return (
     <Card>
-      <CardHeader title="Data" />
-      <CardContent></CardContent>
+      <CardHeader title="现车作业" />
       <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>ID</TableCell>
+              <TableCell>Date</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody></TableBody>
+          <TableBody>
+            <TableRow>
+              <TableCell>#1</TableCell>
+              <TableCell>{new Date().toLocaleDateString()}</TableCell>
+            </TableRow>
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>Date</TableCell>
+            </TableRow>
+          </TableFooter>
         </Table>
       </TableContainer>
+      <TablePagination
+        component={"div"}
+        count={0}
+        page={0}
+        rowsPerPage={20}
+        rowsPerPageOptions={[20, 50, 100]}
+        onPageChange={() => {}}
+        onRowsPerPageChange={() => {}}
+        labelRowsPerPage="每页行数"
+      />
     </Card>
   );
 };

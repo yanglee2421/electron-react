@@ -6,10 +6,15 @@ import localforage from "localforage";
 import React from "react";
 
 type Settings = {
+  activate_key: string;
   databasePath: string;
-  databasePassword: string;
-  databaseDsn: string;
-  refetchInterval: number;
+  driverPath: string;
+
+  // HMIS/KMIS
+  api_ip: string;
+  api_port: string;
+  autoInput: boolean;
+  autoUpload: boolean;
 };
 
 type StoreState = {
@@ -21,36 +26,37 @@ type StoreActions = {
     nextStateOrUpdater:
       | StoreState
       | Partial<StoreState>
-      | ((state: WritableDraft<StoreState>) => void),
+      | ((state: WritableDraft<StoreState>) => void)
   ): void;
 };
 
-type Store = StoreState & StoreActions;
+export type Store = StoreState & StoreActions;
 
 export const useIndexedStore = create<Store>()(
   persist(
-    immer(
-      (set) => ({
-        set,
-        settings: {
-          databasePath: "D:\\数据12\\local.mdb",
-          databasePassword: "Joney",
-          databaseDsn: "MS Access Database",
-          refetchInterval: 1000 * 2,
-        },
-      }),
-    ),
+    immer((set) => ({
+      set,
+      settings: {
+        databasePath: "D:\\数据12\\local.mdb",
+        driverPath: "",
+        api_ip: "",
+        api_port: "",
+        activate_key: "",
+        autoInput: true,
+        autoUpload: true,
+      },
+    })),
     {
       name: "useIndexedStore",
       storage: createJSONStorage(() => localforage),
-      version: 1,
-    },
-  ),
+      version: 2,
+    }
+  )
 );
 
 export const useIndexedStoreHasHydrated = () =>
   React.useSyncExternalStore(
     (onStateChange) => useIndexedStore.persist.onFinishHydration(onStateChange),
     () => useIndexedStore.persist.hasHydrated(),
-    () => false,
+    () => false
   );

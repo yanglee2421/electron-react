@@ -1,3 +1,9 @@
 import { Typography } from "@mui/material";
 
-export const NotFound = () => <Typography>404</Typography>;
+export const NotFound = () => {
+  return (
+    <>
+      <Typography>404</Typography>
+    </>
+  );
+};
