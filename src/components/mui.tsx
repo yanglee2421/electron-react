@@ -10,6 +10,7 @@ import "dayjs/locale/zh";
 import "dayjs/locale/en";
 import React from "react";
 import { useIsDark } from "@/hooks/useIsDark";
+import { useLocalStore } from "@/hooks/useLocalStore";
 
 const spacing = (abs: number) => `${abs * 0.25}rem`;
 
@@ -20,11 +21,25 @@ const darkTheme = createTheme({
   spacing,
 });
 
+const enableDarkMode = (mode: string, isDark: boolean) => {
+  switch (mode) {
+    case "light":
+      return false;
+    case "dark":
+      return true;
+    case "system":
+    default:
+      return isDark;
+  }
+};
+
 type Props = React.PropsWithChildren;
 
 export const MuiProvider = (props: Props) => {
   const isDark = useIsDark();
-  const theme = isDark ? darkTheme : lightTheme;
+  const mode = useLocalStore((state) => state.mode);
+
+  const theme = enableDarkMode(mode, isDark) ? darkTheme : lightTheme;
 
   return (
     <ThemeProvider theme={theme}>

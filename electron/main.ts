@@ -2,13 +2,15 @@ import { app, BrowserWindow, ipcMain, shell } from "electron";
 // import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { access, constants } from "node:fs/promises";
 import * as channel from "./channel";
-import * as os from "node:os";
 import dayjs from "dayjs";
-import { throwError, getCpuSerial, getMotherboardSerial } from "./lib";
+import {
+  throwError,
+  getCpuSerial,
+  getMotherboardSerial,
+  runWinword,
+  execFileAsync,
+} from "./lib";
 
 // const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -101,60 +103,11 @@ ipcMain.handle(channel.getActivateInfo, async () => {
       getMotherboardSerial(),
     ]);
 
-    return [cpu.trim(), motherboard.trim()].join("");
+    return [cpu, motherboard].join("");
   } catch (error) {
     throwError(error);
   }
 });
-
-const winword_32 =
-  "C:\\Program Files (x86)\\Microsoft Office\\Office16\\WINWORD.EXE";
-const winword_64 =
-  "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE";
-const winword365_32 =
-  "C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\WINWORD.EXE";
-const winword365_64 =
-  "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE";
-
-const execFileAsync = promisify(execFile);
-
-const getWinword = async (path: string) => {
-  await access(path, constants.R_OK);
-  return path;
-};
-
-const runWinword = async (data: string) => {
-  const winwords = await Promise.allSettled([
-    getWinword(winword_32),
-    getWinword(winword_64),
-    getWinword(winword365_32),
-    getWinword(winword365_64),
-  ]);
-
-  const winword = winwords.find((i) => i.status === "fulfilled")?.value;
-
-  if (!winword) {
-    throw new Error("Find winword failed");
-  }
-
-  const cp = await execFileAsync(
-    winword,
-    [
-      data,
-      "/save",
-      "/q",
-      "/pxslt",
-      "/a",
-      "/mFilePrint",
-      "/mFileCloseOrExit",
-      "/n",
-      "/w",
-      "/x",
-    ],
-    { windowsVerbatimArguments: false, shell: false }
-  );
-  return cp;
-};
 
 ipcMain.handle(channel.printer, async (e, data: string) => {
   void e;
@@ -186,8 +139,11 @@ ipcMain.handle(channel.queryVerifies, async () => {
 });
 
 ipcMain.handle(channel.mem, async () => {
+  const processMemoryInfo = await process.getProcessMemoryInfo();
+  const freemem = processMemoryInfo.residentSet;
+
   return {
-    totalmem: os.totalmem(),
-    freemem: os.freemem(),
+    totalmem: process.getSystemMemoryInfo().total,
+    freemem,
   };
 });

@@ -3,6 +3,10 @@ import {
   AppBar,
   Box,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   styled,
   Toolbar,
   Typography,
@@ -10,12 +14,15 @@ import {
 import {
   CloseOutlined,
   MenuOutlined,
-  DashboardOutlined,
   CalendarMonthOutlined,
   CalendarTodayOutlined,
   SettingsOutlined,
   TrainOutlined,
   ChevronRightOutlined,
+  DesktopWindowsOutlined,
+  QrCodeScannerOutlined,
+  DarkModeOutlined,
+  LightModeOutlined,
 } from "@mui/icons-material";
 import {
   NavLink,
@@ -24,6 +31,7 @@ import {
   Link as RouterLink,
 } from "react-router";
 import React from "react";
+import { useLocalStore } from "@/hooks/useLocalStore";
 
 const LinkWrapper = styled("div")(({ theme }) => ({
   display: "flex",
@@ -58,10 +66,11 @@ const LinkWrapper = styled("div")(({ theme }) => ({
 }));
 
 const list = [
+  { to: "/", label: "HMIS/KMIS", icon: <QrCodeScannerOutlined /> },
   {
-    to: "/",
+    to: "/home",
     label: "现车作业",
-    icon: <DashboardOutlined />,
+    icon: <TrainOutlined />,
   },
   {
     to: "/verifies",
@@ -69,7 +78,6 @@ const list = [
     icon: <CalendarTodayOutlined />,
   },
   { to: "/quartors", label: "季度校验", icon: <CalendarMonthOutlined /> },
-  { to: "/hmis", label: "HMIS", icon: <TrainOutlined /> },
   {
     to: "/settings",
     label: "设置",
@@ -146,6 +154,68 @@ const AuthMain = styled("main")(({ theme }) => ({
   padding: theme.spacing(4),
 }));
 
+const renderModeIcon = (mode: string) => {
+  switch (mode) {
+    case "light":
+      return <LightModeOutlined />;
+    case "dark":
+      return <DarkModeOutlined />;
+    case "system":
+    default:
+      return <DesktopWindowsOutlined />;
+  }
+};
+
+const ModeToggle = () => {
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const mode = useLocalStore((state) => state.mode);
+  const set = useLocalStore((state) => state.set);
+
+  return (
+    <>
+      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+        {renderModeIcon(mode)}
+      </IconButton>
+      <Menu open={!!anchorEl} anchorEl={anchorEl}>
+        <MenuItem
+          onClick={() => {
+            set({ mode: "light" });
+            setAnchorEl(null);
+          }}
+        >
+          <ListItemIcon>
+            <LightModeOutlined />
+          </ListItemIcon>
+          <ListItemText primary="明亮" />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            set({ mode: "dark" });
+            setAnchorEl(null);
+          }}
+        >
+          <ListItemIcon>
+            <DarkModeOutlined />
+          </ListItemIcon>
+          <ListItemText primary="黑暗" />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            set({ mode: "system" });
+            setAnchorEl(null);
+          }}
+        >
+          <ListItemIcon>
+            <DesktopWindowsOutlined />
+          </ListItemIcon>
+          <ListItemText primary="系统" />
+        </MenuItem>
+      </Menu>
+    </>
+  );
+};
+
 type AuthLayoutProps = React.PropsWithChildren;
 
 export const AuthLayout = (props: AuthLayoutProps) => {
@@ -167,19 +237,21 @@ export const AuthLayout = (props: AuthLayoutProps) => {
       >
         <Toolbar>
           <Box
-            component={RouterLink}
-            to="/"
             sx={{
               display: { xs: "none", sm: "flex" },
               gap: 2.5,
               alignItems: "flex-end",
-              textDecoration: "none",
-              color: "inherit",
+
+              "&>a": {
+                textDecoration: "none",
+                color: (t) => t.palette.text.primary,
+              },
             }}
           >
-            <Typography variant="h6">HMIS/KMIS</Typography>
+            <RouterLink to="/">
+              <Typography variant="h6">HMIS/KMIS</Typography>
+            </RouterLink>
           </Box>
-
           <IconButton
             onClick={() =>
               update((p) => (p === location.key ? "" : location.key))
@@ -188,6 +260,8 @@ export const AuthLayout = (props: AuthLayoutProps) => {
           >
             {showMenuInMobile ? <CloseOutlined /> : <MenuOutlined />}
           </IconButton>
+          <Box sx={{ marginInlineStart: "auto" }} />
+          <ModeToggle />
         </Toolbar>
       </AppBar>
       <AuthAsideWrapper

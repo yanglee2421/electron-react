@@ -86,7 +86,7 @@ export const MemCard = () => {
           font-size="12"
           height={9}
         >
-          100% ({Number(mem.data.totalmem / 1024 ** 3).toFixed(1) + "G"})
+          100% ({Number(mem.data.totalmem / 1024 ** 2).toFixed(1) + "G"})
         </text>
         <text
           x={12}
@@ -123,7 +123,6 @@ export const MemCard = () => {
   const renderMemVal = (x: number) => {
     if (!mem.isSuccess) return null;
 
-    const totalmem = mem.data.totalmem;
     const freemem = data.find((i, idx) => {
       void i;
       return Object.is(idx, Math.floor(x));
@@ -131,9 +130,7 @@ export const MemCard = () => {
 
     if (!freemem) return null;
 
-    const val = totalmem - freemem;
-
-    return (val / 1024 ** 3).toFixed(2);
+    return (freemem / 1024 ** 1).toFixed(2);
   };
 
   const renderCursor = () => {
@@ -178,7 +175,9 @@ export const MemCard = () => {
               points={data
                 .map(
                   (i, idx) =>
-                    `${idx},${Math.floor((i.freemem / i.totalmem) * height)}`
+                    `${idx},${Math.floor(
+                      ((i.totalmem - i.freemem) / i.totalmem) * height
+                    )}`
                 )
                 .join(" ")}
               fill="none"

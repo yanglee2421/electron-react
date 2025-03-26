@@ -83,7 +83,7 @@ const routes: RouteObject[] = [
         children: [
           {
             id: "home",
-            index: true,
+            path: "home",
             lazy: () => import("@/pages/home/route"),
           },
           {
@@ -98,7 +98,7 @@ const routes: RouteObject[] = [
           },
           {
             id: "hmis",
-            path: "hmis",
+            index: true,
             lazy: () => import("@/pages/hmis/route"),
           },
           {

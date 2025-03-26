@@ -31,10 +31,14 @@ import { useSnackbar } from "notistack";
 import { ActivateCard } from "./ActivateCard";
 
 const schema = z.object({
-  databasePath: z.string().min(1),
-  driverPath: z.string().min(1),
-  api_ip: z.string(),
-  api_port: z.string(),
+  databasePath: z.string().min(1, { message: "数据库路径不能为空" }),
+  driverPath: z.string().min(1, { message: "驱动路径不能为空" }),
+  api_ip: z.string().ip({ message: "IP 地址格式不正确" }),
+  api_port: z
+    .string()
+    .refine((v) => z.number().int().min(1).max(65535).safeParse(+v).success, {
+      message: "端口号必须是 1-65535 的整数",
+    }),
   autoInput: z.boolean(),
   autoUpload: z.boolean(),
 });
@@ -68,6 +72,8 @@ export const Settings = () => {
         toast.enqueueSnackbar("保存成功", { variant: "success" });
       }, console.warn)}
       onReset={() => form.reset()}
+      noValidate
+      autoComplete="off"
     >
       <Stack spacing={6}>
         <Card>
