@@ -106,6 +106,7 @@ const routes: RouteObject[] = [
             path: "settings",
             lazy: () => import("@/pages/settings/route"),
           },
+          { id: "log", path: "log", lazy: () => import("@/pages/log/route") },
         ],
       },
     ],
