@@ -1,4 +1,4 @@
-import { Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import * as channel from "@electron/channel";
 import { ipcRenderer } from "@/lib/utils";
 import React from "react";
@@ -12,7 +12,14 @@ export const ActivateCard = () => {
   return (
     <>
       <Typography>ActivateCard</Typography>
-      <QRCodeSVG value={info} />
+      <Box
+        sx={{
+          padding: 4,
+          bgcolor: "white",
+        }}
+      >
+        <QRCodeSVG value={info} />
+      </Box>
       <pre>{info}</pre>
     </>
   );
