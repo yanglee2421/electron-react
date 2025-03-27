@@ -20,8 +20,40 @@ export type Detection = {
   tmnow: string | null;
 };
 
+export type DetectionData = {
+  ManualRes: string | null;
+  bEnable: boolean;
+  fltValueUS: number;
+  fltValueUSH: number;
+  fltValueX: number;
+  fltValueY: number;
+  nAtten: number;
+  nBoard: number;
+  nChannel: number;
+  nFWCount: number;
+  nFWIn: number;
+  nFWIndex: number;
+  nFWOut: number;
+  nTAIndex: number;
+  opid: string | null;
+};
+
 export type GetDataFromAccessDatabaseParams = {
   driverPath: string;
   databasePath: string;
   query: string;
+};
+
+export type UploadByIdParams = Omit<
+  GetDataFromAccessDatabaseParams,
+  "query"
+> & {
+  id: string;
+};
+
+export type UploadByZhParams = Omit<
+  GetDataFromAccessDatabaseParams,
+  "query"
+> & {
+  zh: string;
 };

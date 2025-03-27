@@ -1,15 +1,18 @@
 import { useMutation } from "@tanstack/react-query";
 import { ipcRenderer } from "@/lib/utils";
 import * as channel from "@electron/channel";
-import type { GetRequest, GetResponse } from "@/api/api_types";
-import type { AutoInputToVCParams } from "@/api/autoInput_types";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
+import type { GetRequest, GetResponse } from "@/api/http_types";
+import type { AutoInputToVCParams } from "@/api/autoInput_types";
 
 export const useAutoInputToVC = () => {
   return useMutation({
     mutationFn: async (params: AutoInputToVCParams) => {
-      const data = await ipcRenderer.invoke(channel.autoInputToVC, params);
-      return data as GetResponse;
+      const data: string = await ipcRenderer.invoke(
+        channel.autoInputToVC,
+        params
+      );
+      return data;
     },
   });
 };
@@ -17,7 +20,7 @@ export const useAutoInputToVC = () => {
 export const useFetchInfoFromAPI = () => {
   return useMutation({
     mutationFn: async (params: GetRequest) => {
-      const data = await ipcRenderer.invoke(channel.fetchInfoFromAPI, params);
+      const data = await ipcRenderer.invoke(channel.fetchInfoFromHXZY, params);
       return data as GetResponse;
     },
   });
@@ -29,7 +32,7 @@ export const useUploadByZh = () => {
 
   return useMutation({
     mutationFn: async (zh: string) => {
-      const data = await ipcRenderer.invoke(channel.uploadByZh, {
+      const data = await ipcRenderer.invoke(channel.uploadToHXZYByZh, {
         driverPath: settings.driverPath,
         databasePath: settings.databasePath,
         zh,

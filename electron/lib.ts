@@ -1,7 +1,7 @@
 import { exec, execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { access, constants } from "node:fs/promises";
-import { generateKeyPair, publicEncrypt, privateEncrypt } from "node:crypto";
+// import { generateKeyPair, publicEncrypt, privateEncrypt } from "node:crypto";
 
 export const execAsync = promisify(exec);
 export const execFileAsync = promisify(execFile);
@@ -84,4 +84,22 @@ export const runWinword = async (data: string) => {
     { windowsVerbatimArguments: false, shell: false }
   );
   return cp;
+};
+
+export const getDataFromAccessDatabase = async <T = unknown>(params: {
+  driverPath: string;
+  databasePath: string;
+  sql: string;
+}) => {
+  const data = await execFileAsync(params.driverPath, [
+    "GetDataFromAccessDatabase",
+    params.databasePath,
+    params.sql,
+  ]);
+
+  if (data.stderr) {
+    throwError(data.stderr);
+  }
+
+  return JSON.parse(data.stdout) as T[];
 };

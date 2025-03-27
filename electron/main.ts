@@ -1,6 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell, net } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 // import { createRequire } from "node:module";
-import { fileURLToPath, URL } from "node:url";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import * as channel from "./channel";
 import {
@@ -9,13 +9,17 @@ import {
   getMotherboardSerial,
   runWinword,
   execFileAsync,
+  getDataFromAccessDatabase,
 } from "./lib";
 import dayjs from "dayjs";
 import * as consts from "@/lib/constants";
-import type { GetRequest } from "@/api/api_types";
+import * as hxzyHmis from "./hmis_hxzy";
+import type { GetRequest } from "@/api/http_types";
 import type {
   Detection,
   GetDataFromAccessDatabaseParams,
+  UploadByIdParams,
+  UploadByZhParams,
 } from "@/api/database_types";
 import type { AutoInputToVCParams } from "@/api/autoInput_types";
 
@@ -106,64 +110,109 @@ ipcMain.handle(channel.openPath, async (e, path: string) => {
 ipcMain.handle(channel.getCpuSerial, getCpuSerial);
 ipcMain.handle(channel.getMotherboardSerial, getMotherboardSerial);
 
-ipcMain.handle(channel.fetchInfoFromAPI, async (e, params: GetRequest) => {
+ipcMain.handle(channel.fetchInfoFromHXZY, async (e, params: GetRequest) => {
   // ?type=csbts&param=91022070168
   void e;
-  const url = new URL(`http://${params.ip}:${params.port}/api/getData`);
-  url.searchParams.set("type", "csbts");
-  url.searchParams.set("param", params.barCode + ",666");
-  const res = await net.fetch(url.href, { method: "GET" });
-  const data = await res.json();
+  const data = await hxzyHmis.getFn(params);
   return data;
 });
 
-type UploadByZhParams = GetDataFromAccessDatabaseParams & {
-  zh: string;
-};
+ipcMain.handle(
+  channel.uploadToHXZYByZh,
+  async (e, params: UploadByZhParams) => {
+    void e;
+    try {
+      const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
+      const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
 
-ipcMain.handle(channel.uploadByZh, async (e, params: UploadByZhParams) => {
-  void e;
-  try {
-    const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
-    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
+      const detections = await getDataFromAccessDatabase<Detection>({
+        driverPath: params.driverPath,
+        databasePath: params.databasePath,
+        sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
+      });
 
-    const detectionsInfo = await execFileAsync(params.driverPath, [
-      "GetDataFromAccessDatabase",
-      params.databasePath,
-      `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
-    ]);
+      const detection = detections[0];
 
-    if (detectionsInfo.stderr) {
-      throwError(detectionsInfo.stderr);
+      if (!detection) {
+        throwError("未找到该车轮编号的检测记录");
+      }
+
+      const detectionDatas = await getDataFromAccessDatabase({
+        driverPath: params.driverPath,
+        databasePath: params.databasePath,
+        sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
+      });
+
+      const data = {
+        detection,
+        detectionDatas,
+      };
+
+      const user = detection.szUsername || "";
+
+      const request: hxzyHmis.PostRequest = {
+        data: [
+          {
+            eq_ip: "",
+            eq_bh: "",
+            dh: "",
+            zx: detection.szWHModel || "",
+            zh: detection.szIDsWheel || "",
+            TSFF: "超声波",
+            TSSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
+            TFLAW_PLACE: "",
+            TFLAW_TYPE: "",
+            TVIEW: "",
+            CZCTZ: user,
+            CZCTY: user,
+            LZXRBZ: user,
+            LZXRBY: user,
+            XHCZ: user,
+            XHCY: user,
+            TSZ: user,
+            TSZY: user,
+            CT_RESULT: detection.szResult || "",
+          },
+        ],
+      };
+    } catch (e) {
+      throwError(e);
     }
-
-    const detections: Detection[] = JSON.parse(detectionsInfo.stdout);
-    const detection = detections[0];
-
-    if (!detection) {
-      throwError("未找到该车轮编号的检测记录");
-    }
-
-    const detectionDataInfo = await execFileAsync(params.driverPath, [
-      "GetDataFromAccessDatabase",
-      params.databasePath,
-      `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
-    ]);
-
-    if (detectionDataInfo.stderr) {
-      throwError(detectionDataInfo.stderr);
-    }
-
-    const detectionData = JSON.parse(detectionDataInfo.stdout);
-
-    return {
-      detection,
-      detectionData,
-    };
-  } catch (e) {
-    throwError(e);
   }
-});
+);
+
+ipcMain.handle(
+  channel.uploadToHXZYById,
+  async (e, params: UploadByIdParams) => {
+    void e;
+    try {
+      const detections = await getDataFromAccessDatabase<Detection>({
+        driverPath: params.driverPath,
+        databasePath: params.databasePath,
+        sql: `SELECT * FROM detections WHERE szIDs ='${params.id}'`,
+      });
+
+      const detection = detections[0];
+
+      if (!detection) {
+        throwError("未找到该检测记录");
+      }
+
+      const detectionDatas = await getDataFromAccessDatabase({
+        driverPath: params.driverPath,
+        databasePath: params.databasePath,
+        sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
+      });
+
+      return {
+        detection,
+        detectionDatas,
+      };
+    } catch (e) {
+      throwError(e);
+    }
+  }
+);
 
 ipcMain.handle(channel.autoInputToVC, async (e, data: AutoInputToVCParams) => {
   void e;
@@ -210,17 +259,13 @@ ipcMain.handle(
     void e;
 
     try {
-      const data = await execFileAsync(params.driverPath, [
-        "GetDataFromAccessDatabase",
-        params.databasePath,
-        params.query,
-      ]);
+      const data = await getDataFromAccessDatabase({
+        driverPath: params.driverPath,
+        databasePath: params.databasePath,
+        sql: params.query,
+      });
 
-      if (data.stderr) {
-        throwError(data.stderr);
-      }
-
-      return data.stdout;
+      return data;
     } catch (e) {
       throwError(e);
     }
