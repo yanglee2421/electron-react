@@ -46,6 +46,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { GetRecord } from "./fetcher_type";
+import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
 
 type ActionCellProps = {
   id: string;
@@ -108,10 +109,6 @@ const useScanerForm = () =>
   });
 
 const columnHelper = createColumnHelper<GetRecord>();
-
-const cellPaddingMap = new Map<string, "checkbox" | "none" | "normal">([
-  ["checkbox", "checkbox"],
-]);
 
 const columns = [
   columnHelper.display({
@@ -377,7 +374,7 @@ export const Hmis = () => {
         page={table.getState().pagination.pageIndex}
         count={table.getRowCount()}
         rowsPerPage={table.getState().pagination.pageSize}
-        rowsPerPageOptions={[10, 20, 30]}
+        rowsPerPageOptions={rowsPerPageOptions}
         onPageChange={(e, page) => {
           void e;
           table.setPageIndex(page);

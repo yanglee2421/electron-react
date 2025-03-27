@@ -7,3 +7,9 @@ export const ipcRenderer: IpcRenderer = Reflect.get(
 );
 
 export const webUtils: WebUtils = Reflect.get(window, channel.webUtils);
+
+export const cellPaddingMap = new Map<string, "checkbox" | "none" | "normal">([
+  ["checkbox", "checkbox"],
+]);
+
+export const rowsPerPageOptions = [10, 20, 30];

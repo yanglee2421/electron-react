@@ -3,7 +3,6 @@ import { app, BrowserWindow, ipcMain, shell, net } from "electron";
 import { fileURLToPath, URL } from "node:url";
 import path from "node:path";
 import * as channel from "./channel";
-import dayjs from "dayjs";
 import {
   throwError,
   getCpuSerial,
@@ -182,24 +181,34 @@ ipcMain.handle(channel.printer, async (e, data: string) => {
   }
 });
 
-ipcMain.handle(channel.queryVerifies, async () => {
-  const startDate = dayjs().year(2023).month(5).date(7).startOf("day");
-  const endDate = dayjs().year(2023).month(5).date(7).endOf("day");
-  const start = startDate.format("YYYY/MM/DD HH:mm:ss");
-  const end = endDate.format("YYYY/MM/DD HH:mm:ss");
+type GetDataFromAccessDatabaseParams = {
+  driverPath: string;
+  databasePath: string;
+  query: string;
+};
 
-  const query = `SELECT * FROM quartors WHERE tmnow BETWEEN #${start}# AND #${end}#`;
+ipcMain.handle(
+  channel.getDataFromAccessDatabase,
+  async (e, params: GetDataFromAccessDatabaseParams) => {
+    void e;
 
-  const exePath = "";
+    try {
+      const data = await execFileAsync(params.driverPath, [
+        "GetDataFromAccessDatabase",
+        params.databasePath,
+        params.query,
+      ]);
 
-  try {
-    const data = await execFileAsync(exePath, ["", query]);
+      if (data.stderr) {
+        throwError(data.stderr);
+      }
 
-    return { rows: [], data };
-  } catch (e) {
-    throwError(e);
+      return data.stdout;
+    } catch (e) {
+      throwError(e);
+    }
   }
-});
+);
 
 ipcMain.handle(channel.mem, async () => {
   const processMemoryInfo = await process.getProcessMemoryInfo();
