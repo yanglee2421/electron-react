@@ -4,7 +4,7 @@ import { ipcRenderer } from "@/lib/utils";
 import React from "react";
 import { QRCodeSVG } from "qrcode.react";
 
-const activatedInfo = ipcRenderer.invoke(channel.getActivateInfo);
+const activatedInfo = ipcRenderer.invoke(channel.getCpuSerial);
 
 export const ActivateCard = () => {
   const info = React.use(activatedInfo);

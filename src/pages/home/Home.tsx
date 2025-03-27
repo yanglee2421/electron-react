@@ -28,12 +28,12 @@ import {
   flexRender,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import type { Detection } from "./fetcher_types";
+import type { Detection } from "@/api/database_types";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
 import { RefreshOutlined } from "@mui/icons-material";
+import { DATE_FORMAT } from "@/lib/constants";
 
 const initDate = () => dayjs();
-const DATE_FORMAT = "YYYY/MM/DD HH:mm:ss";
 
 const columnHelper = createColumnHelper<Detection>();
 

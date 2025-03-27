@@ -1,7 +1,7 @@
 import { ipcRenderer } from "@/lib/utils";
 import { queryOptions } from "@tanstack/react-query";
 import * as channel from "@electron/channel";
-import type { GetDataFromAccessDatabaseParams } from "./fetcher_types";
+import type { GetDataFromAccessDatabaseParams } from "@/api/database_types";
 
 export const fetchDetections = (params: GetDataFromAccessDatabaseParams) =>
   queryOptions({

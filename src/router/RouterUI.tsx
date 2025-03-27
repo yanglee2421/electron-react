@@ -10,6 +10,8 @@ import {
 import { AuthLayout } from "@/components/layout";
 import React from "react";
 import { NprogressBar } from "@/components/NprogressBar";
+import { useIndexedStoreHasHydrated } from "@/hooks/useIndexedStore";
+import { Box, CircularProgress } from "@mui/material";
 
 const LANGS = new Set(["en", "zh"]);
 const FALLBACK_LANG = "en";
@@ -55,11 +57,25 @@ export const RootRoute = () => {
   );
 };
 
+const renderOutlet = (hasHydrated: boolean) => {
+  if (!hasHydrated) {
+    return (
+      <Box>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return <Outlet />;
+};
+
 const AuthWrapper = () => {
+  const hasHydrated = useIndexedStoreHasHydrated();
+
   return (
     <AuthLayout>
       <NprogressBar />
-      <Outlet />
+      {renderOutlet(hasHydrated)}
     </AuthLayout>
   );
 };

@@ -35,7 +35,11 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
 import { useSnackbar } from "notistack";
-import { useFetchInfoFromAPI, useAutoInputToVC } from "./fetchers";
+import {
+  useFetchInfoFromAPI,
+  useAutoInputToVC,
+  useUploadByZh,
+} from "./fetchers";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 import dayjs from "dayjs";
 import {
@@ -50,12 +54,15 @@ import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
 
 type ActionCellProps = {
   id: string;
+  zh: string;
 };
 
 const ActionCell = (props: ActionCellProps) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const set = useIndexedStore((s) => s.set);
+  const uploadByZh = useUploadByZh();
+  const toast = useSnackbar();
 
   const handleClose = () => setAnchorEl(null);
 
@@ -67,8 +74,21 @@ const ActionCell = (props: ActionCellProps) => {
       <Menu open={!!anchorEl} onClose={handleClose} anchorEl={anchorEl}>
         <MenuItem
           onClick={() => {
-            console.log("upload", props.id);
-            handleClose();
+            uploadByZh.mutate(props.zh, {
+              onError(error) {
+                toast.enqueueSnackbar(error.message, {
+                  variant: "error",
+                });
+              },
+              onSuccess(data) {
+                console.log(data);
+
+                toast.enqueueSnackbar("上传成功", {
+                  variant: "success",
+                });
+                handleClose();
+              },
+            });
           }}
         >
           <ListItemIcon>
@@ -161,7 +181,7 @@ const columns = [
   columnHelper.display({
     id: "action",
     header: "操作",
-    cell: ({ row }) => <ActionCell id={row.id} />,
+    cell: ({ row }) => <ActionCell id={row.id} zh={row.getValue("zh")} />,
   }),
 ];
 
@@ -246,7 +266,7 @@ export const Hmis = () => {
                         d.getRecords = d.getRecords.filter((i) =>
                           dayjs(i.date).isAfter(dayjs().startOf("day"))
                         );
-                        d.getRecords.push({
+                        d.getRecords.unshift({
                           id: crypto.randomUUID(),
                           barCode: data.data[0].DH,
                           zh: data.data[0].ZH,
