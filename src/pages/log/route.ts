@@ -1,1 +1,1 @@
-export { Log as Component } from "./Log";
+export { Component } from "./component";

@@ -44,16 +44,8 @@ export type GetDataFromAccessDatabaseParams = {
   query: string;
 };
 
-export type UploadByIdParams = Omit<
-  GetDataFromAccessDatabaseParams,
-  "query"
-> & {
-  id: string;
-};
-
-export type UploadByZhParams = Omit<
-  GetDataFromAccessDatabaseParams,
-  "query"
-> & {
+export type UploadParams = Omit<GetDataFromAccessDatabaseParams, "query"> & {
   zh: string;
+  dh: string;
+  host: string;
 };

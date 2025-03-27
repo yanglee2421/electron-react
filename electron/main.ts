@@ -13,13 +13,12 @@ import {
 } from "./lib";
 import dayjs from "dayjs";
 import * as consts from "@/lib/constants";
-import * as hxzyHmis from "./hmis_hxzy";
-import type { GetRequest } from "@/api/http_types";
+import * as hxzyHmis from "./hxzy_hmis";
 import type {
   Detection,
+  DetectionData,
   GetDataFromAccessDatabaseParams,
-  UploadByIdParams,
-  UploadByZhParams,
+  UploadParams,
 } from "@/api/database_types";
 import type { AutoInputToVCParams } from "@/api/autoInput_types";
 
@@ -110,109 +109,83 @@ ipcMain.handle(channel.openPath, async (e, path: string) => {
 ipcMain.handle(channel.getCpuSerial, getCpuSerial);
 ipcMain.handle(channel.getMotherboardSerial, getMotherboardSerial);
 
-ipcMain.handle(channel.fetchInfoFromHXZY, async (e, params: GetRequest) => {
-  // ?type=csbts&param=91022070168
+ipcMain.handle(
+  channel.hxzy_hmis_get_data,
+  async (e, params: hxzyHmis.GetRequest) => {
+    // ?type=csbts&param=91022070168
+    void e;
+    const data = await hxzyHmis.getFn(params);
+    return data;
+  }
+);
+
+ipcMain.handle(channel.hxzy_hmis_save_data, async (e, params: UploadParams) => {
   void e;
-  const data = await hxzyHmis.getFn(params);
-  return data;
+  try {
+    const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
+    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
+
+    const detections = await getDataFromAccessDatabase<Detection>({
+      driverPath: params.driverPath,
+      databasePath: params.databasePath,
+      sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
+    });
+
+    const detection = detections[0];
+
+    if (!detection) {
+      throwError("未找到该车轮编号的检测记录");
+    }
+
+    const detectionDatas = await getDataFromAccessDatabase<DetectionData>({
+      driverPath: params.driverPath,
+      databasePath: params.databasePath,
+      sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
+    });
+
+    const data = {
+      detection,
+      detectionDatas,
+    };
+
+    const user = detection.szUsername || "";
+
+    data.detectionDatas.forEach((detectionData) => {
+      console.log(detectionData.nChannel);
+    });
+
+    const request: hxzyHmis.PostRequest = {
+      data: [
+        {
+          eq_ip: "",
+          eq_bh: "",
+          dh: params.dh,
+          zx: detection.szWHModel || "",
+          zh: detection.szIDsWheel || "",
+          TSFF: "超声波",
+          TSSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
+          TFLAW_PLACE: "",
+          TFLAW_TYPE: "",
+          TVIEW: "",
+          CZCTZ: user,
+          CZCTY: user,
+          LZXRBZ: user,
+          LZXRBY: user,
+          XHCZ: user,
+          XHCY: user,
+          TSZ: user,
+          TSZY: user,
+          CT_RESULT: detection.szResult || "",
+        },
+      ],
+      host: params.host,
+    };
+
+    return request;
+  } catch (e) {
+    throwError(e);
+  }
 });
-
-ipcMain.handle(
-  channel.uploadToHXZYByZh,
-  async (e, params: UploadByZhParams) => {
-    void e;
-    try {
-      const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
-      const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
-
-      const detections = await getDataFromAccessDatabase<Detection>({
-        driverPath: params.driverPath,
-        databasePath: params.databasePath,
-        sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
-      });
-
-      const detection = detections[0];
-
-      if (!detection) {
-        throwError("未找到该车轮编号的检测记录");
-      }
-
-      const detectionDatas = await getDataFromAccessDatabase({
-        driverPath: params.driverPath,
-        databasePath: params.databasePath,
-        sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
-      });
-
-      const data = {
-        detection,
-        detectionDatas,
-      };
-
-      const user = detection.szUsername || "";
-
-      const request: hxzyHmis.PostRequest = {
-        data: [
-          {
-            eq_ip: "",
-            eq_bh: "",
-            dh: "",
-            zx: detection.szWHModel || "",
-            zh: detection.szIDsWheel || "",
-            TSFF: "超声波",
-            TSSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-            TFLAW_PLACE: "",
-            TFLAW_TYPE: "",
-            TVIEW: "",
-            CZCTZ: user,
-            CZCTY: user,
-            LZXRBZ: user,
-            LZXRBY: user,
-            XHCZ: user,
-            XHCY: user,
-            TSZ: user,
-            TSZY: user,
-            CT_RESULT: detection.szResult || "",
-          },
-        ],
-      };
-    } catch (e) {
-      throwError(e);
-    }
-  }
-);
-
-ipcMain.handle(
-  channel.uploadToHXZYById,
-  async (e, params: UploadByIdParams) => {
-    void e;
-    try {
-      const detections = await getDataFromAccessDatabase<Detection>({
-        driverPath: params.driverPath,
-        databasePath: params.databasePath,
-        sql: `SELECT * FROM detections WHERE szIDs ='${params.id}'`,
-      });
-
-      const detection = detections[0];
-
-      if (!detection) {
-        throwError("未找到该检测记录");
-      }
-
-      const detectionDatas = await getDataFromAccessDatabase({
-        driverPath: params.driverPath,
-        databasePath: params.databasePath,
-        sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
-      });
-
-      return {
-        detection,
-        detectionDatas,
-      };
-    } catch (e) {
-      throwError(e);
-    }
-  }
-);
 
 ipcMain.handle(channel.autoInputToVC, async (e, data: AutoInputToVCParams) => {
   void e;

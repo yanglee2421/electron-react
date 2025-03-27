@@ -35,11 +35,7 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
 import { useSnackbar } from "notistack";
-import {
-  useFetchInfoFromAPI,
-  useAutoInputToVC,
-  useUploadByZh,
-} from "./fetchers";
+import { useGetData, useSaveData, useAutoInputToVC } from "./fetchers";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 import dayjs from "dayjs";
 import {
@@ -49,8 +45,8 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import type { GetRecord } from "./fetcher_type";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
+import type { History } from "@/hooks/useIndexedStore";
 
 type ActionCellProps = {
   id: string;
@@ -60,9 +56,11 @@ type ActionCellProps = {
 const ActionCell = (props: ActionCellProps) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
+  const saveData = useSaveData();
+  const snackbar = useSnackbar();
   const set = useIndexedStore((s) => s.set);
-  const uploadByZh = useUploadByZh();
-  const toast = useSnackbar();
+  const settings = useIndexedStore((s) => s.settings);
+  const hmis = useIndexedStore((s) => s.hxzy_hmis);
 
   const handleClose = () => setAnchorEl(null);
 
@@ -74,21 +72,25 @@ const ActionCell = (props: ActionCellProps) => {
       <Menu open={!!anchorEl} onClose={handleClose} anchorEl={anchorEl}>
         <MenuItem
           onClick={() => {
-            uploadByZh.mutate(props.zh, {
-              onError(error) {
-                toast.enqueueSnackbar(error.message, {
-                  variant: "error",
-                });
+            saveData.mutate(
+              {
+                dh: props.id,
+                zh: props.zh,
+                databasePath: settings.databasePath,
+                driverPath: settings.driverPath,
+                host: hmis.host,
               },
-              onSuccess(data) {
-                console.log(data);
-
-                toast.enqueueSnackbar("上传成功", {
-                  variant: "success",
-                });
-                handleClose();
-              },
-            });
+              {
+                onError(error) {
+                  snackbar.enqueueSnackbar(error.message, {
+                    variant: "error",
+                  });
+                },
+                onSuccess() {
+                  handleClose();
+                },
+              }
+            );
           }}
         >
           <ListItemIcon>
@@ -99,8 +101,8 @@ const ActionCell = (props: ActionCellProps) => {
         <MenuItem
           onClick={() => {
             set((d) => {
-              d.getRecords = d.getRecords.filter(
-                (i) => !Object.is(i.id, props.id)
+              d.hxzy_hmis.history = d.hxzy_hmis.history.filter(
+                (row) => row.id !== props.id
               );
             });
             handleClose();
@@ -128,7 +130,7 @@ const useScanerForm = () =>
     resolver: zodResolver(schema),
   });
 
-const columnHelper = createColumnHelper<GetRecord>();
+const columnHelper = createColumnHelper<History>();
 
 const columns = [
   columnHelper.display({
@@ -181,25 +183,28 @@ const columns = [
   columnHelper.display({
     id: "action",
     header: "操作",
-    cell: ({ row }) => <ActionCell id={row.id} zh={row.getValue("zh")} />,
+    cell: ({ row }) => (
+      <ActionCell id={row.getValue("barCode")} zh={row.getValue("zh")} />
+    ),
   }),
 ];
 
-export const Hmis = () => {
+export const Component = () => {
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const formId = React.useId();
 
-  const toast = useSnackbar();
   const form = useScanerForm();
+  const getData = useGetData();
+  const saveData = useSaveData();
+  const snackbar = useSnackbar();
   const autoInput = useAutoInputToVC();
-  const fetchInfoFromAPI = useFetchInfoFromAPI();
-  const settings = useIndexedStore((s) => s.settings);
-  const getRecords = useIndexedStore((s) => s.getRecords);
-  const set = useIndexedStore((s) => s.set);
+  const setting = useIndexedStore((s) => s.settings);
+  const hmis = useIndexedStore((s) => s.hxzy_hmis);
+  const history = useIndexedStore((s) => s.hxzy_hmis.history);
 
   const table = useReactTable({
-    data: getRecords,
+    data: history,
     columns,
     getRowId: (row) => row.id,
     getCoreRowModel: getCoreRowModel(),
@@ -207,11 +212,30 @@ export const Hmis = () => {
   });
 
   React.useEffect(() => {
-    if (!settings.autoUpload) return;
+    if (!hmis.autoUpload) return;
 
-    const timer = setInterval(() => {}, 1000 * 30);
+    const timer = setInterval(async () => {
+      for (const row of history) {
+        await saveData
+          .mutateAsync({
+            dh: row.barCode,
+            zh: row.zh,
+            databasePath: setting.databasePath,
+            driverPath: setting.driverPath,
+            host: hmis.host,
+          })
+          .catch(Boolean);
+      }
+    }, 1000 * 30);
     return () => clearInterval(timer);
-  }, [settings.autoUpload]);
+  }, [
+    hmis.autoUpload,
+    history,
+    saveData,
+    setting.databasePath,
+    setting.driverPath,
+    hmis.host,
+  ]);
 
   const renderRow = () => {
     if (!table.getRowCount()) {
@@ -253,59 +277,49 @@ export const Hmis = () => {
               id={formId}
               noValidate
               autoComplete="off"
-              onSubmit={form.handleSubmit((data) => {
-                fetchInfoFromAPI.mutate(
+              onSubmit={form.handleSubmit(async (values) => {
+                if (saveData.isPending) return;
+
+                form.reset();
+
+                const data = await getData.mutateAsync(
                   {
-                    barCode: data.barCode,
-                    ip: settings.api_ip,
-                    port: settings.api_port,
+                    barCode: values.barCode,
+                    host: hmis.host,
                   },
                   {
-                    onSuccess: (data) => {
-                      set((d) => {
-                        d.getRecords = d.getRecords.filter((i) =>
-                          dayjs(i.date).isAfter(dayjs().startOf("day"))
-                        );
-                        d.getRecords.unshift({
-                          id: crypto.randomUUID(),
-                          barCode: data.data[0].DH,
-                          zh: data.data[0].ZH,
-                          date: new Date().toISOString(),
-                          isUploaded: false,
-                        });
-                      });
-                      if (!settings.autoInput) return;
-                      autoInput.mutate(
-                        {
-                          driverPath: settings.driverPath,
-                          zx: data.data[0].ZX,
-                          zh: data.data[0].ZH,
-                          czzzdw: data.data[0].CZZZDW,
-                          sczzdw: data.data[0].SCZZDW,
-                          mczzdw: data.data[0].MCZZDW,
-                          czzzrq: dayjs(data.data[0].CZZZRQ).format("YYYYMM"),
-                          sczzrq: dayjs(data.data[0].SCZZRQ).format("YYYYMMDD"),
-                          mczzrq: dayjs(data.data[0].MCZZRQ).format("YYYYMMDD"),
-                          ztx: "1",
-                          ytx: "1",
-                        },
-                        {
-                          onError(error) {
-                            toast.enqueueSnackbar(error.message, {
-                              variant: "error",
-                            });
-                          },
-                        }
-                      );
-                    },
                     onError: (error) => {
-                      toast.enqueueSnackbar(error.message, {
+                      snackbar.enqueueSnackbar(error.message, {
                         variant: "error",
                       });
                     },
                   }
                 );
-                form.reset();
+
+                if (!hmis.autoInput) return;
+
+                await autoInput.mutateAsync(
+                  {
+                    driverPath: setting.driverPath,
+                    zx: data.data[0].ZX,
+                    zh: data.data[0].ZH,
+                    czzzdw: data.data[0].CZZZDW,
+                    sczzdw: data.data[0].SCZZDW,
+                    mczzdw: data.data[0].MCZZDW,
+                    czzzrq: dayjs(data.data[0].CZZZRQ).format("YYYYMM"),
+                    sczzrq: dayjs(data.data[0].SCZZRQ).format("YYYYMMDD"),
+                    mczzrq: dayjs(data.data[0].MCZZRQ).format("YYYYMMDD"),
+                    ztx: "1",
+                    ytx: "1",
+                  },
+                  {
+                    onError(error) {
+                      snackbar.enqueueSnackbar(error.message, {
+                        variant: "error",
+                      });
+                    },
+                  }
+                );
               }, console.warn)}
               onReset={() => form.reset()}
             >
@@ -327,6 +341,7 @@ export const Hmis = () => {
                               type="submit"
                               endIcon={<KeyboardReturnOutlined />}
                               variant="contained"
+                              disabled={getData.isPending}
                             >
                               录入
                             </Button>

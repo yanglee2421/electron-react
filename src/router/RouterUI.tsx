@@ -60,7 +60,14 @@ export const RootRoute = () => {
 const renderOutlet = (hasHydrated: boolean) => {
   if (!hasHydrated) {
     return (
-      <Box>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 6,
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -99,8 +106,13 @@ const routes: RouteObject[] = [
         children: [
           {
             id: "home",
-            path: "home",
+            index: true,
             lazy: () => import("@/pages/home/route"),
+          },
+          {
+            id: "detection",
+            path: "detection",
+            lazy: () => import("@/pages/detection/route"),
           },
           {
             id: "verifies",
@@ -113,16 +125,26 @@ const routes: RouteObject[] = [
             lazy: () => import("@/pages/quartors/route"),
           },
           {
-            id: "hmis",
-            index: true,
-            lazy: () => import("@/pages/hmis/route"),
-          },
-          {
             id: "settings",
             path: "settings",
             lazy: () => import("@/pages/settings/route"),
           },
           { id: "log", path: "log", lazy: () => import("@/pages/log/route") },
+          {
+            id: "hxzy_hmis",
+            path: "hxzy_hmis",
+            lazy: () => import("@/pages/hxzy_hmis/route"),
+          },
+          {
+            id: "hxzy_hmis_setting",
+            path: "hxzy_hmis_setting",
+            lazy: () => import("@/pages/hxzy_hmis_setting/route"),
+          },
+          {
+            id: "jtv_hmis",
+            path: "jtv_hmis",
+            lazy: () => import("@/pages/jtv_hmis/route"),
+          },
         ],
       },
     ],

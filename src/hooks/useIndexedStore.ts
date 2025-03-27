@@ -9,15 +9,10 @@ type Settings = {
   activate_key: string;
   databasePath: string;
   driverPath: string;
-
-  // HMIS/KMIS
-  api_ip: string;
-  api_port: string;
-  autoInput: boolean;
-  autoUpload: boolean;
+  home_path: string;
 };
 
-type GetRecord = {
+export type History = {
   id: string;
   barCode: string;
   zh: string;
@@ -25,9 +20,26 @@ type GetRecord = {
   isUploaded: boolean;
 };
 
+type HXZY_HMIS = {
+  history: History[];
+  host: string;
+  autoInput: boolean;
+  autoUpload: boolean;
+  autoUploadInterval: number;
+};
+
+type JTV_HMIS = {
+  history: History[];
+  host: string;
+  autoInput: boolean;
+  autoUpload: boolean;
+  autoUploadInterval: number;
+};
+
 type StoreState = {
   settings: Settings;
-  getRecords: GetRecord[];
+  hxzy_hmis: HXZY_HMIS;
+  jtv_hmis: JTV_HMIS;
 };
 
 type StoreActions = {
@@ -48,18 +60,28 @@ export const useIndexedStore = create<Store>()(
       settings: {
         databasePath: "D:\\数据12\\local.mdb",
         driverPath: "",
-        api_ip: "",
-        api_port: "",
         activate_key: "",
+        home_path: "/settings",
+      },
+      hxzy_hmis: {
+        host: "",
+        history: [],
         autoInput: true,
         autoUpload: true,
+        autoUploadInterval: 1000 * 30,
       },
-      getRecords: [],
+      jtv_hmis: {
+        host: "",
+        history: [],
+        autoInput: true,
+        autoUpload: true,
+        autoUploadInterval: 1000 * 30,
+      },
     })),
     {
       name: "useIndexedStore",
       storage: createJSONStorage(() => localforage),
-      version: 2,
+      version: 3,
     }
   )
 );

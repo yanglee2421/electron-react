@@ -17,7 +17,7 @@ import {
   WarningOutlined,
 } from "@mui/icons-material";
 
-export const Log = () => {
+export const Component = () => {
   const renderLog = () => {
     return (
       <>

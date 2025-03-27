@@ -52,7 +52,7 @@ const ActionCell = (props: ActionCellProps) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const uploadById = useUploadById();
-  const toast = useSnackbar();
+  const snackbar = useSnackbar();
 
   const handleClose = () => setAnchorEl(null);
 
@@ -66,14 +66,14 @@ const ActionCell = (props: ActionCellProps) => {
           onClick={() => {
             uploadById.mutate(props.id, {
               onError(error) {
-                toast.enqueueSnackbar(error.message, {
+                snackbar.enqueueSnackbar(error.message, {
                   variant: "error",
                 });
               },
               onSuccess(data) {
                 console.log(data);
 
-                toast.enqueueSnackbar("上传成功", {
+                snackbar.enqueueSnackbar("上传成功", {
                   variant: "success",
                 });
                 handleClose();

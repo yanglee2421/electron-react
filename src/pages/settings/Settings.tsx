@@ -17,9 +17,7 @@ import {
   CardActions,
   Button,
   Stack,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
+  MenuItem,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import z from "zod";
@@ -28,19 +26,11 @@ import React from "react";
 import * as channel from "@electron/channel";
 import { ipcRenderer, webUtils } from "@/lib/utils";
 import { useSnackbar } from "notistack";
-import { ActivateCard } from "./ActivateCard";
 
 const schema = z.object({
   databasePath: z.string().min(1, { message: "数据库路径不能为空" }),
   driverPath: z.string().min(1, { message: "驱动路径不能为空" }),
-  api_ip: z.string().ip({ message: "IP 地址格式不正确" }),
-  api_port: z
-    .string()
-    .refine((v) => z.number().int().min(1).max(65535).safeParse(+v).success, {
-      message: "端口号必须是 1-65535 的整数",
-    }),
-  autoInput: z.boolean(),
-  autoUpload: z.boolean(),
+  home_path: z.string().min(1, { message: "主页路径不能为空" }),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -60,7 +50,7 @@ export const Settings = () => {
   const settings = useIndexedStore((s) => s.settings);
   const set = useIndexedStore((s) => s.set);
   const form = useSettingForm(settings);
-  const toast = useSnackbar();
+  const snackbar = useSnackbar();
 
   return (
     <form
@@ -69,7 +59,7 @@ export const Settings = () => {
         set((d) => {
           d.settings = { ...d.settings, ...data };
         });
-        toast.enqueueSnackbar("保存成功", { variant: "success" });
+        snackbar.enqueueSnackbar("保存成功", { variant: "success" });
       }, console.warn)}
       onReset={() => form.reset()}
       noValidate
@@ -174,86 +164,34 @@ export const Settings = () => {
                   )}
                 />
               </Grid2>
-            </Grid2>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader title="HMIS/KMIS设置" />
-          <CardContent>
-            <Grid2 container spacing={3}>
               <Grid2 size={{ xs: 12, sm: 6 }}>
                 <Controller
                   control={form.control}
-                  name="api_ip"
+                  name="home_path"
                   render={({ field, fieldState }) => (
                     <TextField
                       {...field}
                       error={!!fieldState.error}
                       helperText={fieldState.error?.message}
                       fullWidth
-                      label="接口 IP"
-                    />
+                      label="主页路径"
+                      select
+                    >
+                      <MenuItem value="/settings">设置</MenuItem>
+                      <MenuItem value="/detection">现车作业</MenuItem>
+                      <MenuItem value="/verifies">日常校验</MenuItem>
+                      <MenuItem value="/quartors">季度校验</MenuItem>
+                      <MenuItem value="/log">日志</MenuItem>
+                      <MenuItem value="/hxzy_hmis">华兴致远HMIS</MenuItem>
+                      <MenuItem value="/hxzy_hmis_setting">
+                        华兴致远HMIS设置
+                      </MenuItem>
+                    </TextField>
                   )}
                 />
-              </Grid2>
-              <Grid2 size={{ xs: 12, sm: 6 }}>
-                <Controller
-                  control={form.control}
-                  name="api_port"
-                  render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                      fullWidth
-                      label="接口端口"
-                    />
-                  )}
-                />
-              </Grid2>
-              <Grid2 size={12}>
-                <FormGroup row>
-                  <Controller
-                    control={form.control}
-                    name="autoInput"
-                    render={({ field }) => (
-                      <FormControlLabel
-                        label="自动录入"
-                        control={
-                          <Checkbox
-                            checked={field.value}
-                            onChange={(e) => {
-                              field.onChange(e.target.checked);
-                            }}
-                          />
-                        }
-                      />
-                    )}
-                  />
-                  <Controller
-                    control={form.control}
-                    name="autoUpload"
-                    render={({ field }) => (
-                      <FormControlLabel
-                        label="自动上传"
-                        control={
-                          <Checkbox
-                            checked={field.value}
-                            onChange={(e) => {
-                              field.onChange(e.target.checked);
-                            }}
-                          />
-                        }
-                      />
-                    )}
-                  />
-                </FormGroup>
               </Grid2>
             </Grid2>
           </CardContent>
-        </Card>
-        <ActivateCard />
-        <Card>
           <CardActions>
             <Button type="submit" form={formId} startIcon={<SaveOutlined />}>
               Save
@@ -280,28 +218,19 @@ export const Settings = () => {
             </Button>
             <Button
               onClick={() => {
-                // 创建 JSON 数据
                 const data = useIndexedStore.getState();
                 const version =
                   useIndexedStore.persist.getOptions().version || 0;
-
-                // 将 JSON 数据转换为字符串
                 const jsonString = JSON.stringify(data, null, 2);
-
-                // 创建 Blob 对象
                 const blob = new Blob([jsonString], {
                   type: "application/json",
                 });
-
-                // 创建下载链接
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
-                link.download = `backup-v${version}.json`; // 下载的文件名
-
-                // 触发下载
-                document.body.appendChild(link); // 将链接添加到 DOM
-                link.click(); // 自动点击链接
-                document.body.removeChild(link); // 下载后移除链接
+                link.download = `backup-v${version}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
               }}
               startIcon={<FileUploadOutlined />}
             >

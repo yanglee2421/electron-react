@@ -8,9 +8,8 @@ export const autoInputToVC = "autoInputToVC";
 export const getDataFromAccessDatabase = "getDataFromAccessDatabase";
 
 // HTTP
-export const fetchInfoFromHXZY = "fetchInfoFromHXZY";
-export const uploadToHXZYByZh = "uploadToHXZYByZh";
-export const uploadToHXZYById = "uploadToHXZYById";
+export const hxzy_hmis_get_data = "hxzy_hmis_get_data";
+export const hxzy_hmis_save_data = "hxzy_hmis_save_data";
 
 // Electron
 export const mem = "mem";

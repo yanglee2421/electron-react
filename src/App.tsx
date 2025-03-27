@@ -10,6 +10,7 @@ export default function App() {
         <SnackbarProvider
           anchorOrigin={{ vertical: "top", horizontal: "right" }}
           autoHideDuration={3000}
+          maxSnack={3}
         >
           <RouterUI />
         </SnackbarProvider>

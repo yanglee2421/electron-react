@@ -66,9 +66,14 @@ const LinkWrapper = styled("div")(({ theme }) => ({
 }));
 
 const list = [
-  { to: "/", label: "HMIS/KMIS", icon: <QrCodeScannerOutlined /> },
+  { to: "/hxzy_hmis", label: "华兴致远HMIS", icon: <QrCodeScannerOutlined /> },
   {
-    to: "/home",
+    to: "/hxzy_hmis_setting",
+    label: "华兴致远HMIS设置",
+    icon: <QrCodeScannerOutlined />,
+  },
+  {
+    to: "/detection",
     label: "现车作业",
     icon: <TrainOutlined />,
   },
@@ -78,6 +83,7 @@ const list = [
     icon: <CalendarTodayOutlined />,
   },
   { to: "/quartors", label: "季度校验", icon: <CalendarMonthOutlined /> },
+  { to: "/log", label: "日志", icon: <CalendarMonthOutlined /> },
   {
     to: "/settings",
     label: "设置",

@@ -14,7 +14,6 @@ export type GetResponse = {
       MCZZRQ: "2018-07-09 00:00:00";
       SCZZDW: "131";
       SCZZRQ: "2018-07-09 00:00:00";
-
       DH: "91022070168";
       ZH: "67444";
       ZX: "RE2B";
@@ -26,13 +25,12 @@ export type GetResponse = {
 
 export type GetRequest = {
   barCode: string;
-  ip: string;
-  port: string;
+  host: string;
 };
 
 export const getFn = async (request: GetRequest) => {
   const url = new URL(
-    `http://${request.ip}:${request.port}/lzjx/dx/csbts/device_api/csbts/api/getDate`
+    `http://${request.host}/lzjx/dx/csbts/device_api/csbts/api/getDate`
   );
   url.searchParams.set("type", "csbts");
   url.searchParams.set("param", request.barCode);
@@ -66,8 +64,7 @@ export type PostRequest = {
     TSZY: string; // 探伤者右
     CT_RESULT: string; // 合格
   }[];
-  ip: string;
-  port: string;
+  host: string;
 };
 
 export type PostResponse = {
@@ -77,7 +74,7 @@ export type PostResponse = {
 
 export const postFn = async (request: PostRequest) => {
   const url = new URL(
-    `http://${request.ip}:${request.port}/lzjx/dx/csbts/device_api/csbts/api/saveData`
+    `http://${request.host}/lzjx/dx/csbts/device_api/csbts/api/saveData`
   );
   url.searchParams.set("type", "csbts");
   const res = await net.fetch(url.href, {
