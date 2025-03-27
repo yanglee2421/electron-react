@@ -1,6 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell, net } from "electron";
 // import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, URL } from "node:url";
 import path from "node:path";
 import * as channel from "./channel";
 import dayjs from "dayjs";
@@ -104,6 +104,69 @@ ipcMain.handle(channel.getActivateInfo, async () => {
     ]);
 
     return [cpu, motherboard].join("");
+  } catch (error) {
+    throwError(error);
+  }
+});
+
+type FetchInfoFromAPIParams = {
+  barCode: string;
+  ip: string;
+  port: string;
+};
+
+ipcMain.handle(
+  channel.fetchInfoFromAPI,
+  async (e, params: FetchInfoFromAPIParams) => {
+    // ?type=csbts&param=91022070168
+    void e;
+    const url = new URL(`http://${params.ip}:${params.port}/api/getData`);
+    url.searchParams.set("type", "csbts");
+    url.searchParams.set("param", params.barCode + ",666");
+    const res = await net.fetch(url.href, { method: "GET" });
+    const data = await res.json();
+    return data;
+  }
+);
+
+type AutoInputToVCParams = {
+  zx: string;
+  zh: string;
+  czzzdw: string;
+  sczzdw: string;
+  mczzdw: string;
+  czzzrq: string;
+  sczzrq: string;
+  mczzrq: string;
+  ztx: string;
+  ytx: string;
+  driverPath: string;
+};
+
+ipcMain.handle(channel.autoInputToVC, async (e, data: AutoInputToVCParams) => {
+  void e;
+  const exePath = data.driverPath;
+
+  try {
+    const cp = await execFileAsync(exePath, [
+      "autoInputToVC",
+      data.zx,
+      data.zh,
+      data.czzzdw,
+      data.sczzdw,
+      data.mczzdw,
+      data.czzzrq,
+      data.sczzrq,
+      data.mczzrq,
+      data.ztx,
+      data.ytx,
+    ]);
+
+    if (cp.stderr) {
+      throwError(cp.stderr);
+    }
+
+    return cp.stdout;
   } catch (error) {
     throwError(error);
   }

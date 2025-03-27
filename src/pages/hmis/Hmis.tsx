@@ -1,14 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  CheckCircleOutlined,
   CheckOutlined,
   ClearOutlined,
   CloudUploadOutlined,
-  ErrorOutlined,
-  InfoOutlined,
+  DeleteOutlined,
   KeyboardReturnOutlined,
   MoreVertOutlined,
-  WarningOutlined,
 } from "@mui/icons-material";
 import {
   Card,
@@ -25,21 +22,78 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
   TablePagination,
-  Pagination,
   Button,
-  Box,
   Divider,
   Checkbox,
+  MenuItem,
+  Menu,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
 import { useSnackbar } from "notistack";
+import { useFetchInfoFromAPI, useAutoInputToVC } from "./fetchers";
+import { useIndexedStore } from "@/hooks/useIndexedStore";
+import dayjs from "dayjs";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import type { GetRecord } from "./fetcher_type";
+
+type ActionCellProps = {
+  id: string;
+};
+
+const ActionCell = (props: ActionCellProps) => {
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const set = useIndexedStore((s) => s.set);
+
+  const handleClose = () => setAnchorEl(null);
+
+  return (
+    <>
+      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+        <MoreVertOutlined />
+      </IconButton>
+      <Menu open={!!anchorEl} onClose={handleClose} anchorEl={anchorEl}>
+        <MenuItem
+          onClick={() => {
+            console.log("upload", props.id);
+            handleClose();
+          }}
+        >
+          <ListItemIcon>
+            <CloudUploadOutlined />
+          </ListItemIcon>
+          <ListItemText primary="上传" />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            set((d) => {
+              d.getRecords = d.getRecords.filter(
+                (i) => !Object.is(i.id, props.id)
+              );
+            });
+            handleClose();
+          }}
+        >
+          <ListItemIcon>
+            <DeleteOutlined color="error" />
+          </ListItemIcon>
+          <ListItemText primary="删除" />
+        </MenuItem>
+      </Menu>
+    </>
+  );
+};
 
 const schema = z.object({
   barCode: z.string().min(1),
@@ -53,69 +107,123 @@ const useScanerForm = () =>
     resolver: zodResolver(schema),
   });
 
+const columnHelper = createColumnHelper<GetRecord>();
+
+const cellPaddingMap = new Map<string, "checkbox" | "none" | "normal">([
+  ["checkbox", "checkbox"],
+]);
+
+const columns = [
+  columnHelper.display({
+    id: "checkbox",
+    header: ({ table }) => (
+      <Checkbox
+        indeterminate={table.getIsSomeRowsSelected()}
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onChange={row.getToggleSelectedHandler()}
+      />
+    ),
+    footer: ({ table }) => (
+      <Checkbox
+        indeterminate={table.getIsSomeRowsSelected()}
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+      />
+    ),
+  }),
+  columnHelper.accessor("id", {
+    header: "ID",
+    footer: "ID",
+    cell: ({ getValue }) => getValue().slice(0, 7),
+  }),
+  columnHelper.accessor("barCode", {
+    header: "单号",
+    footer: "单号",
+  }),
+  columnHelper.accessor("zh", {
+    header: "轴号",
+    footer: "轴号",
+  }),
+  columnHelper.accessor("date", {
+    header: "时间",
+    footer: "时间",
+    cell: ({ getValue }) => new Date(getValue()).toLocaleString(),
+  }),
+  columnHelper.accessor("isUploaded", {
+    header: "已上传",
+    footer: "已上传",
+    cell: ({ getValue }) =>
+      getValue() ? <CheckOutlined /> : <ClearOutlined />,
+  }),
+  columnHelper.display({
+    id: "action",
+    header: "操作",
+    cell: ({ row }) => <ActionCell id={row.id} />,
+  }),
+];
+
 export const Hmis = () => {
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const formId = React.useId();
 
-  const form = useScanerForm();
   const toast = useSnackbar();
+  const form = useScanerForm();
+  const autoInput = useAutoInputToVC();
+  const fetchInfoFromAPI = useFetchInfoFromAPI();
+  const settings = useIndexedStore((s) => s.settings);
+  const getRecords = useIndexedStore((s) => s.getRecords);
+  const set = useIndexedStore((s) => s.set);
 
-  const renderLog = () => {
-    return (
-      <>
-        <CardContent>
-          <Grid2 container spacing={6}>
-            <Grid2 size={12}>
-              <List>
-                <ListItem>
-                  <ListItemIcon>
-                    <ErrorOutlined color="error" />
-                  </ListItemIcon>
-                  <ListItemText primary="error message" />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <InfoOutlined color="info" />
-                  </ListItemIcon>
-                  <ListItemText primary="error message" />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <WarningOutlined color="warning" />
-                  </ListItemIcon>
-                  <ListItemText primary="error message" />
-                </ListItem>
-                <ListItem
-                  secondaryAction={
-                    <IconButton>
-                      <MoreVertOutlined />
-                    </IconButton>
-                  }
-                >
-                  <ListItemIcon>
-                    <CheckCircleOutlined color="success" />
-                  </ListItemIcon>
-                  <ListItemText primary="error message" />
-                </ListItem>
-              </List>
-              <Box sx={{ display: "flex", justifyContent: "center" }}>
-                <Pagination
-                  count={10}
-                  page={1}
-                  onChange={() => {}}
-                  color="primary"
-                  shape="circular"
-                />
-              </Box>
-            </Grid2>
-          </Grid2>
-        </CardContent>
-      </>
-    );
+  const table = useReactTable({
+    data: getRecords,
+    columns,
+    getRowId: (row) => row.id,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  React.useEffect(() => {
+    if (!settings.autoUpload) return;
+
+    const timer = setInterval(() => {}, 1000 * 30);
+    return () => clearInterval(timer);
+  }, [settings.autoUpload]);
+
+  const renderRow = () => {
+    if (!table.getRowCount()) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
+            暂无数据
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return table.getRowModel().rows.map((row) => {
+      return (
+        <TableRow key={row.id}>
+          {row.getVisibleCells().map((cell) => {
+            return (
+              <TableCell
+                key={cell.id}
+                padding={cellPaddingMap.get(cell.column.id)}
+              >
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </TableCell>
+            );
+          })}
+        </TableRow>
+      );
+    });
   };
-
-  void renderLog;
 
   return (
     <Card>
@@ -129,9 +237,57 @@ export const Hmis = () => {
               noValidate
               autoComplete="off"
               onSubmit={form.handleSubmit((data) => {
-                toast.enqueueSnackbar(`Scanned: ${data.barCode}`, {
-                  variant: "success",
-                });
+                fetchInfoFromAPI.mutate(
+                  {
+                    barCode: data.barCode,
+                    ip: settings.api_ip,
+                    port: settings.api_port,
+                  },
+                  {
+                    onSuccess: (data) => {
+                      set((d) => {
+                        d.getRecords = d.getRecords.filter((i) =>
+                          dayjs(i.date).isAfter(dayjs().startOf("day"))
+                        );
+                        d.getRecords.push({
+                          id: crypto.randomUUID(),
+                          barCode: data.data[0].DH,
+                          zh: data.data[0].ZH,
+                          date: new Date().toISOString(),
+                          isUploaded: false,
+                        });
+                      });
+                      if (!settings.autoInput) return;
+                      autoInput.mutate(
+                        {
+                          driverPath: settings.driverPath,
+                          zx: data.data[0].ZX,
+                          zh: data.data[0].ZH,
+                          czzzdw: data.data[0].CZZZDW,
+                          sczzdw: data.data[0].SCZZDW,
+                          mczzdw: data.data[0].MCZZDW,
+                          czzzrq: dayjs(data.data[0].CZZZRQ).format("YYYYMM"),
+                          sczzrq: dayjs(data.data[0].SCZZRQ).format("YYYYMMDD"),
+                          mczzrq: dayjs(data.data[0].MCZZRQ).format("YYYYMMDD"),
+                          ztx: "1",
+                          ytx: "1",
+                        },
+                        {
+                          onError(error) {
+                            toast.enqueueSnackbar(error.message, {
+                              variant: "error",
+                            });
+                          },
+                        }
+                      );
+                    },
+                    onError: (error) => {
+                      toast.enqueueSnackbar(error.message, {
+                        variant: "error",
+                      });
+                    },
+                  }
+                );
                 form.reset();
               }, console.warn)}
               onReset={() => form.reset()}
@@ -177,80 +333,58 @@ export const Hmis = () => {
           上传
         </Button>
       </CardContent>
-      <TableContainer sx={{ maxHeight: 560 }}>
+      <TableContainer>
         <Table>
           <TableHead>
-            <TableRow>
-              <TableCell padding="checkbox">
-                <Checkbox indeterminate />
-              </TableCell>
-              <TableCell>ID</TableCell>
-              <TableCell>单号</TableCell>
-              <TableCell>轴号</TableCell>
-              <TableCell>时间</TableCell>
-              <TableCell>已上传</TableCell>
-              <TableCell>操作</TableCell>
-            </TableRow>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
           </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell padding="checkbox">
-                <Checkbox />
-              </TableCell>
-              <TableCell>#1</TableCell>
-              <TableCell>43513511354131</TableCell>
-              <TableCell>29171</TableCell>
-              <TableCell>{new Date().toLocaleString()}</TableCell>
-              <TableCell>
-                <ClearOutlined />
-              </TableCell>
-              <TableCell>
-                <IconButton>
-                  <MoreVertOutlined />
-                </IconButton>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell padding="checkbox">
-                <Checkbox />
-              </TableCell>
-              <TableCell>#2</TableCell>
-              <TableCell>43513511354131</TableCell>
-              <TableCell>29171</TableCell>
-              <TableCell>{new Date().toLocaleString()}</TableCell>
-              <TableCell>
-                <CheckOutlined />
-              </TableCell>
-              <TableCell>
-                <IconButton>
-                  <MoreVertOutlined />
-                </IconButton>
-              </TableCell>
-            </TableRow>
-          </TableBody>
+          <TableBody>{renderRow()}</TableBody>
           <TableFooter>
-            <TableRow>
-              <TableCell padding="checkbox">
-                <Checkbox indeterminate />
-              </TableCell>
-              <TableCell>Footer</TableCell>
-              <TableCell>Footer</TableCell>
-              <TableCell>Footer</TableCell>
-              <TableCell>Footer</TableCell>
-              <TableCell>Footer</TableCell>
-              <TableCell>Footer</TableCell>
-            </TableRow>
+            {table.getFooterGroups().map((footerGroup) => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
           </TableFooter>
         </Table>
       </TableContainer>
       <TablePagination
         component={"div"}
-        page={0}
-        count={100}
-        rowsPerPage={10}
+        page={table.getState().pagination.pageIndex}
+        count={table.getRowCount()}
+        rowsPerPage={table.getState().pagination.pageSize}
         rowsPerPageOptions={[10, 20, 30]}
-        onPageChange={() => {}}
-        onRowsPerPageChange={() => {}}
+        onPageChange={(e, page) => {
+          void e;
+          table.setPageIndex(page);
+        }}
+        onRowsPerPageChange={(e) => {
+          table.setPageSize(Number.parseInt(e.target.value, 10));
+        }}
         labelRowsPerPage="每页行数"
       />
     </Card>

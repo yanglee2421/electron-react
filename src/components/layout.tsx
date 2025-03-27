@@ -177,7 +177,11 @@ const ModeToggle = () => {
       <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
         {renderModeIcon(mode)}
       </IconButton>
-      <Menu open={!!anchorEl} anchorEl={anchorEl}>
+      <Menu
+        open={!!anchorEl}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+      >
         <MenuItem
           onClick={() => {
             set({ mode: "light" });

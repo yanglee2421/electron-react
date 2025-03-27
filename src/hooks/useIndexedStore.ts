@@ -17,8 +17,17 @@ type Settings = {
   autoUpload: boolean;
 };
 
+type GetRecord = {
+  id: string;
+  barCode: string;
+  zh: string;
+  date: string;
+  isUploaded: boolean;
+};
+
 type StoreState = {
   settings: Settings;
+  getRecords: GetRecord[];
 };
 
 type StoreActions = {
@@ -45,6 +54,7 @@ export const useIndexedStore = create<Store>()(
         autoInput: true,
         autoUpload: true,
       },
+      getRecords: [],
     })),
     {
       name: "useIndexedStore",
