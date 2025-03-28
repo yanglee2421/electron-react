@@ -17,3 +17,4 @@ export const openPath = "openPath";
 export const openDevTools = "openDevTools";
 export const ipcRenderer = "ipcRenderer";
 export const webUtils = "webUtils";
+export const log = "log";

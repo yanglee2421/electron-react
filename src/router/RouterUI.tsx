@@ -1,59 +1,62 @@
 import {
   createHashRouter,
-  Navigate,
   Outlet,
   RouteObject,
   RouterProvider,
-  useLocation,
-  useParams,
 } from "react-router";
 import { AuthLayout } from "@/components/layout";
 import React from "react";
 import { NprogressBar } from "@/components/NprogressBar";
-import { useIndexedStoreHasHydrated } from "@/hooks/useIndexedStore";
+import {
+  useIndexedStore,
+  useIndexedStoreHasHydrated,
+} from "@/hooks/useIndexedStore";
 import { Box, CircularProgress } from "@mui/material";
+import { ipcRenderer } from "@/lib/utils";
+import * as channel from "@electron/channel";
+import dayjs from "dayjs";
+import type { Log } from "@/hooks/useIndexedStore";
 
-const LANGS = new Set(["en", "zh"]);
-const FALLBACK_LANG = "en";
-const getMatchedLang = (path = "", state: string) => {
-  if (LANGS.has(path)) {
-    return path;
-  }
+const LogWrapper = (props: React.PropsWithChildren) => {
+  const set = useIndexedStore((s) => s.set);
 
-  if (LANGS.has(state)) {
-    return state;
-  }
+  React.useEffect(() => {
+    const listener = (e: unknown, data: Log) => {
+      void e;
+      set((d) => {
+        // Remove logs that are not today
+        d.logs = d.logs.filter((i) =>
+          dayjs(i.date).isAfter(dayjs().startOf("day"))
+        );
 
-  return FALLBACK_LANG;
-};
+        // Add new log
+        d.logs.push(data);
 
-export const LangWrapper = (props: React.PropsWithChildren) => {
-  const params = useParams();
-  const location = useLocation();
-  const matchedLang = getMatchedLang(params.lang, "zh");
+        // Deduplicate logs by id
+        const map = new Map<string, Log>();
+        d.logs.forEach((i) => {
+          map.set(i.id, i);
+        });
+        d.logs = Array.from(map.values());
+      });
+    };
 
-  if (matchedLang !== params.lang) {
-    return (
-      <Navigate
-        to={{
-          pathname: `/${matchedLang + location.pathname}`,
-          search: location.search,
-          hash: location.hash,
-        }}
-        state={location.state}
-        replace
-      />
-    );
-  }
+    ipcRenderer.on(channel.log, listener);
+
+    return () => {
+      ipcRenderer.off(channel.log, listener);
+    };
+  }, [set]);
 
   return props.children;
 };
 
 export const RootRoute = () => {
   return (
-    <LangWrapper>
+    <>
+      <NprogressBar />
       <Outlet />
-    </LangWrapper>
+    </>
   );
 };
 
@@ -81,8 +84,7 @@ const AuthWrapper = () => {
 
   return (
     <AuthLayout>
-      <NprogressBar />
-      {renderOutlet(hasHydrated)}
+      <LogWrapper>{renderOutlet(hasHydrated)}</LogWrapper>
     </AuthLayout>
   );
 };
@@ -90,7 +92,7 @@ const AuthWrapper = () => {
 const routes: RouteObject[] = [
   {
     id: "root",
-    path: ":lang?",
+    path: "",
     Component: RootRoute,
     children: [
       {

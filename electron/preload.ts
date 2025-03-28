@@ -9,13 +9,9 @@ contextBridge.exposeInMainWorld(channel.ipcRenderer, {
   send: ipcRenderer.send.bind(ipcRenderer),
   invoke: ipcRenderer.invoke.bind(ipcRenderer),
   removeAllListeners: ipcRenderer.removeAllListeners.bind(ipcRenderer),
+  listenerCount: ipcRenderer.listenerCount.bind(ipcRenderer),
 });
 
 contextBridge.exposeInMainWorld(channel.webUtils, {
   getPathForFile: webUtils.getPathForFile.bind(webUtils),
 });
-
-// contextBridge.exposeInMainWorld("os", {
-//   totalmem: os.totalmem.bind(os),
-//   freemem: os.freemem.bind(os),
-// });

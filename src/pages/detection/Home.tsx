@@ -14,16 +14,12 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
-import { fetchDetections, useUploadById } from "./fetchers";
+import { fetchDetections } from "./fetchers";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 import {
   createColumnHelper,
@@ -34,62 +30,10 @@ import {
 } from "@tanstack/react-table";
 import type { Detection } from "@/api/database_types";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
-import {
-  MoreVertOutlined,
-  RefreshOutlined,
-  CloudUploadOutlined,
-} from "@mui/icons-material";
+import { RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT } from "@/lib/constants";
-import { useSnackbar } from "notistack";
 
 const initDate = () => dayjs();
-
-type ActionCellProps = {
-  id: string;
-};
-
-const ActionCell = (props: ActionCellProps) => {
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-
-  const uploadById = useUploadById();
-  const snackbar = useSnackbar();
-
-  const handleClose = () => setAnchorEl(null);
-
-  return (
-    <>
-      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-        <MoreVertOutlined />
-      </IconButton>
-      <Menu open={!!anchorEl} onClose={handleClose} anchorEl={anchorEl}>
-        <MenuItem
-          onClick={() => {
-            uploadById.mutate(props.id, {
-              onError(error) {
-                snackbar.enqueueSnackbar(error.message, {
-                  variant: "error",
-                });
-              },
-              onSuccess(data) {
-                console.log(data);
-
-                snackbar.enqueueSnackbar("上传成功", {
-                  variant: "success",
-                });
-                handleClose();
-              },
-            });
-          }}
-        >
-          <ListItemIcon>
-            <CloudUploadOutlined />
-          </ListItemIcon>
-          <ListItemText primary="上传" />
-        </MenuItem>
-      </Menu>
-    </>
-  );
-};
 
 const columnHelper = createColumnHelper<Detection>();
 
@@ -108,11 +52,6 @@ const columns = [
     },
   }),
   columnHelper.accessor("szResult", { header: "检测结果" }),
-  columnHelper.display({
-    id: "action",
-    header: "操作",
-    cell: ({ row }) => <ActionCell id={row.getValue("szIDs")} />,
-  }),
 ];
 
 export const Home = () => {

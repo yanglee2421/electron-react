@@ -10,13 +10,13 @@ import {
   runWinword,
   execFileAsync,
   getDataFromAccessDatabase,
+  getIP,
+  getDeviceNo,
 } from "./lib";
 import dayjs from "dayjs";
 import * as consts from "@/lib/constants";
 import * as hxzyHmis from "./hxzy_hmis";
 import type {
-  Detection,
-  DetectionData,
   GetDataFromAccessDatabaseParams,
   UploadParams,
 } from "@/api/database_types";
@@ -95,27 +95,53 @@ app.on("activate", () => {
 
 app.whenReady().then(createWindow);
 
-ipcMain.handle(channel.openDevTools, () => {
+ipcMain.handle(channel.openDevTools, async () => {
   if (!win) return;
-  win.webContents.openDevTools();
+  try {
+    win.webContents.openDevTools();
+  } catch (error) {
+    throwError(error);
+  }
 });
 
 ipcMain.handle(channel.openPath, async (e, path: string) => {
   void e;
-  const data = await shell.openPath(path);
-  return data;
+  try {
+    const data = await shell.openPath(path);
+    return data;
+  } catch (error) {
+    throwError(error);
+  }
 });
 
-ipcMain.handle(channel.getCpuSerial, getCpuSerial);
-ipcMain.handle(channel.getMotherboardSerial, getMotherboardSerial);
+ipcMain.handle(channel.getCpuSerial, async () => {
+  try {
+    const data = await getCpuSerial();
+    return data;
+  } catch (error) {
+    throwError(error);
+  }
+});
+
+ipcMain.handle(channel.getMotherboardSerial, async () => {
+  try {
+    const data = await getMotherboardSerial();
+    return data;
+  } catch (error) {
+    throwError(error);
+  }
+});
 
 ipcMain.handle(
   channel.hxzy_hmis_get_data,
   async (e, params: hxzyHmis.GetRequest) => {
-    // ?type=csbts&param=91022070168
     void e;
-    const data = await hxzyHmis.getFn(params);
-    return data;
+    try {
+      const data = await hxzyHmis.getFn(params);
+      return data;
+    } catch (error) {
+      throwError(error);
+    }
   }
 );
 
@@ -124,64 +150,44 @@ ipcMain.handle(channel.hxzy_hmis_save_data, async (e, params: UploadParams) => {
   try {
     const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
     const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
-
-    const detections = await getDataFromAccessDatabase<Detection>({
+    const eq_ip = getIP();
+    const deviceNo = await getDeviceNo({
       driverPath: params.driverPath,
       databasePath: params.databasePath,
-      sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
     });
 
-    const detection = detections[0];
+    const settledData = await Promise.allSettled(
+      params.records.map((record) =>
+        hxzyHmis.recordToUploadParams(
+          record,
+          eq_ip,
+          deviceNo || "",
+          startDate,
+          endDate,
+          params.driverPath,
+          params.databasePath
+        )
+      )
+    );
 
-    if (!detection) {
-      throwError("未找到该车轮编号的检测记录");
+    const data = settledData
+      .filter((i) => i.status === "fulfilled")
+      .map((i) => i.value);
+
+    const dhs = data.map((i) => i.dh);
+
+    if (!data.length) {
+      throw `单号[${dhs.join(",")}],均未找到对应的记录`;
     }
 
-    const detectionDatas = await getDataFromAccessDatabase<DetectionData>({
-      driverPath: params.driverPath,
-      databasePath: params.databasePath,
-      sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
-    });
-
-    const data = {
-      detection,
-      detectionDatas,
-    };
-
-    const user = detection.szUsername || "";
-
-    data.detectionDatas.forEach((detectionData) => {
-      console.log(detectionData.nChannel);
-    });
-
     const request: hxzyHmis.PostRequest = {
-      data: [
-        {
-          eq_ip: "",
-          eq_bh: "",
-          dh: params.dh,
-          zx: detection.szWHModel || "",
-          zh: detection.szIDsWheel || "",
-          TSFF: "超声波",
-          TSSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-          TFLAW_PLACE: "",
-          TFLAW_TYPE: "",
-          TVIEW: "",
-          CZCTZ: user,
-          CZCTY: user,
-          LZXRBZ: user,
-          LZXRBY: user,
-          XHCZ: user,
-          XHCY: user,
-          TSZ: user,
-          TSZY: user,
-          CT_RESULT: detection.szResult || "",
-        },
-      ],
+      data,
       host: params.host,
     };
 
-    return request;
+    const result = await hxzyHmis.postFn(request);
+
+    return { result, dhs };
   } catch (e) {
     throwError(e);
   }
@@ -207,7 +213,7 @@ ipcMain.handle(channel.autoInputToVC, async (e, data: AutoInputToVCParams) => {
     ]);
 
     if (cp.stderr) {
-      throwError(cp.stderr);
+      throw cp.stderr;
     }
 
     return cp.stdout;
@@ -246,11 +252,15 @@ ipcMain.handle(
 );
 
 ipcMain.handle(channel.mem, async () => {
-  const processMemoryInfo = await process.getProcessMemoryInfo();
-  const freemem = processMemoryInfo.residentSet;
+  try {
+    const processMemoryInfo = await process.getProcessMemoryInfo();
+    const freemem = processMemoryInfo.residentSet;
 
-  return {
-    totalmem: process.getSystemMemoryInfo().total,
-    freemem,
-  };
+    return {
+      totalmem: process.getSystemMemoryInfo().total,
+      freemem,
+    };
+  } catch (error) {
+    throwError(error);
+  }
 });

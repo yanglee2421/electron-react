@@ -1,21 +1,43 @@
-import { exec, execFile } from "node:child_process";
+import { networkInterfaces } from "node:os";
 import { promisify } from "node:util";
+import { exec, execFile } from "node:child_process";
 import { access, constants } from "node:fs/promises";
-// import { generateKeyPair, publicEncrypt, privateEncrypt } from "node:crypto";
+import { randomUUID } from "node:crypto";
+import { BrowserWindow } from "electron";
+import * as channel from "./channel";
+import type { Corporation } from "@/api/database_types";
+import type { Log } from "@/hooks/useIndexedStore";
 
 export const execAsync = promisify(exec);
 export const execFileAsync = promisify(execFile);
 
+export const log = (message: string, type = "info") => {
+  const data: Log = {
+    id: randomUUID(),
+    date: new Date().toISOString(),
+    message,
+    type,
+  };
+
+  BrowserWindow.getAllWindows().forEach((win) => {
+    win.webContents.send(channel.log, data);
+  });
+};
+
 export const throwError = (error: unknown) => {
   if (error instanceof Error) {
+    log(error.message, "error");
     throw error.message;
   }
 
   if (typeof error === "string") {
+    log(error, "error");
     throw error;
   }
 
-  throw String(error);
+  const msg = String(error);
+  log(msg, "error");
+  throw msg;
 };
 
 export const getCpuSerial = async () => {
@@ -25,7 +47,7 @@ export const getCpuSerial = async () => {
   );
 
   if (data.stderr) {
-    throwError(data.stderr);
+    throw data.stderr;
   }
 
   return data.stdout;
@@ -38,7 +60,7 @@ export const getMotherboardSerial = async () => {
   );
 
   if (data.stderr) {
-    throwError(data.stderr);
+    throw data.stderr;
   }
 
   return data.stdout;
@@ -98,8 +120,44 @@ export const getDataFromAccessDatabase = async <T = unknown>(params: {
   ]);
 
   if (data.stderr) {
-    throwError(data.stderr);
+    throw data.stderr;
   }
 
   return JSON.parse(data.stdout) as T[];
+};
+
+export const getIP = () => {
+  const interfaces = networkInterfaces();
+  const IP = Object.values(interfaces)
+    .flat()
+    .find((i) => {
+      if (!i) return false;
+
+      if (i.family !== "IPv4") {
+        return false;
+      }
+
+      return !i.internal;
+    })?.address;
+
+  return IP || "";
+};
+
+type GetDeviceNoParams = {
+  driverPath: string;
+  databasePath: string;
+};
+
+export const getDeviceNo = async (params: GetDeviceNoParams) => {
+  const [corporation] = await getDataFromAccessDatabase<Corporation>({
+    driverPath: params.driverPath,
+    databasePath: params.databasePath,
+    sql: "SELECT TOP 1 * FROM corporation",
+  });
+
+  if (!corporation) {
+    throw "未找到公司信息";
+  }
+
+  return corporation.DeviceNO;
 };

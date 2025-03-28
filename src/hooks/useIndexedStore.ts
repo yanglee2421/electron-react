@@ -12,6 +12,13 @@ type Settings = {
   home_path: string;
 };
 
+export type Log = {
+  id: string;
+  type: string;
+  message: string;
+  date: string;
+};
+
 export type History = {
   id: string;
   barCode: string;
@@ -38,6 +45,7 @@ type JTV_HMIS = {
 
 type StoreState = {
   settings: Settings;
+  logs: Log[];
   hxzy_hmis: HXZY_HMIS;
   jtv_hmis: JTV_HMIS;
 };
@@ -63,6 +71,7 @@ export const useIndexedStore = create<Store>()(
         activate_key: "",
         home_path: "/settings",
       },
+      logs: [],
       hxzy_hmis: {
         host: "",
         history: [],
@@ -81,7 +90,7 @@ export const useIndexedStore = create<Store>()(
     {
       name: "useIndexedStore",
       storage: createJSONStorage(() => localforage),
-      version: 3,
+      version: 4,
     }
   )
 );

@@ -30,6 +30,7 @@ import {
   Menu,
   ListItemIcon,
   ListItemText,
+  Stack,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -50,6 +51,7 @@ import type { History } from "@/hooks/useIndexedStore";
 
 type ActionCellProps = {
   id: string;
+  dh: string;
   zh: string;
 };
 
@@ -74,11 +76,15 @@ const ActionCell = (props: ActionCellProps) => {
           onClick={() => {
             saveData.mutate(
               {
-                dh: props.id,
-                zh: props.zh,
                 databasePath: settings.databasePath,
                 driverPath: settings.driverPath,
                 host: hmis.host,
+                records: [
+                  {
+                    dh: props.dh,
+                    zh: props.zh,
+                  },
+                ],
               },
               {
                 onError(error) {
@@ -184,7 +190,11 @@ const columns = [
     id: "action",
     header: "操作",
     cell: ({ row }) => (
-      <ActionCell id={row.getValue("barCode")} zh={row.getValue("zh")} />
+      <ActionCell
+        id={row.getValue("id")}
+        dh={row.getValue("barCode")}
+        zh={row.getValue("zh")}
+      />
     ),
   }),
 ];
@@ -199,8 +209,9 @@ export const Component = () => {
   const saveData = useSaveData();
   const snackbar = useSnackbar();
   const autoInput = useAutoInputToVC();
-  const setting = useIndexedStore((s) => s.settings);
+  const set = useIndexedStore((s) => s.set);
   const hmis = useIndexedStore((s) => s.hxzy_hmis);
+  const setting = useIndexedStore((s) => s.settings);
   const history = useIndexedStore((s) => s.hxzy_hmis.history);
 
   const table = useReactTable({
@@ -211,23 +222,25 @@ export const Component = () => {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
+  const selectedRows = table.getSelectedRowModel().flatRows;
+  const noSelectedRow = !selectedRows.length;
+
   React.useEffect(() => {
     if (!hmis.autoUpload) return;
 
     const timer = setInterval(async () => {
-      for (const row of history) {
-        await saveData
-          .mutateAsync({
-            dh: row.barCode,
-            zh: row.zh,
-            databasePath: setting.databasePath,
-            driverPath: setting.driverPath,
-            host: hmis.host,
-          })
-          .catch(Boolean);
-      }
+      saveData.mutate({
+        databasePath: setting.databasePath,
+        driverPath: setting.driverPath,
+        host: hmis.host,
+        records: history
+          .filter((row) => !row.isUploaded)
+          .map((row) => ({ dh: row.barCode, zh: row.zh })),
+      });
     }, 1000 * 30);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+    };
   }, [
     hmis.autoUpload,
     history,
@@ -361,9 +374,51 @@ export const Component = () => {
       </CardContent>
       <Divider />
       <CardContent>
-        <Button variant="outlined" startIcon={<CloudUploadOutlined />}>
-          上传
-        </Button>
+        <Stack direction={"row"} spacing={3}>
+          <Button
+            onClick={() => {
+              saveData.mutate(
+                {
+                  databasePath: setting.databasePath,
+                  driverPath: setting.driverPath,
+                  host: hmis.host,
+                  records: selectedRows.map((row) => ({
+                    dh: row.original.barCode,
+                    zh: row.original.zh,
+                  })),
+                },
+                {
+                  onError(error) {
+                    snackbar.enqueueSnackbar(error.message, {
+                      variant: "error",
+                    });
+                  },
+                }
+              );
+            }}
+            disabled={noSelectedRow || saveData.isPending}
+            variant="outlined"
+            startIcon={<CloudUploadOutlined />}
+          >
+            上传
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<DeleteOutlined />}
+            color="error"
+            disabled={noSelectedRow}
+            onClick={() => {
+              const deleteIds = new Set(selectedRows.map((i) => i.id));
+              set((d) => {
+                d.hxzy_hmis.history = d.hxzy_hmis.history.filter(
+                  (i) => !deleteIds.has(i.id)
+                );
+              });
+            }}
+          >
+            删除
+          </Button>
+        </Stack>
       </CardContent>
       <TableContainer>
         <Table>

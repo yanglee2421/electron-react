@@ -3,6 +3,7 @@ import { ipcRenderer } from "@/lib/utils";
 import * as channel from "@electron/channel";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 import dayjs from "dayjs";
+import { useSnackbar } from "notistack";
 import type { UploadParams } from "@/api/database_types";
 import type {
   GetRequest,
@@ -60,6 +61,7 @@ export const useGetData = () => {
 
 export const useSaveData = () => {
   const set = useIndexedStore((s) => s.set);
+  const snackbar = useSnackbar();
 
   return useMutation({
     mutationFn: async (params: UploadParams) => {
@@ -67,14 +69,19 @@ export const useSaveData = () => {
         channel.hxzy_hmis_save_data,
         params
       );
-      return data as PostResponse;
+      return data as { result: PostResponse; dhs: string[] };
     },
-    onSuccess(data, variables) {
-      if (data.code !== "200") return;
+    onSuccess(data) {
+      if (data.result.code !== "200") {
+        snackbar.enqueueSnackbar(data.result.msg, { variant: "error" });
+        return;
+      }
+
+      const records = new Set(data.dhs);
 
       set((d) => {
         d.hxzy_hmis.history.forEach((row) => {
-          if (row.barCode === variables.dh) {
+          if (records.has(row.barCode)) {
             row.isUploaded = true;
           }
         });

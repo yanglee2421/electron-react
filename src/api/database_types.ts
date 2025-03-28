@@ -38,6 +38,10 @@ export type DetectionData = {
   opid: string | null;
 };
 
+export type Corporation = {
+  DeviceNO: string | null;
+};
+
 export type GetDataFromAccessDatabaseParams = {
   driverPath: string;
   databasePath: string;
@@ -45,7 +49,9 @@ export type GetDataFromAccessDatabaseParams = {
 };
 
 export type UploadParams = Omit<GetDataFromAccessDatabaseParams, "query"> & {
-  zh: string;
-  dh: string;
   host: string;
+  records: {
+    dh: string;
+    zh: string;
+  }[];
 };

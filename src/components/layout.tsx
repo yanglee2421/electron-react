@@ -24,12 +24,7 @@ import {
   DarkModeOutlined,
   LightModeOutlined,
 } from "@mui/icons-material";
-import {
-  NavLink,
-  useLocation,
-  useParams,
-  Link as RouterLink,
-} from "react-router";
+import { NavLink, useLocation, Link as RouterLink } from "react-router";
 import React from "react";
 import { useLocalStore } from "@/hooks/useLocalStore";
 
@@ -92,12 +87,10 @@ const list = [
 ];
 
 export const NavMenu = () => {
-  const params = useParams();
-
   return (
     <LinkWrapper>
       {list.map((i) => (
-        <NavLink key={i.to} to={`/${params.lang + i.to}`} end>
+        <NavLink key={i.to} to={i.to} end>
           {i.icon}
           <Typography variant="body1" component="span">
             {i.label}

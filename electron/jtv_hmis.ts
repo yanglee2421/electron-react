@@ -1,7 +1,6 @@
 // 京天威统型
 
 import { net } from "electron";
-import { throwError } from "./lib";
 
 export type GetResponse = {
   code: "200";
@@ -38,7 +37,7 @@ export const getFn = async (request: GetRequest) => {
   url.searchParams.set("param", request.barCode);
   const res = await net.fetch(url.href, { method: "GET" });
   if (!res.ok) {
-    throwError("接口状态异常:" + res.statusText);
+    throw `接口异常[${res.status}]:${res.statusText}`;
   }
   const data: GetResponse = await res.json();
   return data;
@@ -85,7 +84,7 @@ export const postFn = async (request: PostRequest) => {
     body: JSON.stringify(request.data),
   });
   if (!res.ok) {
-    throwError("接口状态异常:" + res.statusText);
+    throw `接口异常[${res.status}]:${res.statusText}`;
   }
   const data: PostResponse = await res.json();
   return data;
