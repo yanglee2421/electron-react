@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import * as channel from "./channel";
 import {
-  throwError,
   getCpuSerial,
   getMotherboardSerial,
   runWinword,
@@ -12,6 +11,7 @@ import {
   getDataFromAccessDatabase,
   getIP,
   getDeviceNo,
+  withLog,
 } from "./lib";
 import dayjs from "dayjs";
 import * as consts from "@/lib/constants";
@@ -92,130 +92,115 @@ app.on("activate", () => {
 
 app.whenReady().then(createWindow);
 
-ipcMain.handle(channel.openDevTools, async () => {
-  if (!win) return;
-  try {
+ipcMain.handle(
+  channel.openDevTools,
+  withLog(async () => {
+    if (!win) return;
     win.webContents.openDevTools();
-  } catch (error) {
-    throwError(error);
-  }
-});
+  })
+);
 
-ipcMain.handle(channel.openPath, async (e, path: string) => {
-  void e;
-  try {
+ipcMain.handle(
+  channel.openPath,
+  withLog(async (e, path: string) => {
+    void e;
     const data = await shell.openPath(path);
     return data;
-  } catch (error) {
-    throwError(error);
-  }
-});
+  })
+);
 
-ipcMain.handle(channel.getCpuSerial, async () => {
-  try {
+ipcMain.handle(
+  channel.getCpuSerial,
+  withLog(async () => {
     const data = await getCpuSerial();
     return data;
-  } catch (error) {
-    throwError(error);
-  }
-});
+  })
+);
 
-ipcMain.handle(channel.getMotherboardSerial, async () => {
-  try {
+ipcMain.handle(
+  channel.getMotherboardSerial,
+  withLog(async () => {
     const data = await getMotherboardSerial();
     return data;
-  } catch (error) {
-    throwError(error);
-  }
-});
+  })
+);
 
 ipcMain.handle(
   channel.hxzy_hmis_get_data,
-  async (e, params: hxzyHmis.GetRequest) => {
+  withLog(async (e, params: hxzyHmis.GetRequest) => {
     void e;
-    try {
-      const data = await hxzyHmis.getFn(params);
-      return data;
-    } catch (error) {
-      throwError(error);
-    }
-  }
+    const data = await hxzyHmis.getFn(params);
+    return data;
+  })
 );
 
 ipcMain.handle(
   channel.hxzy_hmis_save_data,
-  async (e, params: hxzyHmis.SaveDataParams) => {
+  withLog(async (e, params: hxzyHmis.SaveDataParams) => {
     void e;
-    try {
-      const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
-      const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
-      const eq_ip = getIP();
-      const deviceNo = await getDeviceNo({
-        driverPath: params.driverPath,
-        databasePath: params.databasePath,
-      });
+    const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
+    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
+    const eq_ip = getIP();
+    const deviceNo = await getDeviceNo({
+      driverPath: params.driverPath,
+      databasePath: params.databasePath,
+    });
 
-      const settledData = await Promise.allSettled(
-        params.records.map((record) =>
-          hxzyHmis.recordToSaveDataParams(
-            record,
-            eq_ip,
-            deviceNo || "",
-            startDate,
-            endDate,
-            params.driverPath,
-            params.databasePath
-          )
+    const settledData = await Promise.allSettled(
+      params.records.map((record) =>
+        hxzyHmis.recordToSaveDataParams(
+          record,
+          eq_ip,
+          deviceNo || "",
+          startDate,
+          endDate,
+          params.driverPath,
+          params.databasePath
         )
-      );
+      )
+    );
 
-      const data = settledData
-        .filter((i) => i.status === "fulfilled")
-        .map((i) => i.value);
+    const data = settledData
+      .filter((i) => i.status === "fulfilled")
+      .map((i) => i.value);
 
-      const dhs = data.map((i) => i.dh);
+    const dhs = data.map((i) => i.dh);
 
-      if (!data.length) {
-        throw `单号[${dhs.join(",")}],均未找到对应的记录`;
-      }
-
-      const request: hxzyHmis.PostRequest = {
-        data,
-        host: params.host,
-      };
-
-      const result = await hxzyHmis.postFn(request);
-
-      return { result, dhs };
-    } catch (e) {
-      throwError(e);
+    if (!data.length) {
+      throw `单号[${dhs.join(",")}],均未找到对应的记录`;
     }
-  }
+
+    const request: hxzyHmis.PostRequest = {
+      data,
+      host: params.host,
+    };
+
+    const result = await hxzyHmis.postFn(request);
+
+    return { result, dhs };
+  })
 );
 
 ipcMain.handle(
   channel.hxzy_hmis_upload_verifies,
-  async (e, params: hxzyHmis.UploadVerifiesParams) => {
+  withLog(async (e, params: hxzyHmis.UploadVerifiesParams) => {
     void e;
-    try {
-      const data = await hxzyHmis.idToUploadVerifiesData(
-        params.id,
-        params.driverPath,
-        params.databasePath
-      );
+    const data = await hxzyHmis.idToUploadVerifiesData(
+      params.id,
+      params.driverPath,
+      params.databasePath
+    );
 
-      return data;
-    } catch (e) {
-      throwError(e);
-    }
-  }
+    return data;
+  })
 );
 
-ipcMain.handle(channel.autoInputToVC, async (e, data: AutoInputToVCParams) => {
-  void e;
-  const exePath = data.driverPath;
+ipcMain.handle(
+  channel.autoInputToVC,
+  withLog(async (e, data: AutoInputToVCParams) => {
+    void e;
+    const exePath = data.driverPath;
 
-  try {
     const cp = await execFileAsync(exePath, [
       "autoInputToVC",
       data.zx,
@@ -235,42 +220,36 @@ ipcMain.handle(channel.autoInputToVC, async (e, data: AutoInputToVCParams) => {
     }
 
     return cp.stdout;
-  } catch (error) {
-    throwError(error);
-  }
-});
+  })
+);
 
-ipcMain.handle(channel.printer, async (e, data: string) => {
-  void e;
-  try {
+ipcMain.handle(
+  channel.printer,
+  withLog(async (e, data: string) => {
+    void e;
     const cp = await runWinword(data).catch(() => shell.openPath(data));
     return cp;
-  } catch (error) {
-    throwError(error);
-  }
-});
+  })
+);
 
 ipcMain.handle(
   channel.getDataFromAccessDatabase,
-  async (e, params: GetDataFromAccessDatabaseParams) => {
+  withLog(async (e, params: GetDataFromAccessDatabaseParams) => {
     void e;
 
-    try {
-      const data = await getDataFromAccessDatabase({
-        driverPath: params.driverPath,
-        databasePath: params.databasePath,
-        sql: params.query,
-      });
+    const data = await getDataFromAccessDatabase({
+      driverPath: params.driverPath,
+      databasePath: params.databasePath,
+      sql: params.query,
+    });
 
-      return data;
-    } catch (e) {
-      throwError(e);
-    }
-  }
+    return data;
+  })
 );
 
-ipcMain.handle(channel.mem, async () => {
-  try {
+ipcMain.handle(
+  channel.mem,
+  withLog(async () => {
     const processMemoryInfo = await process.getProcessMemoryInfo();
     const freemem = processMemoryInfo.residentSet;
 
@@ -278,7 +257,5 @@ ipcMain.handle(channel.mem, async () => {
       totalmem: process.getSystemMemoryInfo().total,
       freemem,
     };
-  } catch (error) {
-    throwError(error);
-  }
-});
+  })
+);

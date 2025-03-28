@@ -23,8 +23,6 @@ import { useForm, Controller } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
-import * as channel from "@electron/channel";
-import { ipcRenderer, webUtils } from "@/lib/utils";
 import { useSnackbar } from "notistack";
 
 const schema = z.object({
@@ -44,8 +42,6 @@ const useSettingForm = (defaultValues: FormValues) =>
 
 export const Component = () => {
   const formId = React.useId();
-
-  const [isPending, startTransition] = React.useTransition();
 
   const settings = useIndexedStore((s) => s.settings);
   const set = useIndexedStore((s) => s.set);
@@ -71,11 +67,8 @@ export const Component = () => {
             title="设置"
             action={
               <IconButton
-                disabled={isPending}
                 onClick={() => {
-                  startTransition(() =>
-                    ipcRenderer.invoke(channel.openDevTools)
-                  );
+                  window.electronAPI.openDevTools();
                 }}
               >
                 <BugReportOutlined />
@@ -110,7 +103,7 @@ export const Component = () => {
                                     if (!file) return;
 
                                     field.onChange(
-                                      webUtils.getPathForFile(file)
+                                      window.electronAPI.getPathForFile(file)
                                     );
                                   }}
                                 />
@@ -150,7 +143,7 @@ export const Component = () => {
                                     if (!file) return;
 
                                     field.onChange(
-                                      webUtils.getPathForFile(file)
+                                      window.electronAPI.getPathForFile(file)
                                     );
                                   }}
                                 />

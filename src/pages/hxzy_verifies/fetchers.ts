@@ -1,18 +1,15 @@
-import { ipcRenderer } from "@/lib/utils";
 import { queryOptions, useMutation } from "@tanstack/react-query";
-import * as channel from "@electron/channel";
 import type {
   GetDataFromAccessDatabaseParams,
   Verify,
 } from "@/api/database_types";
-import type { UploadVerifiesParams } from "@electron/hxzy_hmis";
+import type { UploadVerifiesParams } from "#/electron/hxzy_hmis";
 
 export const fetchVerifies = (params: GetDataFromAccessDatabaseParams) =>
   queryOptions({
-    queryKey: [channel.getDataFromAccessDatabase, params],
+    queryKey: ["window.electronAPI.getDataFromAccessDatabase", params],
     queryFn: async () => {
-      const data: Verify[] = await ipcRenderer.invoke(
-        channel.getDataFromAccessDatabase,
+      const data = await window.electronAPI.getDataFromAccessDatabase<Verify>(
         params
       );
 
@@ -23,11 +20,7 @@ export const fetchVerifies = (params: GetDataFromAccessDatabaseParams) =>
 export const useUploadVerifies = () => {
   return useMutation({
     mutationFn: async (params: UploadVerifiesParams) => {
-      const data = await ipcRenderer.invoke(
-        channel.hxzy_hmis_upload_verifies,
-        params
-      );
-
+      const data = await window.electronAPI.hxzy_hmis_upload_verifies(params);
       return data;
     },
   });

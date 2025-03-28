@@ -24,20 +24,16 @@ export const log = (message: string, type = "info") => {
   });
 };
 
-export const throwError = (error: unknown) => {
+export const errorToMessage = (error: unknown) => {
   if (error instanceof Error) {
-    log(error.message, "error");
-    throw error.message;
+    return error.message;
   }
 
   if (typeof error === "string") {
-    log(error, "error");
-    throw error;
+    return error;
   }
 
-  const msg = String(error);
-  log(msg, "error");
-  throw msg;
+  return String(error);
 };
 
 export const getCpuSerial = async () => {
@@ -73,20 +69,22 @@ const winword_paths = [
   "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
 ];
 
-const getWinword = async (path: string) => {
+export const verifyPath = async (path: string) => {
   await access(path, constants.R_OK);
   return path;
 };
 
 export const runWinword = async (data: string) => {
   const winwords = await Promise.allSettled(
-    winword_paths.map((path) => getWinword(path))
+    winword_paths.map((path) => verifyPath(path))
   );
 
-  const winword = winwords.find((i) => i.status === "fulfilled")?.value;
+  const winword = winwords.find(
+    (result) => result.status === "fulfilled"
+  )?.value;
 
   if (!winword) {
-    throw new Error("Find winword failed");
+    throw "Find winword failed";
   }
 
   const cp = await execFileAsync(
@@ -160,4 +158,24 @@ export const getDeviceNo = async (params: GetDeviceNoParams) => {
   }
 
   return corporation.DeviceNO;
+};
+
+export const withLog = <
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TCallback extends (...args: any[]) => Promise<unknown>
+>(
+  callback: TCallback
+): TCallback => {
+  const fn = async (...args: Parameters<TCallback>) => {
+    try {
+      return await callback(...args);
+    } catch (error) {
+      const message = errorToMessage(error);
+      log(message, "error");
+      // Throw message instead of error to avoid electron issue #24427
+      throw message;
+    }
+  };
+
+  return fn as TCallback;
 };

@@ -1,6 +1,4 @@
-import { ipcRenderer } from "@/lib/utils";
 import { queryOptions } from "@tanstack/react-query";
-import * as channel from "@electron/channel";
 import type {
   GetDataFromAccessDatabaseParams,
   Detection,
@@ -8,12 +6,10 @@ import type {
 
 export const fetchDetections = (params: GetDataFromAccessDatabaseParams) =>
   queryOptions({
-    queryKey: [channel.getDataFromAccessDatabase, params],
+    queryKey: ["window.electronAPI.getDataFromAccessDatabase", params],
     queryFn: async () => {
-      const data: Detection[] = await ipcRenderer.invoke(
-        channel.getDataFromAccessDatabase,
-        params
-      );
+      const data =
+        await window.electronAPI.getDataFromAccessDatabase<Detection>(params);
 
       return data;
     },

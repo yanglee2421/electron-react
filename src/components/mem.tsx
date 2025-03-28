@@ -7,17 +7,15 @@ import {
   useTheme,
 } from "@mui/material";
 import React from "react";
-import * as channel from "@electron/channel";
-import { ipcRenderer } from "@/lib/utils";
 import { useSize } from "@/hooks/useSize";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
 type Mem = { totalmem: number; freemem: number };
 const fetchMem = () =>
   queryOptions<Mem>({
-    queryKey: [channel.mem],
+    queryKey: ["window.electronAPI.getMem"],
     async queryFn() {
-      const data = await ipcRenderer.invoke(channel.mem);
+      const data = await window.electronAPI.getMem();
       return data;
     },
     networkMode: "offlineFirst",

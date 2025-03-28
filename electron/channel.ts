@@ -16,6 +16,4 @@ export const hxzy_hmis_upload_verifies = "hxzy_hmis_upload_verifies";
 export const mem = "mem";
 export const openPath = "openPath";
 export const openDevTools = "openDevTools";
-export const ipcRenderer = "ipcRenderer";
-export const webUtils = "webUtils";
 export const log = "log";

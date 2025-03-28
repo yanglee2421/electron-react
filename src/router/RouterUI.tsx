@@ -12,8 +12,6 @@ import {
   useIndexedStoreHasHydrated,
 } from "@/hooks/useIndexedStore";
 import { Box, CircularProgress } from "@mui/material";
-import { ipcRenderer } from "@/lib/utils";
-import * as channel from "@electron/channel";
 import dayjs from "dayjs";
 import type { Log } from "@/hooks/useIndexedStore";
 
@@ -21,8 +19,7 @@ const LogWrapper = (props: React.PropsWithChildren) => {
   const set = useIndexedStore((s) => s.set);
 
   React.useEffect(() => {
-    const listener = (e: unknown, data: Log) => {
-      void e;
+    const listener = (data: Log) => {
       set((d) => {
         // Remove logs that are not today
         d.logs = d.logs.filter((i) =>
@@ -41,10 +38,10 @@ const LogWrapper = (props: React.PropsWithChildren) => {
       });
     };
 
-    ipcRenderer.on(channel.log, listener);
+    const unsubscribe = window.electronAPI.subscribeLog(listener);
 
     return () => {
-      ipcRenderer.off(channel.log, listener);
+      unsubscribe();
     };
   }, [set]);
 

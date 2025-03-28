@@ -16,9 +16,7 @@ export default defineConfig({
           resolve: {
             alias: {
               "@": fileURLToPath(new URL("./src", import.meta.url)),
-              "@electron": fileURLToPath(
-                new URL("./electron", import.meta.url)
-              ),
+              "#": fileURLToPath(new URL("./", import.meta.url)),
             },
           },
         },
@@ -31,9 +29,7 @@ export default defineConfig({
           resolve: {
             alias: {
               "@": fileURLToPath(new URL("./src", import.meta.url)),
-              "@electron": fileURLToPath(
-                new URL("./electron", import.meta.url)
-              ),
+              "#": fileURLToPath(new URL("./", import.meta.url)),
             },
           },
         },
@@ -52,7 +48,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "@electron": fileURLToPath(new URL("./electron", import.meta.url)),
+      "#": fileURLToPath(new URL("./", import.meta.url)),
     },
   },
 });

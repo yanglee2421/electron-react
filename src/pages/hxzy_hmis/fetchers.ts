@@ -1,23 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
-import { ipcRenderer } from "@/lib/utils";
-import * as channel from "@electron/channel";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 import dayjs from "dayjs";
-import type {
-  GetRequest,
-  GetResponse,
-  PostResponse,
-  SaveDataParams,
-} from "@electron/hxzy_hmis";
+import type { GetRequest, SaveDataParams } from "#/electron/hxzy_hmis";
 import type { AutoInputToVCParams } from "@/api/autoInput_types";
 
 export const useAutoInputToVC = () => {
   return useMutation({
     mutationFn: async (params: AutoInputToVCParams) => {
-      const data: string = await ipcRenderer.invoke(
-        channel.autoInputToVC,
-        params
-      );
+      const data = await window.electronAPI.autoInputToVC(params);
       return data;
     },
   });
@@ -28,8 +18,8 @@ export const useGetData = () => {
 
   return useMutation({
     mutationFn: async (params: GetRequest) => {
-      const data = await ipcRenderer.invoke(channel.hxzy_hmis_get_data, params);
-      return data as GetResponse;
+      const data = await window.electronAPI.hxzy_hmis_get_data(params);
+      return data;
     },
     onSuccess(data) {
       set((d) => {
@@ -63,11 +53,8 @@ export const useSaveData = () => {
 
   return useMutation({
     mutationFn: async (params: SaveDataParams) => {
-      const data = await ipcRenderer.invoke(
-        channel.hxzy_hmis_save_data,
-        params
-      );
-      return data as { result: PostResponse; dhs: string[] };
+      const data = await window.electronAPI.hxzy_hmis_save_data(params);
+      return data;
     },
     onSuccess(data) {
       const records = new Set(data.dhs);
