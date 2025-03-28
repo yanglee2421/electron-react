@@ -3,12 +3,11 @@ import { ipcRenderer } from "@/lib/utils";
 import * as channel from "@electron/channel";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 import dayjs from "dayjs";
-import { useSnackbar } from "notistack";
-import type { UploadParams } from "@/api/database_types";
 import type {
   GetRequest,
   GetResponse,
   PostResponse,
+  SaveDataParams,
 } from "@electron/hxzy_hmis";
 import type { AutoInputToVCParams } from "@/api/autoInput_types";
 
@@ -61,10 +60,9 @@ export const useGetData = () => {
 
 export const useSaveData = () => {
   const set = useIndexedStore((s) => s.set);
-  const snackbar = useSnackbar();
 
   return useMutation({
-    mutationFn: async (params: UploadParams) => {
+    mutationFn: async (params: SaveDataParams) => {
       const data = await ipcRenderer.invoke(
         channel.hxzy_hmis_save_data,
         params
@@ -72,11 +70,6 @@ export const useSaveData = () => {
       return data as { result: PostResponse; dhs: string[] };
     },
     onSuccess(data) {
-      if (data.result.code !== "200") {
-        snackbar.enqueueSnackbar(data.result.msg, { variant: "error" });
-        return;
-      }
-
       const records = new Set(data.dhs);
 
       set((d) => {

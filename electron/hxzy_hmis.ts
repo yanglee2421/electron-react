@@ -3,7 +3,13 @@
 import { net } from "electron";
 import { throwError, getDataFromAccessDatabase, log } from "./lib";
 import dayjs from "dayjs";
-import type { Detection, DetectionData } from "@/api/database_types";
+import type {
+  Detection,
+  DetectionData,
+  Verify,
+  VerifyData,
+  DatabaseBaseParams,
+} from "@/api/database_types";
 
 export type GetResponse = {
   code: "200";
@@ -97,6 +103,9 @@ export const postFn = async (request: PostRequest) => {
   }
   const data: PostResponse = await res.json();
   log(`返回数据:${JSON.stringify(data)}`);
+  if (data.code !== "200") {
+    throw `接口异常[${data.code}]:${data.msg}`;
+  }
   return data;
 };
 
@@ -105,7 +114,15 @@ type Record = {
   zh: string;
 };
 
-export const recordToUploadParams = async (
+export type SaveDataParams = DatabaseBaseParams & {
+  host: string;
+  records: {
+    dh: string;
+    zh: string;
+  }[];
+};
+
+export const recordToSaveDataParams = async (
   record: Record,
   eq_ip: string,
   eq_bh: string,
@@ -121,12 +138,12 @@ export const recordToUploadParams = async (
   });
 
   if (!detection) {
-    throw `未找到轴号[${record.zh}]的检测记录`;
+    throw `未找到轴号[${record.zh}]的detections记录`;
   }
 
   const user = detection.szUsername || "";
   let detectionDatas: DetectionData[] = [];
-  let TFLAW_PLACE = "车轴";
+  let TFLAW_PLACE = "";
   let TFLAW_TYPE = "";
   let TVIEW = "";
 
@@ -134,14 +151,16 @@ export const recordToUploadParams = async (
     case "故障":
     case "有故障":
     case "疑似故障":
-      TVIEW = "人工复探";
+      TFLAW_PLACE = "车轴";
       TFLAW_TYPE = "裂纹";
+      TVIEW = "人工复探";
       detectionDatas = await getDataFromAccessDatabase<DetectionData>({
         driverPath,
         databasePath,
         sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
       });
       break;
+    default:
   }
 
   detectionDatas.forEach((detectionData) => {
@@ -184,5 +203,37 @@ export const recordToUploadParams = async (
     TSZ: user,
     TSZY: user,
     CT_RESULT: detection.szResult || "",
+  };
+};
+
+export type UploadVerifiesParams = DatabaseBaseParams & {
+  host: string;
+  id: string;
+};
+
+export const idToUploadVerifiesData = async (
+  id: string,
+  driverPath: string,
+  databasePath: string
+) => {
+  const [verifies] = await getDataFromAccessDatabase<Verify>({
+    databasePath,
+    driverPath,
+    sql: `SELECT * FROM verifies WHERE szIDs ='${id}'`,
+  });
+
+  if (!verifies) {
+    throw `未找到ID[${id}]的verifies记录`;
+  }
+
+  const verifiesData = await getDataFromAccessDatabase<VerifyData>({
+    databasePath,
+    driverPath,
+    sql: `SELECT * FROM verifies_data WHERE opid ='${verifies.szIDs}'`,
+  });
+
+  return {
+    verifies,
+    verifiesData,
   };
 };

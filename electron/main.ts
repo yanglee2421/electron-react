@@ -16,10 +16,7 @@ import {
 import dayjs from "dayjs";
 import * as consts from "@/lib/constants";
 import * as hxzyHmis from "./hxzy_hmis";
-import type {
-  GetDataFromAccessDatabaseParams,
-  UploadParams,
-} from "@/api/database_types";
+import type { GetDataFromAccessDatabaseParams } from "@/api/database_types";
 import type { AutoInputToVCParams } from "@/api/autoInput_types";
 
 // const require = createRequire(import.meta.url);
@@ -145,53 +142,74 @@ ipcMain.handle(
   }
 );
 
-ipcMain.handle(channel.hxzy_hmis_save_data, async (e, params: UploadParams) => {
-  void e;
-  try {
-    const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
-    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
-    const eq_ip = getIP();
-    const deviceNo = await getDeviceNo({
-      driverPath: params.driverPath,
-      databasePath: params.databasePath,
-    });
+ipcMain.handle(
+  channel.hxzy_hmis_save_data,
+  async (e, params: hxzyHmis.SaveDataParams) => {
+    void e;
+    try {
+      const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
+      const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
+      const eq_ip = getIP();
+      const deviceNo = await getDeviceNo({
+        driverPath: params.driverPath,
+        databasePath: params.databasePath,
+      });
 
-    const settledData = await Promise.allSettled(
-      params.records.map((record) =>
-        hxzyHmis.recordToUploadParams(
-          record,
-          eq_ip,
-          deviceNo || "",
-          startDate,
-          endDate,
-          params.driverPath,
-          params.databasePath
+      const settledData = await Promise.allSettled(
+        params.records.map((record) =>
+          hxzyHmis.recordToSaveDataParams(
+            record,
+            eq_ip,
+            deviceNo || "",
+            startDate,
+            endDate,
+            params.driverPath,
+            params.databasePath
+          )
         )
-      )
-    );
+      );
 
-    const data = settledData
-      .filter((i) => i.status === "fulfilled")
-      .map((i) => i.value);
+      const data = settledData
+        .filter((i) => i.status === "fulfilled")
+        .map((i) => i.value);
 
-    const dhs = data.map((i) => i.dh);
+      const dhs = data.map((i) => i.dh);
 
-    if (!data.length) {
-      throw `单号[${dhs.join(",")}],均未找到对应的记录`;
+      if (!data.length) {
+        throw `单号[${dhs.join(",")}],均未找到对应的记录`;
+      }
+
+      const request: hxzyHmis.PostRequest = {
+        data,
+        host: params.host,
+      };
+
+      const result = await hxzyHmis.postFn(request);
+
+      return { result, dhs };
+    } catch (e) {
+      throwError(e);
     }
-
-    const request: hxzyHmis.PostRequest = {
-      data,
-      host: params.host,
-    };
-
-    const result = await hxzyHmis.postFn(request);
-
-    return { result, dhs };
-  } catch (e) {
-    throwError(e);
   }
-});
+);
+
+ipcMain.handle(
+  channel.hxzy_hmis_upload_verifies,
+  async (e, params: hxzyHmis.UploadVerifiesParams) => {
+    void e;
+    try {
+      const data = await hxzyHmis.idToUploadVerifiesData(
+        params.id,
+        params.driverPath,
+        params.databasePath
+      );
+
+      return data;
+    } catch (e) {
+      throwError(e);
+    }
+  }
+);
 
 ipcMain.handle(channel.autoInputToVC, async (e, data: AutoInputToVCParams) => {
   void e;

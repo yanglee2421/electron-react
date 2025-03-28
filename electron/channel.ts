@@ -10,6 +10,7 @@ export const getDataFromAccessDatabase = "getDataFromAccessDatabase";
 // HTTP
 export const hxzy_hmis_get_data = "hxzy_hmis_get_data";
 export const hxzy_hmis_save_data = "hxzy_hmis_save_data";
+export const hxzy_hmis_upload_verifies = "hxzy_hmis_upload_verifies";
 
 // Electron
 export const mem = "mem";

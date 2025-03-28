@@ -23,6 +23,8 @@ import {
   QrCodeScannerOutlined,
   DarkModeOutlined,
   LightModeOutlined,
+  InfoOutlined,
+  TuneOutlined,
 } from "@mui/icons-material";
 import { NavLink, useLocation, Link as RouterLink } from "react-router";
 import React from "react";
@@ -65,20 +67,20 @@ const list = [
   {
     to: "/hxzy_hmis_setting",
     label: "华兴致远HMIS设置",
-    icon: <QrCodeScannerOutlined />,
+    icon: <TuneOutlined />,
+  },
+  {
+    to: "/hxzy_verifies",
+    label: "华兴致远日常校验",
+    icon: <CalendarTodayOutlined />,
   },
   {
     to: "/detection",
     label: "现车作业",
     icon: <TrainOutlined />,
   },
-  {
-    to: "/verifies",
-    label: "日常校验",
-    icon: <CalendarTodayOutlined />,
-  },
   { to: "/quartors", label: "季度校验", icon: <CalendarMonthOutlined /> },
-  { to: "/log", label: "日志", icon: <CalendarMonthOutlined /> },
+  { to: "/log", label: "日志", icon: <InfoOutlined /> },
   {
     to: "/settings",
     label: "设置",

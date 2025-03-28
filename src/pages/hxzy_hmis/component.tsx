@@ -92,7 +92,10 @@ const ActionCell = (props: ActionCellProps) => {
                     variant: "error",
                   });
                 },
-                onSuccess() {
+                onSuccess(data) {
+                  snackbar.enqueueSnackbar(data.result.msg, {
+                    variant: "success",
+                  });
                   handleClose();
                 },
               }
@@ -224,20 +227,23 @@ export const Component = () => {
 
   const selectedRows = table.getSelectedRowModel().flatRows;
   const noSelectedRow = !selectedRows.length;
+  const uploadQueue = history
+    .filter((row) => !row.isUploaded)
+    .map((row) => ({ dh: row.barCode, zh: row.zh }));
 
   React.useEffect(() => {
     if (!hmis.autoUpload) return;
+    if (!uploadQueue.length) return;
 
     const timer = setInterval(async () => {
       saveData.mutate({
         databasePath: setting.databasePath,
         driverPath: setting.driverPath,
         host: hmis.host,
-        records: history
-          .filter((row) => !row.isUploaded)
-          .map((row) => ({ dh: row.barCode, zh: row.zh })),
+        records: uploadQueue,
       });
     }, 1000 * 30);
+
     return () => {
       clearInterval(timer);
     };
@@ -248,6 +254,7 @@ export const Component = () => {
     setting.databasePath,
     setting.driverPath,
     hmis.host,
+    uploadQueue,
   ]);
 
   const renderRow = () => {
@@ -449,7 +456,7 @@ export const Component = () => {
                     padding={cellPaddingMap.get(header.column.id)}
                   >
                     {flexRender(
-                      header.column.columnDef.header,
+                      header.column.columnDef.footer,
                       header.getContext()
                     )}
                   </TableCell>

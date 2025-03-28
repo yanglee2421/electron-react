@@ -42,7 +42,7 @@ const useSettingForm = (defaultValues: FormValues) =>
     resolver: zodResolver(schema),
   });
 
-export const Settings = () => {
+export const Component = () => {
   const formId = React.useId();
 
   const [isPending, startTransition] = React.useTransition();
@@ -68,7 +68,7 @@ export const Settings = () => {
       <Stack spacing={6}>
         <Card>
           <CardHeader
-            title="常规设置"
+            title="设置"
             action={
               <IconButton
                 disabled={isPending}
@@ -179,12 +179,14 @@ export const Settings = () => {
                     >
                       <MenuItem value="/settings">设置</MenuItem>
                       <MenuItem value="/detection">现车作业</MenuItem>
-                      <MenuItem value="/verifies">日常校验</MenuItem>
                       <MenuItem value="/quartors">季度校验</MenuItem>
                       <MenuItem value="/log">日志</MenuItem>
                       <MenuItem value="/hxzy_hmis">华兴致远HMIS</MenuItem>
                       <MenuItem value="/hxzy_hmis_setting">
                         华兴致远HMIS设置
+                      </MenuItem>
+                      <MenuItem value="/hxzy_verifies">
+                        华兴致远日常校验
                       </MenuItem>
                     </TextField>
                   )}
@@ -194,9 +196,13 @@ export const Settings = () => {
           </CardContent>
           <CardActions>
             <Button type="submit" form={formId} startIcon={<SaveOutlined />}>
-              Save
+              保存
             </Button>
-            <Button component="label" startIcon={<FileDownloadOutlined />}>
+            <Button
+              component="label"
+              startIcon={<FileDownloadOutlined />}
+              sx={{ display: "none" }}
+            >
               <input
                 type="file"
                 accept="application/json,.json"
@@ -214,7 +220,7 @@ export const Settings = () => {
                   reader.readAsText(file);
                 }}
               />
-              Import
+              导入
             </Button>
             <Button
               onClick={() => {
@@ -233,8 +239,9 @@ export const Settings = () => {
                 document.body.removeChild(link);
               }}
               startIcon={<FileUploadOutlined />}
+              sx={{ display: "none" }}
             >
-              export
+              导出
             </Button>
           </CardActions>
         </Card>

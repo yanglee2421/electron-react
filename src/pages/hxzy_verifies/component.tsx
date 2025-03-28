@@ -14,12 +14,22 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Menu,
 } from "@mui/material";
+import {
+  RefreshOutlined,
+  MoreVertOutlined,
+  CloudUploadOutlined,
+} from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
-import { fetchDetections } from "./fetchers";
+import { useSnackbar } from "notistack";
+import { fetchVerifies, useUploadVerifies } from "./fetchers";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 import {
   createColumnHelper,
@@ -28,22 +38,74 @@ import {
   flexRender,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import type { Detection } from "@/api/database_types";
+import type { Verify } from "@/api/database_types";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
-import { RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT } from "@/lib/constants";
+
+type ActionCellProps = {
+  id: string;
+};
+
+const ActionCell = (props: ActionCellProps) => {
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const snackbar = useSnackbar();
+  const uploadVerifies = useUploadVerifies();
+  const settings = useIndexedStore((s) => s.settings);
+  const hmis = useIndexedStore((s) => s.hxzy_hmis);
+
+  const handleClose = () => setAnchorEl(null);
+
+  return (
+    <>
+      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+        <MoreVertOutlined />
+      </IconButton>
+      <Menu open={!!anchorEl} onClose={handleClose} anchorEl={anchorEl}>
+        <MenuItem
+          onClick={() => {
+            uploadVerifies.mutate(
+              {
+                driverPath: settings.driverPath,
+                databasePath: settings.databasePath,
+                id: props.id,
+                host: hmis.host,
+              },
+              {
+                onError: (error) => {
+                  snackbar.enqueueSnackbar(error.message, { variant: "error" });
+                },
+                onSuccess: (data) => {
+                  snackbar.enqueueSnackbar("上传成功", { variant: "success" });
+                  console.log(data);
+                  handleClose();
+                },
+              }
+            );
+          }}
+        >
+          <ListItemIcon>
+            <CloudUploadOutlined />
+          </ListItemIcon>
+          <ListItemText primary="上传" />
+        </MenuItem>
+      </Menu>
+    </>
+  );
+};
 
 const initDate = () => dayjs();
 
-const columnHelper = createColumnHelper<Detection>();
+const columnHelper = createColumnHelper<Verify>();
 
 const columns = [
-  columnHelper.accessor("szIDs", {}),
-  columnHelper.accessor("szIDsWheel", { header: "车轮编号" }),
-  columnHelper.accessor("szWHModel", { header: "车轮型号" }),
-  columnHelper.accessor("szUsername", { header: "检测员" }),
-  columnHelper.accessor("tmnow", {
-    header: "检测时间",
+  columnHelper.accessor("szIDs", { header: "ID", footer: "ID" }),
+  columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
+  columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
+  columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
+  columnHelper.accessor("tmNow", {
+    header: "时间",
+    footer: "时间",
     cell: ({ getValue }) => {
       const tmnow = getValue();
       if (!tmnow) return null;
@@ -51,20 +113,26 @@ const columns = [
       return new Date(tmnow).toLocaleString();
     },
   }),
-  columnHelper.accessor("szResult", { header: "检测结果" }),
+  columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
+  columnHelper.display({
+    id: "actions",
+    header: "操作",
+    footer: "操作",
+    cell: ({ row }) => <ActionCell id={row.getValue("szIDs")} />,
+  }),
 ];
 
-export const Home = () => {
+export const Component = () => {
   const [date, setDate] = React.useState(initDate);
 
   const settings = useIndexedStore((s) => s.settings);
 
-  const sql = `SELECT * FROM Detections WHERE tmnow BETWEEN #${date
+  const sql = `SELECT * FROM verifies WHERE tmnow BETWEEN #${date
     .startOf("day")
     .format(DATE_FORMAT)}# AND #${date.endOf("day").format(DATE_FORMAT)}#`;
 
   const query = useQuery(
-    fetchDetections({
+    fetchVerifies({
       driverPath: settings.driverPath,
       databasePath: settings.databasePath,
       query: sql,
@@ -137,7 +205,7 @@ export const Home = () => {
   return (
     <Card>
       <CardHeader
-        title="现车作业"
+        title="华兴致远日常校验"
         action={
           <IconButton
             onClick={() => query.refetch()}
@@ -194,7 +262,7 @@ export const Home = () => {
                     padding={cellPaddingMap.get(header.column.id)}
                   >
                     {flexRender(
-                      header.column.columnDef.header,
+                      header.column.columnDef.footer,
                       header.getContext()
                     )}
                   </TableCell>

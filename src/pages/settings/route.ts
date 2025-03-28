@@ -1,2 +1,2 @@
-export { Settings as Component } from "./Settings";
+export { Component } from "./component";
 export { loader } from "./loader";

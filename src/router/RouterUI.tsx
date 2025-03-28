@@ -116,11 +116,7 @@ const routes: RouteObject[] = [
             path: "detection",
             lazy: () => import("@/pages/detection/route"),
           },
-          {
-            id: "verifies",
-            path: "verifies",
-            lazy: () => import("@/pages/verifies/route"),
-          },
+
           {
             id: "quartors",
             path: "quartors",
@@ -141,6 +137,11 @@ const routes: RouteObject[] = [
             id: "hxzy_hmis_setting",
             path: "hxzy_hmis_setting",
             lazy: () => import("@/pages/hxzy_hmis_setting/route"),
+          },
+          {
+            id: "hxzy_verifies",
+            path: "hxzy_verifies",
+            lazy: () => import("@/pages/hxzy_verifies/route"),
           },
           {
             id: "jtv_hmis",
