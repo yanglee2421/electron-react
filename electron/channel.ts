@@ -19,3 +19,5 @@ export const openPath = "openPath";
 export const toggleMode = "toggleMode";
 export const openDevTools = "openDevTools";
 export const setAlwaysOnTop = "setAlwaysOnTop";
+export const focus = "focus";
+export const blur = "blur";

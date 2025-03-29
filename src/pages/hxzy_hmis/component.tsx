@@ -128,7 +128,7 @@ const ActionCell = (props: ActionCellProps) => {
 };
 
 const schema = z.object({
-  barCode: z.string().min(1),
+  barCode: z.string().min(1, { message: "请输入单号" }),
 });
 
 const useScanerForm = () =>
@@ -204,6 +204,7 @@ const columns = [
 
 export const Component = () => {
   const formRef = React.useRef<HTMLFormElement>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const formId = React.useId();
 
@@ -227,16 +228,22 @@ export const Component = () => {
 
   const selectedRows = table.getSelectedRowModel().flatRows;
   const noSelectedRow = !selectedRows.length;
-  const uploadQueue = history
-    .filter((row) => !row.isUploaded)
-    .map((row) => ({ dh: row.barCode, zh: row.zh }));
+  const uploadQueue = React.useMemo(
+    () =>
+      history
+        .filter((row) => !row.isUploaded)
+        .map((row) => ({ dh: row.barCode, zh: row.zh })),
+    [history]
+  );
+
+  const saveDataMutate = saveData.mutate;
 
   React.useEffect(() => {
     if (!hmis.autoUpload) return;
     if (!uploadQueue.length) return;
 
-    const timer = setInterval(async () => {
-      saveData.mutate({
+    const timer = setInterval(() => {
+      saveDataMutate({
         databasePath: setting.databasePath,
         driverPath: setting.driverPath,
         host: hmis.host,
@@ -250,12 +257,49 @@ export const Component = () => {
   }, [
     hmis.autoUpload,
     history,
-    saveData,
+    saveDataMutate,
     setting.databasePath,
     setting.driverPath,
     hmis.host,
     uploadQueue,
   ]);
+
+  React.useEffect(() => {
+    const unsubscribe = window.electronAPI.subscribeFocus(() => {
+      inputRef.current?.focus();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const unsubscribe = window.electronAPI.subscribeBlur(() => {
+      // Reset the focus to the body when the window is blurred
+      inputRef.current?.blur();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const controller = new AbortController();
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.visibilityState !== "visible") return;
+        inputRef.current?.focus();
+      },
+      controller
+    );
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   const renderRow = () => {
     if (!table.getRowCount()) {
@@ -349,6 +393,7 @@ export const Component = () => {
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
+                    inputRef={inputRef}
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                     fullWidth

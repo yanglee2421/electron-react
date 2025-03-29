@@ -65,6 +65,14 @@ function createWindow() {
     console.log("did-finish-load");
   });
 
+  win.on("focus", () => {
+    win?.webContents.send(channel.focus);
+  });
+
+  win.on("blur", () => {
+    win?.webContents.send(channel.blur);
+  });
+
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
   } else {

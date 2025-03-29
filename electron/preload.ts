@@ -90,6 +90,34 @@ const setAlwaysOnTop = async (isAlwaysOnTop: boolean) => {
   await ipcRenderer.invoke(channel.setAlwaysOnTop, isAlwaysOnTop);
 };
 
+const subscribeFocus = (handler: () => void) => {
+  const listener = (event: Electron.IpcRendererEvent) => {
+    // Prevent unused variable warning
+    void event;
+    handler();
+  };
+
+  ipcRenderer.on(channel.focus, listener);
+
+  return () => {
+    ipcRenderer.off(channel.focus, listener);
+  };
+};
+
+const subscribeBlur = (handler: () => void) => {
+  const listener = (event: Electron.IpcRendererEvent) => {
+    // Prevent unused variable warning
+    void event;
+    handler();
+  };
+
+  ipcRenderer.on(channel.blur, listener);
+
+  return () => {
+    ipcRenderer.off(channel.blur, listener);
+  };
+};
+
 const electronAPI = {
   subscribeLog,
   getPathForFile,
@@ -102,6 +130,8 @@ const electronAPI = {
   hxzy_hmis_upload_verifies,
   toggleMode,
   setAlwaysOnTop,
+  subscribeFocus,
+  subscribeBlur,
 };
 
 // --------- Expose some API to the Renderer process ---------
