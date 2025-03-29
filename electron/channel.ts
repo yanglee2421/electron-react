@@ -18,3 +18,4 @@ export const mem = "mem";
 export const openPath = "openPath";
 export const toggleMode = "toggleMode";
 export const openDevTools = "openDevTools";
+export const setAlwaysOnTop = "setAlwaysOnTop";

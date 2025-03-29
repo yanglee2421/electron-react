@@ -86,6 +86,10 @@ const toggleMode = async (mode: "system" | "dark" | "light") => {
   await ipcRenderer.invoke(channel.toggleMode, mode);
 };
 
+const setAlwaysOnTop = async (isAlwaysOnTop: boolean) => {
+  await ipcRenderer.invoke(channel.setAlwaysOnTop, isAlwaysOnTop);
+};
+
 const electronAPI = {
   subscribeLog,
   getPathForFile,
@@ -97,6 +101,7 @@ const electronAPI = {
   hxzy_hmis_save_data,
   hxzy_hmis_upload_verifies,
   toggleMode,
+  setAlwaysOnTop,
 };
 
 // --------- Expose some API to the Renderer process ---------

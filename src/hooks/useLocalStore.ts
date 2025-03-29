@@ -6,6 +6,7 @@ import React from "react";
 
 type State = {
   mode: "light" | "dark" | "system";
+  alwaysOnTop: boolean;
 };
 
 type Actions = {
@@ -23,6 +24,7 @@ export const useLocalStore = create<Store>()(
   persist(
     immer((set) => ({
       mode: "system",
+      alwaysOnTop: false,
       set,
     })),
     {

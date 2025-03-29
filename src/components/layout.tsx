@@ -25,6 +25,7 @@ import {
   LightModeOutlined,
   InfoOutlined,
   TuneOutlined,
+  PushPinOutlined,
 } from "@mui/icons-material";
 import { NavLink, useLocation, Link as RouterLink } from "react-router";
 import React from "react";
@@ -227,6 +228,8 @@ export const AuthLayout = (props: AuthLayoutProps) => {
   const [key, update] = React.useState("");
 
   const location = useLocation();
+  const set = useLocalStore((state) => state.set);
+  const alwaysOnTop = useLocalStore((state) => state.alwaysOnTop);
   const showMenuInMobile = Object.is(key, location.key);
 
   return (
@@ -254,9 +257,10 @@ export const AuthLayout = (props: AuthLayoutProps) => {
             }}
           >
             <RouterLink to="/">
-              <Typography variant="h6">HMIS/KMIS</Typography>
+              <Typography variant="h6">武铁紫云接口面板</Typography>
             </RouterLink>
           </Box>
+
           <IconButton
             onClick={() =>
               update((p) => (p === location.key ? "" : location.key))
@@ -266,6 +270,15 @@ export const AuthLayout = (props: AuthLayoutProps) => {
             {showMenuInMobile ? <CloseOutlined /> : <MenuOutlined />}
           </IconButton>
           <Box sx={{ marginInlineStart: "auto" }} />
+          <IconButton
+            onClick={() => {
+              set((d) => {
+                d.alwaysOnTop = !d.alwaysOnTop;
+              });
+            }}
+          >
+            <PushPinOutlined color={alwaysOnTop ? "primary" : "action"} />
+          </IconButton>
           <ModeToggle />
         </Toolbar>
       </AppBar>

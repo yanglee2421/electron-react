@@ -52,6 +52,7 @@ function createWindow() {
     },
 
     autoHideMenuBar: false,
+    // alwaysOnTop: true,
 
     width: 1024,
     height: 768,
@@ -242,7 +243,7 @@ ipcMain.handle(
   withLog(async (e, params: GetDataFromAccessDatabaseParams) => {
     // Prevent unused variable warning
     void e;
-
+    // Ensure an error is thrown when the promise is rejected
     return await getDataFromAccessDatabase({
       driverPath: params.driverPath,
       databasePath: params.databasePath,
@@ -270,5 +271,14 @@ ipcMain.handle(
     // Prevent unused variable warning
     void e;
     nativeTheme.themeSource = mode;
+  })
+);
+
+ipcMain.handle(
+  channel.setAlwaysOnTop,
+  withLog(async (e, alwaysOnTop: boolean) => {
+    // Prevent unused variable warning
+    void e;
+    win?.setAlwaysOnTop(alwaysOnTop);
   })
 );

@@ -85,8 +85,17 @@ const useNativeTheme = () => {
   }, [mode]);
 };
 
+const useAlwaysOnTop = () => {
+  const alwaysOnTop = useLocalStore((s) => s.alwaysOnTop);
+
+  React.useEffect(() => {
+    window.electronAPI.setAlwaysOnTop(alwaysOnTop);
+  }, [alwaysOnTop]);
+};
+
 const AuthWrapper = () => {
   useNativeTheme();
+  useAlwaysOnTop();
   const hasHydrated = useIndexedStoreHasHydrated();
   const localHasHydrated = useLocalStoreHasHydrated();
 
