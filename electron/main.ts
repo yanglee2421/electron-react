@@ -1,7 +1,7 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
-// import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
+import { app, BrowserWindow, ipcMain, shell, nativeTheme } from "electron";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+// import { createRequire } from "node:module";
 import * as channel from "./channel";
 import {
   getCpuSerial,
@@ -10,7 +10,7 @@ import {
   execFileAsync,
   getDataFromAccessDatabase,
   getIP,
-  getDeviceNo,
+  getCorporation,
   withLog,
 } from "./lib";
 import dayjs from "dayjs";
@@ -90,7 +90,9 @@ app.on("activate", () => {
   }
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  createWindow();
+});
 
 ipcMain.handle(
   channel.openDevTools,
@@ -103,6 +105,7 @@ ipcMain.handle(
 ipcMain.handle(
   channel.openPath,
   withLog(async (e, path: string) => {
+    // Prevent unused variable error
     void e;
     const data = await shell.openPath(path);
     return data;
@@ -112,36 +115,38 @@ ipcMain.handle(
 ipcMain.handle(
   channel.getCpuSerial,
   withLog(async () => {
-    const data = await getCpuSerial();
-    return data;
+    // Ensure an error is thrown when the promise is rejected
+    return await getCpuSerial();
   })
 );
 
 ipcMain.handle(
   channel.getMotherboardSerial,
   withLog(async () => {
-    const data = await getMotherboardSerial();
-    return data;
+    // Ensure an error is thrown when the promise is rejected
+    return await getMotherboardSerial();
   })
 );
 
 ipcMain.handle(
   channel.hxzy_hmis_get_data,
   withLog(async (e, params: hxzyHmis.GetRequest) => {
+    // Prevent unused variable warning
     void e;
-    const data = await hxzyHmis.getFn(params);
-    return data;
+    // Ensure an error is thrown when the promise is rejected
+    return await hxzyHmis.getFn(params);
   })
 );
 
 ipcMain.handle(
   channel.hxzy_hmis_save_data,
   withLog(async (e, params: hxzyHmis.SaveDataParams) => {
+    // Prevent unused variable warning
     void e;
     const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
     const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
     const eq_ip = getIP();
-    const deviceNo = await getDeviceNo({
+    const corporation = await getCorporation({
       driverPath: params.driverPath,
       databasePath: params.databasePath,
     });
@@ -151,7 +156,7 @@ ipcMain.handle(
         hxzyHmis.recordToSaveDataParams(
           record,
           eq_ip,
-          deviceNo || "",
+          corporation.DeviceNO || "",
           startDate,
           endDate,
           params.driverPath,
@@ -167,15 +172,15 @@ ipcMain.handle(
     const dhs = data.map((i) => i.dh);
 
     if (!data.length) {
-      throw `单号[${dhs.join(",")}],均未找到对应的记录`;
+      throw `轴号[${params.records
+        .map((record) => record.zh)
+        .join(",")}],均未找到对应的记录`;
     }
 
-    const request: hxzyHmis.PostRequest = {
+    const result = await hxzyHmis.postFn({
       data,
       host: params.host,
-    };
-
-    const result = await hxzyHmis.postFn(request);
+    });
 
     return { result, dhs };
   })
@@ -184,24 +189,23 @@ ipcMain.handle(
 ipcMain.handle(
   channel.hxzy_hmis_upload_verifies,
   withLog(async (e, params: hxzyHmis.UploadVerifiesParams) => {
+    // Prevent unused variable warning
     void e;
-    const data = await hxzyHmis.idToUploadVerifiesData(
+    // Ensure an error is thrown when the promise is rejected
+    return await hxzyHmis.idToUploadVerifiesData(
       params.id,
       params.driverPath,
       params.databasePath
     );
-
-    return data;
   })
 );
 
 ipcMain.handle(
   channel.autoInputToVC,
   withLog(async (e, data: AutoInputToVCParams) => {
+    // Prevent unused variable warning
     void e;
-    const exePath = data.driverPath;
-
-    const cp = await execFileAsync(exePath, [
+    const cp = await execFileAsync(data.driverPath, [
       "autoInputToVC",
       data.zx,
       data.zh,
@@ -226,24 +230,24 @@ ipcMain.handle(
 ipcMain.handle(
   channel.printer,
   withLog(async (e, data: string) => {
+    // Prevent unused variable warning
     void e;
-    const cp = await runWinword(data).catch(() => shell.openPath(data));
-    return cp;
+    // Ensure an error is thrown when the promise is rejected
+    return await runWinword(data).catch(() => shell.openPath(data));
   })
 );
 
 ipcMain.handle(
   channel.getDataFromAccessDatabase,
   withLog(async (e, params: GetDataFromAccessDatabaseParams) => {
+    // Prevent unused variable warning
     void e;
 
-    const data = await getDataFromAccessDatabase({
+    return await getDataFromAccessDatabase({
       driverPath: params.driverPath,
       databasePath: params.databasePath,
       sql: params.query,
     });
-
-    return data;
   })
 );
 
@@ -257,5 +261,14 @@ ipcMain.handle(
       totalmem: process.getSystemMemoryInfo().total,
       freemem,
     };
+  })
+);
+
+ipcMain.handle(
+  channel.toggleMode,
+  withLog(async (e, mode: "system" | "dark" | "light") => {
+    // Prevent unused variable warning
+    void e;
+    nativeTheme.themeSource = mode;
   })
 );

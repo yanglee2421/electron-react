@@ -16,14 +16,14 @@ import type {
 } from "#/electron/hxzy_hmis";
 
 type LogCallback = (data: Log) => void;
-type SubscribeLog = (callback: LogCallback) => () => void;
+type SubscribeLog = (handler: LogCallback) => () => void;
 type GetMem = () => Promise<{ totalmem: number; freemem: number }>;
 
-const subscribeLog: SubscribeLog = (callback) => {
+const subscribeLog: SubscribeLog = (handler) => {
   const listener = (event: Electron.IpcRendererEvent, data: Log) => {
     // Prevent unused variable warning
     void event;
-    callback(data);
+    handler(data);
   };
 
   ipcRenderer.on(channel.log, listener);
@@ -82,19 +82,11 @@ const hxzy_hmis_upload_verifies = async (params: UploadVerifiesParams) => {
   };
 };
 
-type ElectronAPI = {
-  subscribeLog: SubscribeLog;
-  getPathForFile: typeof getPathForFile;
-  openDevTools: typeof openDevTools;
-  getMem: GetMem;
-  getDataFromAccessDatabase: typeof getDataFromAccessDatabase;
-  autoInputToVC: typeof autoInputToVC;
-  hxzy_hmis_get_data: typeof hxzy_hmis_get_data;
-  hxzy_hmis_save_data: typeof hxzy_hmis_save_data;
-  hxzy_hmis_upload_verifies: typeof hxzy_hmis_upload_verifies;
+const toggleMode = async (mode: "system" | "dark" | "light") => {
+  await ipcRenderer.invoke(channel.toggleMode, mode);
 };
 
-const electronAPI: ElectronAPI = {
+const electronAPI = {
   subscribeLog,
   getPathForFile,
   openDevTools,
@@ -104,6 +96,7 @@ const electronAPI: ElectronAPI = {
   hxzy_hmis_get_data,
   hxzy_hmis_save_data,
   hxzy_hmis_upload_verifies,
+  toggleMode,
 };
 
 // --------- Expose some API to the Renderer process ---------
@@ -111,7 +104,7 @@ contextBridge.exposeInMainWorld("electronAPI", electronAPI);
 
 declare global {
   interface Window {
-    electronAPI: ElectronAPI;
+    electronAPI: typeof electronAPI;
   }
 
   // interface ImportMeta {

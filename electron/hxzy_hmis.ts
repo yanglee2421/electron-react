@@ -1,8 +1,9 @@
 // 成都北 华兴致远
 
 import { net } from "electron";
-import { throwError, getDataFromAccessDatabase, log } from "./lib";
+import { getDataFromAccessDatabase, log } from "./lib";
 import dayjs from "dayjs";
+import { URL } from "node:url";
 import type {
   Detection,
   DetectionData,
@@ -45,7 +46,7 @@ export const getFn = async (request: GetRequest) => {
   log(`请求数据:${url.href}`);
   const res = await net.fetch(url.href, { method: "GET" });
   if (!res.ok) {
-    throwError(`接口异常[${res.status}]:${res.statusText}`);
+    throw `接口异常[${res.status}]:${res.statusText}`;
   }
   const data: GetResponse = await res.json();
   log(`返回数据:${JSON.stringify(data)}`);

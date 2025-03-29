@@ -141,12 +141,12 @@ export const getIP = () => {
   return IP || "";
 };
 
-type GetDeviceNoParams = {
+type GetCorporationParams = {
   driverPath: string;
   databasePath: string;
 };
 
-export const getDeviceNo = async (params: GetDeviceNoParams) => {
+export const getCorporation = async (params: GetCorporationParams) => {
   const [corporation] = await getDataFromAccessDatabase<Corporation>({
     driverPath: params.driverPath,
     databasePath: params.databasePath,
@@ -157,18 +157,19 @@ export const getDeviceNo = async (params: GetDeviceNoParams) => {
     throw "未找到公司信息";
   }
 
-  return corporation.DeviceNO;
+  return corporation;
 };
 
 export const withLog = <
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  TCallback extends (...args: any[]) => Promise<unknown>
+  TFn extends (...args: any[]) => Promise<unknown>
 >(
-  callback: TCallback
-): TCallback => {
-  const fn = async (...args: Parameters<TCallback>) => {
+  fn: TFn
+): TFn => {
+  const fnWithLog = async (...args: Parameters<TFn>) => {
     try {
-      return await callback(...args);
+      // Ensure an error is thrown when the promise is rejected
+      return await fn(...args);
     } catch (error) {
       const message = errorToMessage(error);
       log(message, "error");
@@ -177,5 +178,5 @@ export const withLog = <
     }
   };
 
-  return fn as TCallback;
+  return fnWithLog as TFn;
 };

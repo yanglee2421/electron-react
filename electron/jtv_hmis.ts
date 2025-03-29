@@ -1,6 +1,7 @@
 // 京天威统型
 
 import { net } from "electron";
+import { URL } from "node:url";
 
 export type GetResponse = {
   code: "200";

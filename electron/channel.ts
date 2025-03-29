@@ -13,7 +13,8 @@ export const hxzy_hmis_save_data = "hxzy_hmis_save_data";
 export const hxzy_hmis_upload_verifies = "hxzy_hmis_upload_verifies";
 
 // Electron
+export const log = "log";
 export const mem = "mem";
 export const openPath = "openPath";
+export const toggleMode = "toggleMode";
 export const openDevTools = "openDevTools";
-export const log = "log";

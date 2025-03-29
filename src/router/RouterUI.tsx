@@ -14,6 +14,7 @@ import {
 import { Box, CircularProgress } from "@mui/material";
 import dayjs from "dayjs";
 import type { Log } from "@/hooks/useIndexedStore";
+import { useLocalStore, useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
 
 const LogWrapper = (props: React.PropsWithChildren) => {
   const set = useIndexedStore((s) => s.set);
@@ -76,12 +77,22 @@ const renderOutlet = (hasHydrated: boolean) => {
   return <Outlet />;
 };
 
+const useNativeTheme = () => {
+  const mode = useLocalStore((s) => s.mode);
+
+  React.useEffect(() => {
+    window.electronAPI.toggleMode(mode);
+  }, [mode]);
+};
+
 const AuthWrapper = () => {
+  useNativeTheme();
   const hasHydrated = useIndexedStoreHasHydrated();
+  const localHasHydrated = useLocalStoreHasHydrated();
 
   return (
     <AuthLayout>
-      <LogWrapper>{renderOutlet(hasHydrated)}</LogWrapper>
+      <LogWrapper>{renderOutlet(hasHydrated && localHasHydrated)}</LogWrapper>
     </AuthLayout>
   );
 };
