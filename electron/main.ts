@@ -56,6 +56,7 @@ function createWindow() {
 
     width: 1024,
     height: 768,
+    // show: false,
   });
 
   win.menuBarVisible = false;
@@ -64,13 +65,23 @@ function createWindow() {
   win.webContents.on("did-finish-load", () => {
     console.log("did-finish-load");
   });
-
   win.on("focus", () => {
-    win?.webContents.send(channel.focus);
+    win?.webContents.send(channel.windowFocus);
   });
-
   win.on("blur", () => {
-    win?.webContents.send(channel.blur);
+    win?.webContents.send(channel.windowBlur);
+  });
+  win.on("show", () => {
+    // Only fire when the win.show is called on Windows
+    win?.webContents.send(channel.windowShow);
+  });
+  win.on("hide", () => {
+    // Only fire when the win.hide is called on Windows
+    win?.webContents.send(channel.windowHide);
+  });
+  win.once("ready-to-show", () => {
+    // Too late to call win.show() here
+    // win?.show();
   });
 
   if (VITE_DEV_SERVER_URL) {

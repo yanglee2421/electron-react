@@ -90,31 +90,51 @@ const setAlwaysOnTop = async (isAlwaysOnTop: boolean) => {
   await ipcRenderer.invoke(channel.setAlwaysOnTop, isAlwaysOnTop);
 };
 
-const subscribeFocus = (handler: () => void) => {
+const subscribeWindowFocus = (handler: () => void) => {
   const listener = (event: Electron.IpcRendererEvent) => {
     // Prevent unused variable warning
     void event;
     handler();
   };
-
-  ipcRenderer.on(channel.focus, listener);
-
+  ipcRenderer.on(channel.windowFocus, listener);
   return () => {
-    ipcRenderer.off(channel.focus, listener);
+    ipcRenderer.off(channel.windowFocus, listener);
   };
 };
 
-const subscribeBlur = (handler: () => void) => {
+const subscribeWindowBlur = (handler: () => void) => {
   const listener = (event: Electron.IpcRendererEvent) => {
     // Prevent unused variable warning
     void event;
     handler();
   };
-
-  ipcRenderer.on(channel.blur, listener);
-
+  ipcRenderer.on(channel.windowBlur, listener);
   return () => {
-    ipcRenderer.off(channel.blur, listener);
+    ipcRenderer.off(channel.windowBlur, listener);
+  };
+};
+
+export const subscribeWindowShow = (handler: () => void) => {
+  const listener = (event: Electron.IpcRendererEvent) => {
+    // Prevent unused variable warning
+    void event;
+    handler();
+  };
+  ipcRenderer.on(channel.windowShow, listener);
+  return () => {
+    ipcRenderer.off(channel.windowShow, listener);
+  };
+};
+
+export const subscribeWindowHide = (handler: () => void) => {
+  const listener = (event: Electron.IpcRendererEvent) => {
+    // Prevent unused variable warning
+    void event;
+    handler();
+  };
+  ipcRenderer.on(channel.windowHide, listener);
+  return () => {
+    ipcRenderer.off(channel.windowHide, listener);
   };
 };
 
@@ -130,8 +150,10 @@ const electronAPI = {
   hxzy_hmis_upload_verifies,
   toggleMode,
   setAlwaysOnTop,
-  subscribeFocus,
-  subscribeBlur,
+  subscribeWindowFocus,
+  subscribeWindowBlur,
+  subscribeWindowShow,
+  subscribeWindowHide,
 };
 
 // --------- Expose some API to the Renderer process ---------

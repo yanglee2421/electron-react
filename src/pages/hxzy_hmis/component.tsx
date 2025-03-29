@@ -218,6 +218,10 @@ export const Component = () => {
   const setting = useIndexedStore((s) => s.settings);
   const history = useIndexedStore((s) => s.hxzy_hmis.history);
 
+  const setInputFocus = React.useCallback(() => {
+    inputRef.current?.focus();
+  }, []);
+
   const table = useReactTable({
     data: history,
     columns,
@@ -265,25 +269,20 @@ export const Component = () => {
   ]);
 
   React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeFocus(() => {
-      inputRef.current?.focus();
-    });
+    const unsubscribe = window.electronAPI.subscribeWindowFocus(setInputFocus);
 
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [setInputFocus]);
 
   React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeBlur(() => {
-      // Reset the focus to the body when the window is blurred
-      inputRef.current?.blur();
-    });
+    const unsubscribe = window.electronAPI.subscribeWindowBlur(setInputFocus);
 
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [setInputFocus]);
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -291,7 +290,7 @@ export const Component = () => {
       "visibilitychange",
       () => {
         if (document.visibilityState !== "visible") return;
-        inputRef.current?.focus();
+        setInputFocus();
       },
       controller
     );
@@ -299,7 +298,7 @@ export const Component = () => {
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [setInputFocus]);
 
   const renderRow = () => {
     if (!table.getRowCount()) {
