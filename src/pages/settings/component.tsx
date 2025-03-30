@@ -10,7 +10,7 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Grid2,
+  Grid,
   TextField,
   InputAdornment,
   IconButton,
@@ -76,8 +76,8 @@ export const Component = () => {
             }
           />
           <CardContent>
-            <Grid2 container spacing={3}>
-              <Grid2 size={{ xs: 12, sm: 6 }}>
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   control={form.control}
                   name="databasePath"
@@ -116,8 +116,8 @@ export const Component = () => {
                     />
                   )}
                 />
-              </Grid2>
-              <Grid2 size={{ xs: 12, sm: 6 }}>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   control={form.control}
                   name="driverPath"
@@ -156,8 +156,8 @@ export const Component = () => {
                     />
                   )}
                 />
-              </Grid2>
-              <Grid2 size={{ xs: 12, sm: 6 }}>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   control={form.control}
                   name="home_path"
@@ -184,8 +184,8 @@ export const Component = () => {
                     </TextField>
                   )}
                 />
-              </Grid2>
-            </Grid2>
+              </Grid>
+            </Grid>
           </CardContent>
           <CardActions>
             <Button type="submit" form={formId} startIcon={<SaveOutlined />}>

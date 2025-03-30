@@ -11,7 +11,7 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Grid2,
+  Grid,
   IconButton,
   InputAdornment,
   Table,
@@ -333,8 +333,8 @@ export const Component = () => {
     <Card>
       <CardHeader title="扫码" />
       <CardContent>
-        <Grid2 container spacing={6}>
-          <Grid2 size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
+        <Grid container spacing={6}>
+          <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
             <form
               ref={formRef}
               id={formId}
@@ -420,8 +420,8 @@ export const Component = () => {
                 )}
               />
             </form>
-          </Grid2>
-        </Grid2>
+          </Grid>
+        </Grid>
       </CardContent>
       <Divider />
       <CardContent>

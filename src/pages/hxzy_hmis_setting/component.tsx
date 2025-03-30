@@ -6,7 +6,7 @@ import {
   CardContent,
   CardHeader,
   FormControlLabel,
-  Grid2,
+  Grid,
   Checkbox,
   TextField,
   TextFieldProps,
@@ -139,8 +139,8 @@ export const Component = () => {
             snackbar.enqueueSnackbar("保存成功", { variant: "success" });
           }, console.warn)}
         >
-          <Grid2 container spacing={3}>
-            <Grid2 size={{ xs: 12, sm: 6 }}>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Controller
                 control={form.control}
                 name="ip"
@@ -154,8 +154,8 @@ export const Component = () => {
                   />
                 )}
               />
-            </Grid2>
-            <Grid2 size={{ xs: 12, sm: 6 }}>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Controller
                 control={form.control}
                 name="port"
@@ -169,8 +169,8 @@ export const Component = () => {
                   />
                 )}
               />
-            </Grid2>
-            <Grid2 size={{ xs: 12 }}>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
               <FormGroup row>
                 <Controller
                   control={form.control}
@@ -203,8 +203,8 @@ export const Component = () => {
                   )}
                 />
               </FormGroup>
-            </Grid2>
-            <Grid2 size={{ xs: 12, sm: 6 }}>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Controller
                 control={form.control}
                 name="autoUploadInterval"
@@ -218,8 +218,8 @@ export const Component = () => {
                   />
                 )}
               />
-            </Grid2>
-          </Grid2>
+            </Grid>
+          </Grid>
         </form>
       </CardContent>
       <CardActions>

@@ -4,7 +4,7 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Grid2,
+  Grid,
   IconButton,
   Table,
   TableBody,
@@ -216,8 +216,8 @@ export const Component = () => {
         }
       />
       <CardContent>
-        <Grid2 container spacing={6}>
-          <Grid2 size={12}>
+        <Grid container spacing={6}>
+          <Grid size={12}>
             <DatePicker
               value={date}
               onChange={(day) => {
@@ -230,8 +230,8 @@ export const Component = () => {
                 },
               }}
             />
-          </Grid2>
-        </Grid2>
+          </Grid>
+        </Grid>
       </CardContent>
       <TableContainer>
         <Table>

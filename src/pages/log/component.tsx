@@ -2,7 +2,7 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Grid2,
+  Grid,
   IconButton,
   List,
   ListItem,
@@ -19,8 +19,8 @@ export const Component = () => {
     return (
       <>
         <CardContent>
-          <Grid2 container spacing={6}>
-            <Grid2 size={12}>
+          <Grid container spacing={6}>
+            <Grid size={12}>
               <List>
                 {logs.map((log) => (
                   <ListItem key={log.id}>
@@ -31,8 +31,8 @@ export const Component = () => {
                   </ListItem>
                 ))}
               </List>
-            </Grid2>
-          </Grid2>
+            </Grid>
+          </Grid>
         </CardContent>
       </>
     );
