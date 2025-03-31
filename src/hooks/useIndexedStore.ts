@@ -86,7 +86,7 @@ export const useIndexedStore = create<Store>()(
     immer((set) => ({
       set,
       settings: {
-        databasePath: "D:\\数据12\\local.mdb",
+        databasePath: "",
         driverPath: "",
         activate_key: "",
         home_path: "/settings",
