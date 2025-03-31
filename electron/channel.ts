@@ -25,3 +25,5 @@ export const windowFocus = "windowFocus";
 export const windowBlur = "windowBlur";
 export const windowShow = "windowShow";
 export const windowHide = "windowHide";
+export const setLoginItemSettings = "setLoginItemSettings";
+export const getLoginItemSettings = "getLoginItemSettings";

@@ -33,6 +33,7 @@ type HXZY_HMIS = {
   autoInput: boolean;
   autoUpload: boolean;
   autoUploadInterval: number;
+  gd: string;
 };
 
 type JTV_HMIS = {
@@ -79,6 +80,7 @@ export const useIndexedStore = create<Store>()(
         autoInput: true,
         autoUpload: true,
         autoUploadInterval: 1000 * 30,
+        gd: "",
       },
       jtv_hmis: {
         host: "",

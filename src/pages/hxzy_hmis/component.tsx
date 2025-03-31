@@ -80,6 +80,7 @@ const ActionCell = (props: ActionCellProps) => {
                 databasePath: settings.databasePath,
                 driverPath: settings.driverPath,
                 host: hmis.host,
+                gd: hmis.gd,
                 records: [
                   {
                     dh: props.dh,
@@ -252,6 +253,7 @@ export const Component = () => {
         databasePath: setting.databasePath,
         driverPath: setting.driverPath,
         host: hmis.host,
+        gd: hmis.gd,
         records: uploadQueue,
       });
     }, 1000 * 30);
@@ -265,8 +267,9 @@ export const Component = () => {
     saveDataMutate,
     setting.databasePath,
     setting.driverPath,
-    hmis.host,
     uploadQueue,
+    hmis.gd,
+    hmis.host,
   ]);
 
   React.useEffect(() => {
@@ -434,6 +437,7 @@ export const Component = () => {
                   databasePath: setting.databasePath,
                   driverPath: setting.driverPath,
                   host: hmis.host,
+                  gd: hmis.gd,
                   records: selectedRows.map((row) => ({
                     dh: row.original.barCode,
                     zh: row.original.zh,

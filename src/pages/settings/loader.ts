@@ -1,3 +1,7 @@
+import { fetchLoginItemSettings } from "./fetchers";
+import { queryClient } from "@/lib/query";
+
 export const loader = async () => {
-  return null;
+  const data = await queryClient.ensureQueryData(fetchLoginItemSettings());
+  return data;
 };

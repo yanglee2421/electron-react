@@ -165,6 +165,24 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+  channel.getLoginItemSettings,
+  withLog(async (e) => {
+    // Prevent unused variable warning
+    void e;
+    return app.getLoginItemSettings().openAtLogin;
+  })
+);
+
+ipcMain.handle(
+  channel.setLoginItemSettings,
+  withLog(async (e, openAtLogin: boolean) => {
+    // Prevent unused variable warning
+    void e;
+    app.setLoginItemSettings({ openAtLogin });
+  })
+);
+
+ipcMain.handle(
   channel.printer,
   withLog(async (e, data: string) => {
     // Prevent unused variable warning
@@ -260,6 +278,7 @@ ipcMain.handle(
           record,
           eq_ip,
           corporation.DeviceNO || "",
+          params.gd,
           startDate,
           endDate,
           params.driverPath,
@@ -315,7 +334,7 @@ ipcMain.handle(
 
 ipcMain.handle(
   channel.jtv_hmis_save_data,
-  withLog(async (e, params: hxzyHmis.SaveDataParams) => {
+  withLog(async (e, params: jtvHmis.SaveDataParams) => {
     // Prevent unused variable warning
     void e;
     const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
@@ -328,7 +347,7 @@ ipcMain.handle(
 
     const settledData = await Promise.allSettled(
       params.records.map((record) =>
-        hxzyHmis.recordToSaveDataParams(
+        jtvHmis.recordToSaveDataParams(
           record,
           eq_ip,
           corporation.DeviceNO || "",
@@ -352,7 +371,7 @@ ipcMain.handle(
         .join(",")}],均未找到对应的记录`;
     }
 
-    const result = await hxzyHmis.postFn({
+    const result = await jtvHmis.postFn({
       data,
       host: params.host,
     });

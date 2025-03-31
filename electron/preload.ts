@@ -145,6 +145,14 @@ export const subscribeWindowHide = (handler: () => void) => {
   };
 };
 
+const setLoginItemSettings = async (openAtLogin: boolean) => {
+  await ipcRenderer.invoke(channel.setLoginItemSettings, openAtLogin);
+};
+const getLoginItemSettings = async () => {
+  const data = await ipcRenderer.invoke(channel.getLoginItemSettings);
+  return data as boolean;
+};
+
 const electronAPI = {
   // Electron
   openDevTools,
@@ -152,6 +160,8 @@ const electronAPI = {
   setAlwaysOnTop,
   getPathForFile,
   getMem,
+  setLoginItemSettings,
+  getLoginItemSettings,
 
   // CMD
   getDataFromAccessDatabase,
