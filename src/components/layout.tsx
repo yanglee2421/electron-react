@@ -82,6 +82,16 @@ const list = [
     icon: <TuneOutlined />,
   },
   {
+    to: "/jtv_hmis_xuzhoubei",
+    label: "京天威HMIS(徐州北)",
+    icon: <QrCodeScannerOutlined />,
+  },
+  {
+    to: "/jtv_hmis_xuzhoubei_setting",
+    label: "京天威HMIS设置(徐州北)",
+    icon: <TuneOutlined />,
+  },
+  {
     to: "/detection",
     label: "现车作业",
     icon: <TrainOutlined />,

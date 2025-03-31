@@ -45,11 +45,21 @@ type JTV_HMIS = {
   unitCode: string;
 };
 
+type JTV_HMIS_XUZHOUBEI = {
+  history: History[];
+  host: string;
+  autoInput: boolean;
+  autoUpload: boolean;
+  autoUploadInterval: number;
+  unitCode: string;
+};
+
 type StoreState = {
   settings: Settings;
   logs: Log[];
   hxzy_hmis: HXZY_HMIS;
   jtv_hmis: JTV_HMIS;
+  jtv_hmis_xuzhoubei: JTV_HMIS_XUZHOUBEI;
 };
 
 type StoreActions = {
@@ -83,6 +93,14 @@ export const useIndexedStore = create<Store>()(
         gd: "",
       },
       jtv_hmis: {
+        host: "",
+        history: [],
+        autoInput: true,
+        autoUpload: true,
+        autoUploadInterval: 1000 * 30,
+        unitCode: "",
+      },
+      jtv_hmis_xuzhoubei: {
         host: "",
         history: [],
         autoInput: true,

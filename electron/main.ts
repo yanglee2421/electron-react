@@ -17,6 +17,7 @@ import dayjs from "dayjs";
 import * as consts from "@/lib/constants";
 import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
+import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import type { GetDataFromAccessDatabaseParams } from "@/api/database_types";
 import type { AutoInputToVCParams } from "@/api/autoInput_types";
 
@@ -324,7 +325,7 @@ ipcMain.handle(
 
 ipcMain.handle(
   channel.jtv_hmis_get_data,
-  withLog(async (e, params) => {
+  withLog(async (e, params: jtvHmis.GetRequest) => {
     // Prevent unused variable warning
     void e;
     // Ensure an error is thrown when the promise is rejected
@@ -372,6 +373,64 @@ ipcMain.handle(
     }
 
     const result = await jtvHmis.postFn({
+      data,
+      host: params.host,
+    });
+
+    return { result, dhs };
+  })
+);
+
+ipcMain.handle(
+  channel.jtv_hmis_xuzhoubei_get_data,
+  withLog(async (e, params: jtvHmisXuzhoubei.GetRequest) => {
+    // Prevent unused variable warning
+    void e;
+    // Ensure an error is thrown when the promise is rejected
+    return await jtvHmisXuzhoubei.getFn(params);
+  })
+);
+
+ipcMain.handle(
+  channel.jtv_hmis_xuzhoubei_save_data,
+  withLog(async (e, params: jtvHmisXuzhoubei.SaveDataParams) => {
+    // Prevent unused variable warning
+    void e;
+    const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
+    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
+    const eq_ip = getIP();
+    const corporation = await getCorporation({
+      driverPath: params.driverPath,
+      databasePath: params.databasePath,
+    });
+
+    const settledData = await Promise.allSettled(
+      params.records.map((record) =>
+        jtvHmis.recordToSaveDataParams(
+          record,
+          eq_ip,
+          corporation.DeviceNO || "",
+          startDate,
+          endDate,
+          params.driverPath,
+          params.databasePath
+        )
+      )
+    );
+
+    const data = settledData
+      .filter((i) => i.status === "fulfilled")
+      .map((i) => i.value);
+
+    const dhs = data.map((i) => i.dh);
+
+    if (!data.length) {
+      throw `轴号[${params.records
+        .map((record) => record.zh)
+        .join(",")}],均未找到对应的记录`;
+    }
+
+    const result = await jtvHmisXuzhoubei.postFn({
       data,
       host: params.host,
     });

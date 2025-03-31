@@ -14,26 +14,34 @@ type LogCallback = (data: Log) => void;
 type SubscribeLog = (handler: LogCallback) => () => void;
 type GetMem = () => Promise<{ totalmem: number; freemem: number }>;
 
-const subscribeLog: SubscribeLog = (handler) => {
-  const listener = (event: Electron.IpcRendererEvent, data: Log) => {
-    // Prevent unused variable warning
-    void event;
-    handler(data);
-  };
-
-  ipcRenderer.on(channel.log, listener);
-
-  return () => {
-    ipcRenderer.off(channel.log, listener);
-  };
-};
-
 const getPathForFile = (file: File) => {
   return webUtils.getPathForFile(file);
 };
 
+const openPath = async (path: string) => {
+  const data = await ipcRenderer.invoke(channel.openPath, path);
+  return data as string;
+};
+
 const openDevTools = () => {
   ipcRenderer.invoke(channel.openDevTools);
+};
+
+const toggleMode = async (mode: "system" | "dark" | "light") => {
+  await ipcRenderer.invoke(channel.toggleMode, mode);
+};
+
+const setAlwaysOnTop = async (isAlwaysOnTop: boolean) => {
+  await ipcRenderer.invoke(channel.setAlwaysOnTop, isAlwaysOnTop);
+};
+
+const getLoginItemSettings = async () => {
+  const data = await ipcRenderer.invoke(channel.getLoginItemSettings);
+  return data as boolean;
+};
+
+const setLoginItemSettings = async (openAtLogin: boolean) => {
+  await ipcRenderer.invoke(channel.setLoginItemSettings, openAtLogin);
 };
 
 const getMem: GetMem = async () => {
@@ -89,14 +97,6 @@ const jtv_hmis_save_data = async (params: JTV_HMIS.SaveDataParams) => {
   return data as { result: JTV_HMIS.PostResponse; dhs: string[] };
 };
 
-const toggleMode = async (mode: "system" | "dark" | "light") => {
-  await ipcRenderer.invoke(channel.toggleMode, mode);
-};
-
-const setAlwaysOnTop = async (isAlwaysOnTop: boolean) => {
-  await ipcRenderer.invoke(channel.setAlwaysOnTop, isAlwaysOnTop);
-};
-
 const subscribeWindowFocus = (handler: () => void) => {
   const listener = (event: Electron.IpcRendererEvent) => {
     // Prevent unused variable warning
@@ -121,7 +121,7 @@ const subscribeWindowBlur = (handler: () => void) => {
   };
 };
 
-export const subscribeWindowShow = (handler: () => void) => {
+const subscribeWindowShow = (handler: () => void) => {
   const listener = (event: Electron.IpcRendererEvent) => {
     // Prevent unused variable warning
     void event;
@@ -133,7 +133,7 @@ export const subscribeWindowShow = (handler: () => void) => {
   };
 };
 
-export const subscribeWindowHide = (handler: () => void) => {
+const subscribeWindowHide = (handler: () => void) => {
   const listener = (event: Electron.IpcRendererEvent) => {
     // Prevent unused variable warning
     void event;
@@ -145,16 +145,23 @@ export const subscribeWindowHide = (handler: () => void) => {
   };
 };
 
-const setLoginItemSettings = async (openAtLogin: boolean) => {
-  await ipcRenderer.invoke(channel.setLoginItemSettings, openAtLogin);
-};
-const getLoginItemSettings = async () => {
-  const data = await ipcRenderer.invoke(channel.getLoginItemSettings);
-  return data as boolean;
+const subscribeLog: SubscribeLog = (handler) => {
+  const listener = (event: Electron.IpcRendererEvent, data: Log) => {
+    // Prevent unused variable warning
+    void event;
+    handler(data);
+  };
+
+  ipcRenderer.on(channel.log, listener);
+
+  return () => {
+    ipcRenderer.off(channel.log, listener);
+  };
 };
 
 const electronAPI = {
   // Electron
+  openPath,
   openDevTools,
   toggleMode,
   setAlwaysOnTop,
