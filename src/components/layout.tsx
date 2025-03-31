@@ -89,12 +89,12 @@ const list = [
   {
     to: "/jtv_hmis_xuzhoubei_setting",
     label: "京天威HMIS设置(徐州北)",
-    icon: <QrCodeScannerOutlined />,
+    icon: <TuneOutlined />,
   },
   {
     to: "/kh_hmis",
     label: "康华HMIS",
-    icon: <TuneOutlined />,
+    icon: <QrCodeScannerOutlined />,
   },
   {
     to: "/kh_hmis_setting",

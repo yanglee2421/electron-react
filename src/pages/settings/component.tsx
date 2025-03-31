@@ -19,9 +19,10 @@ import {
   Stack,
   MenuItem,
   Switch,
-  Box,
-  Typography,
   Paper,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import z from "zod";
@@ -29,7 +30,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useSnackbar } from "notistack";
 import { NavMenu } from "@/components/layout";
-import { fetchLoginItemSettings, useSetLoginItemSettings } from "./fetchers";
+import {
+  fetchLoginItemSettings,
+  useSetLoginItemSettings,
+  fetchVersion,
+} from "./fetchers";
 import { useQuery } from "@tanstack/react-query";
 
 const schema = z.object({
@@ -60,6 +65,7 @@ export const Component = () => {
   const set = useIndexedStore((s) => s.set);
   const form = useSettingForm(settings);
   const snackbar = useSnackbar();
+  const version = useQuery(fetchVersion());
   const loginItemSettings = useQuery(fetchLoginItemSettings());
   const setLoginItemSettings = useSetLoginItemSettings();
   const openAtLogin = !!loginItemSettings.data;
@@ -253,26 +259,27 @@ export const Component = () => {
         </CardActions>
       </Card>
       <Paper>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: 4,
-          }}
-        >
-          <Typography>开机自启</Typography>
-          <Switch
-            checked={optimisticOpenAtLogin}
-            onChange={() => {
-              React.startTransition(async () => {
-                const nextOpenAtLogin = !openAtLogin;
-                setOptimisticOpenAtLogin(nextOpenAtLogin);
-                await setLoginItemSettings.mutateAsync(nextOpenAtLogin);
-              });
-            }}
-          />
-        </Box>
+        <List>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={optimisticOpenAtLogin}
+                onChange={() => {
+                  React.startTransition(async () => {
+                    const nextOpenAtLogin = !openAtLogin;
+                    setOptimisticOpenAtLogin(nextOpenAtLogin);
+                    await setLoginItemSettings.mutateAsync(nextOpenAtLogin);
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary="开机自启" />
+          </ListItem>
+          <ListItem secondaryAction={version.data}>
+            <ListItemText primary="版本" />
+          </ListItem>
+        </List>
       </Paper>
     </Stack>
   );

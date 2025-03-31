@@ -6,7 +6,7 @@ import {
 
 export const fetchLoginItemSettings = () =>
   queryOptions({
-    queryKey: ["loginItemSettings"],
+    queryKey: ["window.electronAPI.getLoginItemSettings"],
     queryFn: async () => {
       return await window.electronAPI.getLoginItemSettings();
     },
@@ -26,3 +26,11 @@ export const useSetLoginItemSettings = () => {
     },
   });
 };
+
+export const fetchVersion = () =>
+  queryOptions({
+    queryKey: ["window.electronAPI.getVersion"],
+    queryFn: async () => {
+      return await window.electronAPI.getVersion();
+    },
+  });

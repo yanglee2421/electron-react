@@ -29,3 +29,4 @@ export const windowShow = "windowShow";
 export const windowHide = "windowHide";
 export const setLoginItemSettings = "setLoginItemSettings";
 export const getLoginItemSettings = "getLoginItemSettings";
+export const getVersion = "getVersion";

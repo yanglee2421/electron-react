@@ -50,6 +50,10 @@ const getMem: GetMem = async () => {
   return data;
 };
 
+const getVersion = () => {
+  return ipcRenderer.invoke(channel.getVersion);
+};
+
 const getDataFromAccessDatabase = async <TRecord = unknown>(
   params: GetDataFromAccessDatabaseParams
 ) => {
@@ -190,6 +194,7 @@ const electronAPI = {
   getMem,
   setLoginItemSettings,
   getLoginItemSettings,
+  getVersion,
 
   // CMD
   getDataFromAccessDatabase,

@@ -1,7 +1,10 @@
-import { fetchLoginItemSettings } from "./fetchers";
+import { fetchLoginItemSettings, fetchVersion } from "./fetchers";
 import { queryClient } from "@/lib/query";
 
 export const loader = async () => {
-  const data = await queryClient.ensureQueryData(fetchLoginItemSettings());
-  return data;
+  const loginItemSettings = await queryClient.ensureQueryData(
+    fetchLoginItemSettings()
+  );
+  const version = await queryClient.ensureQueryData(fetchVersion());
+  return { version, loginItemSettings };
 };

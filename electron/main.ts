@@ -184,6 +184,11 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+  channel.getVersion,
+  withLog(async () => app.getVersion())
+);
+
+ipcMain.handle(
   channel.printer,
   withLog(async (e, data: string) => {
     // Prevent unused variable warning
