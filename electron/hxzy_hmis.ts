@@ -54,8 +54,8 @@ export const getFn = async (request: GetRequest) => {
 };
 
 export type PostRequestItem = {
-  eq_ip: string; // 设备IP
-  eq_bh: string; // 设备编号
+  EQ_IP: string; // 设备IP
+  EQ_BH: string; // 设备编号
   dh: string; // 扫码单号
   zx: string; // RE2B
   zh: string; // 03684
@@ -125,8 +125,8 @@ export type SaveDataParams = DatabaseBaseParams & {
 
 export const recordToSaveDataParams = async (
   record: Record,
-  eq_ip: string,
-  eq_bh: string,
+  EQ_IP: string,
+  EQ_BH: string,
   startDate: string,
   endDate: string,
   driverPath: string,
@@ -185,8 +185,8 @@ export const recordToSaveDataParams = async (
   });
 
   return {
-    eq_ip,
-    eq_bh,
+    EQ_IP,
+    EQ_BH,
     dh: record.dh,
     zx: detection.szWHModel || "",
     zh: record.zh,

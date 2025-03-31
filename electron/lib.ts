@@ -135,9 +135,12 @@ export const getIP = () => {
         return false;
       }
 
+      if (i.address === "192.168.1.100") {
+        return false;
+      }
+
       return !i.internal;
     })?.address;
-
   return IP || "";
 };
 
@@ -180,3 +183,4 @@ export const withLog = <
 
   return fnWithLog as TFn;
 };
+getIP();

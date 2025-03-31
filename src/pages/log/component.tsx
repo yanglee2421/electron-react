@@ -10,10 +10,20 @@ import {
 } from "@mui/material";
 import { ClearOutlined } from "@mui/icons-material";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
+import React from "react";
 
 export const Component = () => {
+  const scrollCursorRef = React.useRef<HTMLDivElement>(null);
+
   const logs = useIndexedStore((s) => s.logs);
   const set = useIndexedStore((s) => s.set);
+
+  React.useEffect(() => {
+    scrollCursorRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
 
   const renderLog = () => {
     return (
@@ -55,6 +65,7 @@ export const Component = () => {
         }
       />
       {renderLog()}
+      <div ref={scrollCursorRef}></div>
     </Card>
   );
 };
