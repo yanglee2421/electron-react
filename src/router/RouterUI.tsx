@@ -170,6 +170,16 @@ const routes: RouteObject[] = [
             path: "jtv_hmis_setting",
             lazy: () => import("@/pages/jtv_hmis_setting/route"),
           },
+          {
+            id: "kh_hmis",
+            path: "kh_hmis",
+            lazy: () => import("@/pages/kh_hmis/route"),
+          },
+          {
+            id: "kh_hmis_setting",
+            path: "kh_hmis_setting",
+            lazy: () => import("@/pages/kh_hmis_setting/route"),
+          },
         ],
       },
     ],

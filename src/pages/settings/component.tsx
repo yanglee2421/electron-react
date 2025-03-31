@@ -24,6 +24,7 @@ import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useSnackbar } from "notistack";
+import { NavMenu } from "@/components/layout";
 
 const schema = z.object({
   databasePath: z.string().min(1, { message: "数据库路径不能为空" }),
@@ -170,17 +171,11 @@ export const Component = () => {
                       label="主页路径"
                       select
                     >
-                      <MenuItem value="/settings">设置</MenuItem>
-                      <MenuItem value="/detection">现车作业</MenuItem>
-                      <MenuItem value="/quartors">季度校验</MenuItem>
-                      <MenuItem value="/log">日志</MenuItem>
-                      <MenuItem value="/hxzy_hmis">华兴致远HMIS</MenuItem>
-                      <MenuItem value="/hxzy_hmis_setting">
-                        华兴致远HMIS设置
-                      </MenuItem>
-                      <MenuItem value="/hxzy_verifies">
-                        华兴致远日常校验
-                      </MenuItem>
+                      {NavMenu.list.map((i) => (
+                        <MenuItem key={i.to} value={i.to}>
+                          {i.label}
+                        </MenuItem>
+                      ))}
                     </TextField>
                   )}
                 />

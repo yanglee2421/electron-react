@@ -36,8 +36,9 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
 import { useSnackbar } from "notistack";
-import { useGetData, useSaveData, useAutoInputToVC } from "./fetchers";
+import { useGetData, useSaveData } from "./fetchers";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
+import { useAutoInputToVC } from "@/hooks/useAutoInputToVC";
 import dayjs from "dayjs";
 import {
   createColumnHelper,

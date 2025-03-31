@@ -111,6 +111,8 @@ export const NavMenu = () => {
   );
 };
 
+NavMenu.list = list;
+
 const HEADER_SIZE_XS = 14;
 const HEADER_SIZE_SM = 16;
 const ASIDE_SIZE = 72;
