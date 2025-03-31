@@ -41,6 +41,7 @@ type JTV_HMIS = {
   autoInput: boolean;
   autoUpload: boolean;
   autoUploadInterval: number;
+  unitCode: string;
 };
 
 type StoreState = {
@@ -85,6 +86,7 @@ export const useIndexedStore = create<Store>()(
         autoInput: true,
         autoUpload: true,
         autoUploadInterval: 1000 * 30,
+        unitCode: "",
       },
     })),
     {

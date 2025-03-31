@@ -11,6 +11,8 @@ export const getDataFromAccessDatabase = "getDataFromAccessDatabase";
 export const hxzy_hmis_get_data = "hxzy_hmis_get_data";
 export const hxzy_hmis_save_data = "hxzy_hmis_save_data";
 export const hxzy_hmis_upload_verifies = "hxzy_hmis_upload_verifies";
+export const jtv_hmis_get_data = "jtv_hmis_get_data";
+export const jtv_hmis_save_data = "jtv_hmis_save_data";
 
 // Electron
 export const log = "log";

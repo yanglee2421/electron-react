@@ -75,6 +75,12 @@ const list = [
     label: "华兴致远日常校验",
     icon: <CalendarTodayOutlined />,
   },
+  { to: "/jtv_hmis", label: "京天威HMIS", icon: <QrCodeScannerOutlined /> },
+  {
+    to: "/jtv_hmis_setting",
+    label: "京天威HMIS设置",
+    icon: <TuneOutlined />,
+  },
   {
     to: "/detection",
     label: "现车作业",
@@ -139,14 +145,12 @@ const AuthAside = styled("aside")(({ theme }) => ({
 }));
 
 const AuthContainer = styled("div")(({ theme }) => ({
+  display: "flex",
   flexDirection: "column",
-
   minBlockSize: "100dvh",
 
   paddingBlockStart: theme.spacing(HEADER_SIZE_XS),
   [theme.breakpoints.up("sm")]: {
-    display: "flex",
-
     paddingInlineStart: theme.spacing(ASIDE_SIZE),
     paddingBlockStart: theme.spacing(HEADER_SIZE_SM),
   },

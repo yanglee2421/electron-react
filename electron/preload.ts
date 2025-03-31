@@ -7,13 +7,8 @@ import type {
   VerifyData,
 } from "@/api/database_types";
 import type { AutoInputToVCParams } from "@/api/autoInput_types";
-import type {
-  GetRequest,
-  GetResponse,
-  PostResponse,
-  SaveDataParams,
-  UploadVerifiesParams,
-} from "#/electron/hxzy_hmis";
+import type * as HXZY_HMIS from "#/electron/hxzy_hmis";
+import type * as JTV_HMIS from "#/electron/jtv_hmis";
 
 type LogCallback = (data: Log) => void;
 type SubscribeLog = (handler: LogCallback) => () => void;
@@ -61,17 +56,19 @@ const autoInputToVC = async (params: AutoInputToVCParams) => {
   return data;
 };
 
-const hxzy_hmis_get_data = async (params: GetRequest) => {
+const hxzy_hmis_get_data = async (params: HXZY_HMIS.GetRequest) => {
   const data = await ipcRenderer.invoke(channel.hxzy_hmis_get_data, params);
-  return data as GetResponse;
+  return data as HXZY_HMIS.GetResponse;
 };
 
-const hxzy_hmis_save_data = async (params: SaveDataParams) => {
+const hxzy_hmis_save_data = async (params: HXZY_HMIS.SaveDataParams) => {
   const data = await ipcRenderer.invoke(channel.hxzy_hmis_save_data, params);
-  return data as { result: PostResponse; dhs: string[] };
+  return data as { result: HXZY_HMIS.PostResponse; dhs: string[] };
 };
 
-const hxzy_hmis_upload_verifies = async (params: UploadVerifiesParams) => {
+const hxzy_hmis_upload_verifies = async (
+  params: HXZY_HMIS.UploadVerifiesParams
+) => {
   const data = await ipcRenderer.invoke(
     channel.hxzy_hmis_upload_verifies,
     params
@@ -80,6 +77,16 @@ const hxzy_hmis_upload_verifies = async (params: UploadVerifiesParams) => {
     verifies: Verify;
     verifiesData: VerifyData[];
   };
+};
+
+const jtv_hmis_get_data = async (params: JTV_HMIS.GetRequest) => {
+  const data = await ipcRenderer.invoke(channel.jtv_hmis_get_data, params);
+  return data as JTV_HMIS.GetResponse;
+};
+
+const jtv_hmis_save_data = async (params: JTV_HMIS.SaveDataParams) => {
+  const data = await ipcRenderer.invoke(channel.jtv_hmis_save_data, params);
+  return data as { result: JTV_HMIS.PostResponse; dhs: string[] };
 };
 
 const toggleMode = async (mode: "system" | "dark" | "light") => {
@@ -139,17 +146,26 @@ export const subscribeWindowHide = (handler: () => void) => {
 };
 
 const electronAPI = {
-  subscribeLog,
-  getPathForFile,
+  // Electron
   openDevTools,
+  toggleMode,
+  setAlwaysOnTop,
+  getPathForFile,
   getMem,
+
+  // CMD
   getDataFromAccessDatabase,
   autoInputToVC,
+
+  // HTTP
   hxzy_hmis_get_data,
   hxzy_hmis_save_data,
   hxzy_hmis_upload_verifies,
-  toggleMode,
-  setAlwaysOnTop,
+  jtv_hmis_get_data,
+  jtv_hmis_save_data,
+
+  // Subscriptions
+  subscribeLog,
   subscribeWindowFocus,
   subscribeWindowBlur,
   subscribeWindowShow,
