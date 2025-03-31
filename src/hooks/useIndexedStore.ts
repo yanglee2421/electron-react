@@ -45,13 +45,21 @@ type JTV_HMIS = {
   unitCode: string;
 };
 
+export type HistoryXuzhoubei = History & {
+  PJ_ZZRQ: string; // 制造日期
+  PJ_ZZDW: string; // 制造单位
+  PJ_SCZZRQ: string; // 首次组装日期
+  PJ_SCZZDW: string; // 首次组装单位
+  PJ_MCZZRQ: string; // 末次组装日期
+  PJ_MCZZDW: string; // 末次组装单位
+};
+
 type JTV_HMIS_XUZHOUBEI = {
-  history: History[];
+  history: HistoryXuzhoubei[];
   host: string;
   autoInput: boolean;
   autoUpload: boolean;
   autoUploadInterval: number;
-  unitCode: string;
 };
 
 type StoreState = {
@@ -106,7 +114,6 @@ export const useIndexedStore = create<Store>()(
         autoInput: true,
         autoUpload: true,
         autoUploadInterval: 1000 * 30,
-        unitCode: "",
       },
     })),
     {

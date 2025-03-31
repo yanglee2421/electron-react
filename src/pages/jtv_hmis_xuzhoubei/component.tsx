@@ -48,12 +48,10 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
-import type { History } from "@/hooks/useIndexedStore";
+import type { HistoryXuzhoubei } from "@/hooks/useIndexedStore";
 
 type ActionCellProps = {
-  id: string;
-  dh: string;
-  zh: string;
+  row: HistoryXuzhoubei;
 };
 
 const ActionCell = (props: ActionCellProps) => {
@@ -63,7 +61,7 @@ const ActionCell = (props: ActionCellProps) => {
   const snackbar = useSnackbar();
   const set = useIndexedStore((s) => s.set);
   const settings = useIndexedStore((s) => s.settings);
-  const hmis = useIndexedStore((s) => s.jtv_hmis);
+  const hmis = useIndexedStore((s) => s.jtv_hmis_xuzhoubei);
 
   const handleClose = () => setAnchorEl(null);
 
@@ -82,8 +80,14 @@ const ActionCell = (props: ActionCellProps) => {
                 host: hmis.host,
                 records: [
                   {
-                    dh: props.dh,
-                    zh: props.zh,
+                    dh: props.row.barCode,
+                    zh: props.row.zh,
+                    PJ_ZZRQ: props.row.PJ_ZZRQ, // 制造日期
+                    PJ_ZZDW: props.row.PJ_ZZDW, // 制造单位
+                    PJ_SCZZRQ: props.row.PJ_SCZZRQ, // 首次组装日期
+                    PJ_SCZZDW: props.row.PJ_SCZZDW, // 首次组装单位
+                    PJ_MCZZRQ: props.row.PJ_MCZZRQ, // 末次组装日期
+                    PJ_MCZZDW: props.row.PJ_MCZZDW, // 末次组装单位
                   },
                 ],
               },
@@ -93,8 +97,8 @@ const ActionCell = (props: ActionCellProps) => {
                     variant: "error",
                   });
                 },
-                onSuccess(data) {
-                  snackbar.enqueueSnackbar(data.result.msg, {
+                onSuccess() {
+                  snackbar.enqueueSnackbar("上传成功", {
                     variant: "success",
                   });
                   handleClose();
@@ -111,9 +115,10 @@ const ActionCell = (props: ActionCellProps) => {
         <MenuItem
           onClick={() => {
             set((d) => {
-              d.jtv_hmis.history = d.jtv_hmis.history.filter(
-                (row) => row.id !== props.id
-              );
+              d.jtv_hmis_xuzhoubei.history =
+                d.jtv_hmis_xuzhoubei.history.filter(
+                  (row) => row.id !== props.row.id
+                );
             });
             handleClose();
           }}
@@ -140,7 +145,7 @@ const useScanerForm = () =>
     resolver: zodResolver(schema),
   });
 
-const columnHelper = createColumnHelper<History>();
+const columnHelper = createColumnHelper<HistoryXuzhoubei>();
 
 const columns = [
   columnHelper.display({
@@ -193,13 +198,7 @@ const columns = [
   columnHelper.display({
     id: "action",
     header: "操作",
-    cell: ({ row }) => (
-      <ActionCell
-        id={row.getValue("id")}
-        dh={row.getValue("barCode")}
-        zh={row.getValue("zh")}
-      />
-    ),
+    cell: ({ row }) => <ActionCell row={row.original} />,
   }),
 ];
 
@@ -215,9 +214,9 @@ export const Component = () => {
   const snackbar = useSnackbar();
   const autoInput = useAutoInputToVC();
   const set = useIndexedStore((s) => s.set);
-  const hmis = useIndexedStore((s) => s.jtv_hmis);
+  const hmis = useIndexedStore((s) => s.jtv_hmis_xuzhoubei);
   const setting = useIndexedStore((s) => s.settings);
-  const history = useIndexedStore((s) => s.jtv_hmis.history);
+  const history = useIndexedStore((s) => s.jtv_hmis_xuzhoubei.history);
 
   const setInputFocus = React.useCallback(() => {
     inputRef.current?.focus();
@@ -237,7 +236,16 @@ export const Component = () => {
     () =>
       history
         .filter((row) => !row.isUploaded)
-        .map((row) => ({ dh: row.barCode, zh: row.zh })),
+        .map((row) => ({
+          dh: row.barCode,
+          zh: row.zh,
+          PJ_ZZRQ: row.PJ_ZZRQ, // 制造日期
+          PJ_ZZDW: row.PJ_ZZDW, // 制造单位
+          PJ_SCZZRQ: row.PJ_SCZZRQ, // 首次组装日期
+          PJ_SCZZDW: row.PJ_SCZZDW, // 首次组装单位
+          PJ_MCZZRQ: row.PJ_MCZZRQ, // 末次组装日期
+          PJ_MCZZDW: row.PJ_MCZZDW, // 末次组装单位
+        })),
     [history]
   );
 
@@ -350,7 +358,6 @@ export const Component = () => {
                   {
                     barCode: values.barCode,
                     host: hmis.host,
-                    unitCode: hmis.unitCode,
                   },
                   {
                     onError: (error) => {
@@ -366,14 +373,14 @@ export const Component = () => {
                 await autoInput.mutateAsync(
                   {
                     driverPath: setting.driverPath,
-                    zx: data.data[0].ZX,
-                    zh: data.data[0].ZH,
-                    czzzdw: data.data[0].CZZZDW,
-                    sczzdw: data.data[0].SCZZDW,
-                    mczzdw: data.data[0].MCZZDW,
-                    czzzrq: dayjs(data.data[0].CZZZRQ).format("YYYYMM"),
-                    sczzrq: dayjs(data.data[0].SCZZRQ).format("YYYYMMDD"),
-                    mczzrq: dayjs(data.data[0].MCZZRQ).format("YYYYMMDD"),
+                    zx: data[0].ZX,
+                    zh: data[0].ZH,
+                    czzzdw: data[0].CZZZDW,
+                    sczzdw: data[0].SCZZDW,
+                    mczzdw: data[0].MCZZDW,
+                    czzzrq: dayjs(data[0].CZZZRQ).format("YYYYMM"),
+                    sczzrq: dayjs(data[0].SCZZRQ).format("YYYYMMDD"),
+                    mczzrq: dayjs(data[0].MCZZRQ).format("YYYYMMDD"),
                     ztx: "1",
                     ytx: "1",
                   },
@@ -438,6 +445,12 @@ export const Component = () => {
                   records: selectedRows.map((row) => ({
                     dh: row.original.barCode,
                     zh: row.original.zh,
+                    PJ_ZZRQ: row.original.PJ_ZZRQ, // 制造日期
+                    PJ_ZZDW: row.original.PJ_ZZDW, // 制造单位
+                    PJ_SCZZRQ: row.original.PJ_SCZZRQ, // 首次组装日期
+                    PJ_SCZZDW: row.original.PJ_SCZZDW, // 首次组装单位
+                    PJ_MCZZRQ: row.original.PJ_MCZZRQ, // 末次组装日期
+                    PJ_MCZZDW: row.original.PJ_MCZZDW, // 末次组装单位
                   })),
                 },
                 {
@@ -463,9 +476,10 @@ export const Component = () => {
             onClick={() => {
               const deleteIds = new Set(selectedRows.map((i) => i.id));
               set((d) => {
-                d.jtv_hmis.history = d.jtv_hmis.history.filter(
-                  (i) => !deleteIds.has(i.id)
-                );
+                d.jtv_hmis_xuzhoubei.history =
+                  d.jtv_hmis_xuzhoubei.history.filter(
+                    (i) => !deleteIds.has(i.id)
+                  );
               });
             }}
           >

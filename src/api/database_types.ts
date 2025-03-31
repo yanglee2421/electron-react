@@ -9,6 +9,9 @@ export type Detection = {
   szIDsFirst: string | null;
   szIDsLast: string | null;
   szIDsMake: string | null;
+  /**
+   * @description 轴号
+   */
   szIDsWheel: string | null;
   szMemo: string | null;
   szResult: string | null;
@@ -16,6 +19,9 @@ export type Detection = {
   szTMLast: string | null;
   szTMMake: string | null;
   szUsername: string | null;
+  /**
+   * @description 轴型
+   */
   szWHModel: string | null;
   tmnow: string | null;
 };

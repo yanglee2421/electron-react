@@ -9,6 +9,7 @@ import type {
 import type { AutoInputToVCParams } from "@/api/autoInput_types";
 import type * as HXZY_HMIS from "#/electron/hxzy_hmis";
 import type * as JTV_HMIS from "#/electron/jtv_hmis";
+import type * as JTV_HMIS_XUZHOUBEI from "#/electron/jtv_hmis_xuzhoubei";
 
 type LogCallback = (data: Log) => void;
 type SubscribeLog = (handler: LogCallback) => () => void;
@@ -97,6 +98,26 @@ const jtv_hmis_save_data = async (params: JTV_HMIS.SaveDataParams) => {
   return data as { result: JTV_HMIS.PostResponse; dhs: string[] };
 };
 
+const jtv_hmis_xuzhoubei_get_data = async (
+  params: JTV_HMIS_XUZHOUBEI.GetRequest
+) => {
+  const data = await ipcRenderer.invoke(
+    channel.jtv_hmis_xuzhoubei_get_data,
+    params
+  );
+  return data as JTV_HMIS_XUZHOUBEI.GetResponse;
+};
+
+const jtv_hmis_xuzhoubei_save_data = async (
+  params: JTV_HMIS_XUZHOUBEI.SaveDataParams
+) => {
+  const data = await ipcRenderer.invoke(
+    channel.jtv_hmis_xuzhoubei_save_data,
+    params
+  );
+  return data as { result: JTV_HMIS_XUZHOUBEI.PostResponse; dhs: string[] };
+};
+
 const subscribeWindowFocus = (handler: () => void) => {
   const listener = (event: Electron.IpcRendererEvent) => {
     // Prevent unused variable warning
@@ -180,6 +201,8 @@ const electronAPI = {
   hxzy_hmis_upload_verifies,
   jtv_hmis_get_data,
   jtv_hmis_save_data,
+  jtv_hmis_xuzhoubei_get_data,
+  jtv_hmis_xuzhoubei_save_data,
 
   // Subscriptions
   subscribeLog,

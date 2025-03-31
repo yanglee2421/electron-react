@@ -34,7 +34,6 @@ const schema = z.object({
     .number({ message: "自动上传间隔必须是数字" })
     .int({ message: "自动上传间隔必须是整数" })
     .min(1000 * 10, { message: "自动上传间隔不能小于10秒" }),
-  unitCode: z.string(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -120,7 +119,6 @@ export const Component = () => {
     autoInput: hmis.autoInput,
     autoUpload: hmis.autoUpload,
     autoUploadInterval: hmis.autoUploadInterval,
-    unitCode: hmis.unitCode,
   });
 
   return (
@@ -137,7 +135,6 @@ export const Component = () => {
               d.jtv_hmis_xuzhoubei.autoUpload = data.autoUpload;
               d.jtv_hmis_xuzhoubei.autoUploadInterval = data.autoUploadInterval;
               d.jtv_hmis_xuzhoubei.host = `${data.ip}:${data.port}`;
-              d.jtv_hmis_xuzhoubei.unitCode = data.unitCode;
             });
             snackbar.enqueueSnackbar("保存成功", { variant: "success" });
           }, console.warn)}
@@ -168,21 +165,6 @@ export const Component = () => {
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                     label="端口号"
-                    fullWidth
-                  />
-                )}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="unitCode"
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    label="单位代码"
                     fullWidth
                   />
                 )}

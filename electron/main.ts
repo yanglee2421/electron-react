@@ -398,7 +398,6 @@ ipcMain.handle(
     void e;
     const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
     const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
-    const eq_ip = getIP();
     const corporation = await getCorporation({
       driverPath: params.driverPath,
       databasePath: params.databasePath,
@@ -406,9 +405,8 @@ ipcMain.handle(
 
     const settledData = await Promise.allSettled(
       params.records.map((record) =>
-        jtvHmis.recordToSaveDataParams(
+        jtvHmisXuzhoubei.recordToSaveDataParams(
           record,
-          eq_ip,
           corporation.DeviceNO || "",
           startDate,
           endDate,
@@ -422,19 +420,27 @@ ipcMain.handle(
       .filter((i) => i.status === "fulfilled")
       .map((i) => i.value);
 
-    const dhs = data.map((i) => i.dh);
-
     if (!data.length) {
       throw `轴号[${params.records
         .map((record) => record.zh)
         .join(",")}],均未找到对应的记录`;
     }
 
-    const result = await jtvHmisXuzhoubei.postFn({
-      data,
-      host: params.host,
-    });
+    const dhs: string[] = [];
 
-    return { result, dhs };
+    for (const item of data) {
+      await jtvHmisXuzhoubei
+        .postFn({
+          data: item,
+          host: params.host,
+        })
+        .then((res) => {
+          if (!res) return;
+          dhs.push(item.PJ_SN);
+        })
+        .catch(Boolean);
+    }
+
+    return { dhs };
   })
 );
