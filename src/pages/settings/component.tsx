@@ -199,28 +199,6 @@ export const Component = () => {
                   )}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
-                  control={form.control}
-                  name="home_path"
-                  render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                      fullWidth
-                      label="主页路径"
-                      select
-                    >
-                      {NavMenu.list.map((i) => (
-                        <MenuItem key={i.to} value={i.to}>
-                          {i.label}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-              </Grid>
             </Grid>
           </form>
         </CardContent>
