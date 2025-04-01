@@ -5,7 +5,6 @@ import {
   CloudUploadOutlined,
   DeleteOutlined,
   KeyboardReturnOutlined,
-  MoreVertOutlined,
 } from "@mui/icons-material";
 import {
   Card,
@@ -25,12 +24,11 @@ import {
   TablePagination,
   Button,
   Divider,
-  Checkbox,
-  MenuItem,
-  Menu,
-  ListItemIcon,
-  ListItemText,
-  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -54,7 +52,7 @@ type ActionCellProps = {
 };
 
 const ActionCell = (props: ActionCellProps) => {
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [showAlert, setShowAlert] = React.useState(false);
 
   const saveData = useSaveData();
   const snackbar = useSnackbar();
@@ -62,72 +60,73 @@ const ActionCell = (props: ActionCellProps) => {
   const settings = useIndexedStore((s) => s.settings);
   const hmis = useIndexedStore((s) => s.jtv_hmis_xuzhoubei);
 
-  const handleClose = () => setAnchorEl(null);
+  const handleClose = () => setShowAlert(false);
+
+  const handleUpload = () => {
+    saveData.mutate(
+      {
+        databasePath: settings.databasePath,
+        driverPath: settings.driverPath,
+        host: hmis.host,
+        records: [
+          {
+            dh: props.row.barCode,
+            zh: props.row.zh,
+            PJ_ZZRQ: props.row.PJ_ZZRQ, // 制造日期
+            PJ_ZZDW: props.row.PJ_ZZDW, // 制造单位
+            PJ_SCZZRQ: props.row.PJ_SCZZRQ, // 首次组装日期
+            PJ_SCZZDW: props.row.PJ_SCZZDW, // 首次组装单位
+            PJ_MCZZRQ: props.row.PJ_MCZZRQ, // 末次组装日期
+            PJ_MCZZDW: props.row.PJ_MCZZDW, // 末次组装单位
+          },
+        ],
+      },
+      {
+        onError(error) {
+          snackbar.enqueueSnackbar(error.message, {
+            variant: "error",
+          });
+        },
+        onSuccess() {
+          snackbar.enqueueSnackbar("上传成功", {
+            variant: "success",
+          });
+        },
+      }
+    );
+  };
+
+  const handleDelete = () => {
+    set((d) => {
+      d.jtv_hmis_xuzhoubei.history = d.jtv_hmis_xuzhoubei.history.filter(
+        (row) => row.id !== props.row.id
+      );
+    });
+    handleClose();
+  };
 
   return (
     <>
-      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-        <MoreVertOutlined />
+      <IconButton disabled={saveData.isPending} onClick={handleUpload}>
+        <CloudUploadOutlined />
       </IconButton>
-      <Menu open={!!anchorEl} onClose={handleClose} anchorEl={anchorEl}>
-        <MenuItem
-          onClick={() => {
-            saveData.mutate(
-              {
-                databasePath: settings.databasePath,
-                driverPath: settings.driverPath,
-                host: hmis.host,
-                records: [
-                  {
-                    dh: props.row.barCode,
-                    zh: props.row.zh,
-                    PJ_ZZRQ: props.row.PJ_ZZRQ, // 制造日期
-                    PJ_ZZDW: props.row.PJ_ZZDW, // 制造单位
-                    PJ_SCZZRQ: props.row.PJ_SCZZRQ, // 首次组装日期
-                    PJ_SCZZDW: props.row.PJ_SCZZDW, // 首次组装单位
-                    PJ_MCZZRQ: props.row.PJ_MCZZRQ, // 末次组装日期
-                    PJ_MCZZDW: props.row.PJ_MCZZDW, // 末次组装单位
-                  },
-                ],
-              },
-              {
-                onError(error) {
-                  snackbar.enqueueSnackbar(error.message, {
-                    variant: "error",
-                  });
-                },
-                onSuccess() {
-                  snackbar.enqueueSnackbar("上传成功", {
-                    variant: "success",
-                  });
-                  handleClose();
-                },
-              }
-            );
-          }}
-        >
-          <ListItemIcon>
-            <CloudUploadOutlined />
-          </ListItemIcon>
-          <ListItemText primary="上传" />
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            set((d) => {
-              d.jtv_hmis_xuzhoubei.history =
-                d.jtv_hmis_xuzhoubei.history.filter(
-                  (row) => row.id !== props.row.id
-                );
-            });
-            handleClose();
-          }}
-        >
-          <ListItemIcon>
-            <DeleteOutlined color="error" />
-          </ListItemIcon>
-          <ListItemText primary="删除" />
-        </MenuItem>
-      </Menu>
+      <IconButton>
+        <DeleteOutlined color="error" onClick={() => setShowAlert(true)} />
+      </IconButton>
+      <Dialog open={showAlert} onClose={handleClose}>
+        <DialogTitle>删除</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            确定要删除该记录吗？删除后无法恢复。
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>取消</Button>
+          <Button color="error" onClick={handleDelete}>
+            删除
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
@@ -147,29 +146,6 @@ const useScanerForm = () =>
 const columnHelper = createColumnHelper<HistoryXuzhoubei>();
 
 const columns = [
-  columnHelper.display({
-    id: "checkbox",
-    header: ({ table }) => (
-      <Checkbox
-        indeterminate={table.getIsSomeRowsSelected()}
-        checked={table.getIsAllRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onChange={row.getToggleSelectedHandler()}
-      />
-    ),
-    footer: ({ table }) => (
-      <Checkbox
-        indeterminate={table.getIsSomeRowsSelected()}
-        checked={table.getIsAllRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-      />
-    ),
-  }),
   columnHelper.accessor("id", {
     header: "ID",
     footer: "ID",
@@ -212,7 +188,6 @@ export const Component = () => {
   const saveData = useSaveData();
   const snackbar = useSnackbar();
   const autoInput = useAutoInputToVC();
-  const set = useIndexedStore((s) => s.set);
   const hmis = useIndexedStore((s) => s.jtv_hmis_xuzhoubei);
   const setting = useIndexedStore((s) => s.settings);
   const history = useIndexedStore((s) => s.jtv_hmis_xuzhoubei.history);
@@ -229,8 +204,6 @@ export const Component = () => {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const selectedRows = table.getSelectedRowModel().flatRows;
-  const noSelectedRow = !selectedRows.length;
   const uploadQueue = React.useMemo(
     () =>
       history
@@ -339,7 +312,7 @@ export const Component = () => {
 
   return (
     <Card>
-      <CardHeader title="京天威HMIS" />
+      <CardHeader title="京天威HMIS" subheader="徐州北" />
       <CardContent>
         <Grid container spacing={6}>
           <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
@@ -432,60 +405,6 @@ export const Component = () => {
         </Grid>
       </CardContent>
       <Divider />
-      <CardContent>
-        <Stack direction={"row"} spacing={3}>
-          <Button
-            onClick={() => {
-              saveData.mutate(
-                {
-                  databasePath: setting.databasePath,
-                  driverPath: setting.driverPath,
-                  host: hmis.host,
-                  records: selectedRows.map((row) => ({
-                    dh: row.original.barCode,
-                    zh: row.original.zh,
-                    PJ_ZZRQ: row.original.PJ_ZZRQ, // 制造日期
-                    PJ_ZZDW: row.original.PJ_ZZDW, // 制造单位
-                    PJ_SCZZRQ: row.original.PJ_SCZZRQ, // 首次组装日期
-                    PJ_SCZZDW: row.original.PJ_SCZZDW, // 首次组装单位
-                    PJ_MCZZRQ: row.original.PJ_MCZZRQ, // 末次组装日期
-                    PJ_MCZZDW: row.original.PJ_MCZZDW, // 末次组装单位
-                  })),
-                },
-                {
-                  onError(error) {
-                    snackbar.enqueueSnackbar(error.message, {
-                      variant: "error",
-                    });
-                  },
-                }
-              );
-            }}
-            disabled={noSelectedRow || saveData.isPending}
-            variant="outlined"
-            startIcon={<CloudUploadOutlined />}
-          >
-            上传
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<DeleteOutlined />}
-            color="error"
-            disabled={noSelectedRow}
-            onClick={() => {
-              const deleteIds = new Set(selectedRows.map((i) => i.id));
-              set((d) => {
-                d.jtv_hmis_xuzhoubei.history =
-                  d.jtv_hmis_xuzhoubei.history.filter(
-                    (i) => !deleteIds.has(i.id)
-                  );
-              });
-            }}
-          >
-            删除
-          </Button>
-        </Stack>
-      </CardContent>
       <TableContainer>
         <Table>
           <TableHead>

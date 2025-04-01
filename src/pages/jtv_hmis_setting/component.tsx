@@ -125,7 +125,7 @@ export const Component = () => {
 
   return (
     <Card>
-      <CardHeader title="京天威HMIS设置" />
+      <CardHeader title="京天威HMIS设置" subheader="统型" />
       <CardContent>
         <form
           id={formId}

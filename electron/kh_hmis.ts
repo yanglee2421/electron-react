@@ -13,75 +13,77 @@ import type {
 } from "@/api/database_types";
 
 export type GetResponse = {
-  code: "200";
-  msg: "数据读取成功";
-  data: [
-    {
-      CZZZDW: "048";
-      CZZZRQ: "2009-10";
-      MCZZDW: "131";
-      MCZZRQ: "2018-07-09 00:00:00";
-      SCZZDW: "131";
-      SCZZRQ: "2018-07-09 00:00:00";
-      DH: "91022070168";
-      ZH: "67444";
-      ZX: "RE2B";
-      SRYY: "厂修";
-      SRDW: "588";
-    }
-  ];
+  data: {
+    mesureId: "A23051641563052";
+    zh: "10911";
+    zx: "RE2B";
+    clbjLeft: "HEZD Ⅱ 18264";
+    clbjRight: "HEZD Ⅱ 32744";
+    czzzrq: "2003-01-16";
+    czzzdw: "673";
+    ldszrq: "2014-06-22";
+    ldszdw: "673";
+    ldmzrq: "20 18-04-13";
+    ldmzdw: "623";
+  };
+  code: 200;
+  msg: "success";
 };
 
 export type GetRequest = {
   barCode: string;
   host: string;
-  unitCode: string;
 };
 
 export const getFn = async (request: GetRequest) => {
-  const url = new URL(`http://${request.host}/api/getData`);
+  const url = new URL(`http://${request.host}/api/lzdx_csbtsj_get/get`);
   url.searchParams.set("type", "csbts");
-  url.searchParams.set("param", [request.barCode, request.unitCode].join(","));
+  url.searchParams.set("param", request.barCode);
   log(`请求数据:${url.href}`);
-  const res = await net.fetch(url.href, { method: "GET" });
+  const res = await net.fetch(url.href, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      mesureId: request.barCode,
+    }),
+  });
   if (!res.ok) {
     throw `接口异常[${res.status}]:${res.statusText}`;
   }
   const data: GetResponse = await res.json();
   log(`返回数据:${JSON.stringify(data)}`);
+  if (data.code !== 200) {
+    throw `接口异常[${data.code}]:${data.msg}`;
+  }
   return data;
 };
 
 export type PostRequestItem = {
-  eq_ip: string; // 设备IP
-  eq_bh: string; // 设备编号
-  dh: string; // 扫码单号
-  zx: string; // RE2B
-  zh: string; // 03684
-  TSFF: string;
-  TSSJ: string;
-  TFLAW_PLACE: string; // 缺陷部位
-  TFLAW_TYPE: string; // 缺陷类型
-  TVIEW: string; // 处理意见
-  CZCTZ: string; // 左穿透签章
-  CZCTY: string; // 右穿透签章
-  LZXRBZ: string; // 左轮座签章
-  LZXRBY: string; // 右轮座签章
-  XHCZ: string; // 左轴颈签章
-  XHCY: string; // 右轴颈签章
-  TSZ: string; // 探伤者左
-  TSZY: string; // 探伤者右
-  CT_RESULT: string; // 合格
+  mesureId?: string;
+  ZH: string;
+  ZCTJG: string;
+  ZZJJG: string;
+  ZLZJG: string;
+  YCTJG: string;
+  YZJJG: string;
+  YLZJG: string;
+  JCJG: string;
+  BZ?: string;
+  TSRY: string;
+  JCSJ: string;
+  sbbh: string;
 };
 
 export type PostRequest = {
-  data: PostRequestItem[];
+  data: PostRequestItem;
   host: string;
 };
 
 export type PostResponse = {
-  code: "200";
-  msg: "数据上传成功";
+  code: 200;
+  msg: "success";
 };
 
 export const postFn = async (request: PostRequest) => {
@@ -101,7 +103,7 @@ export const postFn = async (request: PostRequest) => {
   }
   const data: PostResponse = await res.json();
   log(`返回数据:${JSON.stringify(data)}`);
-  if (data.code !== "200") {
+  if (data.code !== 200) {
     throw `接口异常[${data.code}]:${data.msg}`;
   }
   return data;
@@ -117,7 +119,7 @@ export type SaveDataParams = DatabaseBaseParams & {
   records: {
     dh: string;
     zh: string;
-  }[];
+  };
 };
 
 export const recordToSaveDataParams = async (
@@ -201,37 +203,5 @@ export const recordToSaveDataParams = async (
     TSZ: user,
     TSZY: user,
     CT_RESULT: detection.szResult || "",
-  };
-};
-
-export type UploadVerifiesParams = DatabaseBaseParams & {
-  host: string;
-  id: string;
-};
-
-export const idToUploadVerifiesData = async (
-  id: string,
-  driverPath: string,
-  databasePath: string
-) => {
-  const [verifies] = await getDataFromAccessDatabase<Verify>({
-    databasePath,
-    driverPath,
-    sql: `SELECT * FROM verifies WHERE szIDs ='${id}'`,
-  });
-
-  if (!verifies) {
-    throw `未找到ID[${id}]的verifies记录`;
-  }
-
-  const verifiesData = await getDataFromAccessDatabase<VerifyData>({
-    databasePath,
-    driverPath,
-    sql: `SELECT * FROM verifies_data WHERE opid ='${verifies.szIDs}'`,
-  });
-
-  return {
-    verifies,
-    verifiesData,
   };
 };

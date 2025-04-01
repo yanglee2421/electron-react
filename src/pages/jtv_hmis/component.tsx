@@ -331,7 +331,7 @@ export const Component = () => {
 
   return (
     <Card>
-      <CardHeader title="京天威HMIS" />
+      <CardHeader title="京天威HMIS" subheader="统型" />
       <CardContent>
         <Grid container spacing={6}>
           <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>

@@ -65,15 +65,16 @@ const LinkWrapper = styled("div")(({ theme }) => ({
 
 const list = [
   { to: "/hxzy_hmis", label: "华兴致远HMIS", icon: <QrCodeScannerOutlined /> },
-  {
-    to: "/hxzy_hmis_setting",
-    label: "华兴致远HMIS设置",
-    icon: <TuneOutlined />,
-  },
+
   {
     to: "/hxzy_verifies",
     label: "华兴致远日常校验",
     icon: <CalendarTodayOutlined />,
+  },
+  {
+    to: "/hxzy_hmis_setting",
+    label: "华兴致远HMIS设置",
+    icon: <TuneOutlined />,
   },
   { to: "/jtv_hmis", label: "京天威HMIS", icon: <QrCodeScannerOutlined /> },
   {

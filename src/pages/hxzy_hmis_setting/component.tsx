@@ -125,7 +125,7 @@ export const Component = () => {
 
   return (
     <Card>
-      <CardHeader title="华兴致远HMIS设置" />
+      <CardHeader title="华兴致远HMIS设置" subheader="成都北" />
       <CardContent>
         <form
           id={formId}
