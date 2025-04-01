@@ -112,9 +112,23 @@ app.on("activate", () => {
   }
 });
 
-app.whenReady().then(async () => {
-  createWindow();
-});
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
+
+  app.whenReady().then(async () => {
+    createWindow();
+  });
+}
 
 ipcMain.handle(
   channel.openDevTools,
@@ -226,9 +240,9 @@ ipcMain.handle(
       data.czzzdw,
       data.sczzdw,
       data.mczzdw,
-      data.czzzrq,
-      data.sczzrq,
-      data.mczzrq,
+      dayjs(data.czzzrq).format("YYYYMM"),
+      dayjs(data.sczzrq).format("YYYYMMDD"),
+      dayjs(data.mczzrq).format("YYYYMMDD"),
       data.ztx,
       data.ytx,
     ]);

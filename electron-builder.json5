@@ -25,7 +25,8 @@
     oneClick: false,
     perMachine: false,
     allowToChangeInstallationDirectory: true,
-    deleteAppDataOnUninstall: false,
+    deleteAppDataOnUninstall: false,   
+    allowElevation: true,
   },
   linux: {
     target: ["AppImage"],

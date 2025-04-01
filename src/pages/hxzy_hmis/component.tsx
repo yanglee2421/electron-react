@@ -39,7 +39,6 @@ import { useSnackbar } from "notistack";
 import { useGetData, useSaveData } from "./fetchers";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 import { useAutoInputToVC } from "@/hooks/useAutoInputToVC";
-import dayjs from "dayjs";
 import {
   createColumnHelper,
   flexRender,
@@ -373,9 +372,9 @@ export const Component = () => {
                     czzzdw: data.data[0].CZZZDW,
                     sczzdw: data.data[0].SCZZDW,
                     mczzdw: data.data[0].MCZZDW,
-                    czzzrq: dayjs(data.data[0].CZZZRQ).format("YYYYMM"),
-                    sczzrq: dayjs(data.data[0].SCZZRQ).format("YYYYMMDD"),
-                    mczzrq: dayjs(data.data[0].MCZZRQ).format("YYYYMMDD"),
+                    czzzrq: data.data[0].CZZZRQ,
+                    sczzrq: data.data[0].SCZZRQ,
+                    mczzrq: data.data[0].MCZZRQ,
                     ztx: "1",
                     ytx: "1",
                   },
