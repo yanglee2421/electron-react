@@ -14,7 +14,6 @@ import {
   withLog,
 } from "./lib";
 import dayjs from "dayjs";
-import * as consts from "@/lib/constants";
 import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
@@ -285,10 +284,8 @@ ipcMain.handle(
   withLog(async (e, params: hxzyHmis.SaveDataParams) => {
     // Prevent unused variable warning
     void e;
-    const startDate = dayjs()
-      .startOf("day")
-      .format(consts.DATE_FORMAT_DATABASE);
-    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT_DATABASE);
+    const startDate = dayjs().startOf("day").toISOString();
+    const endDate = dayjs().endOf("day").toISOString();
     const eq_ip = getIP();
     const corporation = await getCorporation({
       driverPath: params.driverPath,
@@ -333,7 +330,7 @@ ipcMain.handle(
 
 ipcMain.handle(
   channel.hxzy_hmis_upload_verifies,
-  withLog(async (e, params: jtvHmis.UploadVerifiesParams) => {
+  withLog(async (e, params: hxzyHmis.UploadVerifiesParams) => {
     // Prevent unused variable warning
     void e;
     // Ensure an error is thrown when the promise is rejected
@@ -360,10 +357,8 @@ ipcMain.handle(
   withLog(async (e, params: jtvHmis.SaveDataParams) => {
     // Prevent unused variable warning
     void e;
-    const startDate = dayjs()
-      .startOf("day")
-      .format(consts.DATE_FORMAT_DATABASE);
-    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT_DATABASE);
+    const startDate = dayjs().startOf("day").toISOString();
+    const endDate = dayjs().endOf("day").toISOString();
     const eq_ip = getIP();
     const corporation = await getCorporation({
       driverPath: params.driverPath,
@@ -420,54 +415,7 @@ ipcMain.handle(
   withLog(async (e, params: jtvHmisXuzhoubei.SaveDataParams) => {
     // Prevent unused variable warning
     void e;
-    const startDate = dayjs()
-      .startOf("day")
-      .format(consts.DATE_FORMAT_DATABASE);
-    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT_DATABASE);
-    const corporation = await getCorporation({
-      driverPath: params.driverPath,
-      databasePath: params.databasePath,
-    });
-
-    const settledData = await Promise.allSettled(
-      params.records.map((record) =>
-        jtvHmisXuzhoubei.recordToSaveDataParams(
-          record,
-          corporation.DeviceNO || "",
-          startDate,
-          endDate,
-          params.driverPath,
-          params.databasePath
-        )
-      )
-    );
-
-    const data = settledData
-      .filter((i) => i.status === "fulfilled")
-      .map((i) => i.value);
-
-    if (!data.length) {
-      throw `轴号[${params.records
-        .map((record) => record.zh)
-        .join(",")}],均未找到对应的记录`;
-    }
-
-    const dhs: string[] = [];
-
-    for (const item of data) {
-      await jtvHmisXuzhoubei
-        .postFn({
-          data: item,
-          host: params.host,
-        })
-        .then((res) => {
-          if (!res) return;
-          dhs.push(item.PJ_SN);
-        })
-        .catch(Boolean);
-    }
-
-    return { dhs };
+    return await jtvHmisXuzhoubei.saveData(params);
   })
 );
 

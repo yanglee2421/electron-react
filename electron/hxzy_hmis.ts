@@ -1,11 +1,15 @@
 // 成都北 华兴致远
 
 import { net } from "electron";
-import { getDataFromAccessDatabase, log } from "./lib";
+import {
+  getDetectionByZH,
+  getDetectionDatasByOPID,
+  getDataFromAccessDatabase,
+  log,
+} from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
 import type {
-  Detection,
   DetectionData,
   Verify,
   VerifyData,
@@ -135,15 +139,13 @@ export const recordToSaveDataParams = async (
   driverPath: string,
   databasePath: string
 ): Promise<PostRequestItem> => {
-  const [detection] = await getDataFromAccessDatabase<Detection>({
+  const detection = await getDetectionByZH({
     driverPath,
     databasePath,
-    sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${record.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
+    zh: record.zh,
+    startDate,
+    endDate,
   });
-
-  if (!detection) {
-    throw `未找到轴号[${record.zh}]的detections记录`;
-  }
 
   const user = detection.szUsername || "";
   let detectionDatas: DetectionData[] = [];
@@ -158,10 +160,10 @@ export const recordToSaveDataParams = async (
       TFLAW_PLACE = "车轴";
       TFLAW_TYPE = "裂纹";
       TVIEW = "人工复探";
-      detectionDatas = await getDataFromAccessDatabase<DetectionData>({
+      detectionDatas = await getDetectionDatasByOPID({
         driverPath,
         databasePath,
-        sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
+        opid: detection.szIDs,
       });
       break;
     default:

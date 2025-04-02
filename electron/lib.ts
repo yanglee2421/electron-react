@@ -11,6 +11,8 @@ import type {
   DetectionData,
 } from "@/api/database_types";
 import type { Log } from "@/hooks/useIndexedStore";
+import dayjs from "dayjs";
+import * as consts from "@/lib/constants";
 
 export const execAsync = promisify(exec);
 export const execFileAsync = promisify(execFile);
@@ -195,10 +197,13 @@ export const getDetectionByZH = async (params: {
   startDate: string;
   endDate: string;
 }) => {
+  const startDate = dayjs(params.startDate).format(consts.DATE_FORMAT_DATABASE);
+  const endDate = dayjs(params.endDate).format(consts.DATE_FORMAT_DATABASE);
+
   const [detection] = await getDataFromAccessDatabase<Detection>({
     driverPath: params.driverPath,
     databasePath: params.databasePath,
-    sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${params.startDate}# AND #${params.endDate}# ORDER BY tmnow DESC`,
+    sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
   });
 
   if (!detection) {
@@ -220,4 +225,36 @@ export const getDetectionDatasByOPID = async (params: {
   });
 
   return detectionDatas;
+};
+
+export const getDirection = (nBoard: number) => {
+  //board(板卡)：0.左 1.右
+  switch (nBoard) {
+    case 1:
+      return "右";
+    case 0:
+      return "左";
+    default:
+      return "";
+  }
+};
+
+export const getPlace = (nChannel: number) => {
+  //channel：0.穿透 1~2.轮座 3~8.轴颈
+  switch (nChannel) {
+    case 0:
+      return "穿透";
+    case 1:
+    case 2:
+      return "轮座";
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+      return "轴颈";
+    default:
+      return "车轴";
+  }
 };

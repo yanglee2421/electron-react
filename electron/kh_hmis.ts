@@ -9,7 +9,6 @@ import {
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import * as consts from "@/lib/constants";
 import type { DatabaseBaseParams } from "@/api/database_types";
 
 export type GetResponse = {
@@ -188,12 +187,8 @@ export type SaveDataParams = DatabaseBaseParams & {
 };
 
 export const saveData = async (params: SaveDataParams) => {
-  const startDate = dayjs(params.date)
-    .startOf("day")
-    .format(consts.DATE_FORMAT_DATABASE);
-  const endDate = dayjs(params.date)
-    .endOf("day")
-    .format(consts.DATE_FORMAT_DATABASE);
+  const startDate = dayjs(params.date).startOf("day").toISOString();
+  const endDate = dayjs(params.date).endOf("day").toISOString();
 
   const detection = await getDetectionByZH({
     driverPath: params.driverPath,

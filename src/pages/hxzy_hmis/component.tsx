@@ -5,7 +5,6 @@ import {
   CloudUploadOutlined,
   DeleteOutlined,
   KeyboardReturnOutlined,
-  MoreVertOutlined,
 } from "@mui/icons-material";
 import {
   Card,
@@ -26,11 +25,12 @@ import {
   Button,
   Divider,
   Checkbox,
-  MenuItem,
-  Menu,
-  ListItemIcon,
-  ListItemText,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -56,7 +56,7 @@ type ActionCellProps = {
 };
 
 const ActionCell = (props: ActionCellProps) => {
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [showAlert, setShowAlert] = React.useState(false);
 
   const saveData = useSaveData();
   const snackbar = useSnackbar();
@@ -64,66 +64,69 @@ const ActionCell = (props: ActionCellProps) => {
   const settings = useIndexedStore((s) => s.settings);
   const hmis = useIndexedStore((s) => s.hxzy_hmis);
 
-  const handleClose = () => setAnchorEl(null);
+  const handleClose = () => setShowAlert(false);
+  const handleDelete = () => {
+    set((d) => {
+      d.hxzy_hmis.history = d.hxzy_hmis.history.filter(
+        (row) => row.id !== props.id
+      );
+    });
+    handleClose();
+  };
+
+  const handleUpload = () => {
+    saveData.mutate(
+      {
+        databasePath: settings.databasePath,
+        driverPath: settings.driverPath,
+        host: hmis.host,
+        gd: hmis.gd,
+        records: [
+          {
+            dh: props.dh,
+            zh: props.zh,
+          },
+        ],
+      },
+      {
+        onError(error) {
+          snackbar.enqueueSnackbar(error.message, {
+            variant: "error",
+          });
+        },
+        onSuccess(data) {
+          snackbar.enqueueSnackbar(data.result.msg, {
+            variant: "success",
+          });
+          handleClose();
+        },
+      }
+    );
+  };
 
   return (
     <>
-      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-        <MoreVertOutlined />
+      <IconButton onClick={handleUpload} disabled={saveData.isPending}>
+        <CloudUploadOutlined />
       </IconButton>
-      <Menu open={!!anchorEl} onClose={handleClose} anchorEl={anchorEl}>
-        <MenuItem
-          onClick={() => {
-            saveData.mutate(
-              {
-                databasePath: settings.databasePath,
-                driverPath: settings.driverPath,
-                host: hmis.host,
-                gd: hmis.gd,
-                records: [
-                  {
-                    dh: props.dh,
-                    zh: props.zh,
-                  },
-                ],
-              },
-              {
-                onError(error) {
-                  snackbar.enqueueSnackbar(error.message, {
-                    variant: "error",
-                  });
-                },
-                onSuccess(data) {
-                  snackbar.enqueueSnackbar(data.result.msg, {
-                    variant: "success",
-                  });
-                  handleClose();
-                },
-              }
-            );
-          }}
-        >
-          <ListItemIcon>
-            <CloudUploadOutlined />
-          </ListItemIcon>
-          <ListItemText primary="上传" />
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            set((d) => {
-              d.hxzy_hmis.history = d.hxzy_hmis.history.filter(
-                (row) => row.id !== props.id
-              );
-            });
-            handleClose();
-          }}
-        >
-          <ListItemIcon>
-            <DeleteOutlined color="error" />
-          </ListItemIcon>
-          <ListItemText primary="删除" />
-        </MenuItem>
-      </Menu>
+      <IconButton
+        onClick={() => setShowAlert(true)}
+        disabled={saveData.isPending}
+      >
+        <DeleteOutlined color="error" />
+      </IconButton>
+      <Dialog open={showAlert} onClose={handleClose}>
+        <DialogTitle>删除</DialogTitle>
+        <DialogContent>
+          <DialogContentText>确定要删除这条记录吗？</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>取消</Button>
+          <Button onClick={handleDelete} color="error">
+            删除
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
@@ -255,20 +258,20 @@ export const Component = () => {
         gd: hmis.gd,
         records: uploadQueue,
       });
-    }, 1000 * 30);
+    }, hmis.autoUploadInterval);
 
     return () => {
       clearInterval(timer);
     };
   }, [
-    hmis.autoUpload,
-    history,
+    uploadQueue,
     saveDataMutate,
     setting.databasePath,
     setting.driverPath,
-    uploadQueue,
     hmis.gd,
     hmis.host,
+    hmis.autoUpload,
+    hmis.autoUploadInterval,
   ]);
 
   React.useEffect(() => {

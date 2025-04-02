@@ -178,11 +178,7 @@ const jtv_hmis_xuzhoubei_get_data = async (
 const jtv_hmis_xuzhoubei_save_data = async (
   params: JTV_HMIS_XUZHOUBEI.SaveDataParams
 ) => {
-  const data = await ipcRenderer.invoke(
-    channel.jtv_hmis_xuzhoubei_save_data,
-    params
-  );
-  return data as { result: JTV_HMIS_XUZHOUBEI.PostResponse; dhs: string[] };
+  await ipcRenderer.invoke(channel.jtv_hmis_xuzhoubei_save_data, params);
 };
 
 const kh_hmis_get_data = async (params: KH_HMIS.GetRequest) => {

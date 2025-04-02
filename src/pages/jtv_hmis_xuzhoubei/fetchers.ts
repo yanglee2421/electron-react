@@ -54,12 +54,12 @@ export const useSaveData = () => {
       );
       return data;
     },
-    onSuccess(data) {
-      const records = new Set(data.dhs);
+    onSuccess(data, variable) {
+      void data;
 
       set((d) => {
         d.jtv_hmis_xuzhoubei.history.forEach((row) => {
-          if (records.has(row.barCode)) {
+          if (row.barCode === variable.dh) {
             row.isUploaded = true;
           }
         });

@@ -1,16 +1,10 @@
 // 成都北 华兴致远
 
 import { net } from "electron";
-import { getDataFromAccessDatabase, log } from "./lib";
+import { getDetectionDatasByOPID, getDetectionByZH, log } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import type {
-  Detection,
-  DetectionData,
-  Verify,
-  VerifyData,
-  DatabaseBaseParams,
-} from "@/api/database_types";
+import type { DetectionData, DatabaseBaseParams } from "@/api/database_types";
 
 export type GetResponse = {
   code: "200";
@@ -129,15 +123,13 @@ export const recordToSaveDataParams = async (
   driverPath: string,
   databasePath: string
 ): Promise<PostRequestItem> => {
-  const [detection] = await getDataFromAccessDatabase<Detection>({
+  const detection = await getDetectionByZH({
     driverPath,
     databasePath,
-    sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${record.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
+    zh: record.zh,
+    startDate,
+    endDate,
   });
-
-  if (!detection) {
-    throw `未找到轴号[${record.zh}]的detections记录`;
-  }
 
   const user = detection.szUsername || "";
   let detectionDatas: DetectionData[] = [];
@@ -152,10 +144,10 @@ export const recordToSaveDataParams = async (
       TFLAW_PLACE = "车轴";
       TFLAW_TYPE = "裂纹";
       TVIEW = "人工复探";
-      detectionDatas = await getDataFromAccessDatabase<DetectionData>({
-        driverPath,
+      detectionDatas = await getDetectionDatasByOPID({
         databasePath,
-        sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
+        driverPath,
+        opid: detection.szIDs,
       });
       break;
     default:
@@ -201,37 +193,5 @@ export const recordToSaveDataParams = async (
     TSZ: user,
     TSZY: user,
     CT_RESULT: detection.szResult || "",
-  };
-};
-
-export type UploadVerifiesParams = DatabaseBaseParams & {
-  host: string;
-  id: string;
-};
-
-export const idToUploadVerifiesData = async (
-  id: string,
-  driverPath: string,
-  databasePath: string
-) => {
-  const [verifies] = await getDataFromAccessDatabase<Verify>({
-    databasePath,
-    driverPath,
-    sql: `SELECT * FROM verifies WHERE szIDs ='${id}'`,
-  });
-
-  if (!verifies) {
-    throw `未找到ID[${id}]的verifies记录`;
-  }
-
-  const verifiesData = await getDataFromAccessDatabase<VerifyData>({
-    databasePath,
-    driverPath,
-    sql: `SELECT * FROM verifies_data WHERE opid ='${verifies.szIDs}'`,
-  });
-
-  return {
-    verifies,
-    verifiesData,
   };
 };

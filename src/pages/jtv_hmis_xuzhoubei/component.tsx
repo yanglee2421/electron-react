@@ -68,18 +68,15 @@ const ActionCell = (props: ActionCellProps) => {
         databasePath: settings.databasePath,
         driverPath: settings.driverPath,
         host: hmis.host,
-        records: [
-          {
-            dh: props.row.barCode,
-            zh: props.row.zh,
-            PJ_ZZRQ: props.row.PJ_ZZRQ, // 制造日期
-            PJ_ZZDW: props.row.PJ_ZZDW, // 制造单位
-            PJ_SCZZRQ: props.row.PJ_SCZZRQ, // 首次组装日期
-            PJ_SCZZDW: props.row.PJ_SCZZDW, // 首次组装单位
-            PJ_MCZZRQ: props.row.PJ_MCZZRQ, // 末次组装日期
-            PJ_MCZZDW: props.row.PJ_MCZZDW, // 末次组装单位
-          },
-        ],
+        dh: props.row.barCode,
+        zh: props.row.zh,
+        date: props.row.date,
+        PJ_ZZRQ: props.row.PJ_ZZRQ, // 制造日期
+        PJ_ZZDW: props.row.PJ_ZZDW, // 制造单位
+        PJ_SCZZRQ: props.row.PJ_SCZZRQ, // 首次组装日期
+        PJ_SCZZDW: props.row.PJ_SCZZDW, // 首次组装单位
+        PJ_MCZZRQ: props.row.PJ_MCZZRQ, // 末次组装日期
+        PJ_MCZZDW: props.row.PJ_MCZZDW, // 末次组装单位
       },
       {
         onError(error) {
@@ -211,6 +208,7 @@ export const Component = () => {
         .map((row) => ({
           dh: row.barCode,
           zh: row.zh,
+          date: row.date,
           PJ_ZZRQ: row.PJ_ZZRQ, // 制造日期
           PJ_ZZDW: row.PJ_ZZDW, // 制造单位
           PJ_SCZZRQ: row.PJ_SCZZRQ, // 首次组装日期
@@ -228,25 +226,36 @@ export const Component = () => {
     if (!uploadQueue.length) return;
 
     const timer = setInterval(() => {
+      const firstItem = uploadQueue[0];
+      if (!firstItem) return;
+
       saveDataMutate({
         databasePath: setting.databasePath,
         driverPath: setting.driverPath,
         host: hmis.host,
-        records: uploadQueue,
+        dh: firstItem.dh,
+        zh: firstItem.zh,
+        date: firstItem.date,
+        PJ_ZZRQ: firstItem.PJ_ZZRQ, // 制造日期
+        PJ_ZZDW: firstItem.PJ_ZZDW, // 制造单位
+        PJ_SCZZRQ: firstItem.PJ_SCZZRQ, // 首次组装日期
+        PJ_SCZZDW: firstItem.PJ_SCZZDW, // 首次组装单位
+        PJ_MCZZRQ: firstItem.PJ_MCZZRQ, // 末次组装日期
+        PJ_MCZZDW: firstItem.PJ_MCZZDW, // 末次组装单位
       });
-    }, 1000 * 30);
+    }, hmis.autoUploadInterval);
 
     return () => {
       clearInterval(timer);
     };
   }, [
-    hmis.autoUpload,
-    history,
+    uploadQueue,
     saveDataMutate,
     setting.databasePath,
     setting.driverPath,
     hmis.host,
-    uploadQueue,
+    hmis.autoUpload,
+    hmis.autoUploadInterval,
   ]);
 
   React.useEffect(() => {

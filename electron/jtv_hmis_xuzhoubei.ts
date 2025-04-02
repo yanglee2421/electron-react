@@ -1,14 +1,17 @@
-// 成都北 华兴致远
+// 京天威 徐州北
 
 import { net } from "electron";
-import { getDataFromAccessDatabase, log } from "./lib";
+import {
+  getCorporation,
+  getDetectionByZH,
+  getDetectionDatasByOPID,
+  log,
+  getPlace,
+  getDirection,
+} from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import type {
-  Detection,
-  DetectionData,
-  DatabaseBaseParams,
-} from "@/api/database_types";
+import type { DatabaseBaseParams } from "@/api/database_types";
 
 export type GetResponse = [
   {
@@ -109,9 +112,25 @@ export const postFn = async (request: PostRequest) => {
   return data;
 };
 
-type Record = {
-  dh: string;
+const formatDate = (date: string | null) =>
+  dayjs(date).format("YYYY-MM-DD HH:mm:ss");
+
+const hasQX = (result: string | null) => {
+  switch (result) {
+    case "故障":
+    case "有故障":
+    case "疑似故障":
+      return true;
+    default:
+      return false;
+  }
+};
+
+export type SaveDataParams = DatabaseBaseParams & {
+  host: string;
   zh: string;
+  dh: string;
+  date: string;
   PJ_ZZRQ: string; // 制造日期
   PJ_ZZDW: string; // 制造单位
   PJ_SCZZRQ: string; // 首次组装日期
@@ -120,83 +139,35 @@ type Record = {
   PJ_MCZZDW: string; // 末次组装单位
 };
 
-export type SaveDataParams = DatabaseBaseParams & {
-  host: string;
-  records: Record[];
-};
+export const saveData = async (params: SaveDataParams) => {
+  const startDate = dayjs(params.date).startOf("day").toISOString();
+  const endDate = dayjs(params.date).endOf("day").toISOString();
 
-const formatDate = (date: string | null) =>
-  dayjs(date).format("YYYY-MM-DD HH:mm:ss");
-
-export const recordToSaveDataParams = async (
-  record: Record,
-  SB_SN: string,
-  startDate: string,
-  endDate: string,
-  driverPath: string,
-  databasePath: string
-): Promise<PostRequestItem> => {
-  const [detection] = await getDataFromAccessDatabase<Detection>({
-    driverPath,
-    databasePath,
-    sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${record.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
+  const detection = await getDetectionByZH({
+    driverPath: params.driverPath,
+    databasePath: params.databasePath,
+    zh: params.zh,
+    startDate,
+    endDate,
   });
 
-  if (!detection) {
-    throw `未找到轴号[${record.zh}]的detections记录`;
-  }
+  const corporation = await getCorporation({
+    databasePath: params.databasePath,
+    driverPath: params.driverPath,
+  });
 
+  const SB_SN = corporation.DeviceNO || "";
   const user = detection.szUsername || "";
-  let detectionDatas: DetectionData[] = [];
-  let LW_TFLAW_PLACE = "";
-  let LW_TFLAW_TYPE = "";
-  let LW_TVIEW = "";
 
-  switch (detection.szResult) {
-    case "故障":
-    case "有故障":
-    case "疑似故障":
-      LW_TFLAW_PLACE = "车轴";
-      LW_TFLAW_TYPE = "裂纹";
-      LW_TVIEW = "人工复探";
-      detectionDatas = await getDataFromAccessDatabase<DetectionData>({
-        driverPath,
-        databasePath,
-        sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
-      });
-      break;
-    default:
-  }
-
-  detectionDatas.forEach((detectionData) => {
-    switch (detectionData.nChannel) {
-      case 0:
-        LW_TFLAW_PLACE = "穿透";
-        break;
-      case 1:
-      case 2:
-        LW_TFLAW_PLACE = "卸荷槽";
-        break;
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-        LW_TFLAW_PLACE = "轮座";
-        break;
-    }
-  });
-
-  return {
+  const body: PostRequestItem = {
     PJ_JXID: detection.szIDs,
     SB_SN,
     PJ_TAG: "0", // 设备工作状态(开始检修1/结束检修0检修前后更新此标志)
-    PJ_ZH: record.zh, // 轴号
+    PJ_ZH: params.zh, // 轴号
     PJ_XH: detection.szWHModel || "", // 轴型
-    PJ_ZZRQ: record.PJ_ZZRQ, // 制造日期
-    PJ_ZZDW: record.PJ_ZZDW, // 制造单位
-    PJ_SN: record.dh, // 从HMIS获取的唯一ID(记录流水号)
+    PJ_ZZRQ: params.PJ_ZZRQ, // 制造日期
+    PJ_ZZDW: params.PJ_ZZDW, // 制造单位
+    PJ_SN: params.dh, // 从HMIS获取的唯一ID(记录流水号)
     PJ_JXRQ: formatDate(detection.tmnow), // 检修日期(最近更新PJ_TAG的时间)
     CZCTZ: user, // 车轴穿透左(人员签名)
     CZCTY: user, // 车轴穿透右(人员签名)
@@ -204,13 +175,13 @@ export const recordToSaveDataParams = async (
     LZXRBY: user, // 轮座镶入部右(人员签名)
     XHCZ: user, // 卸荷槽左(人员签名)
     XHCY: user, // 卸荷槽右(人员签名)
-    LW_TFLAW_PLACE, // 缺陷部位
-    LW_TFLAW_TYPE, // 缺陷类型
-    LW_TVIEW, // 处理意见
-    PJ_SCZZRQ: formatDate(record.PJ_SCZZRQ), // 首次组装日期
-    PJ_SCZZDW: record.PJ_SCZZDW, // 首次组装单位
-    PJ_MCZZRQ: formatDate(record.PJ_MCZZRQ), // 末次组装日期
-    PJ_MCZZDW: record.PJ_MCZZDW, // 末次组装单位
+    LW_TFLAW_PLACE: "", // 缺陷部位
+    LW_TFLAW_TYPE: "", // 缺陷类型
+    LW_TVIEW: "", // 处理意见
+    PJ_SCZZRQ: formatDate(params.PJ_SCZZRQ), // 首次组装日期
+    PJ_SCZZDW: params.PJ_SCZZDW, // 首次组装单位
+    PJ_MCZZRQ: formatDate(params.PJ_MCZZRQ), // 末次组装日期
+    PJ_MCZZDW: params.PJ_MCZZDW, // 末次组装单位
     LW_CZCTZ: user, // 左穿透
     LW_CZCTY: user, // 右穿透
     LW_LZXRBZ: user, // 左轮座
@@ -218,4 +189,31 @@ export const recordToSaveDataParams = async (
     LW_XHCZ: user, // 左轴颈
     LW_XHCY: user, // 右轴颈
   };
+
+  const hasQx = hasQX(detection.szResult);
+
+  if (hasQx) {
+    const detectionDatas = await getDetectionDatasByOPID({
+      databasePath: params.databasePath,
+      driverPath: params.driverPath,
+      opid: detection.szIDs,
+    });
+
+    body.LW_TFLAW_PLACE = detectionDatas
+      .reduce<string[]>((result, detectionData) => {
+        const direction = getDirection(detectionData.nBoard);
+        const place = getPlace(detectionData.nChannel);
+        result.push(`${place}${direction}`);
+        return result;
+      }, [])
+      .join(",");
+
+    body.LW_TVIEW = "人工复探";
+    body.LW_TFLAW_TYPE = "裂纹";
+  }
+
+  await postFn({
+    data: body,
+    host: params.host,
+  });
 };

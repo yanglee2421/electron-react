@@ -72,38 +72,38 @@ const ActionCell = (props: ActionCellProps) => {
     handleClose();
   };
 
+  const handleUpload = () => {
+    saveData.mutate(
+      {
+        databasePath: settings.databasePath,
+        driverPath: settings.driverPath,
+        host: hmis.host,
+        tsgz: hmis.tsgz,
+        tszjy: hmis.tszjy,
+        tsysy: hmis.tsysy,
+        dh: props.row.barCode,
+        zh: props.row.zh,
+        date: props.row.date,
+      },
+      {
+        onError(error) {
+          snackbar.enqueueSnackbar(error.message, {
+            variant: "error",
+          });
+        },
+        onSuccess() {
+          snackbar.enqueueSnackbar("上传成功", {
+            variant: "success",
+          });
+          handleClose();
+        },
+      }
+    );
+  };
+
   return (
     <>
-      <IconButton
-        onClick={() => {
-          saveData.mutate(
-            {
-              databasePath: settings.databasePath,
-              driverPath: settings.driverPath,
-              host: hmis.host,
-              tsgz: hmis.tsgz,
-              tszjy: hmis.tszjy,
-              tsysy: hmis.tsysy,
-              dh: props.row.barCode,
-              zh: props.row.zh,
-              date: props.row.date,
-            },
-            {
-              onError(error) {
-                snackbar.enqueueSnackbar(error.message, {
-                  variant: "error",
-                });
-              },
-              onSuccess() {
-                snackbar.enqueueSnackbar("上传成功", {
-                  variant: "success",
-                });
-                handleClose();
-              },
-            }
-          );
-        }}
-      >
+      <IconButton disabled={saveData.isPending} onClick={handleUpload}>
         <CloudUploadOutlined />
       </IconButton>
       <IconButton onClick={() => setShow(true)}>
@@ -256,8 +256,7 @@ export const Component = () => {
       clearInterval(timer);
     };
   }, [
-    hmis.autoUpload,
-    history,
+    uploadQueue,
     saveDataMutate,
     setting.databasePath,
     setting.driverPath,
@@ -265,8 +264,8 @@ export const Component = () => {
     hmis.tsgz,
     hmis.tszjy,
     hmis.tsysy,
+    hmis.autoUpload,
     hmis.autoUploadInterval,
-    uploadQueue,
   ]);
 
   React.useEffect(() => {
