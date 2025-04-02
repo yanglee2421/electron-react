@@ -40,7 +40,7 @@ import {
 } from "@tanstack/react-table";
 import type { Verify } from "@/api/database_types";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
-import { DATE_FORMAT } from "@/lib/constants";
+import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 
 type ActionCellProps = {
   id: string;
@@ -129,7 +129,9 @@ export const Component = () => {
 
   const sql = `SELECT * FROM verifies WHERE tmnow BETWEEN #${date
     .startOf("day")
-    .format(DATE_FORMAT)}# AND #${date.endOf("day").format(DATE_FORMAT)}#`;
+    .format(DATE_FORMAT_DATABASE)}# AND #${date
+    .endOf("day")
+    .format(DATE_FORMAT_DATABASE)}#`;
 
   const query = useQuery(
     fetchVerifies({

@@ -5,7 +5,11 @@ import { access, constants } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { BrowserWindow } from "electron";
 import * as channel from "./channel";
-import type { Corporation } from "@/api/database_types";
+import type {
+  Corporation,
+  Detection,
+  DetectionData,
+} from "@/api/database_types";
 import type { Log } from "@/hooks/useIndexedStore";
 
 export const execAsync = promisify(exec);
@@ -34,6 +38,47 @@ export const errorToMessage = (error: unknown) => {
   }
 
   return String(error);
+};
+
+export const withLog = <
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TFn extends (...args: any[]) => Promise<unknown>
+>(
+  fn: TFn
+): TFn => {
+  const fnWithLog = async (...args: Parameters<TFn>) => {
+    try {
+      // Ensure an error is thrown when the promise is rejected
+      return await fn(...args);
+    } catch (error) {
+      const message = errorToMessage(error);
+      log(message, "error");
+      // Throw message instead of error to avoid electron issue #24427
+      throw message;
+    }
+  };
+
+  return fnWithLog as TFn;
+};
+
+export const getIP = () => {
+  const interfaces = networkInterfaces();
+  const IP = Object.values(interfaces)
+    .flat()
+    .find((i) => {
+      if (!i) return false;
+
+      if (i.family !== "IPv4") {
+        return false;
+      }
+
+      if (i.address === "192.168.1.100") {
+        return false;
+      }
+
+      return !i.internal;
+    })?.address;
+  return IP || "";
 };
 
 export const getCpuSerial = async () => {
@@ -124,26 +169,6 @@ export const getDataFromAccessDatabase = async <T = unknown>(params: {
   return JSON.parse(data.stdout) as T[];
 };
 
-export const getIP = () => {
-  const interfaces = networkInterfaces();
-  const IP = Object.values(interfaces)
-    .flat()
-    .find((i) => {
-      if (!i) return false;
-
-      if (i.family !== "IPv4") {
-        return false;
-      }
-
-      if (i.address === "192.168.1.100") {
-        return false;
-      }
-
-      return !i.internal;
-    })?.address;
-  return IP || "";
-};
-
 type GetCorporationParams = {
   driverPath: string;
   databasePath: string;
@@ -163,24 +188,36 @@ export const getCorporation = async (params: GetCorporationParams) => {
   return corporation;
 };
 
-export const withLog = <
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  TFn extends (...args: any[]) => Promise<unknown>
->(
-  fn: TFn
-): TFn => {
-  const fnWithLog = async (...args: Parameters<TFn>) => {
-    try {
-      // Ensure an error is thrown when the promise is rejected
-      return await fn(...args);
-    } catch (error) {
-      const message = errorToMessage(error);
-      log(message, "error");
-      // Throw message instead of error to avoid electron issue #24427
-      throw message;
-    }
-  };
+export const getDetectionByZH = async (params: {
+  driverPath: string;
+  databasePath: string;
+  zh: string;
+  startDate: string;
+  endDate: string;
+}) => {
+  const [detection] = await getDataFromAccessDatabase<Detection>({
+    driverPath: params.driverPath,
+    databasePath: params.databasePath,
+    sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${params.startDate}# AND #${params.endDate}# ORDER BY tmnow DESC`,
+  });
 
-  return fnWithLog as TFn;
+  if (!detection) {
+    throw `未找到轴号[${params.zh}]的detections记录`;
+  }
+
+  return detection;
 };
-getIP();
+
+export const getDetectionDatasByOPID = async (params: {
+  driverPath: string;
+  databasePath: string;
+  opid: string;
+}) => {
+  const detectionDatas = await getDataFromAccessDatabase<DetectionData>({
+    driverPath: params.driverPath,
+    databasePath: params.databasePath,
+    sql: `SELECT * FROM detections_data WHERE opid ='${params.opid}'`,
+  });
+
+  return detectionDatas;
+};

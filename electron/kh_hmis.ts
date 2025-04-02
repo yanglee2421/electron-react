@@ -1,16 +1,16 @@
-// 成都北 华兴致远
+// 康华 安康
 
 import { net } from "electron";
-import { getDataFromAccessDatabase, log } from "./lib";
+import {
+  getDetectionDatasByOPID,
+  getDetectionByZH,
+  log,
+  getCorporation,
+} from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import type {
-  Detection,
-  DetectionData,
-  Verify,
-  VerifyData,
-  DatabaseBaseParams,
-} from "@/api/database_types";
+import * as consts from "@/lib/constants";
+import type { DatabaseBaseParams } from "@/api/database_types";
 
 export type GetResponse = {
   data: {
@@ -37,17 +37,16 @@ export type GetRequest = {
 
 export const getFn = async (request: GetRequest) => {
   const url = new URL(`http://${request.host}/api/lzdx_csbtsj_get/get`);
-  url.searchParams.set("type", "csbts");
-  url.searchParams.set("param", request.barCode);
-  log(`请求数据:${url.href}`);
+  const body = JSON.stringify({
+    mesureId: request.barCode,
+  });
+  log(`请求数据[${url.href}]:${body}`);
   const res = await net.fetch(url.href, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      mesureId: request.barCode,
-    }),
+    body,
   });
   if (!res.ok) {
     throw `接口异常[${res.status}]:${res.statusText}`;
@@ -87,10 +86,9 @@ export type PostResponse = {
 };
 
 export const postFn = async (request: PostRequest) => {
-  const url = new URL(`http://${request.host}/api/saveData`);
-  url.searchParams.set("type", "csbts");
+  const url = new URL(`http://${request.host}/api/lzdx_csbtsj_tsjg/save`);
   const body = JSON.stringify(request.data);
-  log(`请求数据:${url.href},${body}`);
+  log(`请求数据[${url.href}]:${body}`);
   const res = await net.fetch(url.href, {
     method: "POST",
     body,
@@ -109,99 +107,176 @@ export const postFn = async (request: PostRequest) => {
   return data;
 };
 
-type Record = {
-  dh: string;
+type QXDataParams = {
+  mesureid: string;
   zh: string;
+  testdatetime: string;
+  testtype: "超声波";
+  btcw: "1";
+  tsr: string;
+  tsgz: string;
+  tszjy: string;
+  tsysy: string;
+  gzmc: "裂纹";
+  clff: "人工复探";
+  qxlzzdmjlnc?: string;
+  qxlzzdmjlwc?: string;
+  qxlzydmjlnc?: string;
+  qxlzydmjlwc?: string;
+  qxlzzlwcnc?: string;
+  qxlzzlwcwc?: string;
+  qxlzylwcnc?: string;
+  qxlzylwcwc?: string;
+  qxlzzlwsnc?: string;
+  qxlzzlwswc?: string;
+  qxlzylwsnc?: string;
+  qxlzylwswc?: string;
+  qxzjzdmjlzj?: string;
+  qxzjzdmjlzs?: string;
+  qxzjydmjlzj?: string;
+  qxzjydmjlzs?: string;
+  qxzjzlwczj?: string;
+  qxzjzlwczs?: string;
+  qxzjylwczj?: string;
+  qxzjylwczs?: string;
+  qxzjzlwszj?: string;
+  qxzjzlwszs?: string;
+  qxzjylwszj?: string;
+  qxzjylwszs?: string;
+  qxclzlwcz?: string;
+  qxclzlwcy?: string;
+  qxclylwcz?: string;
+  qxclylwcy?: string;
+  bz: "";
+};
+
+type SaveQXDataParams = {
+  host: string;
+  data: QXDataParams;
+};
+
+export const saveQXData = async (params: SaveQXDataParams) => {
+  const url = new URL(`http://${params.host}/api/lzdx_csbtsj_whzy_tsjgqx/save`);
+  const body = JSON.stringify(params.data);
+  log(`请求数据[${url.href}]:${body}`);
+  const res = await net.fetch(url.href, {
+    method: "POST",
+    body,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    throw `接口异常[${res.status}]:${res.statusText}`;
+  }
+  const data: PostResponse = await res.json();
+  log(`返回数据:${JSON.stringify(data)}`);
+  if (data.code !== 200) {
+    throw `接口异常[${data.code}]:${data.msg}`;
+  }
+  return data;
 };
 
 export type SaveDataParams = DatabaseBaseParams & {
   host: string;
-  records: {
-    dh: string;
-    zh: string;
-  };
+  dh: string;
+  zh: string;
+  date: string;
 };
 
-export const recordToSaveDataParams = async (
-  record: Record,
-  eq_ip: string,
-  eq_bh: string,
-  startDate: string,
-  endDate: string,
-  driverPath: string,
-  databasePath: string
-): Promise<PostRequestItem> => {
-  const [detection] = await getDataFromAccessDatabase<Detection>({
-    driverPath,
-    databasePath,
-    sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${record.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
+export const saveData = async (params: SaveDataParams) => {
+  const startDate = dayjs(params.date)
+    .startOf("day")
+    .format(consts.DATE_FORMAT_DATABASE);
+  const endDate = dayjs(params.date)
+    .endOf("day")
+    .format(consts.DATE_FORMAT_DATABASE);
+
+  const detection = await getDetectionByZH({
+    driverPath: params.driverPath,
+    databasePath: params.databasePath,
+    zh: params.zh,
+    startDate,
+    endDate,
   });
 
-  if (!detection) {
-    throw `未找到轴号[${record.zh}]的detections记录`;
-  }
-
-  const user = detection.szUsername || "";
-  let detectionDatas: DetectionData[] = [];
-  let TFLAW_PLACE = "";
-  let TFLAW_TYPE = "";
-  let TVIEW = "";
-
-  switch (detection.szResult) {
-    case "故障":
-    case "有故障":
-    case "疑似故障":
-      TFLAW_PLACE = "车轴";
-      TFLAW_TYPE = "裂纹";
-      TVIEW = "人工复探";
-      detectionDatas = await getDataFromAccessDatabase<DetectionData>({
-        driverPath,
-        databasePath,
-        sql: `SELECT * FROM detections_data WHERE opid ='${detection.szIDs}'`,
-      });
-      break;
-    default:
-  }
-
-  detectionDatas.forEach((detectionData) => {
-    switch (detectionData.nChannel) {
-      case 0:
-        TFLAW_PLACE = "穿透";
-        break;
-      case 1:
-      case 2:
-        TFLAW_PLACE = "卸荷槽";
-        break;
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-        TFLAW_PLACE = "轮座";
-        break;
-    }
+  const corporation = await getCorporation({
+    driverPath: params.driverPath,
+    databasePath: params.databasePath,
   });
 
-  return {
-    eq_ip,
-    eq_bh,
-    dh: record.dh,
-    zx: detection.szWHModel || "",
-    zh: record.zh,
-    TSFF: "超声波",
-    TSSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-    TFLAW_PLACE,
-    TFLAW_TYPE,
-    TVIEW,
-    CZCTZ: user,
-    CZCTY: user,
-    LZXRBZ: user,
-    LZXRBY: user,
-    XHCZ: user,
-    XHCY: user,
-    TSZ: user,
-    TSZY: user,
-    CT_RESULT: detection.szResult || "",
+  const JCJG = detection.szResult === "合格" ? "1" : "0";
+
+  const basicBody: PostRequestItem = {
+    mesureId: params.dh,
+    ZH: params.zh,
+    // 1 探伤 0 不探伤
+    ZCTJG: "1",
+    ZZJJG: "1",
+    ZLZJG: "1",
+    YCTJG: "1",
+    YZJJG: "1",
+    YLZJG: "1",
+    JCJG,
+    BZ: "",
+    TSRY: detection.szUsername || "",
+    JCSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
+    sbbh: corporation.DeviceNO || "",
+  };
+
+  await postFn({
+    data: basicBody,
+    host: params.host,
+  });
+
+  if (JCJG === "1") return;
+
+  const detectionDatas = await getDetectionDatasByOPID({
+    driverPath: params.driverPath,
+    databasePath: params.databasePath,
+    opid: detection.szIDs,
+  });
+
+  const qxBody: QXDataParams = {
+    mesureid: params.dh,
+    zh: params.zh,
+    testdatetime: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
+    testtype: "超声波",
+    btcw: "车轴",
+    tsr: detection.szUsername || "",
+    tsgz: detection.szResult || "",
+    tszjy: detection.szUsername || "",
+    tsysy: detection.szResult || "",
+    gzmc: "裂纹",
+    clff: "人工复探",
+    // qxlzzdmjlnc: "",
+    // qxlzzdmjlwc: "",
+    // qxlzydmjlnc: "",
+    // qxlzydmjlwc: "",
+    // qxlzzlwcnc: "",
+    // qxlzzlwcwc: "",
+    // qxlzylwcnc: "",
+    // qxlzylwcwc: "",
+    // qxlzzlwsnc: "",
+    // qxlzzlwswc: "",
+    // qxlzylwsnc: "",
+    // qxlzylwswc: "",
+    // qxzjzdmjlzj: "",
+    // qxzjzdmjlzs: "",
+    // qxzjydmjlzj: "",
+    // qxzjydmjlzs: "",
+    // qxzjzlwczj: "",
+    // qxzjzlwczs: "",
+    // qxzjylwczj: "",
+    // qxzjylwczs: "",
+    // qxzjzlwszj: "",
+    // qxzjzlwszs: "",
+    // qxzjylwszj: "",
+    // qxzjylwszs: "",
+    // qxclzlwcz: "0",
+    // qxclzlwcy: "0",
+    // qxclylwcz: "0",
+    // qxclylwcy: "0",
+    bz: "",
   };
 };

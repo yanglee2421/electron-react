@@ -15,6 +15,8 @@ export const jtv_hmis_get_data = "jtv_hmis_get_data";
 export const jtv_hmis_save_data = "jtv_hmis_save_data";
 export const jtv_hmis_xuzhoubei_get_data = "jtv_hmis_xuzhoubei_get_data";
 export const jtv_hmis_xuzhoubei_save_data = "jtv_hmis_xuzhoubei_save_data";
+export const kh_hmis_get_data = "kh_hmis_get_data";
+export const kh_hmis_save_data = "kh_hmis_save_data";
 
 // Electron
 export const log = "log";

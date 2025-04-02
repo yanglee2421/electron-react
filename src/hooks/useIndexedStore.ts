@@ -60,6 +60,7 @@ type JTV_HMIS_XUZHOUBEI = {
   autoInput: boolean;
   autoUpload: boolean;
   autoUploadInterval: number;
+  username_prefix: string; // 用户名前缀
 };
 
 type KH_HMIS = {
@@ -123,6 +124,7 @@ export const useIndexedStore = create<Store>()(
         autoInput: true,
         autoUpload: true,
         autoUploadInterval: 1000 * 30,
+        username_prefix: "",
       },
       kh_hmis: {
         host: "",

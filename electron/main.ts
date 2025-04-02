@@ -284,8 +284,10 @@ ipcMain.handle(
   withLog(async (e, params: hxzyHmis.SaveDataParams) => {
     // Prevent unused variable warning
     void e;
-    const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
-    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
+    const startDate = dayjs()
+      .startOf("day")
+      .format(consts.DATE_FORMAT_DATABASE);
+    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT_DATABASE);
     const eq_ip = getIP();
     const corporation = await getCorporation({
       driverPath: params.driverPath,
@@ -357,8 +359,10 @@ ipcMain.handle(
   withLog(async (e, params: jtvHmis.SaveDataParams) => {
     // Prevent unused variable warning
     void e;
-    const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
-    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
+    const startDate = dayjs()
+      .startOf("day")
+      .format(consts.DATE_FORMAT_DATABASE);
+    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT_DATABASE);
     const eq_ip = getIP();
     const corporation = await getCorporation({
       driverPath: params.driverPath,
@@ -415,8 +419,10 @@ ipcMain.handle(
   withLog(async (e, params: jtvHmisXuzhoubei.SaveDataParams) => {
     // Prevent unused variable warning
     void e;
-    const startDate = dayjs().startOf("day").format(consts.DATE_FORMAT);
-    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT);
+    const startDate = dayjs()
+      .startOf("day")
+      .format(consts.DATE_FORMAT_DATABASE);
+    const endDate = dayjs().endOf("day").format(consts.DATE_FORMAT_DATABASE);
     const corporation = await getCorporation({
       driverPath: params.driverPath,
       databasePath: params.databasePath,
