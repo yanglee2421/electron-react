@@ -190,6 +190,16 @@ const kh_hmis_save_data = async (params: KH_HMIS.SaveDataParams) => {
   await ipcRenderer.invoke(channel.kh_hmis_save_data, params);
 };
 
+const getCpuSerial = async () => {
+  const data: string = await ipcRenderer.invoke(channel.getCpuSerial);
+  return data;
+};
+
+const getMotherboardSerial = async () => {
+  const data: string = await ipcRenderer.invoke(channel.getMotherboardSerial);
+  return data;
+};
+
 const electronAPI = {
   // Electron
   openPath,
@@ -205,6 +215,8 @@ const electronAPI = {
   // CMD
   getDataFromAccessDatabase,
   autoInputToVC,
+  getCpuSerial,
+  getMotherboardSerial,
 
   // HTTP
   hxzy_hmis_get_data,
