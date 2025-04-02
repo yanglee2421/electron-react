@@ -20,7 +20,7 @@ export const Component = () => {
 
   React.useEffect(() => {
     scrollCursorRef.current?.scrollIntoView({
-      behavior: "smooth",
+      behavior: "instant",
       block: "start",
     });
   }, []);
@@ -37,6 +37,10 @@ export const Component = () => {
                     <ListItemText
                       primary={log.message}
                       secondary={new Date(log.date).toLocaleString()}
+                      sx={{
+                        wordBreak: "break-all",
+                        overflowWrap: "break-word",
+                      }}
                     />
                   </ListItem>
                 ))}
