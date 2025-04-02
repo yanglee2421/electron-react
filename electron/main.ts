@@ -18,6 +18,7 @@ import * as consts from "@/lib/constants";
 import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
+import * as khHmis from "./kh_hmis";
 import type { GetDataFromAccessDatabaseParams } from "@/api/database_types";
 import type { AutoInputToVCParams } from "@/api/autoInput_types";
 
@@ -467,5 +468,24 @@ ipcMain.handle(
     }
 
     return { dhs };
+  })
+);
+
+ipcMain.handle(
+  channel.kh_hmis_get_data,
+  withLog(async (e, params: khHmis.GetRequest) => {
+    // Prevent unused variable warning
+    void e;
+    // Ensure an error is thrown when the promise is rejected
+    return await khHmis.getFn(params);
+  })
+);
+
+ipcMain.handle(
+  channel.kh_hmis_save_data,
+  withLog(async (e, params: khHmis.SaveDataParams) => {
+    // Prevent unused variable warning
+    void e;
+    return await khHmis.saveData(params);
   })
 );

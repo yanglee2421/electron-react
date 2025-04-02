@@ -34,7 +34,9 @@ const schema = z.object({
     .number({ message: "自动上传间隔必须是数字" })
     .int({ message: "自动上传间隔必须是整数" })
     .min(1000 * 10, { message: "自动上传间隔不能小于10秒" }),
-  unitCode: z.string(),
+  tsgz: z.string(),
+  tszjy: z.string(),
+  tsysy: z.string(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -112,7 +114,7 @@ export const Component = () => {
   const formId = React.useId();
 
   const set = useIndexedStore((s) => s.set);
-  const hmis = useIndexedStore((s) => s.jtv_hmis);
+  const hmis = useIndexedStore((s) => s.kh_hmis);
   const snackbar = useSnackbar();
   const form = useSettingForm({
     ip: hmis.host.split(":")[0],
@@ -120,7 +122,9 @@ export const Component = () => {
     autoInput: hmis.autoInput,
     autoUpload: hmis.autoUpload,
     autoUploadInterval: hmis.autoUploadInterval,
-    unitCode: hmis.unitCode,
+    tsgz: hmis.tsgz,
+    tszjy: hmis.tszjy,
+    tsysy: hmis.tsysy,
   });
 
   return (
@@ -133,11 +137,13 @@ export const Component = () => {
           autoComplete="off"
           onSubmit={form.handleSubmit((data) => {
             set((d) => {
-              d.jtv_hmis.autoInput = data.autoInput;
-              d.jtv_hmis.autoUpload = data.autoUpload;
-              d.jtv_hmis.autoUploadInterval = data.autoUploadInterval;
-              d.jtv_hmis.host = `${data.ip}:${data.port}`;
-              d.jtv_hmis.unitCode = data.unitCode;
+              d.kh_hmis.autoInput = data.autoInput;
+              d.kh_hmis.autoUpload = data.autoUpload;
+              d.kh_hmis.autoUploadInterval = data.autoUploadInterval;
+              d.kh_hmis.host = `${data.ip}:${data.port}`;
+              d.kh_hmis.tsgz = data.tsgz;
+              d.kh_hmis.tszjy = data.tszjy;
+              d.kh_hmis.tsysy = data.tsysy;
             });
             snackbar.enqueueSnackbar("保存成功", { variant: "success" });
           }, console.warn)}
@@ -168,6 +174,51 @@ export const Component = () => {
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                     label="端口号"
+                    fullWidth
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                control={form.control}
+                name="tsgz"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    label="探伤工长"
+                    fullWidth
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                control={form.control}
+                name="tszjy"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    label="探伤质检员"
+                    fullWidth
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                control={form.control}
+                name="tsysy"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    label="探伤验收员"
                     fullWidth
                   />
                 )}

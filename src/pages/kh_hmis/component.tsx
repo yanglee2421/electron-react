@@ -26,6 +26,10 @@ import {
   Divider,
   Checkbox,
   Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -45,9 +49,7 @@ import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
 import type { History } from "@/hooks/useIndexedStore";
 
 type ActionCellProps = {
-  id: string;
-  dh: string;
-  zh: string;
+  row: History;
 };
 
 const ActionCell = (props: ActionCellProps) => {
@@ -61,6 +63,15 @@ const ActionCell = (props: ActionCellProps) => {
 
   const handleClose = () => setShow(false);
 
+  const handleDelete = () => {
+    set((d) => {
+      d.kh_hmis.history = d.kh_hmis.history.filter(
+        (row) => row.id !== props.row.id
+      );
+    });
+    handleClose();
+  };
+
   return (
     <>
       <IconButton
@@ -70,12 +81,12 @@ const ActionCell = (props: ActionCellProps) => {
               databasePath: settings.databasePath,
               driverPath: settings.driverPath,
               host: hmis.host,
-              records: [
-                {
-                  dh: props.dh,
-                  zh: props.zh,
-                },
-              ],
+              tsgz: hmis.tsgz,
+              tszjy: hmis.tszjy,
+              tsysy: hmis.tsysy,
+              dh: props.row.barCode,
+              zh: props.row.zh,
+              date: props.row.date,
             },
             {
               onError(error) {
@@ -83,8 +94,8 @@ const ActionCell = (props: ActionCellProps) => {
                   variant: "error",
                 });
               },
-              onSuccess(data) {
-                snackbar.enqueueSnackbar(data.result.msg, {
+              onSuccess() {
+                snackbar.enqueueSnackbar("上传成功", {
                   variant: "success",
                 });
                 handleClose();
@@ -95,19 +106,21 @@ const ActionCell = (props: ActionCellProps) => {
       >
         <CloudUploadOutlined />
       </IconButton>
-      <IconButton
-        onClick={() => {
-          set((d) => {
-            d.kh_hmis.history = d.kh_hmis.history.filter(
-              (row) => row.id !== props.id
-            );
-          });
-          handleClose();
-        }}
-      >
+      <IconButton onClick={() => setShow(true)}>
         <DeleteOutlined color="error" />
       </IconButton>
-      <Dialog open={show}></Dialog>
+      <Dialog open={show} onClose={handleClose}>
+        <DialogTitle>警告</DialogTitle>
+        <DialogContent>
+          <DialogContentText>确定要删除该条数据吗？</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>取消</Button>
+          <Button onClick={handleDelete} color="error">
+            删除
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
@@ -177,13 +190,7 @@ const columns = [
   columnHelper.display({
     id: "action",
     header: "操作",
-    cell: ({ row }) => (
-      <ActionCell
-        id={row.getValue("id")}
-        dh={row.getValue("barCode")}
-        zh={row.getValue("zh")}
-      />
-    ),
+    cell: ({ row }) => <ActionCell row={row.original} />,
   }),
 ];
 
@@ -218,7 +225,7 @@ export const Component = () => {
     () =>
       history
         .filter((row) => !row.isUploaded)
-        .map((row) => ({ dh: row.barCode, zh: row.zh })),
+        .map((row) => ({ dh: row.barCode, zh: row.zh, date: row.date })),
     [history]
   );
 
@@ -229,13 +236,21 @@ export const Component = () => {
     if (!uploadQueue.length) return;
 
     const timer = setInterval(() => {
+      const firstItem = uploadQueue[0];
+      if (!firstItem) return;
+
       saveDataMutate({
         databasePath: setting.databasePath,
         driverPath: setting.driverPath,
         host: hmis.host,
-        records: uploadQueue,
+        tsgz: hmis.tsgz,
+        tszjy: hmis.tszjy,
+        tsysy: hmis.tsysy,
+        dh: firstItem.dh,
+        zh: firstItem.zh,
+        date: firstItem.date,
       });
-    }, 1000 * 30);
+    }, hmis.autoUploadInterval);
 
     return () => {
       clearInterval(timer);
@@ -247,6 +262,10 @@ export const Component = () => {
     setting.databasePath,
     setting.driverPath,
     hmis.host,
+    hmis.tsgz,
+    hmis.tszjy,
+    hmis.tsysy,
+    hmis.autoUploadInterval,
     uploadQueue,
   ]);
 
@@ -346,14 +365,14 @@ export const Component = () => {
                 await autoInput.mutateAsync(
                   {
                     driverPath: setting.driverPath,
-                    zx: data.data[0].ZX,
-                    zh: data.data[0].ZH,
-                    czzzdw: data.data[0].CZZZDW,
-                    sczzdw: data.data[0].SCZZDW,
-                    mczzdw: data.data[0].MCZZDW,
-                    czzzrq: data.data[0].CZZZRQ,
-                    sczzrq: data.data[0].SCZZRQ,
-                    mczzrq: data.data[0].MCZZRQ,
+                    zx: data.data.zx,
+                    zh: data.data.zh,
+                    czzzdw: data.data.czzzdw,
+                    sczzdw: data.data.ldszdw,
+                    mczzdw: data.data.ldmzdw,
+                    czzzrq: data.data.czzzrq,
+                    sczzrq: data.data.ldszrq,
+                    mczzrq: data.data.ldmzrq,
                     ztx: "1",
                     ytx: "1",
                   },

@@ -10,6 +10,7 @@ import type { AutoInputToVCParams } from "@/api/autoInput_types";
 import type * as HXZY_HMIS from "#/electron/hxzy_hmis";
 import type * as JTV_HMIS from "#/electron/jtv_hmis";
 import type * as JTV_HMIS_XUZHOUBEI from "#/electron/jtv_hmis_xuzhoubei";
+import type * as KH_HMIS from "#/electron/kh_hmis";
 
 type LogCallback = (data: Log) => void;
 type SubscribeLog = (handler: LogCallback) => () => void;
@@ -52,6 +53,68 @@ const getMem: GetMem = async () => {
 
 const getVersion = () => {
   return ipcRenderer.invoke(channel.getVersion);
+};
+
+const subscribeWindowFocus = (handler: () => void) => {
+  const listener = (event: Electron.IpcRendererEvent) => {
+    // Prevent unused variable warning
+    void event;
+    handler();
+  };
+  ipcRenderer.on(channel.windowFocus, listener);
+  return () => {
+    ipcRenderer.off(channel.windowFocus, listener);
+  };
+};
+
+const subscribeWindowBlur = (handler: () => void) => {
+  const listener = (event: Electron.IpcRendererEvent) => {
+    // Prevent unused variable warning
+    void event;
+    handler();
+  };
+  ipcRenderer.on(channel.windowBlur, listener);
+  return () => {
+    ipcRenderer.off(channel.windowBlur, listener);
+  };
+};
+
+const subscribeWindowShow = (handler: () => void) => {
+  const listener = (event: Electron.IpcRendererEvent) => {
+    // Prevent unused variable warning
+    void event;
+    handler();
+  };
+  ipcRenderer.on(channel.windowShow, listener);
+  return () => {
+    ipcRenderer.off(channel.windowShow, listener);
+  };
+};
+
+const subscribeWindowHide = (handler: () => void) => {
+  const listener = (event: Electron.IpcRendererEvent) => {
+    // Prevent unused variable warning
+    void event;
+    handler();
+  };
+  ipcRenderer.on(channel.windowHide, listener);
+  return () => {
+    ipcRenderer.off(channel.windowHide, listener);
+  };
+};
+
+const subscribeLog: SubscribeLog = (handler) => {
+  const listener = (event: Electron.IpcRendererEvent, data: Log) => {
+    // Prevent unused variable warning
+    void event;
+    handler(data);
+  };
+
+  ipcRenderer.on(channel.log, listener);
+
+  return () => {
+    ipcRenderer.off(channel.log, listener);
+  };
 };
 
 const getDataFromAccessDatabase = async <TRecord = unknown>(
@@ -122,66 +185,13 @@ const jtv_hmis_xuzhoubei_save_data = async (
   return data as { result: JTV_HMIS_XUZHOUBEI.PostResponse; dhs: string[] };
 };
 
-const subscribeWindowFocus = (handler: () => void) => {
-  const listener = (event: Electron.IpcRendererEvent) => {
-    // Prevent unused variable warning
-    void event;
-    handler();
-  };
-  ipcRenderer.on(channel.windowFocus, listener);
-  return () => {
-    ipcRenderer.off(channel.windowFocus, listener);
-  };
+const kh_hmis_get_data = async (params: KH_HMIS.GetRequest) => {
+  const data = await ipcRenderer.invoke(channel.kh_hmis_get_data, params);
+  return data as KH_HMIS.GetResponse;
 };
 
-const subscribeWindowBlur = (handler: () => void) => {
-  const listener = (event: Electron.IpcRendererEvent) => {
-    // Prevent unused variable warning
-    void event;
-    handler();
-  };
-  ipcRenderer.on(channel.windowBlur, listener);
-  return () => {
-    ipcRenderer.off(channel.windowBlur, listener);
-  };
-};
-
-const subscribeWindowShow = (handler: () => void) => {
-  const listener = (event: Electron.IpcRendererEvent) => {
-    // Prevent unused variable warning
-    void event;
-    handler();
-  };
-  ipcRenderer.on(channel.windowShow, listener);
-  return () => {
-    ipcRenderer.off(channel.windowShow, listener);
-  };
-};
-
-const subscribeWindowHide = (handler: () => void) => {
-  const listener = (event: Electron.IpcRendererEvent) => {
-    // Prevent unused variable warning
-    void event;
-    handler();
-  };
-  ipcRenderer.on(channel.windowHide, listener);
-  return () => {
-    ipcRenderer.off(channel.windowHide, listener);
-  };
-};
-
-const subscribeLog: SubscribeLog = (handler) => {
-  const listener = (event: Electron.IpcRendererEvent, data: Log) => {
-    // Prevent unused variable warning
-    void event;
-    handler(data);
-  };
-
-  ipcRenderer.on(channel.log, listener);
-
-  return () => {
-    ipcRenderer.off(channel.log, listener);
-  };
+const kh_hmis_save_data = async (params: KH_HMIS.SaveDataParams) => {
+  await ipcRenderer.invoke(channel.kh_hmis_save_data, params);
 };
 
 const electronAPI = {
@@ -208,6 +218,8 @@ const electronAPI = {
   jtv_hmis_save_data,
   jtv_hmis_xuzhoubei_get_data,
   jtv_hmis_xuzhoubei_save_data,
+  kh_hmis_get_data,
+  kh_hmis_save_data,
 
   // Subscriptions
   subscribeLog,

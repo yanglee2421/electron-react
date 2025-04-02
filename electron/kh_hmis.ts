@@ -23,7 +23,7 @@ export type GetResponse = {
     czzzdw: "673";
     ldszrq: "2014-06-22";
     ldszdw: "673";
-    ldmzrq: "20 18-04-13";
+    ldmzrq: "2018-04-13";
     ldmzdw: "623";
   };
   code: 200;
@@ -59,7 +59,7 @@ export const getFn = async (request: GetRequest) => {
   return data;
 };
 
-export type PostRequestItem = {
+type PostRequestItem = {
   mesureId?: string;
   ZH: string;
   ZCTJG: string;
@@ -75,17 +75,17 @@ export type PostRequestItem = {
   sbbh: string;
 };
 
-export type PostRequest = {
+type PostRequest = {
   data: PostRequestItem;
   host: string;
 };
 
-export type PostResponse = {
+type PostResponse = {
   code: 200;
   msg: "success";
 };
 
-export const postFn = async (request: PostRequest) => {
+const postFn = async (request: PostRequest) => {
   const url = new URL(`http://${request.host}/api/lzdx_csbtsj_tsjg/save`);
   const body = JSON.stringify(request.data);
   log(`请求数据[${url.href}]:${body}`);
@@ -112,7 +112,7 @@ type QXDataParams = {
   zh: string;
   testdatetime: string;
   testtype: "超声波";
-  btcw: "1";
+  btcw: string;
   tsr: string;
   tsgz: string;
   tszjy: string;
@@ -155,7 +155,7 @@ type SaveQXDataParams = {
   data: QXDataParams;
 };
 
-export const saveQXData = async (params: SaveQXDataParams) => {
+const saveQXData = async (params: SaveQXDataParams) => {
   const url = new URL(`http://${params.host}/api/lzdx_csbtsj_whzy_tsjgqx/save`);
   const body = JSON.stringify(params.data);
   log(`请求数据[${url.href}]:${body}`);
@@ -182,6 +182,9 @@ export type SaveDataParams = DatabaseBaseParams & {
   dh: string;
   zh: string;
   date: string;
+  tsgz: string;
+  tszjy: string;
+  tsysy: string;
 };
 
 export const saveData = async (params: SaveDataParams) => {
@@ -231,7 +234,7 @@ export const saveData = async (params: SaveDataParams) => {
 
   if (JCJG === "1") return;
 
-  const detectionDatas = await getDetectionDatasByOPID({
+  await getDetectionDatasByOPID({
     driverPath: params.driverPath,
     databasePath: params.databasePath,
     opid: detection.szIDs,
@@ -244,9 +247,9 @@ export const saveData = async (params: SaveDataParams) => {
     testtype: "超声波",
     btcw: "车轴",
     tsr: detection.szUsername || "",
-    tsgz: detection.szResult || "",
-    tszjy: detection.szUsername || "",
-    tsysy: detection.szResult || "",
+    tsgz: params.tsgz,
+    tszjy: params.tszjy,
+    tsysy: params.tsysy,
     gzmc: "裂纹",
     clff: "人工复探",
     // qxlzzdmjlnc: "",
@@ -279,4 +282,9 @@ export const saveData = async (params: SaveDataParams) => {
     // qxclylwcy: "0",
     bz: "",
   };
+
+  await saveQXData({
+    data: qxBody,
+    host: params.host,
+  });
 };

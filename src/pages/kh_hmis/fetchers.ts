@@ -20,15 +20,15 @@ export const useGetData = () => {
 
         // Update or add history
         const matchedRow = d.kh_hmis.history.find(
-          (row) => row.barCode === data.data[0].DH
+          (row) => row.barCode === data.data.mesureId
         );
         if (matchedRow) {
           matchedRow.isUploaded = false;
         } else {
           d.kh_hmis.history.unshift({
             id: crypto.randomUUID(),
-            barCode: data.data[0].DH,
-            zh: data.data[0].ZH,
+            barCode: data.data.mesureId,
+            zh: data.data.zh,
             date: new Date().toISOString(),
             isUploaded: false,
           });
@@ -46,12 +46,12 @@ export const useSaveData = () => {
       const data = await window.electronAPI.kh_hmis_save_data(params);
       return data;
     },
-    onSuccess(data) {
-      const records = new Set(data.dhs);
+    onSuccess(data, variable) {
+      void data;
 
       set((d) => {
         d.kh_hmis.history.forEach((row) => {
-          if (records.has(row.barCode)) {
+          if (row.barCode === variable.dh) {
             row.isUploaded = true;
           }
         });

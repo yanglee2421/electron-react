@@ -69,6 +69,9 @@ type KH_HMIS = {
   autoInput: boolean;
   autoUpload: boolean;
   autoUploadInterval: number;
+  tsgz: string;
+  tszjy: string;
+  tsysy: string;
 };
 
 type StoreState = {
@@ -132,6 +135,9 @@ export const useIndexedStore = create<Store>()(
         autoInput: true,
         autoUpload: true,
         autoUploadInterval: 1000 * 30,
+        tsgz: "",
+        tszjy: "",
+        tsysy: "",
       },
     })),
     {
