@@ -137,6 +137,7 @@ export type SaveDataParams = DatabaseBaseParams & {
   PJ_SCZZDW: string; // 首次组装单位
   PJ_MCZZRQ: string; // 末次组装日期
   PJ_MCZZDW: string; // 末次组装单位
+  username_prefix: string; // 用户名前缀
 };
 
 export const saveData = async (params: SaveDataParams) => {
@@ -157,7 +158,8 @@ export const saveData = async (params: SaveDataParams) => {
   });
 
   const SB_SN = corporation.DeviceNO || "";
-  const user = detection.szUsername || "";
+  const usernameInDB = detection.szUsername || "";
+  const user = [params.username_prefix, usernameInDB].join("");
 
   const body: PostRequestItem = {
     PJ_JXID: detection.szIDs,
@@ -199,14 +201,18 @@ export const saveData = async (params: SaveDataParams) => {
       opid: detection.szIDs,
     });
 
-    body.LW_TFLAW_PLACE = detectionDatas
-      .reduce<string[]>((result, detectionData) => {
-        const direction = getDirection(detectionData.nBoard);
-        const place = getPlace(detectionData.nChannel);
-        result.push(`${place}${direction}`);
-        return result;
-      }, [])
-      .join(",");
+    if (detectionDatas.length === 0) {
+      body.LW_TFLAW_PLACE = "车轴";
+    } else {
+      body.LW_TFLAW_PLACE = detectionDatas
+        .reduce<string[]>((result, detectionData) => {
+          const direction = getDirection(detectionData.nBoard);
+          const place = getPlace(detectionData.nChannel);
+          result.push(`${place}${direction}`);
+          return result;
+        }, [])
+        .join(",");
+    }
 
     body.LW_TVIEW = "人工复探";
     body.LW_TFLAW_TYPE = "裂纹";

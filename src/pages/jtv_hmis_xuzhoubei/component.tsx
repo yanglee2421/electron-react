@@ -77,6 +77,7 @@ const ActionCell = (props: ActionCellProps) => {
         PJ_SCZZDW: props.row.PJ_SCZZDW, // 首次组装单位
         PJ_MCZZRQ: props.row.PJ_MCZZRQ, // 末次组装日期
         PJ_MCZZDW: props.row.PJ_MCZZDW, // 末次组装单位
+        username_prefix: hmis.username_prefix,
       },
       {
         onError(error) {
@@ -242,6 +243,7 @@ export const Component = () => {
         PJ_SCZZDW: firstItem.PJ_SCZZDW, // 首次组装单位
         PJ_MCZZRQ: firstItem.PJ_MCZZRQ, // 末次组装日期
         PJ_MCZZDW: firstItem.PJ_MCZZDW, // 末次组装单位
+        username_prefix: hmis.username_prefix,
       });
     }, hmis.autoUploadInterval);
 
@@ -256,6 +258,7 @@ export const Component = () => {
     hmis.host,
     hmis.autoUpload,
     hmis.autoUploadInterval,
+    hmis.username_prefix,
   ]);
 
   React.useEffect(() => {

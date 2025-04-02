@@ -34,6 +34,7 @@ const schema = z.object({
     .number({ message: "自动上传间隔必须是数字" })
     .int({ message: "自动上传间隔必须是整数" })
     .min(1000 * 10, { message: "自动上传间隔不能小于10秒" }),
+  username_prefix: z.string(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -119,6 +120,7 @@ export const Component = () => {
     autoInput: hmis.autoInput,
     autoUpload: hmis.autoUpload,
     autoUploadInterval: hmis.autoUploadInterval,
+    username_prefix: hmis.username_prefix,
   });
 
   return (
@@ -135,6 +137,7 @@ export const Component = () => {
               d.jtv_hmis_xuzhoubei.autoUpload = data.autoUpload;
               d.jtv_hmis_xuzhoubei.autoUploadInterval = data.autoUploadInterval;
               d.jtv_hmis_xuzhoubei.host = `${data.ip}:${data.port}`;
+              d.jtv_hmis_xuzhoubei.username_prefix = data.username_prefix;
             });
             snackbar.enqueueSnackbar("保存成功", { variant: "success" });
           }, console.warn)}
@@ -165,6 +168,21 @@ export const Component = () => {
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                     label="端口号"
+                    fullWidth
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                control={form.control}
+                name="username_prefix"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    label="用户名前缀"
                     fullWidth
                   />
                 )}
