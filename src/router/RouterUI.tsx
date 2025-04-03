@@ -11,10 +11,11 @@ import {
   useIndexedStore,
   useIndexedStoreHasHydrated,
 } from "@/hooks/useIndexedStore";
-import { Box, CircularProgress } from "@mui/material";
+import { Box, Button, CircularProgress, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import type { Log } from "@/hooks/useIndexedStore";
 import { useLocalStore, useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 
 const LogWrapper = (props: React.PropsWithChildren) => {
   const set = useIndexedStore((s) => s.set);
@@ -106,6 +107,69 @@ const AuthWrapper = () => {
   );
 };
 
+const fetchActivation = () =>
+  queryOptions({
+    queryKey: ["fetchActivateCode"],
+    queryFn: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      return { isOk: false };
+    },
+  });
+
+const ActivationGuard = () => {
+  const [activateCode, setActivateCode] = React.useState("");
+
+  const activation = useQuery({
+    ...fetchActivation(),
+    enabled: !!activateCode,
+
+    retry: false,
+
+    // Disable automatic refetching
+    refetchOnMount: false,
+    refetchInterval: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    refetchIntervalInBackground: false,
+
+    // Disable garbage collection
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
+  if (!activateCode) {
+    return (
+      <Box>
+        please input activateCode
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setActivateCode("ad");
+          }}
+        >
+          <TextField />
+          <Button type="submit">click me</Button>
+        </form>
+      </Box>
+    );
+  }
+
+  if (activation.isPending) {
+    return (
+      <Box>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (activation.isError) {
+    return <Box>{activation.error.message}</Box>;
+  }
+
+  return <Outlet />;
+};
+
 const routes: RouteObject[] = [
   {
     id: "root",
@@ -129,66 +193,74 @@ const routes: RouteObject[] = [
             lazy: () => import("@/pages/home/route"),
           },
           {
-            id: "detection",
-            path: "detection",
-            lazy: () => import("@/pages/detection/route"),
-          },
-
-          {
-            id: "quartors",
-            path: "quartors",
-            lazy: () => import("@/pages/quartors/route"),
-          },
-          {
             id: "settings",
             path: "settings",
             lazy: () => import("@/pages/settings/route"),
           },
           { id: "log", path: "log", lazy: () => import("@/pages/log/route") },
           {
-            id: "hxzy_hmis",
-            path: "hxzy_hmis",
-            lazy: () => import("@/pages/hxzy_hmis/route"),
-          },
-          {
-            id: "hxzy_hmis_setting",
-            path: "hxzy_hmis_setting",
-            lazy: () => import("@/pages/hxzy_hmis_setting/route"),
-          },
-          {
-            id: "hxzy_verifies",
-            path: "hxzy_verifies",
-            lazy: () => import("@/pages/hxzy_verifies/route"),
-          },
-          {
-            id: "jtv_hmis",
-            path: "jtv_hmis",
-            lazy: () => import("@/pages/jtv_hmis/route"),
-          },
-          {
-            id: "jtv_hmis_setting",
-            path: "jtv_hmis_setting",
-            lazy: () => import("@/pages/jtv_hmis_setting/route"),
-          },
-          {
-            id: "jtv_hmis_xuzhoubei",
-            path: "jtv_hmis_xuzhoubei",
-            lazy: () => import("@/pages/jtv_hmis_xuzhoubei/route"),
-          },
-          {
-            id: "jtv_hmis_xuzhoubei_setting",
-            path: "jtv_hmis_xuzhoubei_setting",
-            lazy: () => import("@/pages/jtv_hmis_xuzhoubei_setting/route"),
-          },
-          {
-            id: "kh_hmis",
-            path: "kh_hmis",
-            lazy: () => import("@/pages/kh_hmis/route"),
-          },
-          {
-            id: "kh_hmis_setting",
-            path: "kh_hmis_setting",
-            lazy: () => import("@/pages/kh_hmis_setting/route"),
+            id: "activate",
+            path: "",
+            Component: ActivationGuard,
+            children: [
+              {
+                id: "detection",
+                path: "detection",
+                lazy: () => import("@/pages/detection/route"),
+              },
+
+              {
+                id: "quartors",
+                path: "quartors",
+                lazy: () => import("@/pages/quartors/route"),
+              },
+
+              {
+                id: "hxzy_hmis",
+                path: "hxzy_hmis",
+                lazy: () => import("@/pages/hxzy_hmis/route"),
+              },
+              {
+                id: "hxzy_hmis_setting",
+                path: "hxzy_hmis_setting",
+                lazy: () => import("@/pages/hxzy_hmis_setting/route"),
+              },
+              {
+                id: "hxzy_verifies",
+                path: "hxzy_verifies",
+                lazy: () => import("@/pages/hxzy_verifies/route"),
+              },
+              {
+                id: "jtv_hmis",
+                path: "jtv_hmis",
+                lazy: () => import("@/pages/jtv_hmis/route"),
+              },
+              {
+                id: "jtv_hmis_setting",
+                path: "jtv_hmis_setting",
+                lazy: () => import("@/pages/jtv_hmis_setting/route"),
+              },
+              {
+                id: "jtv_hmis_xuzhoubei",
+                path: "jtv_hmis_xuzhoubei",
+                lazy: () => import("@/pages/jtv_hmis_xuzhoubei/route"),
+              },
+              {
+                id: "jtv_hmis_xuzhoubei_setting",
+                path: "jtv_hmis_xuzhoubei_setting",
+                lazy: () => import("@/pages/jtv_hmis_xuzhoubei_setting/route"),
+              },
+              {
+                id: "kh_hmis",
+                path: "kh_hmis",
+                lazy: () => import("@/pages/kh_hmis/route"),
+              },
+              {
+                id: "kh_hmis_setting",
+                path: "kh_hmis_setting",
+                lazy: () => import("@/pages/kh_hmis_setting/route"),
+              },
+            ],
           },
         ],
       },

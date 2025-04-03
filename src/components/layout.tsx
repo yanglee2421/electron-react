@@ -165,6 +165,33 @@ const AuthAside = styled("aside")(({ theme }) => ({
   overflowX: "visible",
   overflowY: "auto",
   borderInlineEnd: `1px solid ${theme.palette.divider}`,
+  // Not supported :hover :active
+  // scrollbarColor: `${theme.palette.action.disabled} transparent`,
+  // scrollbarWidth: "thin",
+
+  // Not supported in Firefox
+  // "&::-webkit-scrollbar": {
+  //   width: theme.spacing(1.5),
+  // },
+  // "&::-webkit-scrollbar-thumb": {
+  //   backgroundColor: alpha(
+  //     theme.palette.text.primary,
+  //     theme.palette.action.disabledOpacity
+  //   ),
+  //   borderRadius: theme.spacing(0.5),
+  // },
+  // "&::-webkit-scrollbar-thumb:hover": {
+  //   backgroundColor: alpha(
+  //     theme.palette.text.primary,
+  //     theme.palette.action.hoverOpacity
+  //   ),
+  // },
+  // "&::-webkit-scrollbar-thumb:active": {
+  //   backgroundColor: alpha(
+  //     theme.palette.text.primary,
+  //     theme.palette.action.activatedOpacity
+  //   ),
+  // },
 }));
 
 const AuthContainer = styled("div")(({ theme }) => ({
@@ -280,6 +307,7 @@ export const AuthLayout = (props: AuthLayoutProps) => {
               "&>a": {
                 textDecoration: "none",
                 color: (t) => t.palette.text.primary,
+                outline: "none",
               },
             }}
           >
