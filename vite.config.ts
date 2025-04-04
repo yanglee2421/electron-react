@@ -51,4 +51,37 @@ export default defineConfig({
       "#": fileURLToPath(new URL("./", import.meta.url)),
     },
   },
+
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes("node_modules/react/")) {
+            // Split vendor chunks
+            return "react";
+          }
+
+          if (id.includes("node_modules/react-dom/")) {
+            // Split vendor chunks
+            return "react-dom";
+          }
+
+          if (id.includes("node_modules/@tanstack/react-query/")) {
+            // Split vendor chunks
+            return "tanstack-react-query";
+          }
+
+          if (id.includes("node_modules/zustand/")) {
+            // Split vendor chunks
+            return "zustand";
+          }
+
+          if (id.includes("node_modules/notistack/")) {
+            // Split vendor chunks
+            return "notistack";
+          }
+        },
+      },
+    },
+  },
 });
