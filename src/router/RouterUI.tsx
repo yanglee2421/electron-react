@@ -42,6 +42,7 @@ import NProgress from "nprogress";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 import { queryClient } from "@/lib/constants";
 import { AuthLayout } from "./layout";
+import { getSerialFromStdout } from "@/lib/utils";
 
 const motherboardSerial = window.electronAPI.getMotherboardSerial();
 
@@ -68,7 +69,7 @@ const ActivationForm = () => {
   const form = useActivationForm();
   const set = useIndexedStore((s) => s.set);
 
-  const code = motherboardSerialString.trim().split("\n").at(-1) || "";
+  const code = getSerialFromStdout(motherboardSerialString);
 
   return (
     <Card>

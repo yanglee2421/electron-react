@@ -13,13 +13,14 @@ import {
   getIP,
   getCorporation,
   withLog,
+  PRIVATE_KEY,
 } from "./lib";
 import dayjs from "dayjs";
+import { getSerialFromStdout } from "@/lib/utils";
 import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
-import * as consts from "./lib";
 import type { GetDataFromAccessDatabaseParams } from "#/electron/database_types";
 import type { AutoInputToVCParams } from "#/electron/autoInput_types";
 
@@ -236,16 +237,14 @@ ipcMain.handle(
     // Prevent unused variable warning
     void e;
     const motherboardSerial = await getMotherboardSerial();
-    const currentValue = motherboardSerial.trim().split("\n").at(-1) || "";
+    const currentValue = getSerialFromStdout(motherboardSerial);
     if (!currentValue) {
       throw new Error("获取主板序列号失败");
     }
     const decryptedValue = privateDecrypt(
-      consts.PRIVATE_KEY,
+      PRIVATE_KEY,
       Buffer.from(activateCode, "base64")
-    )
-      .toString("utf-8")
-      .trim();
+    ).toString("utf-8");
 
     return {
       isOk: currentValue === decryptedValue,
