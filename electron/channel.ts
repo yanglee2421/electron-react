@@ -2,6 +2,7 @@
 export const printer = "printer";
 export const getCpuSerial = "getCpuSerial";
 export const getMotherboardSerial = "getMotherboardSerial";
+export const verifyActivation = "verifyActivation";
 
 // C# Driver
 export const autoInputToVC = "autoInputToVC";

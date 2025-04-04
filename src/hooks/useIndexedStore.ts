@@ -6,7 +6,6 @@ import localforage from "localforage";
 import React from "react";
 
 type Settings = {
-  activate_key: string;
   databasePath: string;
   driverPath: string;
   home_path: string;
@@ -74,7 +73,8 @@ type KH_HMIS = {
   tsysy: string;
 };
 
-type StoreState = {
+type State = {
+  activateCode: string;
   settings: Settings;
   logs: Log[];
   hxzy_hmis: HXZY_HMIS;
@@ -83,25 +83,25 @@ type StoreState = {
   kh_hmis: KH_HMIS;
 };
 
-type StoreActions = {
+type Actions = {
   set(
     nextStateOrUpdater:
-      | StoreState
-      | Partial<StoreState>
-      | ((state: WritableDraft<StoreState>) => void)
+      | State
+      | Partial<State>
+      | ((state: WritableDraft<State>) => void)
   ): void;
 };
 
-export type Store = StoreState & StoreActions;
+export type Store = State & Actions;
 
 export const useIndexedStore = create<Store>()(
   persist(
     immer((set) => ({
       set,
+      activateCode: "",
       settings: {
         databasePath: "",
         driverPath: "",
-        activate_key: "",
         home_path: "/settings",
       },
       logs: [],

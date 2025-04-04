@@ -199,6 +199,14 @@ const getMotherboardSerial = async () => {
   const data: string = await ipcRenderer.invoke(channel.getMotherboardSerial);
   return data;
 };
+type VerifyActivationResult = { isOk: boolean };
+const verifyActivation = async (code: string) => {
+  const data: VerifyActivationResult = await ipcRenderer.invoke(
+    channel.verifyActivation,
+    code
+  );
+  return data;
+};
 
 const electronAPI = {
   // Electron
@@ -217,6 +225,7 @@ const electronAPI = {
   autoInputToVC,
   getCpuSerial,
   getMotherboardSerial,
+  verifyActivation,
 
   // HTTP
   hxzy_hmis_get_data,

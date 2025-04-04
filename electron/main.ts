@@ -18,8 +18,10 @@ import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
+import * as consts from "@/lib/constants";
 import type { GetDataFromAccessDatabaseParams } from "@/api/database_types";
 import type { AutoInputToVCParams } from "@/api/autoInput_types";
+import { privateDecrypt } from "node:crypto";
 
 // const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -225,6 +227,29 @@ ipcMain.handle(
   withLog(async () => {
     // Ensure an error is thrown when the promise is rejected
     return await getMotherboardSerial();
+  })
+);
+
+ipcMain.handle(
+  channel.verifyActivation,
+  withLog(async (e, activateCode: string) => {
+    // Prevent unused variable warning
+    void e;
+    const motherboardSerial = await getMotherboardSerial();
+    const currentValue = motherboardSerial.trim().split("\n").at(-1) || "";
+    if (!currentValue) {
+      throw new Error("获取主板序列号失败");
+    }
+    const decryptedValue = privateDecrypt(
+      consts.PRIVATE_KEY,
+      Buffer.from(activateCode, "base64")
+    )
+      .toString("utf-8")
+      .trim();
+
+    return {
+      isOk: currentValue === decryptedValue,
+    };
   })
 );
 

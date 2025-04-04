@@ -11,11 +11,30 @@ import {
   useIndexedStore,
   useIndexedStoreHasHydrated,
 } from "@/hooks/useIndexedStore";
-import { Box, Button, CircularProgress, TextField } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  CircularProgress,
+  Grid,
+  IconButton,
+  InputAdornment,
+  TextField,
+} from "@mui/material";
 import dayjs from "dayjs";
 import type { Log } from "@/hooks/useIndexedStore";
 import { useLocalStore, useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { QRCodeSVG } from "qrcode.react";
+import { ContentCopyOutlined, FindInPageOutlined } from "@mui/icons-material";
+import { useSnackbar } from "notistack";
+import { z } from "zod";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { fetchActivation } from "@/api/fetchActivation";
 
 const LogWrapper = (props: React.PropsWithChildren) => {
   const set = useIndexedStore((s) => s.set);
@@ -107,20 +126,141 @@ const AuthWrapper = () => {
   );
 };
 
-const fetchActivation = () =>
-  queryOptions({
-    queryKey: ["fetchActivateCode"],
-    queryFn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      return { isOk: false };
+const motherboardSerial = window.electronAPI.getMotherboardSerial();
+
+const activationSchema = z.object({
+  activationCode: z.string().min(1, "激活码不能为空"),
+});
+
+const useActivationForm = () =>
+  useForm({
+    defaultValues: {
+      activationCode: "",
     },
+    resolver: zodResolver(activationSchema),
   });
 
+const ActivationForm = () => {
+  const motherboardSerialString = React.use(motherboardSerial);
+
+  const formId = React.useId();
+
+  const [isPending, startTransition] = React.useTransition();
+
+  const snackbar = useSnackbar();
+  const form = useActivationForm();
+  const set = useIndexedStore((s) => s.set);
+
+  const code = motherboardSerialString.trim().split("\n").at(-1) || "";
+
+  return (
+    <Card>
+      <CardHeader title="未激活" subheader="请联系服务人员以激活应用" />
+      <CardContent>
+        <form
+          id={formId}
+          onSubmit={form.handleSubmit((data) => {
+            set((d) => {
+              d.activateCode = data.activationCode;
+            });
+          }, console.warn)}
+        >
+          <Grid container spacing={6}>
+            <Grid size={12}>
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                <Box sx={{ bgcolor: "white", p: 3 }}>
+                  <QRCodeSVG value={code} width={256} height={256} />
+                </Box>
+              </Box>
+            </Grid>
+            <Grid size={12}>
+              <TextField
+                label="识别码"
+                fullWidth
+                value={code}
+                onChange={Boolean}
+                slotProps={{
+                  input: {
+                    readOnly: true,
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          disabled={isPending}
+                          onClick={() => {
+                            startTransition(async () => {
+                              await navigator.clipboard.writeText(code);
+                              snackbar.enqueueSnackbar("复制成功", {
+                                variant: "success",
+                              });
+                            });
+                          }}
+                        >
+                          <ContentCopyOutlined />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={12}>
+              <Controller
+                control={form.control}
+                name="activationCode"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    label="激活码"
+                    fullWidth
+                    rows={1}
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton component="label">
+                              <FindInPageOutlined />
+                              <input
+                                type="file"
+                                value=""
+                                onChange={async (e) => {
+                                  const file = e.target.files?.item(0);
+                                  if (!file) return;
+                                  const text = await file.text();
+                                  form.setValue("activationCode", text);
+                                  snackbar.enqueueSnackbar("读取成功", {
+                                    variant: "success",
+                                  });
+                                }}
+                                hidden
+                              />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+          </Grid>
+        </form>
+      </CardContent>
+      <CardActions>
+        <Button type="submit" form={formId}>
+          激活
+        </Button>
+      </CardActions>
+    </Card>
+  );
+};
+
 const ActivationGuard = () => {
-  const [activateCode, setActivateCode] = React.useState("");
+  const activateCode = useIndexedStore((s) => s.activateCode);
 
   const activation = useQuery({
-    ...fetchActivation(),
+    ...fetchActivation(activateCode),
     enabled: !!activateCode,
 
     retry: false,
@@ -138,26 +278,19 @@ const ActivationGuard = () => {
   });
 
   if (!activateCode) {
-    return (
-      <Box>
-        please input activateCode
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setActivateCode("ad");
-          }}
-        >
-          <TextField />
-          <Button type="submit">click me</Button>
-        </form>
-      </Box>
-    );
+    return <ActivationForm />;
   }
 
   if (activation.isPending) {
     return (
-      <Box>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 6,
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -165,6 +298,10 @@ const ActivationGuard = () => {
 
   if (activation.isError) {
     return <Box>{activation.error.message}</Box>;
+  }
+
+  if (!activation.data.isOk) {
+    return <ActivationForm />;
   }
 
   return <Outlet />;
