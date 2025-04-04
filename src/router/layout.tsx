@@ -27,9 +27,10 @@ import {
   TuneOutlined,
   PushPinOutlined,
 } from "@mui/icons-material";
-import { NavLink, useLocation, Link as RouterLink } from "react-router";
+import { NavLink, useLocation, Link as RouterLink, Outlet } from "react-router";
 import React from "react";
 import { useLocalStore } from "@/hooks/useLocalStore";
+import { ASIDE_SIZE, HEADER_SIZE_SM, HEADER_SIZE_XS } from "@/lib/constants";
 
 const LinkWrapper = styled("div")(({ theme }) => ({
   display: "flex",
@@ -133,10 +134,6 @@ export const NavMenu = () => {
 };
 
 NavMenu.list = list;
-
-const HEADER_SIZE_XS = 14;
-const HEADER_SIZE_SM = 16;
-const ASIDE_SIZE = 72;
 
 const AuthAsideWrapper = styled("div")(({ theme }) => ({
   position: "fixed",
@@ -276,9 +273,7 @@ const ModeToggle = () => {
   );
 };
 
-type AuthLayoutProps = React.PropsWithChildren;
-
-export const AuthLayout = (props: AuthLayoutProps) => {
+export const AuthLayout = () => {
   const [key, update] = React.useState("");
 
   const location = useLocation();
@@ -351,7 +346,9 @@ export const AuthLayout = (props: AuthLayoutProps) => {
           display: showMenuInMobile ? "none" : "flex",
         }}
       >
-        <AuthMain>{props.children}</AuthMain>
+        <AuthMain>
+          <Outlet />
+        </AuthMain>
       </AuthContainer>
     </>
   );

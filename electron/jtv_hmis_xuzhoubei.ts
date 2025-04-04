@@ -11,7 +11,7 @@ import {
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import type { DatabaseBaseParams } from "@/api/database_types";
+import type { DatabaseBaseParams } from "#/electron/database_types";
 
 export type GetResponse = [
   {

@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import type {
   GetDataFromAccessDatabaseParams,
   Detection,
-} from "@/api/database_types";
+} from "#/electron/database_types";
 
 export const fetchDetections = (params: GetDataFromAccessDatabaseParams) =>
   queryOptions({

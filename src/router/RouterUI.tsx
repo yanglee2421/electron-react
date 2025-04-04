@@ -1,16 +1,10 @@
-import {
-  createHashRouter,
-  Outlet,
-  RouteObject,
-  RouterProvider,
-} from "react-router";
-import { AuthLayout } from "@/components/layout";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import React from "react";
-import { NprogressBar } from "@/components/NprogressBar";
-import {
-  useIndexedStore,
-  useIndexedStoreHasHydrated,
-} from "@/hooks/useIndexedStore";
+import { QRCodeSVG } from "qrcode.react";
+import { useSnackbar } from "notistack";
 import {
   Box,
   Button,
@@ -23,108 +17,31 @@ import {
   IconButton,
   InputAdornment,
   TextField,
+  useTheme,
+  GlobalStyles,
+  Alert,
+  AlertTitle,
+  Typography,
 } from "@mui/material";
-import dayjs from "dayjs";
-import type { Log } from "@/hooks/useIndexedStore";
-import { useLocalStore, useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
-import { useQuery } from "@tanstack/react-query";
-import { QRCodeSVG } from "qrcode.react";
-import { ContentCopyOutlined, FindInPageOutlined } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
-import { z } from "zod";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { fetchActivation } from "@/api/fetchActivation";
-
-const LogWrapper = (props: React.PropsWithChildren) => {
-  const set = useIndexedStore((s) => s.set);
-
-  React.useEffect(() => {
-    const listener = (data: Log) => {
-      set((d) => {
-        // Remove logs that are not today
-        d.logs = d.logs.filter((i) =>
-          dayjs(i.date).isAfter(dayjs().startOf("day"))
-        );
-
-        // Add new log
-        d.logs.push(data);
-
-        // Deduplicate logs by id
-        const map = new Map<string, Log>();
-        d.logs.forEach((i) => {
-          map.set(i.id, i);
-        });
-        d.logs = Array.from(map.values());
-      });
-    };
-
-    const unsubscribe = window.electronAPI.subscribeLog(listener);
-
-    return () => {
-      unsubscribe();
-    };
-  }, [set]);
-
-  return props.children;
-};
-
-export const RootRoute = () => {
-  return (
-    <>
-      <NprogressBar />
-      <Outlet />
-    </>
-  );
-};
-
-const renderOutlet = (hasHydrated: boolean) => {
-  if (!hasHydrated) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 6,
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  return <Outlet />;
-};
-
-const useNativeTheme = () => {
-  const mode = useLocalStore((s) => s.mode);
-
-  React.useEffect(() => {
-    window.electronAPI.toggleMode(mode);
-  }, [mode]);
-};
-
-const useAlwaysOnTop = () => {
-  const alwaysOnTop = useLocalStore((s) => s.alwaysOnTop);
-
-  React.useEffect(() => {
-    window.electronAPI.setAlwaysOnTop(alwaysOnTop);
-  }, [alwaysOnTop]);
-};
-
-const AuthWrapper = () => {
-  useNativeTheme();
-  useAlwaysOnTop();
-  const hasHydrated = useIndexedStoreHasHydrated();
-  const localHasHydrated = useLocalStoreHasHydrated();
-
-  return (
-    <AuthLayout>
-      <LogWrapper>{renderOutlet(hasHydrated && localHasHydrated)}</LogWrapper>
-    </AuthLayout>
-  );
-};
+import {
+  ContentCopyOutlined,
+  FindInPageOutlined,
+  HomeOutlined,
+} from "@mui/icons-material";
+import {
+  createHashRouter,
+  RouteObject,
+  RouterProvider,
+  Outlet,
+  useNavigation,
+  useRouteError,
+  isRouteErrorResponse,
+  Link,
+} from "react-router";
+import NProgress from "nprogress";
+import { useIndexedStore } from "@/hooks/useIndexedStore";
+import { queryClient } from "@/lib/constants";
+import { AuthLayout } from "./layout";
 
 const motherboardSerial = window.electronAPI.getMotherboardSerial();
 
@@ -256,6 +173,15 @@ const ActivationForm = () => {
   );
 };
 
+const fetchActivation = (code: string) =>
+  queryOptions({
+    queryKey: ["fetchActivateCode", code],
+    queryFn: async () => {
+      const data = await window.electronAPI.verifyActivation(code);
+      return data;
+    },
+  });
+
 const ActivationGuard = () => {
   const activateCode = useIndexedStore((s) => s.activateCode);
 
@@ -307,11 +233,107 @@ const ActivationGuard = () => {
   return <Outlet />;
 };
 
+const useNprogress = () => {
+  const navigation = useNavigation();
+
+  React.useEffect(() => {
+    switch (navigation.state) {
+      case "submitting":
+      case "loading":
+        NProgress.start();
+        break;
+      case "idle":
+      default:
+        NProgress.done();
+    }
+  }, [navigation.state]);
+};
+
+const NprogressBar = () => {
+  const theme = useTheme();
+  useNprogress();
+
+  return (
+    <GlobalStyles
+      styles={{
+        "#nprogress": {
+          position: "fixed",
+          top: 0,
+          inlineSize: "100dvw",
+
+          zIndex: theme.zIndex.drawer + 1,
+        },
+        "#nprogress .bar": {
+          backgroundColor: theme.palette.primary.main,
+          blockSize: theme.spacing(1),
+        },
+      }}
+    />
+  );
+};
+
+const RootRoute = () => {
+  return (
+    <>
+      <NprogressBar />
+      <Outlet />
+    </>
+  );
+};
+
+const renderError = (error: unknown) => {
+  if (isRouteErrorResponse(error)) {
+    return (
+      <Alert severity="error" variant="outlined">
+        <AlertTitle>{error.status}</AlertTitle>
+        <Typography>{error.statusText}</Typography>
+        <Link to="/">
+          <Button startIcon={<HomeOutlined />}>返回首页</Button>
+        </Link>
+      </Alert>
+    );
+  }
+
+  if (error instanceof Error) {
+    return (
+      <Alert severity="error" variant="outlined">
+        <AlertTitle>错误</AlertTitle>
+        <Typography>{error.message}</Typography>
+        <Typography variant="body2">{error.stack}</Typography>
+        <Link to="/">
+          <Button startIcon={<HomeOutlined />} color="error">
+            返回首页
+          </Button>
+        </Link>
+      </Alert>
+    );
+  }
+
+  return (
+    <Alert severity="error" variant="outlined">
+      <AlertTitle>错误</AlertTitle>
+      <Typography>未知错误，请联系服务人员</Typography>
+      <Link to="/">
+        <Button startIcon={<HomeOutlined />} color="error">
+          返回首页
+        </Button>
+      </Link>
+    </Alert>
+  );
+};
+
+const RootErrorBoundary = () => {
+  const error = useRouteError();
+
+  return <Box sx={{ padding: 6 }}>{renderError(error)}</Box>;
+};
+
 const routes: RouteObject[] = [
   {
     id: "root",
     path: "",
     Component: RootRoute,
+    ErrorBoundary: RootErrorBoundary,
     children: [
       {
         id: "404",
@@ -322,7 +344,7 @@ const routes: RouteObject[] = [
       },
       {
         id: "auth_layout",
-        Component: AuthWrapper,
+        Component: AuthLayout,
         children: [
           {
             id: "home",
@@ -336,9 +358,18 @@ const routes: RouteObject[] = [
           },
           { id: "log", path: "log", lazy: () => import("@/pages/log/route") },
           {
-            id: "activate",
+            id: "activation_guard",
             path: "",
             Component: ActivationGuard,
+            loader: async () => {
+              const activateCode = useIndexedStore.getState().activateCode;
+              // Do not to Verify when activation code is not exist
+              if (!activateCode) return { isOk: false };
+              const data = await queryClient.ensureQueryData(
+                fetchActivation(activateCode)
+              );
+              return data;
+            },
             children: [
               {
                 id: "detection",

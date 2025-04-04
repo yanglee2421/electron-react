@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell, nativeTheme } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { privateDecrypt } from "node:crypto";
 // import { createRequire } from "node:module";
 import * as channel from "./channel";
 import {
@@ -18,10 +19,9 @@ import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
-import * as consts from "@/lib/constants";
-import type { GetDataFromAccessDatabaseParams } from "@/api/database_types";
-import type { AutoInputToVCParams } from "@/api/autoInput_types";
-import { privateDecrypt } from "node:crypto";
+import * as consts from "./lib";
+import type { GetDataFromAccessDatabaseParams } from "#/electron/database_types";
+import type { AutoInputToVCParams } from "#/electron/autoInput_types";
 
 // const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

@@ -28,8 +28,8 @@ import {
   flexRender,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import type { Detection } from "@/api/database_types";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
+import type { Detection } from "#/electron/database_types";
+import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 

@@ -5,8 +5,8 @@ import type {
   GetDataFromAccessDatabaseParams,
   Verify,
   VerifyData,
-} from "@/api/database_types";
-import type { AutoInputToVCParams } from "@/api/autoInput_types";
+} from "#/electron/database_types";
+import type { AutoInputToVCParams } from "#/electron/autoInput_types";
 import type * as HXZY_HMIS from "#/electron/hxzy_hmis";
 import type * as JTV_HMIS from "#/electron/jtv_hmis";
 import type * as JTV_HMIS_XUZHOUBEI from "#/electron/jtv_hmis_xuzhoubei";

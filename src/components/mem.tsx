@@ -7,8 +7,31 @@ import {
   useTheme,
 } from "@mui/material";
 import React from "react";
-import { useSize } from "@/hooks/useSize";
 import { queryOptions, useQuery } from "@tanstack/react-query";
+
+const useSize = (ref: React.RefObject<HTMLElement | null>) => {
+  const [size, setSize] = React.useState<ResizeObserverEntry | null>(null);
+
+  const [isPending, startTransition] = React.useTransition();
+
+  React.useEffect(() => {
+    const div = ref.current;
+    if (!div) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      startTransition(() => {
+        setSize(entry);
+      });
+    });
+    observer.observe(div);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [ref]);
+
+  return [size, isPending] as const;
+};
 
 type Mem = { totalmem: number; freemem: number };
 const fetchMem = () =>

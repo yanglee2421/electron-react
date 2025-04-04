@@ -2,7 +2,7 @@ import { queryOptions, useMutation } from "@tanstack/react-query";
 import type {
   GetDataFromAccessDatabaseParams,
   Verify,
-} from "@/api/database_types";
+} from "#/electron/database_types";
 import type { UploadVerifiesParams } from "#/electron/hxzy_hmis";
 
 export const fetchVerifies = (params: GetDataFromAccessDatabaseParams) =>

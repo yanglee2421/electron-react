@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import type { AutoInputToVCParams } from "@/api/autoInput_types";
+import type { AutoInputToVCParams } from "#/electron/autoInput_types";
 
 export const useAutoInputToVC = () => {
   return useMutation({

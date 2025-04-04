@@ -38,8 +38,8 @@ import {
   flexRender,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import type { Verify } from "@/api/database_types";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
+import type { Verify } from "#/electron/database_types";
+import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 
 type ActionCellProps = {

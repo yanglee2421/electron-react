@@ -46,7 +46,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/utils";
+import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import type { History } from "@/hooks/useIndexedStore";
 
 type ActionCellProps = {

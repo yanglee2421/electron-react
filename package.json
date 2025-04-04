@@ -1,7 +1,7 @@
 {
   "name": "wtzy_toolkit",
   "private": true,
-  "version": "0.0.10",
+  "version": "0.0.11",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -50,7 +50,7 @@
     "globals": "^15.14.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.2",
-    "vite": "^5.4.11",
+    "vite": "^6.2.5",
     "vite-plugin-electron": "^0.29.0",
     "vite-plugin-electron-renderer": "^0.14.6"
   },

@@ -14,7 +14,7 @@ import type {
   Verify,
   VerifyData,
   DatabaseBaseParams,
-} from "@/api/database_types";
+} from "#/electron/database_types";
 
 export type GetResponse = {
   code: "200";

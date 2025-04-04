@@ -4,7 +4,10 @@ import { net } from "electron";
 import { getDetectionDatasByOPID, getDetectionByZH, log } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import type { DetectionData, DatabaseBaseParams } from "@/api/database_types";
+import type {
+  DetectionData,
+  DatabaseBaseParams,
+} from "#/electron/database_types";
 
 export type GetResponse = {
   code: "200";

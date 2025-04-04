@@ -5,14 +5,13 @@ import { access, constants } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { BrowserWindow } from "electron";
 import * as channel from "./channel";
+import dayjs from "dayjs";
 import type {
   Corporation,
   Detection,
   DetectionData,
-} from "@/api/database_types";
+} from "#/electron/database_types";
 import type { Log } from "@/hooks/useIndexedStore";
-import dayjs from "dayjs";
-import * as consts from "@/lib/constants";
 
 export const execAsync = promisify(exec);
 export const execFileAsync = promisify(execFile);
@@ -53,6 +52,8 @@ export const withLog = <
       // Ensure an error is thrown when the promise is rejected
       return await fn(...args);
     } catch (error) {
+      console.error(error);
+      // Log the error message
       const message = errorToMessage(error);
       log(message, "error");
       // Throw message instead of error to avoid electron issue #24427
@@ -197,8 +198,8 @@ export const getDetectionByZH = async (params: {
   startDate: string;
   endDate: string;
 }) => {
-  const startDate = dayjs(params.startDate).format(consts.DATE_FORMAT_DATABASE);
-  const endDate = dayjs(params.endDate).format(consts.DATE_FORMAT_DATABASE);
+  const startDate = dayjs(params.startDate).format(DATE_FORMAT_DATABASE);
+  const endDate = dayjs(params.endDate).format(DATE_FORMAT_DATABASE);
 
   const [detection] = await getDataFromAccessDatabase<Detection>({
     driverPath: params.driverPath,
@@ -258,3 +259,42 @@ export const getPlace = (nChannel: number) => {
       return "车轴";
   }
 };
+
+export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
+export const PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC0t/rJL4O1vKuG
+Lo449OHDML49T4f8NzDK25wTRe0oqlKnxfpdQNjuLEGOSGH8B18AE9DGxpqsMt5d
+Qo3ITY/RJaZ625R4s3+TfCteIG45AHk+NIQubqtWYyytMGnSkW02O7+Vi1VMZ7nz
+Uh0t57rQWLqhPwY8z3R8afNABDQe5vuXVzIwoLYMXM/I2VEEsupgvyz+fKTerMzQ
+Cdap9msvUBnyWaVaW8CKIp5Ac6s20oMtAF7NLN+dDpYp27DBBhN0ZsjpFE+Xzm/P
+uTvSppB6Cvq5qiHvC6ROQknulSBuiRvxD0W6X71IPvr9fgMZy/fuJEEgVjF6y8WL
+XZpH+Q+1AgMBAAECggEABGOmje3fQVH+iYEGd8gs1pCPwk3089GEWBz63rX3U2JF
+pSkIEm1Bh5FgGzxTUut76XTRwI4w0gdfQr0b0/ZcTJxhPYEpS0Ay1EpzBDN98dj6
+2OGuJzGNbEj23BL9sv1QvX04g0GR1gv75nbDWirTbP2GtOViuaXhQqdRHugrOuff
+VSNJx/MBYKYPlrtLSZZ/coYZf5HCYbzjJHoKW/bZ+7R7kQx9cVqjWff9nnaWXU8q
+2kixp8qG9NniJDnkI/VPgr2b9M98l02iAzrp60urxTkw14njXRrtoxTahrRqxaZX
+/Gfk8WWH+jz/JgkuFrMxROssDQIFqKcsqoehCzYfoQKBgQDhn3zCU7fXtWN4YBbi
+e8uEkpbBk/qKJzi/+HuGTmavb2oodxpGXX6XoM1F2Hlu0PG1x94pv9BRzYdmzG2c
+/LOhMWKFvLQ6m8rE0RYGPqAJ+k1liAv6yPn8OoU89g594MLvelcpu9GGGd3VdM4k
+NaTMMQjAz7VE8tfwpoMtvTxS4QKBgQDNDMgn2ogTwCBDntElA7tI2kCzhVNFS++W
+F2p5sKV+du1rGn/nt7wJQEl4VpMhwdO/xcjWC3FC1/UIWKPbGUm58XT418nNh5QA
+asRQ7P1jQRBHWxMhuMdazAzilTkUKz9gffnKzye/Ue1JjfEG1h2bQYUCmRIKYH7l
+ydOd+33rVQKBgQDOH6eZ3WQKhKNwWNDvbsuavVVPWoK8bmKxNzCancvAINhqSY1O
+laHOotCGK+OcsvTv7r3vhFasNUmrR74oetEcxYJNzf0Vwji4IJCvec058Ft/E5Bm
+N+/yWABblivdIlbU8/7nmLgtfDonBcRCXmPFTFLD276uU/Gl4GndgpG24QKBgEuZ
+sdZX0SIPDRZBYPUXuh5zMbW+q2P6Slx5R62UPoAxEvoRLCVf7bkvdacjrF2e3BZx
+ssmQMHMnslUgcVFfsnoXFzyEOwhHO38n3jfEGOxWWc0lPBmLyhyk7P9Ba2kPRO+r
+osRuukXky+r5pWsS2Jmcf5DkpO0khMTuM9Kkndl9AoGAcnUr2CYaTt2z1gYxLxGJ
+8okyFARlsfYlg8MEjw9tTn/xBOm3EwjAm2aGg3t1EJvcJFiOEBshrSZ7O8Q0zt1w
+27w6Cq+yJ9vsL6W3zUfEUDyEmwpDr7xPCg8Sceh7Kc/lgUQVu5f/KaHYWiTIb2qg
+zWQDUeItwVDxnIwpU7V+9Hg=
+-----END PRIVATE KEY-----`;
+export const PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtLf6yS+Dtbyrhi6OOPTh
+wzC+PU+H/DcwytucE0XtKKpSp8X6XUDY7ixBjkhh/AdfABPQxsaarDLeXUKNyE2P
+0SWmetuUeLN/k3wrXiBuOQB5PjSELm6rVmMsrTBp0pFtNju/lYtVTGe581IdLee6
+0Fi6oT8GPM90fGnzQAQ0Hub7l1cyMKC2DFzPyNlRBLLqYL8s/nyk3qzM0AnWqfZr
+L1AZ8lmlWlvAiiKeQHOrNtKDLQBezSzfnQ6WKduwwQYTdGbI6RRPl85vz7k70qaQ
+egr6uaoh7wukTkJJ7pUgbokb8Q9Ful+9SD76/X4DGcv37iRBIFYxesvFi12aR/kP
+tQIDAQAB
+-----END PUBLIC KEY-----`;
