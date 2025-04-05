@@ -25,11 +25,25 @@ import {
   Alert,
   AlertTitle,
   Typography,
+  AppBar,
+  alpha,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  styled,
+  Toolbar,
 } from "@mui/material";
 import {
+  CloseOutlined,
   ContentCopyOutlined,
+  DarkModeOutlined,
+  DesktopWindowsOutlined,
   FindInPageOutlined,
   HomeOutlined,
+  LightModeOutlined,
+  MenuOutlined,
+  PushPinOutlined,
 } from "@mui/icons-material";
 import {
   createHashRouter,
@@ -40,13 +54,240 @@ import {
   useRouteError,
   isRouteErrorResponse,
   Link,
+  ScrollRestoration,
+  useLocation,
 } from "react-router";
 import NProgress from "nprogress";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
-import { queryClient } from "@/lib/constants";
+import {
+  ASIDE_SIZE,
+  HEADER_SIZE_SM,
+  HEADER_SIZE_XS,
+  queryClient,
+} from "@/lib/constants";
 import { Loading } from "@/components/Loading";
-import { AuthLayout } from "./layout";
+import { NavMenu } from "./nav";
 import { getSerialFromStdout } from "@/lib/utils";
+import { useLocalStore } from "@/hooks/useLocalStore";
+
+const AuthAsideWrapper = styled("div")(({ theme }) => ({
+  position: "fixed",
+  zIndex: theme.zIndex.appBar - 1,
+  insetInlineStart: 0,
+  insetBlockStart: 0,
+
+  inlineSize: "100dvw",
+  blockSize: "100dvh",
+
+  paddingBlockStart: theme.spacing(HEADER_SIZE_XS),
+  [theme.breakpoints.up("sm")]: {
+    maxInlineSize: theme.spacing(ASIDE_SIZE),
+
+    paddingBlockStart: theme.spacing(HEADER_SIZE_SM),
+  },
+
+  overflow: "hidden",
+
+  backgroundColor: theme.palette.background.default,
+}));
+
+const AuthAside = styled("aside")(({ theme }) => ({
+  blockSize: "100%",
+
+  overflowX: "visible",
+  overflowY: "auto",
+  borderInlineEnd: `1px solid ${theme.palette.divider}`,
+  // Not supported :hover :active
+  // scrollbarColor: `${theme.palette.action.disabled} transparent`,
+  // scrollbarWidth: "thin",
+
+  // Not supported in Firefox
+  // "&::-webkit-scrollbar": {
+  //   width: theme.spacing(1.5),
+  // },
+  // "&::-webkit-scrollbar-thumb": {
+  //   backgroundColor: alpha(
+  //     theme.palette.text.primary,
+  //     theme.palette.action.disabledOpacity
+  //   ),
+  //   borderRadius: theme.spacing(0.5),
+  // },
+  // "&::-webkit-scrollbar-thumb:hover": {
+  //   backgroundColor: alpha(
+  //     theme.palette.text.primary,
+  //     theme.palette.action.hoverOpacity
+  //   ),
+  // },
+  // "&::-webkit-scrollbar-thumb:active": {
+  //   backgroundColor: alpha(
+  //     theme.palette.text.primary,
+  //     theme.palette.action.activatedOpacity
+  //   ),
+  // },
+}));
+
+const AuthContainer = styled("div")(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  minBlockSize: "100dvh",
+
+  paddingBlockStart: theme.spacing(HEADER_SIZE_XS),
+  [theme.breakpoints.up("sm")]: {
+    paddingInlineStart: theme.spacing(ASIDE_SIZE),
+    paddingBlockStart: theme.spacing(HEADER_SIZE_SM),
+  },
+}));
+
+const AuthMain = styled("main")(({ theme }) => ({
+  padding: theme.spacing(4),
+}));
+
+const renderModeIcon = (mode: string) => {
+  switch (mode) {
+    case "light":
+      return <LightModeOutlined />;
+    case "dark":
+      return <DarkModeOutlined />;
+    case "system":
+    default:
+      return <DesktopWindowsOutlined />;
+  }
+};
+
+const ModeToggle = () => {
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const mode = useLocalStore((state) => state.mode);
+  const set = useLocalStore((state) => state.set);
+
+  return (
+    <>
+      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+        {renderModeIcon(mode)}
+      </IconButton>
+      <Menu
+        open={!!anchorEl}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+      >
+        <MenuItem
+          onClick={() => {
+            set({ mode: "light" });
+            setAnchorEl(null);
+          }}
+        >
+          <ListItemIcon>
+            <LightModeOutlined />
+          </ListItemIcon>
+          <ListItemText primary="明亮" />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            set({ mode: "dark" });
+            setAnchorEl(null);
+          }}
+        >
+          <ListItemIcon>
+            <DarkModeOutlined />
+          </ListItemIcon>
+          <ListItemText primary="黑暗" />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            set({ mode: "system" });
+            setAnchorEl(null);
+          }}
+        >
+          <ListItemIcon>
+            <DesktopWindowsOutlined />
+          </ListItemIcon>
+          <ListItemText primary="系统" />
+        </MenuItem>
+      </Menu>
+    </>
+  );
+};
+
+const AuthLayout = () => {
+  const [key, update] = React.useState("");
+
+  const location = useLocation();
+  const set = useLocalStore((state) => state.set);
+  const alwaysOnTop = useLocalStore((state) => state.alwaysOnTop);
+  const showMenuInMobile = Object.is(key, location.key);
+
+  return (
+    <>
+      <AppBar
+        elevation={0}
+        sx={(theme) => ({
+          bgcolor: "transparent",
+          borderBlockEnd: `1px solid ${theme.palette.divider}`,
+          backgroundColor: alpha(theme.palette.background.default, 0.6),
+          backdropFilter: "blur(8px)",
+        })}
+      >
+        <Toolbar>
+          <Box
+            sx={{
+              display: { xs: "none", sm: "flex" },
+              gap: 2.5,
+              alignItems: "flex-end",
+
+              "&>a": {
+                textDecoration: "none",
+                color: (t) => t.palette.text.primary,
+                outline: "none",
+              },
+            }}
+          >
+            <Link to="/">
+              <Typography variant="h6">武铁紫云接口面板</Typography>
+            </Link>
+          </Box>
+
+          <IconButton
+            onClick={() =>
+              update((p) => (p === location.key ? "" : location.key))
+            }
+            sx={{ display: { sm: "none" } }}
+          >
+            {showMenuInMobile ? <CloseOutlined /> : <MenuOutlined />}
+          </IconButton>
+          <Box sx={{ marginInlineStart: "auto" }} />
+          <IconButton
+            onClick={() => {
+              set((d) => {
+                d.alwaysOnTop = !d.alwaysOnTop;
+              });
+            }}
+          >
+            <PushPinOutlined color={alwaysOnTop ? "primary" : "action"} />
+          </IconButton>
+          <ModeToggle />
+        </Toolbar>
+      </AppBar>
+      <AuthAsideWrapper
+        sx={{
+          maxInlineSize: showMenuInMobile ? "none" : 0,
+        }}
+      >
+        <AuthAside>
+          <NavMenu />
+        </AuthAside>
+      </AuthAsideWrapper>
+      <AuthContainer
+        sx={{
+          display: showMenuInMobile ? "none" : "flex",
+        }}
+      >
+        <AuthMain>
+          <Outlet />
+        </AuthMain>
+      </AuthContainer>
+    </>
+  );
+};
 
 const motherboardSerial = window.electronAPI.getMotherboardSerial();
 
@@ -287,6 +528,7 @@ const RootRoute = () => {
     <>
       <NprogressBar />
       <Outlet />
+      <ScrollRestoration />
     </>
   );
 };
@@ -348,9 +590,7 @@ const routes: RouteObject[] = [
       {
         id: "404",
         path: "*",
-        lazy() {
-          return import("@/pages/not-found/route");
-        },
+        lazy: () => import("@/pages/not-found/component"),
       },
       {
         id: "auth_layout",
@@ -359,14 +599,18 @@ const routes: RouteObject[] = [
           {
             id: "home",
             index: true,
-            lazy: () => import("@/pages/home/route"),
+            lazy: () => import("@/pages/home/component"),
           },
           {
             id: "settings",
             path: "settings",
             lazy: () => import("@/pages/settings/route"),
           },
-          { id: "log", path: "log", lazy: () => import("@/pages/log/route") },
+          {
+            id: "log",
+            path: "log",
+            lazy: () => import("@/pages/log/component"),
+          },
           {
             id: "activation_guard",
             path: "",
@@ -384,59 +628,60 @@ const routes: RouteObject[] = [
               {
                 id: "detection",
                 path: "detection",
-                lazy: () => import("@/pages/detection/route"),
+                lazy: () => import("@/pages/detection/component"),
               },
 
               {
                 id: "quartors",
                 path: "quartors",
-                lazy: () => import("@/pages/quartors/route"),
+                lazy: () => import("@/pages/quartors/component"),
               },
 
               {
                 id: "hxzy_hmis",
                 path: "hxzy_hmis",
-                lazy: () => import("@/pages/hxzy_hmis/route"),
+                lazy: () => import("@/pages/hxzy_hmis/component"),
               },
               {
                 id: "hxzy_hmis_setting",
                 path: "hxzy_hmis_setting",
-                lazy: () => import("@/pages/hxzy_hmis_setting/route"),
+                lazy: () => import("@/pages/hxzy_hmis_setting/component"),
               },
               {
                 id: "hxzy_verifies",
                 path: "hxzy_verifies",
-                lazy: () => import("@/pages/hxzy_verifies/route"),
+                lazy: () => import("@/pages/hxzy_verifies/component"),
               },
               {
                 id: "jtv_hmis",
                 path: "jtv_hmis",
-                lazy: () => import("@/pages/jtv_hmis/route"),
+                lazy: () => import("@/pages/jtv_hmis/component"),
               },
               {
                 id: "jtv_hmis_setting",
                 path: "jtv_hmis_setting",
-                lazy: () => import("@/pages/jtv_hmis_setting/route"),
+                lazy: () => import("@/pages/jtv_hmis_setting/component"),
               },
               {
                 id: "jtv_hmis_xuzhoubei",
                 path: "jtv_hmis_xuzhoubei",
-                lazy: () => import("@/pages/jtv_hmis_xuzhoubei/route"),
+                lazy: () => import("@/pages/jtv_hmis_xuzhoubei/component"),
               },
               {
                 id: "jtv_hmis_xuzhoubei_setting",
                 path: "jtv_hmis_xuzhoubei_setting",
-                lazy: () => import("@/pages/jtv_hmis_xuzhoubei_setting/route"),
+                lazy: () =>
+                  import("@/pages/jtv_hmis_xuzhoubei_setting/component"),
               },
               {
                 id: "kh_hmis",
                 path: "kh_hmis",
-                lazy: () => import("@/pages/kh_hmis/route"),
+                lazy: () => import("@/pages/kh_hmis/component"),
               },
               {
                 id: "kh_hmis_setting",
                 path: "kh_hmis_setting",
-                lazy: () => import("@/pages/kh_hmis_setting/route"),
+                lazy: () => import("@/pages/kh_hmis_setting/component"),
               },
             ],
           },

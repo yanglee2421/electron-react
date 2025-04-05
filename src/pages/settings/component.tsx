@@ -29,7 +29,7 @@ import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useSnackbar } from "notistack";
-import { NavMenu } from "@/router/layout";
+import { NavMenu } from "@/router/nav";
 import {
   fetchLoginItemSettings,
   useSetLoginItemSettings,

@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@mui/material";
 
-export const Quartors = () => {
+export const Component = () => {
   return (
     <Card>
       <CardHeader title="季度校验" />
