@@ -43,6 +43,8 @@ Before development and packaging, generate SQL files for database migration usin
 
 Generating SQL depends on the contents of `schema.ts`. After modifying `schema.ts`, you need to regenerate the SQL files.
 
+> Note: `@electron/rebuild` is internally invoked by `electron-builder`, but during the development phase, `electron-builder` is not used for packaging.
+
 ```bash
 npx drizzle-kit generate
 ```

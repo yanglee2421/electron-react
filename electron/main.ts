@@ -44,7 +44,6 @@ const Database: typeof import("better-sqlite3") = require("better-sqlite3");
 const sqliteDb = new Database(dbPath);
 const db = drizzle(sqliteDb, { schema });
 migrate(db, { migrationsFolder: path.join(__dirname, "../drizzle") });
-console.log(app.getPath("userData"));
 
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 process.env.APP_ROOT = path.join(__dirname, "..");
@@ -137,18 +136,6 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(async () => {
-    const data = await db.transaction(async (trx) => {
-      await trx.insert(schema.usersTable).values([
-        {
-          name: "test",
-          age: 18,
-          email: "",
-        },
-      ]);
-      const data = await trx.query.usersTable.findMany();
-      console.log("data", data);
-    });
-    console.log("data", data);
     createWindow();
   });
 }

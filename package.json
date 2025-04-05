@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
