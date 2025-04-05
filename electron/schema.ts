@@ -7,9 +7,13 @@ export const usersTable = sqliteTable("users_table", {
   email: text().notNull().unique(),
 });
 
+export type User = typeof usersTable.$inferSelect;
+
 export const logTable = sqliteTable("log", {
   id: int().primaryKey({ autoIncrement: true }),
   type: text(),
   message: text(),
   date: text(),
 });
+
+export type Log = typeof logTable.$inferSelect;

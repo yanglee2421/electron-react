@@ -1,5 +1,5 @@
-# @see - https://www.electron.build/configuration/configuration
-appId: "YourAppID"
+# @see - https://www.electron.build/configuration
+appId: "app.yanglee2421.wtzy_toolkit"
 asar: true
 productName: "WTZY_Toolkit"
 directories:
