@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell, nativeTheme } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { privateDecrypt } from "node:crypto";
+import { createHash } from "node:crypto";
 // import { createRequire } from "node:module";
 import * as channel from "./channel";
 import {
@@ -13,7 +13,7 @@ import {
   getIP,
   getCorporation,
   withLog,
-  PRIVATE_KEY,
+  DATE_FORMAT_DATABASE,
 } from "./lib";
 import dayjs from "dayjs";
 import { getSerialFromStdout } from "@/lib/utils";
@@ -237,17 +237,16 @@ ipcMain.handle(
     // Prevent unused variable warning
     void e;
     const motherboardSerial = await getMotherboardSerial();
-    const currentValue = getSerialFromStdout(motherboardSerial);
-    if (!currentValue) {
+    const serial = getSerialFromStdout(motherboardSerial);
+    if (!serial) {
       throw new Error("获取主板序列号失败");
     }
-    const decryptedValue = privateDecrypt(
-      PRIVATE_KEY,
-      Buffer.from(activateCode, "base64")
-    ).toString("utf-8");
+    const exceptedCode = createHash("md5")
+      .update([serial, DATE_FORMAT_DATABASE].join(""))
+      .digest("hex");
 
     return {
-      isOk: currentValue === decryptedValue,
+      isOk: activateCode === exceptedCode,
     };
   })
 );
