@@ -10,8 +10,12 @@ import React from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/zh";
 import "dayjs/locale/en";
-import { useLocalStore } from "@/hooks/useLocalStore";
-import { useIndexedStore } from "@/hooks/useIndexedStore";
+import { Loading } from "@/components/Loading";
+import { useLocalStore, useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
+import {
+  useIndexedStore,
+  useIndexedStoreHasHydrated,
+} from "@/hooks/useIndexedStore";
 import type { Log } from "@/hooks/useIndexedStore";
 
 const mediaQuery = matchMedia("(prefers-color-scheme: dark)");
@@ -114,6 +118,21 @@ export const App = () => {
   useAlwaysOnTop();
   useLog();
 
+  const indexedHasHydrated = useIndexedStoreHasHydrated();
+  const localHasHydrated = useLocalStoreHasHydrated();
+
+  const renderRouter = () => {
+    if (!indexedHasHydrated) {
+      return <Loading />;
+    }
+
+    if (!localHasHydrated) {
+      return <Loading />;
+    }
+
+    return <RouterUI />;
+  };
+
   return (
     <QueryProvider>
       <MuiProvider>
@@ -122,7 +141,7 @@ export const App = () => {
           autoHideDuration={3000}
           maxSnack={3}
         >
-          <RouterUI />
+          {renderRouter()}
         </SnackbarProvider>
       </MuiProvider>
     </QueryProvider>

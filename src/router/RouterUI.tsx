@@ -1,4 +1,8 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  queryOptions,
+  usePrefetchQuery,
+  useQuery,
+} from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,7 +16,6 @@ import {
   CardActions,
   CardContent,
   CardHeader,
-  CircularProgress,
   Grid,
   IconButton,
   InputAdornment,
@@ -41,6 +44,7 @@ import {
 import NProgress from "nprogress";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
 import { queryClient } from "@/lib/constants";
+import { Loading } from "@/components/Loading";
 import { AuthLayout } from "./layout";
 import { getSerialFromStdout } from "@/lib/utils";
 
@@ -209,18 +213,7 @@ const ActivationGuard = () => {
   }
 
   if (activation.isPending) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 6,
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <Loading />;
   }
 
   if (activation.isError) {
@@ -273,7 +266,23 @@ const NprogressBar = () => {
   );
 };
 
+const usePrefetchActivation = () => {
+  const activateCode = useIndexedStore((s) => s.activateCode);
+
+  usePrefetchQuery({
+    ...fetchActivation(activateCode),
+
+    retry: false,
+
+    // Disable garbage collection
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+};
+
 const RootRoute = () => {
+  usePrefetchActivation();
+
   return (
     <>
       <NprogressBar />
