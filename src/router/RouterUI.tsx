@@ -604,7 +604,7 @@ const routes: RouteObject[] = [
           {
             id: "settings",
             path: "settings",
-            lazy: () => import("@/pages/settings/route"),
+            lazy: () => import("@/pages/settings"),
           },
           {
             id: "log",
