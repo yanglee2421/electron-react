@@ -6,7 +6,8 @@
 
 ## Development
 
-```powershell
+```bash
+# windows powershell
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 ```
 
@@ -21,9 +22,27 @@ const odbc: typeof import("odbc") = require("odbc");
 
 ## Build
 
-```powershell
+```bash
+# Windows powershell
 # Install chocolatey cli
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 # Install rebuild dependencies for ia32
 choco install python visualstudio2022-workload-vctools -y
+```
+
+## Rebuild
+
+When use native module like better-sqlite3 need to rebuild it by @electron/rebuild
+
+~~~bash
+yarn rebuild -w -f better-sqlite3
+~~~
+
+## Databse
+Before development and packaging, generate SQL files for database migration using the following command:
+
+Generating SQL depends on the contents of `schema.ts`. After modifying `schema.ts`, you need to regenerate the SQL files.
+
+```bash
+npx drizzle-kit generate
 ```
