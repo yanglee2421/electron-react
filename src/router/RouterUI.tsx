@@ -59,16 +59,12 @@ import {
 } from "react-router";
 import NProgress from "nprogress";
 import { useIndexedStore } from "@/hooks/useIndexedStore";
-import {
-  ASIDE_SIZE,
-  HEADER_SIZE_SM,
-  HEADER_SIZE_XS,
-  queryClient,
-} from "@/lib/constants";
+import { ASIDE_SIZE, HEADER_SIZE_SM, HEADER_SIZE_XS } from "@/lib/constants";
 import { Loading } from "@/components/Loading";
 import { NavMenu } from "./nav";
 import { getSerialFromStdout } from "@/lib/utils";
 import { useLocalStore } from "@/hooks/useLocalStore";
+import { QueryProvider } from "@/components/query";
 
 const AuthAsideWrapper = styled("div")(({ theme }) => ({
   position: "fixed",
@@ -619,8 +615,9 @@ const routes: RouteObject[] = [
               const activateCode = useIndexedStore.getState().activateCode;
               // Do not to Verify when activation code is not exist
               if (!activateCode) return { isOk: false };
+              const queryClient = QueryProvider.queryClient;
               const data = await queryClient.ensureQueryData(
-                fetchActivation(activateCode)
+                fetchActivation(activateCode),
               );
               return data;
             },

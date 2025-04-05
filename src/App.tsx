@@ -1,8 +1,5 @@
 import { RouterUI } from "./router/RouterUI";
 import { SnackbarProvider } from "notistack";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { queryClient } from "@/lib/constants";
 import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -17,6 +14,7 @@ import {
   useIndexedStoreHasHydrated,
 } from "@/hooks/useIndexedStore";
 import type { Log } from "@/hooks/useIndexedStore";
+import { QueryProvider } from "./components/query";
 
 const mediaQuery = matchMedia("(prefers-color-scheme: dark)");
 const spacing = (abs: number) => `${abs * 0.25}rem`;
@@ -37,7 +35,7 @@ const useIsDark = () =>
       };
     },
     () => mediaQuery.matches,
-    () => false
+    () => false,
   );
 
 type Props = React.PropsWithChildren;
@@ -54,15 +52,6 @@ const MuiProvider = (props: Props) => {
       </LocalizationProvider>
       <CssBaseline />
     </ThemeProvider>
-  );
-};
-
-const QueryProvider = (props: React.PropsWithChildren) => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      {props.children}
-      <ReactQueryDevtools buttonPosition="bottom-left" />
-    </QueryClientProvider>
   );
 };
 
@@ -90,7 +79,7 @@ const useLog = () => {
       set((d) => {
         // Remove logs that are not today
         d.logs = d.logs.filter((i) =>
-          dayjs(i.date).isAfter(dayjs().startOf("day"))
+          dayjs(i.date).isAfter(dayjs().startOf("day")),
         );
 
         // Add new log

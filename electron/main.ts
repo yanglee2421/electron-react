@@ -145,7 +145,7 @@ ipcMain.handle(
   withLog(async () => {
     if (!win) return;
     win.webContents.openDevTools();
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -155,7 +155,7 @@ ipcMain.handle(
     void e;
     const data = await shell.openPath(path);
     return data;
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -168,7 +168,7 @@ ipcMain.handle(
       totalmem: process.getSystemMemoryInfo().total,
       freemem,
     };
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -177,7 +177,7 @@ ipcMain.handle(
     // Prevent unused variable warning
     void e;
     nativeTheme.themeSource = mode;
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -186,7 +186,7 @@ ipcMain.handle(
     // Prevent unused variable warning
     void e;
     win?.setAlwaysOnTop(alwaysOnTop);
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -195,7 +195,7 @@ ipcMain.handle(
     // Prevent unused variable warning
     void e;
     return app.getLoginItemSettings().openAtLogin;
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -204,12 +204,12 @@ ipcMain.handle(
     // Prevent unused variable warning
     void e;
     app.setLoginItemSettings({ openAtLogin });
-  })
+  }),
 );
 
 ipcMain.handle(
   channel.getVersion,
-  withLog(async () => app.getVersion())
+  withLog(async () => app.getVersion()),
 );
 
 ipcMain.handle(
@@ -219,7 +219,7 @@ ipcMain.handle(
     void e;
     // Ensure an error is thrown when the promise is rejected
     return await runWinword(data).catch(() => shell.openPath(data));
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -227,7 +227,7 @@ ipcMain.handle(
   withLog(async () => {
     // Ensure an error is thrown when the promise is rejected
     return await getCpuSerial();
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -235,7 +235,7 @@ ipcMain.handle(
   withLog(async () => {
     // Ensure an error is thrown when the promise is rejected
     return await getMotherboardSerial();
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -255,7 +255,7 @@ ipcMain.handle(
     return {
       isOk: activateCode === exceptedCode,
     };
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -282,7 +282,7 @@ ipcMain.handle(
     }
 
     return cp.stdout;
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -296,7 +296,7 @@ ipcMain.handle(
       databasePath: params.databasePath,
       sql: params.query,
     });
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -306,7 +306,7 @@ ipcMain.handle(
     void e;
     // Ensure an error is thrown when the promise is rejected
     return await hxzyHmis.getFn(params);
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -332,9 +332,9 @@ ipcMain.handle(
           startDate,
           endDate,
           params.driverPath,
-          params.databasePath
-        )
-      )
+          params.databasePath,
+        ),
+      ),
     );
 
     const data = settledData
@@ -355,7 +355,7 @@ ipcMain.handle(
     });
 
     return { result, dhs };
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -367,9 +367,9 @@ ipcMain.handle(
     return await hxzyHmis.idToUploadVerifiesData(
       params.id,
       params.driverPath,
-      params.databasePath
+      params.databasePath,
     );
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -379,7 +379,7 @@ ipcMain.handle(
     void e;
     // Ensure an error is thrown when the promise is rejected
     return await jtvHmis.getFn(params);
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -404,9 +404,9 @@ ipcMain.handle(
           startDate,
           endDate,
           params.driverPath,
-          params.databasePath
-        )
-      )
+          params.databasePath,
+        ),
+      ),
     );
 
     const data = settledData
@@ -427,7 +427,7 @@ ipcMain.handle(
     });
 
     return { result, dhs };
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -437,7 +437,7 @@ ipcMain.handle(
     void e;
     // Ensure an error is thrown when the promise is rejected
     return await jtvHmisXuzhoubei.getFn(params);
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -446,7 +446,7 @@ ipcMain.handle(
     // Prevent unused variable warning
     void e;
     return await jtvHmisXuzhoubei.saveData(params);
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -456,7 +456,7 @@ ipcMain.handle(
     void e;
     // Ensure an error is thrown when the promise is rejected
     return await khHmis.getFn(params);
-  })
+  }),
 );
 
 ipcMain.handle(
@@ -465,5 +465,5 @@ ipcMain.handle(
     // Prevent unused variable warning
     void e;
     return await khHmis.saveData(params);
-  })
+  }),
 );
