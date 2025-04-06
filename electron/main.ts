@@ -250,7 +250,8 @@ ipcMain.handle(
     }
     const exceptedCode = createHash("md5")
       .update([serial, DATE_FORMAT_DATABASE].join(""))
-      .digest("hex");
+      .digest("hex")
+      .toUpperCase();
 
     return {
       isOk: activateCode === exceptedCode,
