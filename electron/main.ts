@@ -61,6 +61,7 @@ function createWindow() {
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
+      nodeIntegration: false,
     },
 
     autoHideMenuBar: false,
@@ -134,6 +135,11 @@ if (!gotTheLock) {
       win.focus();
     }
   });
+
+  if (import.meta.env.DEV) {
+    // Disable hardware acceleration to avoid the black screen issue on Windows.
+    app.disableHardwareAcceleration();
+  }
 
   app.whenReady().then(async () => {
     createWindow();

@@ -3,6 +3,7 @@ import path from "node:path";
 import electron from "vite-plugin-electron/simple";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
+import renderer from "vite-plugin-electron-renderer";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -19,6 +20,11 @@ export default defineConfig({
               "#": fileURLToPath(new URL("./", import.meta.url)),
             },
           },
+          build: {
+            rollupOptions: {
+              external: ["better-sqlite3"],
+            },
+          },
         },
       },
       preload: {
@@ -32,6 +38,13 @@ export default defineConfig({
               "#": fileURLToPath(new URL("./", import.meta.url)),
             },
           },
+          build: {
+            rollupOptions: {
+              output: {
+                inlineDynamicImports: true,
+              },
+            },
+          },
         },
       },
       // Ployfill the Electron and Node.js API for Renderer process.
@@ -43,6 +56,7 @@ export default defineConfig({
             undefined
           : {},
     }),
+    renderer(),
   ],
 
   resolve: {
