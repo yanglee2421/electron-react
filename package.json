@@ -22,6 +22,8 @@
     "@tanstack/react-table": "^8.20.6",
     "better-sqlite3": "^11.9.1",
     "dayjs": "^1.11.13",
+    "dexie": "^4.0.11",
+    "dexie-react-hooks": "^1.1.7",
     "docx": "^9.1.0",
     "drizzle-orm": "^0.41.0",
     "exceljs": "^4.4.0",

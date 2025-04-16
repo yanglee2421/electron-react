@@ -6,16 +6,7 @@ import localforage from "localforage";
 import React from "react";
 
 type Settings = {
-  databasePath: string;
-  driverPath: string;
   home_path: string;
-};
-
-export type Log = {
-  id: string;
-  type: string;
-  message: string;
-  date: string;
 };
 
 export type History = {
@@ -74,9 +65,7 @@ type KH_HMIS = {
 };
 
 type State = {
-  activateCode: string;
   settings: Settings;
-  logs: Log[];
   hxzy_hmis: HXZY_HMIS;
   jtv_hmis: JTV_HMIS;
   jtv_hmis_xuzhoubei: JTV_HMIS_XUZHOUBEI;
@@ -88,7 +77,7 @@ type Actions = {
     nextStateOrUpdater:
       | State
       | Partial<State>
-      | ((state: WritableDraft<State>) => void)
+      | ((state: WritableDraft<State>) => void),
   ): void;
 };
 
@@ -98,13 +87,9 @@ export const useIndexedStore = create<Store>()(
   persist(
     immer((set) => ({
       set,
-      activateCode: "",
       settings: {
-        databasePath: "",
-        driverPath: "",
         home_path: "/settings",
       },
-      logs: [],
       hxzy_hmis: {
         host: "",
         history: [],
@@ -144,13 +129,13 @@ export const useIndexedStore = create<Store>()(
       name: "useIndexedStore",
       storage: createJSONStorage(() => localforage),
       version: 4,
-    }
-  )
+    },
+  ),
 );
 
 export const useIndexedStoreHasHydrated = () =>
   React.useSyncExternalStore(
     (onStateChange) => useIndexedStore.persist.onFinishHydration(onStateChange),
     () => useIndexedStore.persist.hasHydrated(),
-    () => false
+    () => false,
   );

@@ -9,14 +9,14 @@ import {
   ListItemText,
 } from "@mui/material";
 import { ClearOutlined } from "@mui/icons-material";
-import { useIndexedStore } from "@/hooks/useIndexedStore";
 import React from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 
 export const Component = () => {
   const scrollCursorRef = React.useRef<HTMLDivElement>(null);
 
-  const logs = useIndexedStore((s) => s.logs);
-  const set = useIndexedStore((s) => s.set);
+  const logs = useLiveQuery(() => db.log.toArray(), []);
 
   React.useEffect(() => {
     scrollCursorRef.current?.scrollIntoView({
@@ -32,7 +32,7 @@ export const Component = () => {
           <Grid container spacing={6}>
             <Grid size={12}>
               <List>
-                {logs.map((log) => (
+                {logs?.map((log) => (
                   <ListItem key={log.id}>
                     <ListItemText
                       primary={log.message}
@@ -59,9 +59,7 @@ export const Component = () => {
         action={
           <IconButton
             onClick={() => {
-              set((d) => {
-                d.logs = [];
-              });
+              db.log.clear();
             }}
           >
             <ClearOutlined />

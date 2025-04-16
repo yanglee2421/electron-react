@@ -4,7 +4,6 @@ import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import React from "react";
-import dayjs from "dayjs";
 import "dayjs/locale/zh";
 import "dayjs/locale/en";
 import { Loading } from "@/components/Loading";
@@ -13,8 +12,9 @@ import {
   useIndexedStore,
   useIndexedStoreHasHydrated,
 } from "@/hooks/useIndexedStore";
-import type { Log } from "@/hooks/useIndexedStore";
 import { QueryProvider } from "./components/query";
+import { db } from "./lib/db";
+import type { Log } from "./lib/db";
 
 const mediaQuery = matchMedia("(prefers-color-scheme: dark)");
 const spacing = (abs: number) => `${abs * 0.25}rem`;
@@ -76,22 +76,7 @@ const useLog = () => {
 
   React.useEffect(() => {
     const listener = (data: Log) => {
-      set((d) => {
-        // Remove logs that are not today
-        d.logs = d.logs.filter((i) =>
-          dayjs(i.date).isAfter(dayjs().startOf("day")),
-        );
-
-        // Add new log
-        d.logs.push(data);
-
-        // Deduplicate logs by id
-        const map = new Map<string, Log>();
-        d.logs.forEach((i) => {
-          map.set(i.id, i);
-        });
-        d.logs = Array.from(map.values());
-      });
+      db.log.add({ type: data.type, message: data.message, date: data.date });
     };
 
     const unsubscribe = window.electronAPI.subscribeLog(listener);

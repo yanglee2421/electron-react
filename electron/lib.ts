@@ -2,24 +2,23 @@ import { networkInterfaces } from "node:os";
 import { promisify } from "node:util";
 import { exec, execFile } from "node:child_process";
 import { access, constants } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
 import { BrowserWindow } from "electron";
-import * as channel from "./channel";
 import dayjs from "dayjs";
+import * as channel from "./channel";
 import type {
   Corporation,
   Detection,
   DetectionData,
 } from "#/electron/database_types";
-import type { Log } from "@/hooks/useIndexedStore";
+import type { Log } from "#/src/lib/db";
 
 export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 export const execAsync = promisify(exec);
 export const execFileAsync = promisify(execFile);
 
-export const log = (message: string, type = "info") => {
+export const log = async (message: string, type = "info") => {
   const data: Log = {
-    id: randomUUID(),
+    id: 0,
     date: new Date().toISOString(),
     message,
     type,
@@ -47,7 +46,7 @@ type WithLogFn<TArgs extends unknown[], TReturn = void> = (
 ) => Promise<TReturn>;
 
 export const withLog = <TArgs extends unknown[], TReturn = void>(
-  fn: WithLogFn<TArgs, TReturn>
+  fn: WithLogFn<TArgs, TReturn>,
 ): WithLogFn<TArgs, TReturn> => {
   const fnWithLog = async (...args: TArgs) => {
     try {
@@ -57,7 +56,7 @@ export const withLog = <TArgs extends unknown[], TReturn = void>(
       console.error(error);
       // Log the error message
       const message = errorToMessage(error);
-      log(message, "error");
+      await log(message, "error");
       // Throw message instead of error to avoid electron issue #24427
       throw message;
     }
@@ -89,7 +88,7 @@ export const getIP = () => {
 export const getCpuSerial = async () => {
   const data = await execAsync(
     "Get-CimInstance -ClassName Win32_Processor | Select-Object ProcessorId",
-    { shell: "powershell" }
+    { shell: "powershell" },
   );
 
   if (data.stderr) {
@@ -102,7 +101,7 @@ export const getCpuSerial = async () => {
 export const getMotherboardSerial = async () => {
   const data = await execAsync(
     "Get-WmiObject win32_baseboard | Select-Object SerialNumber",
-    { shell: "powershell" }
+    { shell: "powershell" },
   );
 
   if (data.stderr) {
@@ -126,11 +125,11 @@ export const verifyPath = async (path: string) => {
 
 export const runWinword = async (data: string) => {
   const winwords = await Promise.allSettled(
-    winword_paths.map((path) => verifyPath(path))
+    winword_paths.map((path) => verifyPath(path)),
   );
 
   const winword = winwords.find(
-    (result) => result.status === "fulfilled"
+    (result) => result.status === "fulfilled",
   )?.value;
 
   if (!winword) {
@@ -151,7 +150,7 @@ export const runWinword = async (data: string) => {
       "/w",
       "/x",
     ],
-    { windowsVerbatimArguments: false, shell: false }
+    { windowsVerbatimArguments: false, shell: false },
   );
   return cp;
 };

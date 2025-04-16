@@ -1,8 +1,4 @@
-import {
-  queryOptions,
-  usePrefetchQuery,
-  useQuery,
-} from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -58,13 +54,11 @@ import {
   useLocation,
 } from "react-router";
 import NProgress from "nprogress";
-import { useIndexedStore } from "@/hooks/useIndexedStore";
 import { ASIDE_SIZE, HEADER_SIZE_SM, HEADER_SIZE_XS } from "@/lib/constants";
 import { Loading } from "@/components/Loading";
 import { NavMenu } from "./nav";
 import { getSerialFromStdout } from "@/lib/utils";
 import { useLocalStore } from "@/hooks/useLocalStore";
-import { QueryProvider } from "@/components/query";
 
 const AuthAsideWrapper = styled("div")(({ theme }) => ({
   position: "fixed",
@@ -308,7 +302,6 @@ const ActivationForm = () => {
 
   const snackbar = useSnackbar();
   const form = useActivationForm();
-  const set = useIndexedStore((s) => s.set);
 
   const code = getSerialFromStdout(motherboardSerialString);
 
@@ -319,9 +312,7 @@ const ActivationForm = () => {
         <form
           id={formId}
           onSubmit={form.handleSubmit((data) => {
-            set((d) => {
-              d.activateCode = data.activationCode;
-            });
+            console.log(data);
           }, console.warn)}
         >
           <Grid container spacing={6}>
@@ -425,7 +416,7 @@ const fetchActivation = (code: string) =>
   });
 
 const ActivationGuard = () => {
-  const activateCode = useIndexedStore((s) => s.activateCode);
+  const activateCode = "";
 
   const activation = useQuery({
     ...fetchActivation(activateCode),
@@ -445,21 +436,21 @@ const ActivationGuard = () => {
     gcTime: Infinity,
   });
 
-  if (!activateCode) {
-    return <ActivationForm />;
-  }
+  // if (!activateCode) {
+  //   return <ActivationForm />;
+  // }
 
-  if (activation.isPending) {
-    return <Loading />;
-  }
+  // if (activation.isPending) {
+  //   return <Loading />;
+  // }
 
-  if (activation.isError) {
-    return <Box>{activation.error.message}</Box>;
-  }
+  // if (activation.isError) {
+  //   return <Box>{activation.error.message}</Box>;
+  // }
 
-  if (!activation.data.isOk) {
-    return <ActivationForm />;
-  }
+  // if (!activation.data.isOk) {
+  //   return <ActivationForm />;
+  // }
 
   return <Outlet />;
 };
@@ -503,19 +494,7 @@ const NprogressBar = () => {
   );
 };
 
-const usePrefetchActivation = () => {
-  const activateCode = useIndexedStore((s) => s.activateCode);
-
-  usePrefetchQuery({
-    ...fetchActivation(activateCode),
-
-    retry: false,
-
-    // Disable garbage collection
-    staleTime: Infinity,
-    gcTime: Infinity,
-  });
-};
+const usePrefetchActivation = () => {};
 
 const RootRoute = () => {
   usePrefetchActivation();
@@ -611,16 +590,7 @@ const routes: RouteObject[] = [
             id: "activation_guard",
             path: "",
             Component: ActivationGuard,
-            loader: async () => {
-              const activateCode = useIndexedStore.getState().activateCode;
-              // Do not to Verify when activation code is not exist
-              if (!activateCode) return { isOk: false };
-              const queryClient = QueryProvider.queryClient;
-              const data = await queryClient.ensureQueryData(
-                fetchActivation(activateCode),
-              );
-              return data;
-            },
+            loader: async () => {},
             children: [
               {
                 id: "detection",
@@ -689,7 +659,4 @@ const routes: RouteObject[] = [
 ];
 
 const router = createHashRouter(routes);
-
-export const RouterUI = () => {
-  return <RouterProvider router={router} />;
-};
+export const RouterUI = () => <RouterProvider router={router} />;
