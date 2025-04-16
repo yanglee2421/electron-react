@@ -16,12 +16,15 @@ import {
 } from "./lib";
 import dayjs from "dayjs";
 import { getSerialFromStdout } from "@/lib/utils";
+import { db } from "./db";
+import * as schema from "./schema";
 import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
 import type { GetDataFromAccessDatabaseParams } from "#/electron/database_types";
 import type { AutoInputToVCParams } from "#/electron/autoInput_types";
+import { eq } from "drizzle-orm";
 
 // The built directory structure
 //
@@ -462,5 +465,45 @@ ipcMain.handle(
     // Prevent unused variable warning
     void e;
     return await khHmis.saveData(params);
+  }),
+);
+
+ipcMain.handle(
+  channel.getSetting,
+  withLog(async () => {
+    let setting: schema.Settings | undefined = void 0;
+    await db.transaction(async (tx) => {
+      setting = await tx.query.settingsTable.findFirst();
+      if (!setting) {
+        [setting] = await tx
+          .insert(schema.settingsTable)
+          .values({})
+          .returning();
+      }
+    });
+
+    if (!setting) {
+      throw new Error("获取设置失败");
+    }
+
+    return setting;
+  }),
+);
+
+ipcMain.handle(
+  channel.setSetting,
+  withLog(async (e, data: schema.Settings) => {
+    void e;
+    const [settings] = await db
+      .update(schema.settingsTable)
+      .set({
+        databasePath: data.databasePath,
+        driverPath: data.driverPath,
+        activateCode: data.activateCode,
+      })
+      .where(eq(schema.settingsTable.id, data.id))
+      .returning();
+
+    return settings;
   }),
 );

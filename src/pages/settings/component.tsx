@@ -36,6 +36,8 @@ import {
   fetchVersion,
 } from "./fetchers";
 import { useQuery } from "@tanstack/react-query";
+import { useLoaderData } from "react-router";
+import { loader } from "./loader";
 
 const schema = z.object({
   databasePath: z.string().min(1, { message: "数据库路径不能为空" }),
@@ -61,9 +63,14 @@ const reducer = (prev: boolean, action: boolean) => {
 export const Component = () => {
   const formId = React.useId();
 
+  const loaderData = useLoaderData<typeof loader>();
   const settings = useIndexedStore((s) => s.settings);
   const set = useIndexedStore((s) => s.set);
-  const form = useSettingForm(settings);
+  const form = useSettingForm({
+    home_path: settings.home_path,
+    databasePath: loaderData.settings.databasePath || "",
+    driverPath: loaderData.settings.driverPath || "",
+  });
   const snackbar = useSnackbar();
   const version = useQuery(fetchVersion());
   const loginItemSettings = useQuery(fetchLoginItemSettings());
@@ -71,7 +78,7 @@ export const Component = () => {
   const openAtLogin = !!loginItemSettings.data;
   const [optimisticOpenAtLogin, setOptimisticOpenAtLogin] = React.useOptimistic(
     openAtLogin,
-    reducer
+    reducer,
   );
 
   return (
@@ -92,9 +99,15 @@ export const Component = () => {
         <CardContent>
           <form
             id={formId}
-            onSubmit={form.handleSubmit((data) => {
+            onSubmit={form.handleSubmit(async (data) => {
               set((d) => {
                 d.settings = { ...d.settings, ...data };
+              });
+              await window.electronAPI.setSetting({
+                databasePath: data.databasePath,
+                driverPath: data.driverPath,
+                activateCode: null,
+                id: loaderData.settings.id,
               });
               snackbar.enqueueSnackbar("保存成功", { variant: "success" });
             }, console.warn)}
@@ -129,7 +142,7 @@ export const Component = () => {
                                     if (!file) return;
 
                                     field.onChange(
-                                      window.electronAPI.getPathForFile(file)
+                                      window.electronAPI.getPathForFile(file),
                                     );
                                   }}
                                 />
@@ -169,7 +182,7 @@ export const Component = () => {
                                     if (!file) return;
 
                                     field.onChange(
-                                      window.electronAPI.getPathForFile(file)
+                                      window.electronAPI.getPathForFile(file),
                                     );
                                   }}
                                 />

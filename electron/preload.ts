@@ -1,6 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import * as channel from "./channel";
-import type { Log } from "@/hooks/useIndexedStore";
 import type {
   GetDataFromAccessDatabaseParams,
   Verify,
@@ -11,6 +10,8 @@ import type * as HXZY_HMIS from "#/electron/hxzy_hmis";
 import type * as JTV_HMIS from "#/electron/jtv_hmis";
 import type * as JTV_HMIS_XUZHOUBEI from "#/electron/jtv_hmis_xuzhoubei";
 import type * as KH_HMIS from "#/electron/kh_hmis";
+import type { Settings } from "./schema";
+import type { Log } from "#/src/lib/db";
 
 type LogCallback = (data: Log) => void;
 type SubscribeLog = (handler: LogCallback) => () => void;
@@ -118,11 +119,11 @@ const subscribeLog: SubscribeLog = (handler) => {
 };
 
 const getDataFromAccessDatabase = async <TRecord = unknown>(
-  params: GetDataFromAccessDatabaseParams
+  params: GetDataFromAccessDatabaseParams,
 ) => {
   const data = await ipcRenderer.invoke(
     channel.getDataFromAccessDatabase,
-    params
+    params,
   );
   return data as TRecord[];
 };
@@ -143,11 +144,11 @@ const hxzy_hmis_save_data = async (params: HXZY_HMIS.SaveDataParams) => {
 };
 
 const hxzy_hmis_upload_verifies = async (
-  params: HXZY_HMIS.UploadVerifiesParams
+  params: HXZY_HMIS.UploadVerifiesParams,
 ) => {
   const data = await ipcRenderer.invoke(
     channel.hxzy_hmis_upload_verifies,
-    params
+    params,
   );
   return data as {
     verifies: Verify;
@@ -166,17 +167,17 @@ const jtv_hmis_save_data = async (params: JTV_HMIS.SaveDataParams) => {
 };
 
 const jtv_hmis_xuzhoubei_get_data = async (
-  params: JTV_HMIS_XUZHOUBEI.GetRequest
+  params: JTV_HMIS_XUZHOUBEI.GetRequest,
 ) => {
   const data = await ipcRenderer.invoke(
     channel.jtv_hmis_xuzhoubei_get_data,
-    params
+    params,
   );
   return data as JTV_HMIS_XUZHOUBEI.GetResponse;
 };
 
 const jtv_hmis_xuzhoubei_save_data = async (
-  params: JTV_HMIS_XUZHOUBEI.SaveDataParams
+  params: JTV_HMIS_XUZHOUBEI.SaveDataParams,
 ) => {
   await ipcRenderer.invoke(channel.jtv_hmis_xuzhoubei_save_data, params);
 };
@@ -203,8 +204,18 @@ type VerifyActivationResult = { isOk: boolean };
 const verifyActivation = async (code: string) => {
   const data: VerifyActivationResult = await ipcRenderer.invoke(
     channel.verifyActivation,
-    code
+    code,
   );
+  return data;
+};
+
+const getSetting = async () => {
+  const data: Settings = await ipcRenderer.invoke(channel.getSetting);
+  return data;
+};
+
+const setSetting = async (param: Settings) => {
+  const data: Settings = await ipcRenderer.invoke(channel.setSetting, param);
   return data;
 };
 
@@ -237,6 +248,10 @@ const electronAPI = {
   jtv_hmis_xuzhoubei_save_data,
   kh_hmis_get_data,
   kh_hmis_save_data,
+
+  // SQLite
+  getSetting,
+  setSetting,
 
   // Subscriptions
   subscribeLog,

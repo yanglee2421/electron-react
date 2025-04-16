@@ -33,3 +33,7 @@ export const windowHide = "windowHide";
 export const setLoginItemSettings = "setLoginItemSettings";
 export const getLoginItemSettings = "getLoginItemSettings";
 export const getVersion = "getVersion";
+
+// SQLite
+export const getSetting = "getSetting";
+export const setSetting = "setSetting";

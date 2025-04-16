@@ -1,4 +1,4 @@
-import { fetchLoginItemSettings, fetchVersion } from "./fetchers";
+import { fetchLoginItemSettings, fetchVersion, fetchSettins } from "./fetchers";
 import { QueryProvider } from "@/components/query";
 
 export const loader = async () => {
@@ -7,5 +7,6 @@ export const loader = async () => {
     fetchLoginItemSettings(),
   );
   const version = await queryClient.ensureQueryData(fetchVersion());
-  return { version, loginItemSettings };
+  const settings = await queryClient.ensureQueryData(fetchSettins());
+  return { version, loginItemSettings, settings };
 };

@@ -34,3 +34,11 @@ export const fetchVersion = () =>
       return await window.electronAPI.getVersion();
     },
   });
+
+export const fetchSettins = () =>
+  queryOptions({
+    queryKey: ["window.electronAPI.getSetting"],
+    queryFn: async () => {
+      return await window.electronAPI.getSetting();
+    },
+  });
