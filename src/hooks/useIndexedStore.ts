@@ -7,6 +7,8 @@ import React from "react";
 
 type Settings = {
   home_path: string;
+  alwaysOnTop: boolean;
+  mode: "system" | "dark" | "light";
 };
 
 export type History = {
@@ -89,6 +91,8 @@ export const useIndexedStore = create<Store>()(
       set,
       settings: {
         home_path: "/settings",
+        alwaysOnTop: false,
+        mode: "system",
       },
       hxzy_hmis: {
         host: "",

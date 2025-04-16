@@ -7,7 +7,7 @@ import React from "react";
 import "dayjs/locale/zh";
 import "dayjs/locale/en";
 import { Loading } from "@/components/Loading";
-import { useLocalStore, useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
+import { useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
 import {
   useIndexedStore,
   useIndexedStoreHasHydrated,
@@ -56,7 +56,7 @@ const MuiProvider = (props: Props) => {
 };
 
 const useNativeTheme = () => {
-  const mode = useLocalStore((s) => s.mode);
+  const mode = useIndexedStore((s) => s.settings.mode);
 
   React.useEffect(() => {
     window.electronAPI.toggleMode(mode);
@@ -64,7 +64,7 @@ const useNativeTheme = () => {
 };
 
 const useAlwaysOnTop = () => {
-  const alwaysOnTop = useLocalStore((s) => s.alwaysOnTop);
+  const alwaysOnTop = useIndexedStore((s) => s.settings.alwaysOnTop);
 
   React.useEffect(() => {
     window.electronAPI.setAlwaysOnTop(alwaysOnTop);

@@ -5,7 +5,6 @@ import { createHash } from "node:crypto";
 import * as channel from "./channel";
 import {
   getCpuSerial,
-  getMotherboardSerial,
   runWinword,
   execFileAsync,
   getDataFromAccessDatabase,
@@ -13,9 +12,11 @@ import {
   getCorporation,
   withLog,
   DATE_FORMAT_DATABASE,
+  getSettings,
+  getSerialFromStdout,
 } from "./lib";
 import dayjs from "dayjs";
-import { getSerialFromStdout } from "@/lib/utils";
+import * as sql from "drizzle-orm";
 import { db } from "./db";
 import * as schema from "./schema";
 import * as hxzyHmis from "./hxzy_hmis";
@@ -24,7 +25,7 @@ import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
 import type { GetDataFromAccessDatabaseParams } from "#/electron/database_types";
 import type { AutoInputToVCParams } from "#/electron/autoInput_types";
-import { eq } from "drizzle-orm";
+import type * as PRELOAD from "./preload";
 
 // The built directory structure
 //
@@ -58,7 +59,7 @@ function createWindow() {
     },
 
     autoHideMenuBar: false,
-    // alwaysOnTop: true,
+    alwaysOnTop: false,
 
     width: 1024,
     height: 768,
@@ -68,9 +69,7 @@ function createWindow() {
   win.menuBarVisible = false;
 
   // Test active push message to Renderer-process.
-  win.webContents.on("did-finish-load", () => {
-    console.log("did-finish-load");
-  });
+  win.webContents.on("did-finish-load", () => {});
   win.on("focus", () => {
     win?.webContents.send(channel.windowFocus);
   });
@@ -222,39 +221,19 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-  channel.getCpuSerial,
-  withLog(async () => {
-    // Ensure an error is thrown when the promise is rejected
-    return await getCpuSerial();
-  }),
-);
-
-ipcMain.handle(
-  channel.getMotherboardSerial,
-  withLog(async () => {
-    // Ensure an error is thrown when the promise is rejected
-    return await getMotherboardSerial();
-  }),
-);
-
-ipcMain.handle(
   channel.verifyActivation,
-  withLog(async (e, activateCode: string) => {
-    // Prevent unused variable warning
-    void e;
-    const motherboardSerial = await getMotherboardSerial();
-    const serial = getSerialFromStdout(motherboardSerial);
-    if (!serial) {
-      throw new Error("获取主板序列号失败");
-    }
+  withLog(async () => {
+    const cpuSerial = await getCpuSerial();
+    const serial = getSerialFromStdout(cpuSerial);
+    const { activateCode } = await getSettings();
+    if (!activateCode) return { isOk: false, serial };
+    if (!serial) throw new Error("获取CPU序列号失败");
     const exceptedCode = createHash("md5")
       .update([serial, DATE_FORMAT_DATABASE].join(""))
       .digest("hex")
       .toUpperCase();
 
-    return {
-      isOk: activateCode === exceptedCode,
-    };
+    return { isOk: activateCode === exceptedCode, serial };
   }),
 );
 
@@ -471,39 +450,56 @@ ipcMain.handle(
 ipcMain.handle(
   channel.getSetting,
   withLog(async () => {
-    let setting: schema.Settings | undefined = void 0;
-    await db.transaction(async (tx) => {
-      setting = await tx.query.settingsTable.findFirst();
-      if (!setting) {
-        [setting] = await tx
-          .insert(schema.settingsTable)
-          .values({})
-          .returning();
-      }
-    });
-
-    if (!setting) {
-      throw new Error("获取设置失败");
-    }
-
-    return setting;
+    return await getSettings();
   }),
 );
 
 ipcMain.handle(
   channel.setSetting,
-  withLog(async (e, data: schema.Settings) => {
+  withLog(async (e, data: PRELOAD.SetSettingParams) => {
     void e;
+
     const [settings] = await db
-      .update(schema.settingsTable)
-      .set({
-        databasePath: data.databasePath,
-        driverPath: data.driverPath,
-        activateCode: data.activateCode,
+      .insert(schema.settingsTable)
+      .values({ ...data, id: 1 })
+      .onConflictDoUpdate({
+        target: schema.settingsTable.id,
+        targetWhere: sql.eq(schema.settingsTable.id, 1),
+        set: data,
       })
-      .where(eq(schema.settingsTable.id, data.id))
       .returning();
 
     return settings;
   }),
+);
+
+ipcMain.handle(
+  channel.getJtvBarcode,
+  withLog(
+    async (
+      e,
+      params: PRELOAD.GetJtvBarcodeParams,
+    ): Promise<PRELOAD.GetJtvBarcodeResult> => {
+      // Prevent unused variable warning
+      void e;
+      const [{ count }] = await db
+        .select({ count: sql.count() })
+        .from(schema.jtvBarcodeTable)
+        .where(
+          sql.between(
+            schema.jtvBarcodeTable.date,
+            new Date(),
+            new Date(params.endDate),
+          ),
+        )
+        .limit(1);
+      const rows = await db.query.jtvBarcodeTable.findMany({
+        limit: params.pageSize,
+        offset: params.pageIndex * params.pageSize,
+        where: (jtvBarcode, { between }) =>
+          between(jtvBarcode.date, new Date(), new Date(params.endDate)),
+      });
+      return { rows, count };
+    },
+  ),
 );

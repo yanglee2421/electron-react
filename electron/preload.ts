@@ -10,7 +10,7 @@ import type * as HXZY_HMIS from "#/electron/hxzy_hmis";
 import type * as JTV_HMIS from "#/electron/jtv_hmis";
 import type * as JTV_HMIS_XUZHOUBEI from "#/electron/jtv_hmis_xuzhoubei";
 import type * as KH_HMIS from "#/electron/kh_hmis";
-import type { Settings } from "./schema";
+import type * as SCHEMA from "./schema";
 import type { Log } from "#/src/lib/db";
 
 type LogCallback = (data: Log) => void;
@@ -191,31 +191,49 @@ const kh_hmis_save_data = async (params: KH_HMIS.SaveDataParams) => {
   await ipcRenderer.invoke(channel.kh_hmis_save_data, params);
 };
 
-const getCpuSerial = async () => {
-  const data: string = await ipcRenderer.invoke(channel.getCpuSerial);
-  return data;
+export type VerifyActivationResult = {
+  isOk: boolean;
+  serial: string;
 };
 
-const getMotherboardSerial = async () => {
-  const data: string = await ipcRenderer.invoke(channel.getMotherboardSerial);
-  return data;
-};
-type VerifyActivationResult = { isOk: boolean };
-const verifyActivation = async (code: string) => {
+const verifyActivation = async () => {
   const data: VerifyActivationResult = await ipcRenderer.invoke(
     channel.verifyActivation,
-    code,
   );
   return data;
 };
 
 const getSetting = async () => {
-  const data: Settings = await ipcRenderer.invoke(channel.getSetting);
+  const data: SCHEMA.Settings = await ipcRenderer.invoke(channel.getSetting);
   return data;
 };
 
-const setSetting = async (param: Settings) => {
-  const data: Settings = await ipcRenderer.invoke(channel.setSetting, param);
+export type SetSettingParams = Partial<Omit<SCHEMA.Settings, "id">>;
+
+const setSetting = async (param: SetSettingParams) => {
+  const data: SCHEMA.Settings = await ipcRenderer.invoke(
+    channel.setSetting,
+    param,
+  );
+  return data;
+};
+
+export type GetJtvBarcodeParams = {
+  pageIndex: number;
+  pageSize: number;
+  startDate: string;
+  endDate: string;
+};
+
+export type GetJtvBarcodeResult = {
+  count: number;
+  rows: SCHEMA.JTVBarcode[];
+};
+
+const getJtvBarcode = async (
+  params: GetJtvBarcodeParams,
+): Promise<GetJtvBarcodeResult> => {
+  const data = await ipcRenderer.invoke(channel.getJtvBarcode, params);
   return data;
 };
 
@@ -234,8 +252,6 @@ const electronAPI = {
   // CMD
   getDataFromAccessDatabase,
   autoInputToVC,
-  getCpuSerial,
-  getMotherboardSerial,
   verifyActivation,
 
   // HTTP
@@ -252,6 +268,7 @@ const electronAPI = {
   // SQLite
   getSetting,
   setSetting,
+  getJtvBarcode,
 
   // Subscriptions
   subscribeLog,

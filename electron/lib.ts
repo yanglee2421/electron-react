@@ -4,6 +4,8 @@ import { exec, execFile } from "node:child_process";
 import { access, constants } from "node:fs/promises";
 import { BrowserWindow } from "electron";
 import dayjs from "dayjs";
+import { db } from "./db";
+import * as schema from "./schema";
 import * as channel from "./channel";
 import type {
   Corporation,
@@ -259,4 +261,25 @@ export const getPlace = (nChannel: number) => {
     default:
       return "车轴";
   }
+};
+
+export const getSettings = async () => {
+  let settings = await db.query.settingsTable.findFirst({
+    where: (setting, { eq }) => eq(setting.id, 1),
+  });
+
+  if (!settings) {
+    const [created] = await db
+      .insert(schema.settingsTable)
+      .values({ id: 1 })
+      .returning();
+
+    settings = created;
+  }
+
+  return settings;
+};
+
+export const getSerialFromStdout = (stdout: string) => {
+  return stdout.trim().split("\n").at(-1) || "";
 };

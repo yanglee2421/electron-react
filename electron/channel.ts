@@ -1,7 +1,5 @@
 // Windows 10
 export const printer = "printer";
-export const getCpuSerial = "getCpuSerial";
-export const getMotherboardSerial = "getMotherboardSerial";
 export const verifyActivation = "verifyActivation";
 
 // C# Driver
@@ -37,3 +35,6 @@ export const getVersion = "getVersion";
 // SQLite
 export const getSetting = "getSetting";
 export const setSetting = "setSetting";
+export const getJtvBarcode = "getJtvBarcode";
+export const setJtvBarcode = "setJtvBarcode";
+export const deleteJtvBarcode = "deleteJtvBarcode";

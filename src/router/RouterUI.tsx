@@ -1,4 +1,10 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  usePrefetchQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -57,8 +63,8 @@ import NProgress from "nprogress";
 import { ASIDE_SIZE, HEADER_SIZE_SM, HEADER_SIZE_XS } from "@/lib/constants";
 import { Loading } from "@/components/Loading";
 import { NavMenu } from "./nav";
-import { getSerialFromStdout } from "@/lib/utils";
-import { useLocalStore } from "@/hooks/useLocalStore";
+import { useIndexedStore } from "@/hooks/useIndexedStore";
+import { QueryProvider } from "@/components/query";
 
 const AuthAsideWrapper = styled("div")(({ theme }) => ({
   position: "fixed",
@@ -147,8 +153,8 @@ const renderModeIcon = (mode: string) => {
 const ModeToggle = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
-  const mode = useLocalStore((state) => state.mode);
-  const set = useLocalStore((state) => state.set);
+  const mode = useIndexedStore((state) => state.settings.mode);
+  const set = useIndexedStore((state) => state.set);
 
   return (
     <>
@@ -162,8 +168,10 @@ const ModeToggle = () => {
       >
         <MenuItem
           onClick={() => {
-            set({ mode: "light" });
             setAnchorEl(null);
+            set((draft) => {
+              draft.settings.mode = "light";
+            });
           }}
         >
           <ListItemIcon>
@@ -173,8 +181,10 @@ const ModeToggle = () => {
         </MenuItem>
         <MenuItem
           onClick={() => {
-            set({ mode: "dark" });
             setAnchorEl(null);
+            set((draft) => {
+              draft.settings.mode = "dark";
+            });
           }}
         >
           <ListItemIcon>
@@ -184,8 +194,10 @@ const ModeToggle = () => {
         </MenuItem>
         <MenuItem
           onClick={() => {
-            set({ mode: "system" });
             setAnchorEl(null);
+            set((draft) => {
+              draft.settings.mode = "system";
+            });
           }}
         >
           <ListItemIcon>
@@ -202,8 +214,8 @@ const AuthLayout = () => {
   const [key, update] = React.useState("");
 
   const location = useLocation();
-  const set = useLocalStore((state) => state.set);
-  const alwaysOnTop = useLocalStore((state) => state.alwaysOnTop);
+  const set = useIndexedStore((state) => state.set);
+  const alwaysOnTop = useIndexedStore((state) => state.settings.alwaysOnTop);
   const showMenuInMobile = Object.is(key, location.key);
 
   return (
@@ -248,7 +260,7 @@ const AuthLayout = () => {
           <IconButton
             onClick={() => {
               set((d) => {
-                d.alwaysOnTop = !d.alwaysOnTop;
+                d.settings.alwaysOnTop = !d.settings.alwaysOnTop;
               });
             }}
           >
@@ -279,8 +291,6 @@ const AuthLayout = () => {
   );
 };
 
-const motherboardSerial = window.electronAPI.getMotherboardSerial();
-
 const activationSchema = z.object({
   activationCode: z.string().min(1, "激活码不能为空"),
 });
@@ -293,17 +303,59 @@ const useActivationForm = () =>
     resolver: zodResolver(activationSchema),
   });
 
-const ActivationForm = () => {
-  const motherboardSerialString = React.use(motherboardSerial);
+const useActivate = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (activateCode: string) => {
+      const data = await window.electronAPI.setSetting({
+        activateCode,
+      });
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: fetchActivation().queryKey,
+      });
+    },
+  });
+};
 
+const useActivation = () =>
+  useQuery({
+    ...fetchActivation(),
+
+    retry: false,
+
+    // Disable automatic refetching
+    refetchOnMount: false,
+    refetchInterval: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    refetchIntervalInBackground: false,
+
+    // Disable garbage collection
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
+const ActivationForm = () => {
   const formId = React.useId();
 
   const [isPending, startTransition] = React.useTransition();
-
   const snackbar = useSnackbar();
   const form = useActivationForm();
+  const activate = useActivate();
+  const activation = useActivation();
 
-  const code = getSerialFromStdout(motherboardSerialString);
+  if (activation.isPending) {
+    return <Loading />;
+  }
+
+  if (activation.isError) {
+    return <Box>{activation.error.message}</Box>;
+  }
+
+  const code = activation.data.serial;
 
   return (
     <Card>
@@ -312,7 +364,13 @@ const ActivationForm = () => {
         <form
           id={formId}
           onSubmit={form.handleSubmit((data) => {
-            console.log(data);
+            activate.mutate(data.activationCode, {
+              onError: (error) => {
+                snackbar.enqueueSnackbar(error.message, {
+                  variant: "error",
+                });
+              },
+            });
           }, console.warn)}
         >
           <Grid container spacing={6}>
@@ -398,7 +456,7 @@ const ActivationForm = () => {
         </form>
       </CardContent>
       <CardActions>
-        <Button type="submit" form={formId}>
+        <Button type="submit" form={formId} disabled={activate.isPending}>
           激活
         </Button>
       </CardActions>
@@ -406,51 +464,29 @@ const ActivationForm = () => {
   );
 };
 
-const fetchActivation = (code: string) =>
+const fetchActivation = () =>
   queryOptions({
-    queryKey: ["fetchActivateCode", code],
+    queryKey: ["fetchActivateCode"],
     queryFn: async () => {
-      const data = await window.electronAPI.verifyActivation(code);
+      const data = await window.electronAPI.verifyActivation();
       return data;
     },
   });
 
 const ActivationGuard = () => {
-  const activateCode = "";
+  const activation = useActivation();
 
-  const activation = useQuery({
-    ...fetchActivation(activateCode),
-    enabled: !!activateCode,
+  if (activation.isPending) {
+    return <Loading />;
+  }
 
-    retry: false,
+  if (activation.isError) {
+    return <Box>{activation.error.message}</Box>;
+  }
 
-    // Disable automatic refetching
-    refetchOnMount: false,
-    refetchInterval: false,
-    refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
-    refetchIntervalInBackground: false,
-
-    // Disable garbage collection
-    staleTime: Infinity,
-    gcTime: Infinity,
-  });
-
-  // if (!activateCode) {
-  //   return <ActivationForm />;
-  // }
-
-  // if (activation.isPending) {
-  //   return <Loading />;
-  // }
-
-  // if (activation.isError) {
-  //   return <Box>{activation.error.message}</Box>;
-  // }
-
-  // if (!activation.data.isOk) {
-  //   return <ActivationForm />;
-  // }
+  if (!activation.data.isOk) {
+    return <ActivationForm />;
+  }
 
   return <Outlet />;
 };
@@ -494,7 +530,7 @@ const NprogressBar = () => {
   );
 };
 
-const usePrefetchActivation = () => {};
+const usePrefetchActivation = () => usePrefetchQuery(fetchActivation());
 
 const RootRoute = () => {
   usePrefetchActivation();
@@ -590,7 +626,11 @@ const routes: RouteObject[] = [
             id: "activation_guard",
             path: "",
             Component: ActivationGuard,
-            loader: async () => {},
+            loader: async () => {
+              await QueryProvider.queryClient.ensureQueryData(
+                fetchActivation(),
+              );
+            },
             children: [
               {
                 id: "detection",
