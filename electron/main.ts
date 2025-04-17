@@ -16,8 +16,9 @@ import {
   getSerialFromStdout,
 } from "./lib";
 import dayjs from "dayjs";
-import * as sql from "drizzle-orm";
+import { setting } from "./setting";
 import { db } from "./db";
+import * as sql from "drizzle-orm";
 import * as schema from "./schema";
 import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
@@ -50,7 +51,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 
 let win: BrowserWindow | null;
 
-function createWindow() {
+const createWindow = () => {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
@@ -95,7 +96,7 @@ function createWindow() {
     // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
-}
+};
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -135,6 +136,8 @@ if (!gotTheLock) {
 
   app.whenReady().then(async () => {
     createWindow();
+    await setting.init();
+    await jtvHmis.jtvHmisSetting.init();
   });
 }
 
