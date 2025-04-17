@@ -87,12 +87,3 @@ export type VerifyData = {
   nTAIndex: number;
   opid: string | null;
 };
-
-export type DatabaseBaseParams = {
-  driverPath: string;
-  databasePath: string;
-};
-
-export type GetDataFromAccessDatabaseParams = DatabaseBaseParams & {
-  query: string;
-};

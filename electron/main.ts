@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, nativeTheme } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -8,15 +8,12 @@ import {
   runWinword,
   execFileAsync,
   getDataFromAccessDatabase,
-  getIP,
-  getCorporation,
   withLog,
   DATE_FORMAT_DATABASE,
-  getSettings,
   getSerialFromStdout,
+  settings,
 } from "./lib";
 import dayjs from "dayjs";
-import { setting } from "./setting";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
@@ -24,7 +21,6 @@ import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
-import type { GetDataFromAccessDatabaseParams } from "#/electron/database_types";
 import type { AutoInputToVCParams } from "#/electron/autoInput_types";
 import type * as PRELOAD from "./preload";
 
@@ -49,9 +45,14 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   ? path.join(process.env.APP_ROOT, "public")
   : RENDERER_DIST;
 
+if (import.meta.env.DEV) {
+  console.log(app.getPath("userData"));
+}
+
 let win: BrowserWindow | null;
 
 const createWindow = () => {
+  const alwaysOnTop = settings.get("alwaysOnTop");
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
@@ -60,7 +61,7 @@ const createWindow = () => {
     },
 
     autoHideMenuBar: false,
-    alwaysOnTop: false,
+    alwaysOnTop,
 
     width: 1024,
     height: 768,
@@ -134,11 +135,7 @@ if (!gotTheLock) {
     app.disableHardwareAcceleration();
   }
 
-  app.whenReady().then(async () => {
-    createWindow();
-    await setting.init();
-    await jtvHmis.jtvHmisSetting.init();
-  });
+  app.whenReady().then(createWindow);
 }
 
 ipcMain.handle(
@@ -173,42 +170,6 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-  channel.toggleMode,
-  withLog(async (e, mode: "system" | "dark" | "light") => {
-    // Prevent unused variable warning
-    void e;
-    nativeTheme.themeSource = mode;
-  }),
-);
-
-ipcMain.handle(
-  channel.setAlwaysOnTop,
-  withLog(async (e, alwaysOnTop: boolean) => {
-    // Prevent unused variable warning
-    void e;
-    win?.setAlwaysOnTop(alwaysOnTop);
-  }),
-);
-
-ipcMain.handle(
-  channel.getLoginItemSettings,
-  withLog(async (e) => {
-    // Prevent unused variable warning
-    void e;
-    return app.getLoginItemSettings().openAtLogin;
-  }),
-);
-
-ipcMain.handle(
-  channel.setLoginItemSettings,
-  withLog(async (e, openAtLogin: boolean) => {
-    // Prevent unused variable warning
-    void e;
-    app.setLoginItemSettings({ openAtLogin });
-  }),
-);
-
-ipcMain.handle(
   channel.getVersion,
   withLog(async () => app.getVersion()),
 );
@@ -216,7 +177,6 @@ ipcMain.handle(
 ipcMain.handle(
   channel.printer,
   withLog(async (e, data: string) => {
-    // Prevent unused variable warning
     void e;
     // Ensure an error is thrown when the promise is rejected
     return await runWinword(data).catch(() => shell.openPath(data));
@@ -228,7 +188,7 @@ ipcMain.handle(
   withLog(async () => {
     const cpuSerial = await getCpuSerial();
     const serial = getSerialFromStdout(cpuSerial);
-    const { activateCode } = await getSettings();
+    const activateCode = settings.get("activateCode");
     if (!activateCode) return { isOk: false, serial };
     if (!serial) throw new Error("获取CPU序列号失败");
     const exceptedCode = createHash("md5")
@@ -269,192 +229,87 @@ ipcMain.handle(
 
 ipcMain.handle(
   channel.getDataFromAccessDatabase,
-  withLog(async (e, params: GetDataFromAccessDatabaseParams) => {
-    // Prevent unused variable warning
+  withLog(async (e, sql: string) => {
     void e;
-    // Ensure an error is thrown when the promise is rejected
-    return await getDataFromAccessDatabase({
-      driverPath: params.driverPath,
-      databasePath: params.databasePath,
-      sql: params.query,
-    });
+    return await getDataFromAccessDatabase(sql);
   }),
 );
 
 ipcMain.handle(
   channel.hxzy_hmis_get_data,
-  withLog(async (e, params: hxzyHmis.GetRequest) => {
-    // Prevent unused variable warning
+  withLog(async (e, barcode: string) => {
     void e;
-    // Ensure an error is thrown when the promise is rejected
-    return await hxzyHmis.getFn(params);
+    return await hxzyHmis.getFn(barcode);
   }),
 );
 
 ipcMain.handle(
   channel.hxzy_hmis_save_data,
-  withLog(async (e, params: hxzyHmis.SaveDataParams) => {
-    // Prevent unused variable warning
+  withLog(async (e, id: number) => {
     void e;
-    const startDate = dayjs().startOf("day").toISOString();
-    const endDate = dayjs().endOf("day").toISOString();
-    const eq_ip = getIP();
-    const corporation = await getCorporation({
-      driverPath: params.driverPath,
-      databasePath: params.databasePath,
-    });
-
-    const settledData = await Promise.allSettled(
-      params.records.map((record) =>
-        hxzyHmis.recordToSaveDataParams(
-          record,
-          eq_ip,
-          corporation.DeviceNO || "",
-          params.gd,
-          startDate,
-          endDate,
-          params.driverPath,
-          params.databasePath,
-        ),
-      ),
-    );
-
-    const data = settledData
-      .filter((i) => i.status === "fulfilled")
-      .map((i) => i.value);
-
-    const dhs = data.map((i) => i.dh);
-
-    if (!data.length) {
-      throw `轴号[${params.records
-        .map((record) => record.zh)
-        .join(",")}],均未找到对应的记录`;
-    }
-
-    const result = await hxzyHmis.postFn({
-      data,
-      host: params.host,
-    });
-
-    return { result, dhs };
+    return await hxzyHmis.uploadBarcode(id);
   }),
 );
 
 ipcMain.handle(
   channel.hxzy_hmis_upload_verifies,
-  withLog(async (e, params: hxzyHmis.UploadVerifiesParams) => {
-    // Prevent unused variable warning
+  withLog(async (e, id: string) => {
     void e;
-    // Ensure an error is thrown when the promise is rejected
-    return await hxzyHmis.idToUploadVerifiesData(
-      params.id,
-      params.driverPath,
-      params.databasePath,
-    );
+    return await hxzyHmis.idToUploadVerifiesData(id);
   }),
 );
 
 ipcMain.handle(
   channel.jtv_hmis_get_data,
-  withLog(async (e, params: jtvHmis.GetRequest) => {
-    // Prevent unused variable warning
+  withLog(async (e, barcode: string) => {
     void e;
-    // Ensure an error is thrown when the promise is rejected
-    return await jtvHmis.getFn(params);
+    return await jtvHmis.getFn(barcode);
   }),
 );
 
 ipcMain.handle(
   channel.jtv_hmis_save_data,
-  withLog(async (e, params: jtvHmis.SaveDataParams) => {
-    // Prevent unused variable warning
+  withLog(async (e, id: number) => {
     void e;
-    const startDate = dayjs().startOf("day").toISOString();
-    const endDate = dayjs().endOf("day").toISOString();
-    const eq_ip = getIP();
-    const corporation = await getCorporation({
-      driverPath: params.driverPath,
-      databasePath: params.databasePath,
-    });
-
-    const settledData = await Promise.allSettled(
-      params.records.map((record) =>
-        jtvHmis.recordToSaveDataParams(
-          record,
-          eq_ip,
-          corporation.DeviceNO || "",
-          startDate,
-          endDate,
-          params.driverPath,
-          params.databasePath,
-        ),
-      ),
-    );
-
-    const data = settledData
-      .filter((i) => i.status === "fulfilled")
-      .map((i) => i.value);
-
-    const dhs = data.map((i) => i.dh);
-
-    if (!data.length) {
-      throw `轴号[${params.records
-        .map((record) => record.zh)
-        .join(",")}],均未找到对应的记录`;
-    }
-
-    const result = await jtvHmis.postFn({
-      data,
-      host: params.host,
-    });
-
-    return { result, dhs };
+    return await jtvHmis.uploadBarcode(id);
   }),
 );
 
 ipcMain.handle(
   channel.jtv_hmis_xuzhoubei_get_data,
-  withLog(async (e, params: jtvHmisXuzhoubei.GetRequest) => {
-    // Prevent unused variable warning
+  withLog(async (e, barcode: string) => {
     void e;
-    // Ensure an error is thrown when the promise is rejected
-    return await jtvHmisXuzhoubei.getFn(params);
+    return await jtvHmisXuzhoubei.getFn(barcode);
   }),
 );
 
 ipcMain.handle(
   channel.jtv_hmis_xuzhoubei_save_data,
-  withLog(async (e, params: jtvHmisXuzhoubei.SaveDataParams) => {
-    // Prevent unused variable warning
+  withLog(async (e, id: number) => {
     void e;
-    return await jtvHmisXuzhoubei.saveData(params);
+    return await jtvHmisXuzhoubei.uploadBarcode(id);
   }),
 );
 
 ipcMain.handle(
   channel.kh_hmis_get_data,
-  withLog(async (e, params: khHmis.GetRequest) => {
-    // Prevent unused variable warning
+  withLog(async (e, barcode: string) => {
     void e;
-    // Ensure an error is thrown when the promise is rejected
-    return await khHmis.getFn(params);
+    return await khHmis.getFn(barcode);
   }),
 );
 
 ipcMain.handle(
   channel.kh_hmis_save_data,
-  withLog(async (e, params: khHmis.SaveDataParams) => {
-    // Prevent unused variable warning
+  withLog(async (e, id: number) => {
     void e;
-    return await khHmis.saveData(params);
+    return await khHmis.uploadBarcode(id);
   }),
 );
 
 ipcMain.handle(
   channel.getSetting,
-  withLog(async () => {
-    return await getSettings();
-  }),
+  withLog(async () => settings.store),
 );
 
 ipcMain.handle(
@@ -462,28 +317,19 @@ ipcMain.handle(
   withLog(async (e, data: PRELOAD.SetSettingParams) => {
     void e;
 
-    const [settings] = await db
-      .insert(schema.settingsTable)
-      .values({ ...data, id: 1 })
-      .onConflictDoUpdate({
-        target: schema.settingsTable.id,
-        targetWhere: sql.eq(schema.settingsTable.id, 1),
-        set: data,
-      })
-      .returning();
+    Object.entries(data).forEach(([key, value]) => settings.set(key, value));
 
-    return settings;
+    return settings.store;
   }),
 );
 
 ipcMain.handle(
-  channel.getJtvBarcode,
+  channel.jtvBarcodeGet,
   withLog(
     async (
       e,
       params: PRELOAD.GetJtvBarcodeParams,
     ): Promise<PRELOAD.GetJtvBarcodeResult> => {
-      // Prevent unused variable warning
       void e;
       const [{ count }] = await db
         .select({ count: sql.count() })

@@ -1,16 +1,8 @@
 import {
   queryOptions,
-  useMutation,
   useQueryClient,
+  useMutation,
 } from "@tanstack/react-query";
-
-export const fetchVersion = () =>
-  queryOptions({
-    queryKey: ["window.electronAPI.getVersion"],
-    queryFn: async () => {
-      return await window.electronAPI.getVersion();
-    },
-  });
 
 export const fetchSettins = () =>
   queryOptions({

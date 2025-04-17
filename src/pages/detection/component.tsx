@@ -20,7 +20,6 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
 import { fetchDetections } from "./fetchers";
-import { useIndexedStore } from "@/hooks/useIndexedStore";
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -58,21 +57,13 @@ const columns = [
 export const Component = () => {
   const [date, setDate] = React.useState(initDate);
 
-  const settings = useIndexedStore((s) => s.settings);
-
   const sql = `SELECT * FROM detections WHERE tmnow BETWEEN #${date
     .startOf("day")
     .format(DATE_FORMAT_DATABASE)}# AND #${date
     .endOf("day")
     .format(DATE_FORMAT_DATABASE)}#`;
 
-  const query = useQuery(
-    fetchDetections({
-      driverPath: settings.driverPath,
-      databasePath: settings.databasePath,
-      query: sql,
-    })
-  );
+  const query = useQuery(fetchDetections({ query: sql }));
 
   const data = React.useMemo(() => query.data || [], [query.data]);
 
@@ -180,7 +171,7 @@ export const Component = () => {
                   >
                     {flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableCell>
                 ))}
@@ -198,7 +189,7 @@ export const Component = () => {
                   >
                     {flexRender(
                       header.column.columnDef.footer,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableCell>
                 ))}

@@ -55,22 +55,6 @@ const MuiProvider = (props: Props) => {
   );
 };
 
-const useNativeTheme = () => {
-  const mode = useIndexedStore((s) => s.settings.mode);
-
-  React.useEffect(() => {
-    window.electronAPI.toggleMode(mode);
-  }, [mode]);
-};
-
-const useAlwaysOnTop = () => {
-  const alwaysOnTop = useIndexedStore((s) => s.settings.alwaysOnTop);
-
-  React.useEffect(() => {
-    window.electronAPI.setAlwaysOnTop(alwaysOnTop);
-  }, [alwaysOnTop]);
-};
-
 const useLog = () => {
   const set = useIndexedStore((s) => s.set);
 
@@ -88,8 +72,6 @@ const useLog = () => {
 };
 
 export const App = () => {
-  useNativeTheme();
-  useAlwaysOnTop();
   useLog();
 
   const indexedHasHydrated = useIndexedStoreHasHydrated();

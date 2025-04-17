@@ -1,10 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import * as channel from "./channel";
-import type {
-  GetDataFromAccessDatabaseParams,
-  Verify,
-  VerifyData,
-} from "#/electron/database_types";
+import type { Settings } from "./lib";
+import type { Verify, VerifyData } from "#/electron/database_types";
 import type { AutoInputToVCParams } from "#/electron/autoInput_types";
 import type * as HXZY_HMIS from "#/electron/hxzy_hmis";
 import type * as JTV_HMIS from "#/electron/jtv_hmis";
@@ -30,23 +27,6 @@ const openDevTools = () => {
   ipcRenderer.invoke(channel.openDevTools);
 };
 
-const toggleMode = async (mode: "system" | "dark" | "light") => {
-  await ipcRenderer.invoke(channel.toggleMode, mode);
-};
-
-const setAlwaysOnTop = async (isAlwaysOnTop: boolean) => {
-  await ipcRenderer.invoke(channel.setAlwaysOnTop, isAlwaysOnTop);
-};
-
-const getLoginItemSettings = async () => {
-  const data = await ipcRenderer.invoke(channel.getLoginItemSettings);
-  return data as boolean;
-};
-
-const setLoginItemSettings = async (openAtLogin: boolean) => {
-  await ipcRenderer.invoke(channel.setLoginItemSettings, openAtLogin);
-};
-
 const getMem: GetMem = async () => {
   const data = await ipcRenderer.invoke(channel.mem);
   return data;
@@ -56,53 +36,21 @@ const getVersion = () => {
   return ipcRenderer.invoke(channel.getVersion);
 };
 
-const subscribeWindowFocus = (handler: () => void) => {
-  const listener = (event: Electron.IpcRendererEvent) => {
-    // Prevent unused variable warning
-    void event;
-    handler();
-  };
-  ipcRenderer.on(channel.windowFocus, listener);
-  return () => {
-    ipcRenderer.off(channel.windowFocus, listener);
+const createSubscribe = (channel: string) => {
+  return (handler: () => void) => {
+    // Create a new listener function to ensure reference equality for the off method
+    const listener = () => handler();
+    ipcRenderer.on(channel, listener);
+    return () => ipcRenderer.off(channel, listener);
   };
 };
 
-const subscribeWindowBlur = (handler: () => void) => {
-  const listener = (event: Electron.IpcRendererEvent) => {
-    // Prevent unused variable warning
-    void event;
-    handler();
-  };
-  ipcRenderer.on(channel.windowBlur, listener);
-  return () => {
-    ipcRenderer.off(channel.windowBlur, listener);
-  };
-};
-
-const subscribeWindowShow = (handler: () => void) => {
-  const listener = (event: Electron.IpcRendererEvent) => {
-    // Prevent unused variable warning
-    void event;
-    handler();
-  };
-  ipcRenderer.on(channel.windowShow, listener);
-  return () => {
-    ipcRenderer.off(channel.windowShow, listener);
-  };
-};
-
-const subscribeWindowHide = (handler: () => void) => {
-  const listener = (event: Electron.IpcRendererEvent) => {
-    // Prevent unused variable warning
-    void event;
-    handler();
-  };
-  ipcRenderer.on(channel.windowHide, listener);
-  return () => {
-    ipcRenderer.off(channel.windowHide, listener);
-  };
-};
+const subscribeWindowFocus = createSubscribe(channel.windowFocus);
+const subscribeWindowBlur = createSubscribe(channel.windowBlur);
+const subscribeWindowShow = createSubscribe(channel.windowShow);
+const subscribeWindowHide = createSubscribe(channel.windowHide);
+const subscribeHxzyBarcodeEmit = createSubscribe(channel.hxzyBarcodeEmit);
+const subscribeJtvBarcodeEmit = createSubscribe(channel.jtvBarcodeEmit);
 
 const subscribeLog: SubscribeLog = (handler) => {
   const listener = (event: Electron.IpcRendererEvent, data: Log) => {
@@ -118,13 +66,8 @@ const subscribeLog: SubscribeLog = (handler) => {
   };
 };
 
-const getDataFromAccessDatabase = async <TRecord = unknown>(
-  params: GetDataFromAccessDatabaseParams,
-) => {
-  const data = await ipcRenderer.invoke(
-    channel.getDataFromAccessDatabase,
-    params,
-  );
+const getDataFromAccessDatabase = async <TRecord = unknown>(sql: string) => {
+  const data = await ipcRenderer.invoke(channel.getDataFromAccessDatabase, sql);
   return data as TRecord[];
 };
 
@@ -133,62 +76,55 @@ const autoInputToVC = async (params: AutoInputToVCParams) => {
   return data;
 };
 
-const hxzy_hmis_get_data = async (params: HXZY_HMIS.GetRequest) => {
-  const data = await ipcRenderer.invoke(channel.hxzy_hmis_get_data, params);
+const hxzy_hmis_get_data = async (barcode: string) => {
+  const data = await ipcRenderer.invoke(channel.hxzy_hmis_get_data, barcode);
   return data as HXZY_HMIS.GetResponse;
 };
 
-const hxzy_hmis_save_data = async (params: HXZY_HMIS.SaveDataParams) => {
-  const data = await ipcRenderer.invoke(channel.hxzy_hmis_save_data, params);
-  return data as { result: HXZY_HMIS.PostResponse; dhs: string[] };
+const hxzy_hmis_save_data = async (id: number) => {
+  await ipcRenderer.invoke(channel.hxzy_hmis_save_data, id);
+  return id;
 };
 
-const hxzy_hmis_upload_verifies = async (
-  params: HXZY_HMIS.UploadVerifiesParams,
-) => {
-  const data = await ipcRenderer.invoke(
-    channel.hxzy_hmis_upload_verifies,
-    params,
-  );
+const hxzy_hmis_upload_verifies = async (id: string) => {
+  const data = await ipcRenderer.invoke(channel.hxzy_hmis_upload_verifies, id);
   return data as {
     verifies: Verify;
     verifiesData: VerifyData[];
   };
 };
 
-const jtv_hmis_get_data = async (params: JTV_HMIS.GetRequest) => {
-  const data = await ipcRenderer.invoke(channel.jtv_hmis_get_data, params);
+const jtv_hmis_get_data = async (barcode: string) => {
+  const data = await ipcRenderer.invoke(channel.jtv_hmis_get_data, barcode);
   return data as JTV_HMIS.GetResponse;
 };
 
-const jtv_hmis_save_data = async (params: JTV_HMIS.SaveDataParams) => {
-  const data = await ipcRenderer.invoke(channel.jtv_hmis_save_data, params);
-  return data as { result: JTV_HMIS.PostResponse; dhs: string[] };
+const jtv_hmis_save_data = async (id: number) => {
+  await ipcRenderer.invoke(channel.jtv_hmis_save_data, id);
+  return id;
 };
 
-const jtv_hmis_xuzhoubei_get_data = async (
-  params: JTV_HMIS_XUZHOUBEI.GetRequest,
-) => {
+const jtv_hmis_xuzhoubei_get_data = async (barcode: string) => {
   const data = await ipcRenderer.invoke(
     channel.jtv_hmis_xuzhoubei_get_data,
-    params,
+    barcode,
   );
   return data as JTV_HMIS_XUZHOUBEI.GetResponse;
 };
 
-const jtv_hmis_xuzhoubei_save_data = async (
-  params: JTV_HMIS_XUZHOUBEI.SaveDataParams,
-) => {
-  await ipcRenderer.invoke(channel.jtv_hmis_xuzhoubei_save_data, params);
+const jtv_hmis_xuzhoubei_save_data = async (id: number) => {
+  await ipcRenderer.invoke(channel.jtv_hmis_xuzhoubei_save_data, id);
+  return id;
 };
 
-const kh_hmis_get_data = async (params: KH_HMIS.GetRequest) => {
-  const data = await ipcRenderer.invoke(channel.kh_hmis_get_data, params);
+const kh_hmis_get_data = async (barcode: string) => {
+  const data = await ipcRenderer.invoke(channel.kh_hmis_get_data, barcode);
   return data as KH_HMIS.GetResponse;
 };
 
-const kh_hmis_save_data = async (params: KH_HMIS.SaveDataParams) => {
-  await ipcRenderer.invoke(channel.kh_hmis_save_data, params);
+const kh_hmis_save_data = async (id: number) => {
+  await ipcRenderer.invoke(channel.kh_hmis_save_data, id);
+  return id;
 };
 
 export type VerifyActivationResult = {
@@ -204,17 +140,14 @@ const verifyActivation = async () => {
 };
 
 const getSetting = async () => {
-  const data: SCHEMA.Settings = await ipcRenderer.invoke(channel.getSetting);
+  const data: Settings = await ipcRenderer.invoke(channel.getSetting);
   return data;
 };
 
-export type SetSettingParams = Partial<Omit<SCHEMA.Settings, "id">>;
+export type SetSettingParams = Partial<Settings>;
 
 const setSetting = async (param: SetSettingParams) => {
-  const data: SCHEMA.Settings = await ipcRenderer.invoke(
-    channel.setSetting,
-    param,
-  );
+  const data: Settings = await ipcRenderer.invoke(channel.setSetting, param);
   return data;
 };
 
@@ -230,10 +163,10 @@ export type GetJtvBarcodeResult = {
   rows: SCHEMA.JTVBarcode[];
 };
 
-const getJtvBarcode = async (
+const jtvBarcodeGet = async (
   params: GetJtvBarcodeParams,
 ): Promise<GetJtvBarcodeResult> => {
-  const data = await ipcRenderer.invoke(channel.getJtvBarcode, params);
+  const data = await ipcRenderer.invoke(channel.jtvBarcodeGet, params);
   return data;
 };
 
@@ -241,12 +174,8 @@ const electronAPI = {
   // Electron
   openPath,
   openDevTools,
-  toggleMode,
-  setAlwaysOnTop,
   getPathForFile,
   getMem,
-  setLoginItemSettings,
-  getLoginItemSettings,
   getVersion,
 
   // CMD
@@ -268,7 +197,7 @@ const electronAPI = {
   // SQLite
   getSetting,
   setSetting,
-  getJtvBarcode,
+  jtvBarcodeGet,
 
   // Subscriptions
   subscribeLog,
@@ -276,6 +205,8 @@ const electronAPI = {
   subscribeWindowBlur,
   subscribeWindowShow,
   subscribeWindowHide,
+  subscribeHxzyBarcodeEmit,
+  subscribeJtvBarcodeEmit,
 };
 
 // --------- Expose some API to the Renderer process ---------

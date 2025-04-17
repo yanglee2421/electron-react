@@ -23,6 +23,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  CircularProgress,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import z from "zod";
@@ -30,11 +31,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useSnackbar } from "notistack";
 import { NavMenu } from "@/router/nav";
-import {
-  fetchLoginItemSettings,
-  useSetLoginItemSettings,
-  fetchVersion,
-} from "./fetchers";
+import { fetchSettins, fetchVersion, useUpdateSettings } from "./fetchers";
 import { useQuery } from "@tanstack/react-query";
 import { useLoaderData } from "react-router";
 import { loader } from "./loader";
@@ -47,39 +44,72 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const useSettingForm = (defaultValues: FormValues) =>
-  useForm<FormValues>({
-    defaultValues,
-
+const useSettingForm = () => {
+  const settings = useIndexedStore((s) => s);
+  const config = useQuery(fetchSettins());
+  return useForm<FormValues>({
+    defaultValues: {
+      home_path: settings.home_path,
+      databasePath: config.data?.databasePath || "",
+      driverPath: config.data?.driverPath || "",
+    },
     resolver: zodResolver(schema),
   });
+};
 
 const reducer = (prev: boolean, action: boolean) => {
-  // Present unused variable warning
   void prev;
   return action;
+};
+
+const useOpenAtLogin = () => {
+  const [openAtLogin, setOpenAtLogin] = React.useState<null | boolean>(null);
+
+  const loaderData = useLoaderData<typeof loader>();
+
+  const getSwitchChecked = () => {
+    switch (openAtLogin) {
+      case true:
+      case false:
+        return openAtLogin;
+      default:
+        return loaderData.settings.openAtLogin;
+    }
+  };
+
+  const switchedChecked = getSwitchChecked();
+
+  const [, startTransition] = React.useTransition();
+  const [optimisticChecked, setOptimisticChecked] = React.useOptimistic(
+    switchedChecked,
+    reducer,
+  );
+
+  const fn = React.useCallback(
+    async (checked: boolean) => {
+      startTransition(async () => {
+        setOptimisticChecked(checked);
+        await window.electronAPI.setSetting({
+          openAtLogin: checked,
+        });
+        setOpenAtLogin(checked);
+      });
+    },
+    [setOptimisticChecked],
+  );
+
+  return [optimisticChecked, fn] as const;
 };
 
 export const Component = () => {
   const formId = React.useId();
 
-  const loaderData = useLoaderData<typeof loader>();
-  const settings = useIndexedStore((s) => s.settings);
   const set = useIndexedStore((s) => s.set);
-  const form = useSettingForm({
-    home_path: settings.home_path,
-    databasePath: loaderData.settings.databasePath || "",
-    driverPath: loaderData.settings.driverPath || "",
-  });
+  const form = useSettingForm();
+  const mutate = useUpdateSettings();
   const snackbar = useSnackbar();
   const version = useQuery(fetchVersion());
-  const loginItemSettings = useQuery(fetchLoginItemSettings());
-  const setLoginItemSettings = useSetLoginItemSettings();
-  const openAtLogin = !!loginItemSettings.data;
-  const [optimisticOpenAtLogin, setOptimisticOpenAtLogin] = React.useOptimistic(
-    openAtLogin,
-    reducer,
-  );
+  const [openAtLogin, setOpenAtLogin] = useOpenAtLogin();
 
   return (
     <Stack spacing={6}>
@@ -101,13 +131,11 @@ export const Component = () => {
             id={formId}
             onSubmit={form.handleSubmit(async (data) => {
               set((d) => {
-                d.settings = { ...d.settings, ...data };
+                d.home_path = data.home_path;
               });
-              await window.electronAPI.setSetting({
+              mutate.mutate({
                 databasePath: data.databasePath,
                 driverPath: data.driverPath,
-                activateCode: null,
-                id: loaderData.settings.id,
               });
               snackbar.enqueueSnackbar("保存成功", { variant: "success" });
             }, console.warn)}
@@ -222,7 +250,18 @@ export const Component = () => {
           </form>
         </CardContent>
         <CardActions>
-          <Button type="submit" form={formId} startIcon={<SaveOutlined />}>
+          <Button
+            type="submit"
+            form={formId}
+            startIcon={
+              mutate.isPending ? (
+                <CircularProgress size={16} />
+              ) : (
+                <SaveOutlined />
+              )
+            }
+            disabled={mutate.isPending}
+          >
             保存
           </Button>
           <Button
@@ -276,13 +315,10 @@ export const Component = () => {
           <ListItem
             secondaryAction={
               <Switch
-                checked={optimisticOpenAtLogin}
-                onChange={() => {
-                  React.startTransition(async () => {
-                    const nextOpenAtLogin = !openAtLogin;
-                    setOptimisticOpenAtLogin(nextOpenAtLogin);
-                    await setLoginItemSettings.mutateAsync(nextOpenAtLogin);
-                  });
+                checked={openAtLogin}
+                onChange={(e, checked) => {
+                  void e;
+                  setOpenAtLogin(checked);
                 }}
               />
             }

@@ -2,17 +2,71 @@ import { networkInterfaces } from "node:os";
 import { promisify } from "node:util";
 import { exec, execFile } from "node:child_process";
 import { access, constants } from "node:fs/promises";
-import { BrowserWindow } from "electron";
+import { app, BrowserWindow, nativeTheme } from "electron";
 import dayjs from "dayjs";
-import { db } from "./db";
-import * as schema from "./schema";
 import * as channel from "./channel";
+import Store from "electron-store";
 import type {
   Corporation,
   Detection,
   DetectionData,
 } from "#/electron/database_types";
 import type { Log } from "#/src/lib/db";
+
+export type Settings = {
+  databasePath: string;
+  driverPath: string;
+  activateCode: string;
+  alwaysOnTop: boolean;
+  openAtLogin: boolean;
+  mode: "system" | "light" | "dark";
+};
+
+export const settings = new Store<Settings>({
+  name: "settings",
+  schema: {
+    databasePath: {
+      type: "string",
+      default: "",
+    },
+    driverPath: {
+      type: "string",
+      default: "",
+    },
+    activateCode: {
+      type: "string",
+      default: "",
+    },
+    alwaysOnTop: {
+      type: "boolean",
+      default: false,
+    },
+    openAtLogin: {
+      type: "boolean",
+      default: false,
+    },
+    mode: {
+      type: "string",
+      default: "system",
+      enum: ["system", "light", "dark"],
+    },
+  },
+});
+
+settings.onDidChange("alwaysOnTop", (value) => {
+  BrowserWindow.getAllWindows().forEach((win) => {
+    win.setAlwaysOnTop(!!value);
+  });
+});
+
+settings.onDidChange("openAtLogin", (value) => {
+  app.setLoginItemSettings({ openAtLogin: value });
+});
+
+settings.onDidChange("mode", (value) => {
+  if (!value) return;
+  nativeTheme.themeSource = value;
+});
 
 export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 export const execAsync = promisify(exec);
@@ -157,15 +211,12 @@ export const runWinword = async (data: string) => {
   return cp;
 };
 
-export const getDataFromAccessDatabase = async <T = unknown>(params: {
-  driverPath: string;
-  databasePath: string;
-  sql: string;
-}) => {
-  const data = await execFileAsync(params.driverPath, [
+export const getDataFromAccessDatabase = async <T = unknown>(sql: string) => {
+  const config = settings.store;
+  const data = await execFileAsync(config.driverPath, [
     "GetDataFromAccessDatabase",
-    params.databasePath,
-    params.sql,
+    config.databasePath,
+    sql,
   ]);
 
   if (data.stderr) {
@@ -175,17 +226,10 @@ export const getDataFromAccessDatabase = async <T = unknown>(params: {
   return JSON.parse(data.stdout) as T[];
 };
 
-type GetCorporationParams = {
-  driverPath: string;
-  databasePath: string;
-};
-
-export const getCorporation = async (params: GetCorporationParams) => {
-  const [corporation] = await getDataFromAccessDatabase<Corporation>({
-    driverPath: params.driverPath,
-    databasePath: params.databasePath,
-    sql: "SELECT TOP 1 * FROM corporation",
-  });
+export const getCorporation = async () => {
+  const [corporation] = await getDataFromAccessDatabase<Corporation>(
+    "SELECT TOP 1 * FROM corporation",
+  );
 
   if (!corporation) {
     throw "未找到公司信息";
@@ -195,8 +239,6 @@ export const getCorporation = async (params: GetCorporationParams) => {
 };
 
 export const getDetectionByZH = async (params: {
-  driverPath: string;
-  databasePath: string;
   zh: string;
   startDate: string;
   endDate: string;
@@ -204,11 +246,9 @@ export const getDetectionByZH = async (params: {
   const startDate = dayjs(params.startDate).format(DATE_FORMAT_DATABASE);
   const endDate = dayjs(params.endDate).format(DATE_FORMAT_DATABASE);
 
-  const [detection] = await getDataFromAccessDatabase<Detection>({
-    driverPath: params.driverPath,
-    databasePath: params.databasePath,
-    sql: `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
-  });
+  const [detection] = await getDataFromAccessDatabase<Detection>(
+    `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
+  );
 
   if (!detection) {
     throw `未找到轴号[${params.zh}]的detections记录`;
@@ -217,16 +257,10 @@ export const getDetectionByZH = async (params: {
   return detection;
 };
 
-export const getDetectionDatasByOPID = async (params: {
-  driverPath: string;
-  databasePath: string;
-  opid: string;
-}) => {
-  const detectionDatas = await getDataFromAccessDatabase<DetectionData>({
-    driverPath: params.driverPath,
-    databasePath: params.databasePath,
-    sql: `SELECT * FROM detections_data WHERE opid ='${params.opid}'`,
-  });
+export const getDetectionDatasByOPID = async (opid: string) => {
+  const detectionDatas = await getDataFromAccessDatabase<DetectionData>(
+    `SELECT * FROM detections_data WHERE opid ='${opid}'`,
+  );
 
   return detectionDatas;
 };
@@ -263,23 +297,14 @@ export const getPlace = (nChannel: number) => {
   }
 };
 
-export const getSettings = async () => {
-  let settings = await db.query.settingsTable.findFirst({
-    where: (setting, { eq }) => eq(setting.id, 1),
-  });
-
-  if (!settings) {
-    const [created] = await db
-      .insert(schema.settingsTable)
-      .values({ id: 1 })
-      .returning();
-
-    settings = created;
-  }
-
-  return settings;
-};
-
 export const getSerialFromStdout = (stdout: string) => {
   return stdout.trim().split("\n").at(-1) || "";
+};
+
+export const createEmit = (channel: string) => {
+  return () => {
+    BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.send(channel);
+    });
+  };
 };

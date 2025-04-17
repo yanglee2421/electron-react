@@ -45,6 +45,7 @@ import {
   HomeOutlined,
   LightModeOutlined,
   MenuOutlined,
+  PushPin,
   PushPinOutlined,
 } from "@mui/icons-material";
 import {
@@ -58,13 +59,14 @@ import {
   Link,
   ScrollRestoration,
   useLocation,
+  useLoaderData,
 } from "react-router";
 import NProgress from "nprogress";
 import { ASIDE_SIZE, HEADER_SIZE_SM, HEADER_SIZE_XS } from "@/lib/constants";
 import { Loading } from "@/components/Loading";
 import { NavMenu } from "./nav";
-import { useIndexedStore } from "@/hooks/useIndexedStore";
 import { QueryProvider } from "@/components/query";
+import { fetchSettins } from "@/api/fetch_settings";
 
 const AuthAsideWrapper = styled("div")(({ theme }) => ({
   position: "fixed",
@@ -150,11 +152,49 @@ const renderModeIcon = (mode: string) => {
   }
 };
 
+const useMode = () => {
+  const [mode, setMode] = React.useState<null | "system" | "light" | "dark">(
+    null,
+  );
+
+  const loaderData = useLoaderData<typeof authLayoutLoader>();
+
+  const getTheme = () => {
+    if (typeof mode === "string") {
+      return mode;
+    }
+    return loaderData.mode;
+  };
+
+  const theme = getTheme();
+
+  const [, startTransition] = React.useTransition();
+  const [optimisticValue, setOptimisticValue] = React.useOptimistic(
+    theme,
+    (prev: typeof theme, next: typeof theme) => {
+      void prev;
+      return next;
+    },
+  );
+
+  const fn = React.useCallback(
+    (mode: "system" | "light" | "dark") => {
+      startTransition(async () => {
+        setOptimisticValue(mode);
+        await window.electronAPI.setSetting({ mode });
+        setMode(mode);
+      });
+    },
+    [setOptimisticValue],
+  );
+
+  return [optimisticValue, fn] as const;
+};
+
 const ModeToggle = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
-  const mode = useIndexedStore((state) => state.settings.mode);
-  const set = useIndexedStore((state) => state.set);
+  const [mode, setMode] = useMode();
 
   return (
     <>
@@ -169,9 +209,7 @@ const ModeToggle = () => {
         <MenuItem
           onClick={() => {
             setAnchorEl(null);
-            set((draft) => {
-              draft.settings.mode = "light";
-            });
+            setMode("light");
           }}
         >
           <ListItemIcon>
@@ -182,9 +220,7 @@ const ModeToggle = () => {
         <MenuItem
           onClick={() => {
             setAnchorEl(null);
-            set((draft) => {
-              draft.settings.mode = "dark";
-            });
+            setMode("dark");
           }}
         >
           <ListItemIcon>
@@ -195,9 +231,7 @@ const ModeToggle = () => {
         <MenuItem
           onClick={() => {
             setAnchorEl(null);
-            set((draft) => {
-              draft.settings.mode = "system";
-            });
+            setMode("system");
           }}
         >
           <ListItemIcon>
@@ -210,12 +244,56 @@ const ModeToggle = () => {
   );
 };
 
+const authLayoutLoader = async () => {
+  const queryClient = QueryProvider.queryClient;
+  return await queryClient.ensureQueryData(fetchSettins());
+};
+
+const reducer = (prev: boolean, next: boolean) => {
+  void prev;
+  return next;
+};
+
+const useAlwaysOnTop = () => {
+  const [checked, setChecked] = React.useState<null | boolean>(null);
+
+  const loaderData = useLoaderData<typeof authLayoutLoader>();
+
+  const getPin = () => {
+    if (typeof checked === "boolean") {
+      return checked;
+    }
+
+    return loaderData.alwaysOnTop;
+  };
+
+  const pin = getPin();
+
+  const [, startTransition] = React.useTransition();
+  const [optimisticValue, setOptimisticValue] = React.useOptimistic(
+    pin,
+    reducer,
+  );
+
+  const fn = React.useCallback(
+    (checked: boolean) => {
+      startTransition(async () => {
+        setOptimisticValue(checked);
+        await window.electronAPI.setSetting({ alwaysOnTop: checked });
+        setChecked(checked);
+      });
+    },
+    [setOptimisticValue],
+  );
+
+  return [optimisticValue, fn] as const;
+};
+
 const AuthLayout = () => {
   const [key, update] = React.useState("");
 
   const location = useLocation();
-  const set = useIndexedStore((state) => state.set);
-  const alwaysOnTop = useIndexedStore((state) => state.settings.alwaysOnTop);
+  const [alwaysOnTop, setAlwaysOnTop] = useAlwaysOnTop();
   const showMenuInMobile = Object.is(key, location.key);
 
   return (
@@ -259,12 +337,10 @@ const AuthLayout = () => {
           <Box sx={{ marginInlineStart: "auto" }} />
           <IconButton
             onClick={() => {
-              set((d) => {
-                d.settings.alwaysOnTop = !d.settings.alwaysOnTop;
-              });
+              setAlwaysOnTop(!alwaysOnTop);
             }}
           >
-            <PushPinOutlined color={alwaysOnTop ? "primary" : "action"} />
+            {alwaysOnTop ? <PushPin /> : <PushPinOutlined />}
           </IconButton>
           <ModeToggle />
         </Toolbar>
@@ -606,6 +682,7 @@ const routes: RouteObject[] = [
       {
         id: "auth_layout",
         Component: AuthLayout,
+        loader: authLayoutLoader,
         children: [
           {
             id: "home",

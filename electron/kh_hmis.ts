@@ -6,10 +6,61 @@ import {
   getDetectionByZH,
   log,
   getCorporation,
+  createEmit,
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import type { DatabaseBaseParams } from "#/electron/database_types";
+import Store from "electron-store";
+import { db } from "./db";
+import * as sql from "drizzle-orm";
+import * as schema from "./schema";
+import * as channel from "./channel";
+
+export type KH_HMIS = {
+  host: string;
+  autoInput: boolean;
+  autoUpload: boolean;
+  autoUploadInterval: number;
+  tsgz: string;
+  tszjy: string;
+  tsysy: string;
+};
+
+export const kh_hmis = new Store<KH_HMIS>({
+  name: "kh_hmis",
+  schema: {
+    host: {
+      type: "string",
+      default: "",
+    },
+    autoInput: {
+      type: "boolean",
+      default: false,
+    },
+    autoUpload: {
+      type: "boolean",
+      default: false,
+    },
+    autoUploadInterval: {
+      type: "number",
+      default: 30,
+    },
+    tsgz: {
+      type: "string",
+      default: "",
+    },
+    tszjy: {
+      type: "string",
+      default: "",
+    },
+    tsysy: {
+      type: "string",
+      default: "",
+    },
+  },
+});
+
+export const emit = createEmit(channel.khBarcodeEmit);
 
 export type GetResponse = {
   data: {
@@ -29,15 +80,11 @@ export type GetResponse = {
   msg: "success";
 };
 
-export type GetRequest = {
-  barCode: string;
-  host: string;
-};
-
-export const getFn = async (request: GetRequest) => {
-  const url = new URL(`http://${request.host}/api/lzdx_csbtsj_get/get`);
+export const getFn = async (barCode: string) => {
+  const host = kh_hmis.get("host");
+  const url = new URL(`http://${host}/api/lzdx_csbtsj_get/get`);
   const body = JSON.stringify({
-    mesureId: request.barCode,
+    mesureId: barCode,
   });
   log(`请求数据[${url.href}]:${body}`);
   const res = await net.fetch(url.href, {
@@ -74,19 +121,15 @@ type PostRequestItem = {
   sbbh: string;
 };
 
-type PostRequest = {
-  data: PostRequestItem;
-  host: string;
-};
-
 type PostResponse = {
   code: 200;
   msg: "success";
 };
 
-const postFn = async (request: PostRequest) => {
-  const url = new URL(`http://${request.host}/api/lzdx_csbtsj_tsjg/save`);
-  const body = JSON.stringify(request.data);
+const postFn = async (params: PostRequestItem) => {
+  const host = kh_hmis.get("host");
+  const url = new URL(`http://${host}/api/lzdx_csbtsj_tsjg/save`);
+  const body = JSON.stringify(params);
   log(`请求数据[${url.href}]:${body}`);
   const res = await net.fetch(url.href, {
     method: "POST",
@@ -149,14 +192,10 @@ type QXDataParams = {
   bz: "";
 };
 
-type SaveQXDataParams = {
-  host: string;
-  data: QXDataParams;
-};
-
-const saveQXData = async (params: SaveQXDataParams) => {
-  const url = new URL(`http://${params.host}/api/lzdx_csbtsj_whzy_tsjgqx/save`);
-  const body = JSON.stringify(params.data);
+const saveQXData = async (params: QXDataParams) => {
+  const host = kh_hmis.get("host");
+  const url = new URL(`http://${host}/api/lzdx_csbtsj_whzy_tsjgqx/save`);
+  const body = JSON.stringify(params);
   log(`请求数据[${url.href}]:${body}`);
   const res = await net.fetch(url.href, {
     method: "POST",
@@ -176,38 +215,39 @@ const saveQXData = async (params: SaveQXDataParams) => {
   return data;
 };
 
-export type SaveDataParams = DatabaseBaseParams & {
-  host: string;
-  dh: string;
-  zh: string;
-  date: string;
-  tsgz: string;
-  tszjy: string;
-  tsysy: string;
-};
+export const upload = async (id: number) => {
+  const record = await db.query.khBarcodeTable.findFirst({
+    where: sql.eq(schema.khBarcodeTable.id, id),
+  });
 
-export const saveData = async (params: SaveDataParams) => {
-  const startDate = dayjs(params.date).startOf("day").toISOString();
-  const endDate = dayjs(params.date).endOf("day").toISOString();
+  if (!record) {
+    throw new Error(`记录#${id}不存在`);
+  }
+
+  if (!record.zh) {
+    throw new Error(`记录#${id}轴号不存在`);
+  }
+
+  if (!record.barCode) {
+    throw new Error(`记录#${id}条形码不存在`);
+  }
+
+  const startDate = dayjs(record.date).startOf("day").toISOString();
+  const endDate = dayjs(record.date).endOf("day").toISOString();
+  const corporation = await getCorporation();
 
   const detection = await getDetectionByZH({
-    driverPath: params.driverPath,
-    databasePath: params.databasePath,
-    zh: params.zh,
+    zh: record.zh,
     startDate,
     endDate,
   });
 
-  const corporation = await getCorporation({
-    driverPath: params.driverPath,
-    databasePath: params.databasePath,
-  });
-
   const JCJG = detection.szResult === "合格" ? "1" : "0";
+  const hmis = kh_hmis.store;
 
   const basicBody: PostRequestItem = {
-    mesureId: params.dh,
-    ZH: params.zh,
+    mesureId: record.barCode,
+    ZH: record.zh,
     // 1 探伤 0 不探伤
     ZCTJG: "1",
     ZZJJG: "1",
@@ -222,29 +262,22 @@ export const saveData = async (params: SaveDataParams) => {
     sbbh: corporation.DeviceNO || "",
   };
 
-  await postFn({
-    data: basicBody,
-    host: params.host,
-  });
+  await postFn(basicBody);
 
   if (JCJG === "1") return;
 
-  await getDetectionDatasByOPID({
-    driverPath: params.driverPath,
-    databasePath: params.databasePath,
-    opid: detection.szIDs,
-  });
+  await getDetectionDatasByOPID(detection.szIDs);
 
   const qxBody: QXDataParams = {
-    mesureid: params.dh,
-    zh: params.zh,
+    mesureid: record.barCode,
+    zh: record.zh,
     testdatetime: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
     testtype: "超声波",
     btcw: "车轴",
     tsr: detection.szUsername || "",
-    tsgz: params.tsgz,
-    tszjy: params.tszjy,
-    tsysy: params.tsysy,
+    tsgz: hmis.tsgz,
+    tszjy: hmis.tszjy,
+    tsysy: hmis.tsysy,
     gzmc: "裂纹",
     clff: "人工复探",
     // qxlzzdmjlnc: "",
@@ -278,8 +311,14 @@ export const saveData = async (params: SaveDataParams) => {
     bz: "",
   };
 
-  await saveQXData({
-    data: qxBody,
-    host: params.host,
-  });
+  await saveQXData(qxBody);
+};
+
+export const uploadBarcode = async (id: number) => {
+  await upload(id);
+  await db
+    .update(schema.khBarcodeTable)
+    .set({ isUploaded: true })
+    .where(sql.eq(schema.khBarcodeTable.id, id));
+  emit();
 };
