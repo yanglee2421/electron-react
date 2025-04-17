@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, nativeTheme, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -53,6 +53,7 @@ let win: BrowserWindow | null;
 
 const createWindow = () => {
   const alwaysOnTop = settings.get("alwaysOnTop");
+
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
@@ -135,7 +136,11 @@ if (!gotTheLock) {
     app.disableHardwareAcceleration();
   }
 
-  app.whenReady().then(createWindow);
+  app.whenReady().then(async () => {
+    const mode = settings.get("mode");
+    nativeTheme.themeSource = mode;
+    createWindow();
+  });
 }
 
 ipcMain.handle(

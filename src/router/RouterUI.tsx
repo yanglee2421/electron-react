@@ -39,9 +39,9 @@ import {
 import {
   CloseOutlined,
   ContentCopyOutlined,
+  ContentPasteOutlined,
   DarkModeOutlined,
   DesktopWindowsOutlined,
-  FindInPageOutlined,
   HomeOutlined,
   LightModeOutlined,
   MenuOutlined,
@@ -503,22 +503,13 @@ const ActivationForm = () => {
                       input: {
                         endAdornment: (
                           <InputAdornment position="end">
-                            <IconButton component="label">
-                              <FindInPageOutlined />
-                              <input
-                                type="file"
-                                value=""
-                                onChange={async (e) => {
-                                  const file = e.target.files?.item(0);
-                                  if (!file) return;
-                                  const text = await file.text();
-                                  form.setValue("activationCode", text);
-                                  snackbar.enqueueSnackbar("读取成功", {
-                                    variant: "success",
-                                  });
-                                }}
-                                hidden
-                              />
+                            <IconButton
+                              onClick={() => {
+                                const text = navigator.clipboard.readText();
+                                field.onChange(text);
+                              }}
+                            >
+                              <ContentPasteOutlined />
                             </IconButton>
                           </InputAdornment>
                         ),
