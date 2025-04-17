@@ -504,8 +504,9 @@ const ActivationForm = () => {
                         endAdornment: (
                           <InputAdornment position="end">
                             <IconButton
-                              onClick={() => {
-                                const text = navigator.clipboard.readText();
+                              onClick={async () => {
+                                const text =
+                                  await navigator.clipboard.readText();
                                 field.onChange(text);
                               }}
                             >
