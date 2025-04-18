@@ -2,71 +2,16 @@ import { networkInterfaces } from "node:os";
 import { promisify } from "node:util";
 import { exec, execFile } from "node:child_process";
 import { access, constants } from "node:fs/promises";
-import { app, BrowserWindow, nativeTheme } from "electron";
+import { BrowserWindow } from "electron";
 import dayjs from "dayjs";
 import * as channel from "./channel";
-import Store from "electron-store";
+import { settings } from "./store";
 import type {
   Corporation,
   Detection,
   DetectionData,
 } from "#/electron/database_types";
 import type { Log } from "#/src/lib/db";
-
-export type Settings = {
-  databasePath: string;
-  driverPath: string;
-  activateCode: string;
-  alwaysOnTop: boolean;
-  openAtLogin: boolean;
-  mode: "system" | "light" | "dark";
-};
-
-export const settings = new Store<Settings>({
-  name: "settings",
-  schema: {
-    databasePath: {
-      type: "string",
-      default: "",
-    },
-    driverPath: {
-      type: "string",
-      default: "",
-    },
-    activateCode: {
-      type: "string",
-      default: "",
-    },
-    alwaysOnTop: {
-      type: "boolean",
-      default: false,
-    },
-    openAtLogin: {
-      type: "boolean",
-      default: false,
-    },
-    mode: {
-      type: "string",
-      default: "system",
-      enum: ["system", "light", "dark"],
-    },
-  },
-});
-
-settings.onDidChange("alwaysOnTop", (value) => {
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.setAlwaysOnTop(!!value);
-  });
-});
-
-settings.onDidChange("openAtLogin", (value) => {
-  app.setLoginItemSettings({ openAtLogin: value });
-});
-
-settings.onDidChange("mode", (value) => {
-  if (!value) return;
-  nativeTheme.themeSource = value;
-});
 
 export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 export const execAsync = promisify(exec);

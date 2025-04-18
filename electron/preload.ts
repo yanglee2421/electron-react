@@ -1,6 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import * as channel from "./channel";
-import type { Settings } from "./lib";
 import type { Verify, VerifyData } from "#/electron/database_types";
 import type { AutoInputToVCParams } from "#/electron/autoInput_types";
 import type * as HXZY_HMIS from "#/electron/hxzy_hmis";
@@ -8,6 +7,7 @@ import type * as JTV_HMIS from "#/electron/jtv_hmis";
 import type * as JTV_HMIS_XUZHOUBEI from "#/electron/jtv_hmis_xuzhoubei";
 import type * as KH_HMIS from "#/electron/kh_hmis";
 import type * as SCHEMA from "./schema";
+import type * as STORE from "./store";
 import type { Log } from "#/src/lib/db";
 
 type LogCallback = (data: Log) => void;
@@ -140,14 +140,17 @@ const verifyActivation = async () => {
 };
 
 const getSetting = async () => {
-  const data: Settings = await ipcRenderer.invoke(channel.getSetting);
+  const data: STORE.Settings = await ipcRenderer.invoke(channel.getSetting);
   return data;
 };
 
-export type SetSettingParams = Partial<Settings>;
+export type SetSettingParams = Partial<STORE.Settings>;
 
 const setSetting = async (param: SetSettingParams) => {
-  const data: Settings = await ipcRenderer.invoke(channel.setSetting, param);
+  const data: STORE.Settings = await ipcRenderer.invoke(
+    channel.setSetting,
+    param,
+  );
   return data;
 };
 

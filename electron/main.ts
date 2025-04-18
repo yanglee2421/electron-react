@@ -11,8 +11,8 @@ import {
   withLog,
   DATE_FORMAT_DATABASE,
   getSerialFromStdout,
-  settings,
 } from "./lib";
+import { settings } from "./store";
 import dayjs from "dayjs";
 import { db } from "./db";
 import * as sql from "drizzle-orm";

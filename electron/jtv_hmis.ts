@@ -11,46 +11,12 @@ import {
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
+import { jtv_hmis } from "./store";
 import { db } from "./db";
 import * as schema from "./schema";
 import * as sql from "drizzle-orm";
 import * as channel from "./channel";
-import Store from "electron-store";
 import type { DetectionData } from "#/electron/database_types";
-
-export type JTV_HMIS = {
-  host: string;
-  autoInput: boolean;
-  autoUpload: boolean;
-  autoUploadInterval: number;
-  unitCode: string;
-};
-
-export const jtv_hmis = new Store<JTV_HMIS>({
-  name: "jtv_hmis",
-  schema: {
-    host: {
-      type: "string",
-      default: "",
-    },
-    autoInput: {
-      type: "boolean",
-      default: false,
-    },
-    autoUpload: {
-      type: "boolean",
-      default: false,
-    },
-    autoUploadInterval: {
-      type: "number",
-      default: 30,
-    },
-    unitCode: {
-      type: "string",
-      default: "",
-    },
-  },
-});
 
 export const emit = createEmit(channel.jtvBarcodeEmit);
 

@@ -10,55 +10,11 @@ import {
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import Store from "electron-store";
+import { kh_hmis } from "./store";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
 import * as channel from "./channel";
-
-export type KH_HMIS = {
-  host: string;
-  autoInput: boolean;
-  autoUpload: boolean;
-  autoUploadInterval: number;
-  tsgz: string;
-  tszjy: string;
-  tsysy: string;
-};
-
-export const kh_hmis = new Store<KH_HMIS>({
-  name: "kh_hmis",
-  schema: {
-    host: {
-      type: "string",
-      default: "",
-    },
-    autoInput: {
-      type: "boolean",
-      default: false,
-    },
-    autoUpload: {
-      type: "boolean",
-      default: false,
-    },
-    autoUploadInterval: {
-      type: "number",
-      default: 30,
-    },
-    tsgz: {
-      type: "string",
-      default: "",
-    },
-    tszjy: {
-      type: "string",
-      default: "",
-    },
-    tsysy: {
-      type: "string",
-      default: "",
-    },
-  },
-});
 
 export const emit = createEmit(channel.khBarcodeEmit);
 

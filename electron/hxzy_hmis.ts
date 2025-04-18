@@ -12,50 +12,16 @@ import {
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import Store from "electron-store";
+import { hxzy_hmis } from "./store";
+import { db } from "./db";
+import * as sql from "drizzle-orm";
+import * as schema from "./schema";
+import * as channel from "./channel";
 import type {
   DetectionData,
   Verify,
   VerifyData,
 } from "#/electron/database_types";
-import { db } from "./db";
-import * as sql from "drizzle-orm";
-import * as schema from "./schema";
-import * as channel from "./channel";
-
-export type HXZY_HMIS = {
-  host: string;
-  autoInput: boolean;
-  autoUpload: boolean;
-  autoUploadInterval: number;
-  gd: string;
-};
-
-export const hxzy_hmis = new Store<HXZY_HMIS>({
-  name: "hxzy_hmis",
-  schema: {
-    host: {
-      type: "string",
-      default: "",
-    },
-    autoInput: {
-      type: "boolean",
-      default: false,
-    },
-    autoUpload: {
-      type: "boolean",
-      default: false,
-    },
-    autoUploadInterval: {
-      type: "number",
-      default: 30,
-    },
-    gd: {
-      type: "string",
-      default: "",
-    },
-  },
-});
 
 export const emit = createEmit(channel.hxzyBarcodeEmit);
 
