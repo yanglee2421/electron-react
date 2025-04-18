@@ -12,45 +12,11 @@ import {
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import Store from "electron-store";
+import { jtv_hmis_xuzhoubei } from "./store";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
 import * as channel from "./channel";
-
-export type JTV_HMIS_XUZHOUBEI = {
-  host: string;
-  autoInput: boolean;
-  autoUpload: boolean;
-  autoUploadInterval: number;
-  username_prefix: string;
-};
-
-export const jtv_hmis_xuzhoubei = new Store<JTV_HMIS_XUZHOUBEI>({
-  name: "jtv_hmis_xuzhoubei",
-  schema: {
-    host: {
-      type: "string",
-      default: "",
-    },
-    autoInput: {
-      type: "boolean",
-      default: false,
-    },
-    autoUpload: {
-      type: "boolean",
-      default: false,
-    },
-    autoUploadInterval: {
-      type: "number",
-      default: 30,
-    },
-    username_prefix: {
-      type: "string",
-      default: "",
-    },
-  },
-});
 
 export const emit = createEmit(channel.jtvXuzhoubeiBarcodeEmit);
 
