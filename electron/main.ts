@@ -137,6 +137,7 @@ if (!gotTheLock) {
     const mode = store.settings.get("mode");
     nativeTheme.themeSource = mode;
     hxzyHmis.init();
+    jtvHmisXuzhoubei.init();
     createWindow();
   });
 }
@@ -224,22 +225,6 @@ ipcMain.handle(
   withLog(async (e, id: number) => {
     void e;
     return await jtvHmis.uploadBarcode(id);
-  }),
-);
-
-ipcMain.handle(
-  channel.jtv_hmis_xuzhoubei_api_get,
-  withLog(async (e, barcode: string) => {
-    void e;
-    return await jtvHmisXuzhoubei.getFn(barcode);
-  }),
-);
-
-ipcMain.handle(
-  channel.jtv_hmis_xuzhoubei_api_set,
-  withLog(async (e, id: number) => {
-    void e;
-    return await jtvHmisXuzhoubei.uploadBarcode(id);
   }),
 );
 

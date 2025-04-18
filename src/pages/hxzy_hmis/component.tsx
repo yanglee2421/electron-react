@@ -37,7 +37,12 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
 import { useSnackbar } from "notistack";
-import { fetchHxzyHmisBarcode, useGetData, useSaveData } from "./fetchers";
+import {
+  fetchHxzyHmisBarcode,
+  useDeleteBarcode,
+  useGetData,
+  useSaveData,
+} from "./fetchers";
 import {
   createColumnHelper,
   flexRender,
@@ -45,10 +50,10 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import type { HxzyBarcode } from "#/electron/schema";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
+import type { HxzyBarcode } from "#/electron/schema";
 
 type ActionCellProps = {
   id: number;
@@ -59,10 +64,18 @@ const ActionCell = (props: ActionCellProps) => {
 
   const saveData = useSaveData();
   const snackbar = useSnackbar();
+  const deleteBarcode = useDeleteBarcode();
 
   const handleClose = () => setShowAlert(false);
   const handleDelete = () => {
     handleClose();
+    deleteBarcode.mutate(props.id, {
+      onError: (error) => {
+        snackbar.enqueueSnackbar(error.message, {
+          variant: "error",
+        });
+      },
+    });
   };
 
   const handleUpload = () => {
@@ -99,7 +112,11 @@ const ActionCell = (props: ActionCellProps) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>取消</Button>
-          <Button onClick={handleDelete} color="error">
+          <Button
+            onClick={handleDelete}
+            disabled={deleteBarcode.isPending}
+            color="error"
+          >
             删除
           </Button>
         </DialogActions>

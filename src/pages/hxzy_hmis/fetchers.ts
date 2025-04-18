@@ -5,21 +5,41 @@ import {
 } from "@tanstack/react-query";
 
 export const fetchHxzyHmisBarcode = (
-  ...rest: Parameters<typeof window.electronAPI.hxzy_hmis_barcode_get>
+  ...rest: Parameters<typeof window.electronAPI.hxzy_hmis_sqlite_get>
 ) =>
   queryOptions({
-    queryKey: ["window.electronAPI.hxzy_hmis_setting_get", rest],
+    queryKey: ["window.electronAPI.hxzy_hmis_sqlite_get", rest],
     queryFn: async () => {
-      return window.electronAPI.hxzy_hmis_barcode_get(...rest);
+      return window.electronAPI.hxzy_hmis_sqlite_get(...rest);
     },
   });
+
+export const useDeleteBarcode = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const data = await window.electronAPI.hxzy_hmis_sqlite_delete(id);
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: fetchHxzyHmisBarcode({
+          pageIndex: 1,
+          pageSize: 10,
+          startDate: "",
+          endDate: "",
+        }).queryKey.slice(0, 1),
+      });
+    },
+  });
+};
 
 export const useGetData = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (barcode: string) => {
-      const data = await window.electronAPI.hxzy_hmis_get_data(barcode);
+      const data = await window.electronAPI.hxzy_hmis_api_get(barcode);
       return data;
     },
     onSuccess: async () => {
@@ -40,7 +60,7 @@ export const useSaveData = () => {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const data = await window.electronAPI.hxzy_hmis_save_data(id);
+      const data = await window.electronAPI.hxzy_hmis_api_set(id);
       return data;
     },
     onSuccess: async () => {

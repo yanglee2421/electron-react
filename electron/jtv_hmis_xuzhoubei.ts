@@ -1,6 +1,6 @@
 // 京天威 徐州北
 
-import { net } from "electron";
+import { net, ipcMain } from "electron";
 import {
   getCorporation,
   getDetectionByZH,
@@ -8,15 +8,19 @@ import {
   log,
   getPlace,
   getDirection,
+  withLog,
 } from "./lib";
+import { autoInputToVC } from "./cmd";
 import dayjs from "dayjs";
 import { URL } from "node:url";
 import { jtv_hmis_xuzhoubei } from "./store";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
+import * as channel from "./channel";
+import type * as PRELOAD from "./preload";
 
-export type GetResponse = [
+type GetResponse = [
   {
     SCZZRQ: "1990-10-19";
     DH: "50409100225";
@@ -33,7 +37,7 @@ export type GetResponse = [
   },
 ];
 
-export const getFn = async (barCode: string) => {
+const fetch_get = async (barCode: string) => {
   const host = jtv_hmis_xuzhoubei.get("host");
   const url = new URL(`http://${host}/pmss/vjkxx.do`);
   url.searchParams.set("method", "getData");
@@ -49,7 +53,7 @@ export const getFn = async (barCode: string) => {
   return data;
 };
 
-export type PostRequestItem = {
+type PostRequestItem = {
   PJ_JXID: string; // 设备生产ID(主键)
   SB_SN: string; // 设备编号
   PJ_TAG: string; // 设备工作状态(开始检修1/结束检修0检修前后更新此标志)
@@ -80,7 +84,7 @@ export type PostRequestItem = {
   LW_XHCY: string; // 右轴颈
 };
 
-export const postFn = async (request: PostRequestItem) => {
+const fetch_set = async (request: PostRequestItem) => {
   const host = jtv_hmis_xuzhoubei.get("host");
   const url = new URL(`http://${host}/pmss/example.do`);
   url.searchParams.set("method", "saveData");
@@ -119,18 +123,47 @@ const hasQX = (result: string | null) => {
   }
 };
 
-export const uploadBarcode = async (id: number) => {
-  const hmis = jtv_hmis_xuzhoubei.store;
-  const record = await db.query.jtvXuzhoubeiBarcodeTable.findFirst({
-    where: sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id),
+/*
+ * HMIS相关操作
+ */
+const api_get = async (barCode: string) => {
+  const data = await fetch_get(barCode);
+
+  await db.insert(schema.jtvXuzhoubeiBarcodeTable).values({
+    barCode: barCode,
+    zh: data[0].ZH,
+    date: new Date(),
+    isUploaded: false,
+    PJ_ZZRQ: data[0].CZZZRQ,
+    PJ_ZZDW: data[0].CZZZDW,
+    PJ_SCZZRQ: data[0].SCZZRQ,
+    PJ_SCZZDW: data[0].SCZZDW,
+    PJ_MCZZRQ: data[0].MCZZRQ,
+    PJ_MCZZDW: data[0].MCZZDW,
   });
 
-  if (!record) {
-    throw new Error(`记录#${id}不存在`);
-  }
+  const autoInput = jtv_hmis_xuzhoubei.get("autoInput");
 
+  if (autoInput) return;
+  await autoInputToVC({
+    zx: data[0].ZX,
+    zh: data[0].ZH,
+    czzzdw: data[0].CZZZDW,
+    sczzdw: data[0].SCZZDW,
+    mczzdw: data[0].MCZZDW,
+    czzzrq: data[0].CZZZRQ,
+    sczzrq: data[0].SCZZRQ,
+    mczzrq: data[0].MCZZRQ,
+    ztx: "1",
+    ytx: "1",
+  });
+};
+
+const recordToBody = async (
+  record: schema.JtvXuzhoubeiBarcode,
+): Promise<PostRequestItem> => {
   if (!record.zh) {
-    throw new Error(`记录#${id}轴号不存在`);
+    throw new Error(`记录轴号不存在`);
   }
 
   const startDate = dayjs(record.date).startOf("day").toISOString();
@@ -143,6 +176,7 @@ export const uploadBarcode = async (id: number) => {
   });
 
   const SB_SN = corporation.DeviceNO || "";
+  const hmis = jtv_hmis_xuzhoubei.store;
   const usernameInDB = detection.szUsername || "";
   const user = [hmis.username_prefix, usernameInDB].join("");
 
@@ -199,11 +233,159 @@ export const uploadBarcode = async (id: number) => {
     body.LW_TFLAW_TYPE = "裂纹";
   }
 
-  await postFn(body);
+  return body;
+};
+
+const api_set = async (id: number) => {
+  const record = await db.query.jtvXuzhoubeiBarcodeTable.findFirst({
+    where: sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id),
+  });
+
+  if (!record) {
+    throw new Error(`记录#${id}不存在`);
+  }
+
+  if (!record.zh) {
+    throw new Error(`记录#${id}轴号不存在`);
+  }
+
+  const body = await recordToBody(record);
+
+  await fetch_set(body);
   await db
     .update(schema.jtvXuzhoubeiBarcodeTable)
     .set({
       isUploaded: true,
     })
     .where(sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id));
+};
+
+/*
+ * SQLite操作相关
+ */
+const sqlite_get = async (
+  params: PRELOAD.GetJtvXuzhoubeiBarcodeParams,
+): Promise<PRELOAD.GetJtvXuzhoubeiBarcodeResult> => {
+  const [{ count }] = await db
+    .select({ count: sql.count() })
+    .from(schema.jtvXuzhoubeiBarcodeTable)
+    .where(
+      sql.between(
+        schema.jtvXuzhoubeiBarcodeTable.date,
+        new Date(params.startDate),
+        new Date(params.endDate),
+      ),
+    )
+    .limit(1);
+  const rows = await db.query.jtvXuzhoubeiBarcodeTable.findMany({
+    where: sql.between(
+      schema.jtvXuzhoubeiBarcodeTable.date,
+      new Date(params.startDate),
+      new Date(params.endDate),
+    ),
+    offset: params.pageIndex * params.pageSize,
+    limit: params.pageSize,
+  });
+  return { rows, count };
+};
+
+const sqlite_delete = async (id: number): Promise<number> => {
+  await db
+    .delete(schema.jtvXuzhoubeiBarcodeTable)
+    .where(sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id));
+  return id;
+};
+
+// 自动上传相关
+const doTask = withLog(api_set);
+let timer: NodeJS.Timeout | null = null;
+
+const autoUploadHandler = async () => {
+  const delay = jtv_hmis_xuzhoubei.get("autoUploadInterval") * 1000;
+  timer = setTimeout(autoUploadHandler, delay);
+
+  const barcodes = await db.query.jtvXuzhoubeiBarcodeTable.findMany({
+    where: sql.eq(schema.jtvXuzhoubeiBarcodeTable.isUploaded, false),
+  });
+
+  for (const barcode of barcodes) {
+    await doTask(barcode.id).catch(Boolean);
+  }
+};
+
+const initAutoUpload = () => {
+  if (jtv_hmis_xuzhoubei.get("autoUpload")) {
+    autoUploadHandler();
+  }
+
+  jtv_hmis_xuzhoubei.onDidChange("autoUpload", (value) => {
+    if (value) {
+      autoUploadHandler();
+      return;
+    }
+
+    if (!timer) return;
+    clearTimeout(timer);
+  });
+};
+
+// IPC通信初始化
+const initIpc = () => {
+  ipcMain.handle(
+    channel.jtv_hmis_xuzhoubei_api_get,
+    withLog(async (e, barcode: string) => {
+      void e;
+      return await api_get(barcode);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.jtv_hmis_xuzhoubei_api_set,
+    withLog(async (e, id: number) => {
+      void e;
+      return await api_set(id);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.jtv_hmis_xuzhoubei_setting_get,
+    withLog(async () => jtv_hmis_xuzhoubei.store),
+  );
+
+  ipcMain.handle(
+    channel.jtv_hmis_xuzhoubei_setting_set,
+    withLog(async (e, data: PRELOAD.JtvHmisXuzhoubeiSettingSetParams) => {
+      void e;
+      jtv_hmis_xuzhoubei.set(data);
+      return jtv_hmis_xuzhoubei.store;
+    }),
+  );
+
+  ipcMain.handle(
+    channel.jtv_hmis_xuzhoubei_sqlite_get,
+    withLog(
+      async (
+        e,
+        params: PRELOAD.GetJtvXuzhoubeiBarcodeParams,
+      ): Promise<PRELOAD.GetJtvXuzhoubeiBarcodeResult> => {
+        void e;
+        const data = await sqlite_get(params);
+        return data;
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    channel.jtv_hmis_xuzhoubei_sqlite_delete,
+    withLog(async (e, id: number): Promise<number> => {
+      void e;
+      return await sqlite_delete(id);
+    }),
+  );
+};
+
+// 导出初始化函数
+export const init = () => {
+  initIpc();
+  initAutoUpload();
 };

@@ -56,13 +56,6 @@ const fetch_get = async (barcode: string) => {
   const data: GetResponse = await res.json();
   log(`返回数据:${JSON.stringify(data)}`);
 
-  await db.insert(schema.hxzyBarcodeTable).values({
-    barCode: barcode,
-    zh: data.data[0].ZH,
-    date: new Date(),
-    isUploaded: false,
-  });
-
   return data;
 };
 
@@ -214,6 +207,14 @@ const recordToPostParams = async (
 
 const api_get = async (barcode: string) => {
   const data = await fetch_get(barcode);
+
+  await db.insert(schema.hxzyBarcodeTable).values({
+    barCode: barcode,
+    zh: data.data[0].ZH,
+    date: new Date(),
+    isUploaded: false,
+  });
+
   const autoInput = hxzy_hmis.get("autoInput");
 
   if (autoInput) return;
@@ -296,6 +297,13 @@ const sqlite_get = async (
     limit: params.pageSize,
   });
   return { rows, count };
+};
+
+const sqlite_delete = async (id: number): Promise<number> => {
+  await db
+    .delete(schema.hxzyBarcodeTable)
+    .where(sql.eq(schema.hxzyBarcodeTable.id, id));
+  return id;
 };
 
 const doTask = withLog(api_set);
@@ -381,6 +389,15 @@ const initIpc = () => {
         return data;
       },
     ),
+  );
+
+  // 添加删除SQLite记录的IPC处理
+  ipcMain.handle(
+    channel.hxzy_hmis_sqlite_delete,
+    withLog(async (e, id: number): Promise<number> => {
+      void e;
+      return await sqlite_delete(id);
+    }),
   );
 };
 
