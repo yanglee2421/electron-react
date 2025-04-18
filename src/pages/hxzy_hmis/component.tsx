@@ -25,34 +25,33 @@ import {
   Button,
   Divider,
   Checkbox,
-  Stack,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
+  Link,
+  CircularProgress,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
 import { useSnackbar } from "notistack";
-import { useGetData, useSaveData } from "./fetchers";
-import { useIndexedStore } from "@/hooks/useIndexedStore";
-import { useAutoInputToVC } from "@/hooks/useAutoInputToVC";
+import { fetchHxzyHmisBarcode, useGetData, useSaveData } from "./fetchers";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import type { History } from "@/hooks/useIndexedStore";
+import type { HxzyBarcode } from "#/electron/schema";
+import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
+import { DatePicker } from "@mui/x-date-pickers";
 
 type ActionCellProps = {
-  id: string;
-  dh: string;
-  zh: string;
+  id: number;
 };
 
 const ActionCell = (props: ActionCellProps) => {
@@ -60,48 +59,26 @@ const ActionCell = (props: ActionCellProps) => {
 
   const saveData = useSaveData();
   const snackbar = useSnackbar();
-  const set = useIndexedStore((s) => s.set);
-  const settings = useIndexedStore((s) => s.settings);
-  const hmis = useIndexedStore((s) => s.hxzy_hmis);
 
   const handleClose = () => setShowAlert(false);
   const handleDelete = () => {
-    set((d) => {
-      d.hxzy_hmis.history = d.hxzy_hmis.history.filter(
-        (row) => row.id !== props.id
-      );
-    });
     handleClose();
   };
 
   const handleUpload = () => {
-    saveData.mutate(
-      {
-        databasePath: settings.databasePath,
-        driverPath: settings.driverPath,
-        host: hmis.host,
-        gd: hmis.gd,
-        records: [
-          {
-            dh: props.dh,
-            zh: props.zh,
-          },
-        ],
+    saveData.mutate(props.id, {
+      onError(error) {
+        snackbar.enqueueSnackbar(error.message, {
+          variant: "error",
+        });
       },
-      {
-        onError(error) {
-          snackbar.enqueueSnackbar(error.message, {
-            variant: "error",
-          });
-        },
-        onSuccess(data) {
-          snackbar.enqueueSnackbar(data.result.msg, {
-            variant: "success",
-          });
-          handleClose();
-        },
-      }
-    );
+      onSuccess(data) {
+        snackbar.enqueueSnackbar(`#${data}上传成功`, {
+          variant: "success",
+        });
+        handleClose();
+      },
+    });
   };
 
   return (
@@ -143,7 +120,7 @@ const useScanerForm = () =>
     resolver: zodResolver(schema),
   });
 
-const columnHelper = createColumnHelper<History>();
+const columnHelper = createColumnHelper<HxzyBarcode>();
 
 const columns = [
   columnHelper.display({
@@ -172,7 +149,7 @@ const columns = [
   columnHelper.accessor("id", {
     header: "ID",
     footer: "ID",
-    cell: ({ getValue }) => getValue().slice(0, 7),
+    cell: ({ getValue }) => <Link underline="none">#{getValue()}</Link>,
   }),
   columnHelper.accessor("barCode", {
     header: "单号",
@@ -185,7 +162,7 @@ const columns = [
   columnHelper.accessor("date", {
     header: "时间",
     footer: "时间",
-    cell: ({ getValue }) => new Date(getValue()).toLocaleString(),
+    cell: ({ getValue }) => getValue()?.toLocaleString(),
   }),
   columnHelper.accessor("isUploaded", {
     header: "已上传",
@@ -196,17 +173,17 @@ const columns = [
   columnHelper.display({
     id: "action",
     header: "操作",
-    cell: ({ row }) => (
-      <ActionCell
-        id={row.getValue("id")}
-        dh={row.getValue("barCode")}
-        zh={row.getValue("zh")}
-      />
-    ),
+    cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
   }),
 ];
 
+const initDate = () => dayjs();
+
 export const Component = () => {
+  const [date, setDate] = React.useState(initDate);
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(10);
+
   const formRef = React.useRef<HTMLFormElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -216,63 +193,29 @@ export const Component = () => {
   const getData = useGetData();
   const saveData = useSaveData();
   const snackbar = useSnackbar();
-  const autoInput = useAutoInputToVC();
-  const set = useIndexedStore((s) => s.set);
-  const hmis = useIndexedStore((s) => s.hxzy_hmis);
-  const setting = useIndexedStore((s) => s.settings);
-  const history = useIndexedStore((s) => s.hxzy_hmis.history);
+  const barcode = useQuery(
+    fetchHxzyHmisBarcode({
+      pageIndex,
+      pageSize,
+      startDate: dayjs(date).startOf("day").toISOString(),
+      endDate: dayjs(date).endOf("day").toISOString(),
+    }),
+  );
 
   const setInputFocus = React.useCallback(() => {
     inputRef.current?.focus();
   }, []);
 
+  const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
+
   const table = useReactTable({
-    data: history,
+    data,
     columns,
-    getRowId: (row) => row.id,
+    getRowId: (row) => row.id.toString(),
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+
+    manualPagination: true,
   });
-
-  const selectedRows = table.getSelectedRowModel().flatRows;
-  const noSelectedRow = !selectedRows.length;
-  const uploadQueue = React.useMemo(
-    () =>
-      history
-        .filter((row) => !row.isUploaded)
-        .map((row) => ({ dh: row.barCode, zh: row.zh })),
-    [history]
-  );
-
-  const saveDataMutate = saveData.mutate;
-
-  React.useEffect(() => {
-    if (!hmis.autoUpload) return;
-    if (!uploadQueue.length) return;
-
-    const timer = setInterval(() => {
-      saveDataMutate({
-        databasePath: setting.databasePath,
-        driverPath: setting.driverPath,
-        host: hmis.host,
-        gd: hmis.gd,
-        records: uploadQueue,
-      });
-    }, hmis.autoUploadInterval);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, [
-    uploadQueue,
-    saveDataMutate,
-    setting.databasePath,
-    setting.driverPath,
-    hmis.gd,
-    hmis.host,
-    hmis.autoUpload,
-    hmis.autoUploadInterval,
-  ]);
 
   React.useEffect(() => {
     const unsubscribe = window.electronAPI.subscribeWindowFocus(setInputFocus);
@@ -298,7 +241,7 @@ export const Component = () => {
         if (document.visibilityState !== "visible") return;
         setInputFocus();
       },
-      controller
+      controller,
     );
 
     return () => {
@@ -350,45 +293,13 @@ export const Component = () => {
                 if (saveData.isPending) return;
 
                 form.reset();
-
-                const data = await getData.mutateAsync(
-                  {
-                    barCode: values.barCode,
-                    host: hmis.host,
+                getData.mutate(values.barCode, {
+                  onError: (error) => {
+                    snackbar.enqueueSnackbar(error.message, {
+                      variant: "error",
+                    });
                   },
-                  {
-                    onError: (error) => {
-                      snackbar.enqueueSnackbar(error.message, {
-                        variant: "error",
-                      });
-                    },
-                  }
-                );
-
-                if (!hmis.autoInput) return;
-
-                await autoInput.mutateAsync(
-                  {
-                    driverPath: setting.driverPath,
-                    zx: data.data[0].ZX,
-                    zh: data.data[0].ZH,
-                    czzzdw: data.data[0].CZZZDW,
-                    sczzdw: data.data[0].SCZZDW,
-                    mczzdw: data.data[0].MCZZDW,
-                    czzzrq: data.data[0].CZZZRQ,
-                    sczzrq: data.data[0].SCZZRQ,
-                    mczzrq: data.data[0].MCZZRQ,
-                    ztx: "1",
-                    ytx: "1",
-                  },
-                  {
-                    onError(error) {
-                      snackbar.enqueueSnackbar(error.message, {
-                        variant: "error",
-                      });
-                    },
-                  }
-                );
+                });
               }, console.warn)}
               onReset={() => form.reset()}
             >
@@ -409,7 +320,13 @@ export const Component = () => {
                             <Button
                               form={formId}
                               type="submit"
-                              endIcon={<KeyboardReturnOutlined />}
+                              endIcon={
+                                getData.isPending ? (
+                                  <CircularProgress size={16} />
+                                ) : (
+                                  <KeyboardReturnOutlined />
+                                )
+                              }
                               variant="contained"
                               disabled={getData.isPending}
                             >
@@ -431,52 +348,24 @@ export const Component = () => {
       </CardContent>
       <Divider />
       <CardContent>
-        <Stack direction={"row"} spacing={3}>
-          <Button
-            onClick={() => {
-              saveData.mutate(
-                {
-                  databasePath: setting.databasePath,
-                  driverPath: setting.driverPath,
-                  host: hmis.host,
-                  gd: hmis.gd,
-                  records: selectedRows.map((row) => ({
-                    dh: row.original.barCode,
-                    zh: row.original.zh,
-                  })),
+        <Grid container spacing={6}>
+          <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+            <DatePicker
+              value={date}
+              onChange={(e) => {
+                if (!e) return;
+                setDate(e);
+              }}
+              slotProps={{
+                textField: {
+                  label: "日期",
+                  fullWidth: true,
+                  helperText: "选择日期",
                 },
-                {
-                  onError(error) {
-                    snackbar.enqueueSnackbar(error.message, {
-                      variant: "error",
-                    });
-                  },
-                }
-              );
-            }}
-            disabled={noSelectedRow || saveData.isPending}
-            variant="outlined"
-            startIcon={<CloudUploadOutlined />}
-          >
-            上传
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<DeleteOutlined />}
-            color="error"
-            disabled={noSelectedRow}
-            onClick={() => {
-              const deleteIds = new Set(selectedRows.map((i) => i.id));
-              set((d) => {
-                d.hxzy_hmis.history = d.hxzy_hmis.history.filter(
-                  (i) => !deleteIds.has(i.id)
-                );
-              });
-            }}
-          >
-            删除
-          </Button>
-        </Stack>
+              }}
+            />
+          </Grid>
+        </Grid>
       </CardContent>
       <TableContainer>
         <Table>
@@ -490,7 +379,7 @@ export const Component = () => {
                   >
                     {flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableCell>
                 ))}
@@ -508,7 +397,7 @@ export const Component = () => {
                   >
                     {flexRender(
                       header.column.columnDef.footer,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableCell>
                 ))}
@@ -519,16 +408,16 @@ export const Component = () => {
       </TableContainer>
       <TablePagination
         component={"div"}
-        page={table.getState().pagination.pageIndex}
-        count={table.getRowCount()}
-        rowsPerPage={table.getState().pagination.pageSize}
+        page={pageIndex}
+        count={barcode.data?.count ?? 0}
+        rowsPerPage={pageSize}
         rowsPerPageOptions={rowsPerPageOptions}
         onPageChange={(e, page) => {
           void e;
-          table.setPageIndex(page);
+          setPageIndex(page);
         }}
         onRowsPerPageChange={(e) => {
-          table.setPageSize(Number.parseInt(e.target.value, 10));
+          setPageSize(Number.parseInt(e.target.value, 10));
         }}
         labelRowsPerPage="每页行数"
       />

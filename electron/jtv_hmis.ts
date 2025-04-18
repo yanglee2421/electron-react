@@ -7,7 +7,6 @@ import {
   log,
   getIP,
   getCorporation,
-  createEmit,
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
@@ -15,10 +14,7 @@ import { jtv_hmis } from "./store";
 import { db } from "./db";
 import * as schema from "./schema";
 import * as sql from "drizzle-orm";
-import * as channel from "./channel";
-import type { DetectionData } from "#/electron/database_types";
-
-export const emit = createEmit(channel.jtvBarcodeEmit);
+import type { DetectionData } from "./cmd";
 
 export type GetResponse = {
   code: "200";
@@ -212,5 +208,4 @@ export const uploadBarcode = async (id: number) => {
     .update(schema.jtvBarcodeTable)
     .set({ isUploaded: true })
     .where(sql.eq(schema.jtvBarcodeTable.id, record.id));
-  emit();
 };

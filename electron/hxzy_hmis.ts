@@ -1,6 +1,6 @@
 // 成都北 华兴致远
 
-import { net } from "electron";
+import { net, ipcMain } from "electron";
 import {
   getDetectionByZH,
   getDetectionDatasByOPID,
@@ -8,24 +8,20 @@ import {
   log,
   getCorporation,
   getIP,
-  createEmit,
+  withLog,
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
 import { hxzy_hmis } from "./store";
+import { autoInputToVC } from "./cmd";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
 import * as channel from "./channel";
-import type {
-  DetectionData,
-  Verify,
-  VerifyData,
-} from "#/electron/database_types";
+import type { DetectionData, Verify, VerifyData } from "./cmd";
+import type * as PRELOAD from "./preload";
 
-export const emit = createEmit(channel.hxzyBarcodeEmit);
-
-export type GetResponse = {
+type GetResponse = {
   code: "200";
   msg: "数据读取成功";
   data: [
@@ -45,7 +41,7 @@ export type GetResponse = {
   ];
 };
 
-export const getFn = async (barcode: string) => {
+const fetch_get = async (barcode: string) => {
   const host = hxzy_hmis.get("host");
   const url = new URL(
     `http://${host}/lzjx/dx/csbts/device_api/csbts/api/getDate`,
@@ -66,12 +62,11 @@ export const getFn = async (barcode: string) => {
     date: new Date(),
     isUploaded: false,
   });
-  emit();
 
   return data;
 };
 
-export type PostRequestItem = {
+type PostRequestItem = {
   EQ_IP: string; // 设备IP
   EQ_BH: string; // 设备编号
   GD: string; // 股道号
@@ -94,12 +89,12 @@ export type PostRequestItem = {
   CT_RESULT: string; // 合格
 };
 
-export type PostResponse = {
+type PostResponse = {
   code: "200";
   msg: "数据上传成功";
 };
 
-export const postFn = async (request: PostRequestItem[]) => {
+const fetch_set = async (request: PostRequestItem[]) => {
   const host = hxzy_hmis.get("host");
   const url = new URL(
     `http://${host}/lzjx/dx/csbts/device_api/csbts/api/saveData`,
@@ -125,7 +120,7 @@ export const postFn = async (request: PostRequestItem[]) => {
   return data;
 };
 
-export const recordToPostParams = async (
+const recordToPostParams = async (
   record: schema.HxzyBarcode,
 ): Promise<PostRequestItem> => {
   const id = record.id;
@@ -217,7 +212,26 @@ export const recordToPostParams = async (
   };
 };
 
-export const uploadBarcode = async (id: number) => {
+const api_get = async (barcode: string) => {
+  const data = await fetch_get(barcode);
+  const autoInput = hxzy_hmis.get("autoInput");
+
+  if (autoInput) return;
+  await autoInputToVC({
+    zx: data.data[0].ZX,
+    zh: data.data[0].ZH,
+    czzzdw: data.data[0].CZZZDW,
+    sczzdw: data.data[0].SCZZDW,
+    mczzdw: data.data[0].MCZZDW,
+    czzzrq: data.data[0].CZZZRQ,
+    sczzrq: data.data[0].SCZZRQ,
+    mczzrq: data.data[0].MCZZRQ,
+    ztx: "1",
+    ytx: "1",
+  });
+};
+
+const api_set = async (id: number) => {
   const record = await db.query.hxzyBarcodeTable.findFirst({
     where: sql.eq(schema.hxzyBarcodeTable.id, id),
   });
@@ -232,15 +246,14 @@ export const uploadBarcode = async (id: number) => {
 
   const postParams = await recordToPostParams(record);
 
-  await postFn([postParams]);
+  await fetch_set([postParams]);
   await db
     .update(schema.hxzyBarcodeTable)
     .set({ isUploaded: true })
     .where(sql.eq(schema.hxzyBarcodeTable.id, id));
-  emit();
 };
 
-export const idToUploadVerifiesData = async (id: string) => {
+const idToUploadVerifiesData = async (id: string) => {
   const [verifies] = await getDataFromAccessDatabase<Verify>(
     `SELECT * FROM verifies WHERE szIDs ='${id}'`,
   );
@@ -257,4 +270,121 @@ export const idToUploadVerifiesData = async (id: string) => {
     verifies,
     verifiesData,
   };
+};
+
+const sqlite_get = async (
+  params: PRELOAD.HxzyBarcodeGetParams,
+): Promise<PRELOAD.HxzyBarcodeGetResult> => {
+  const [{ count }] = await db
+    .select({ count: sql.count() })
+    .from(schema.hxzyBarcodeTable)
+    .where(
+      sql.between(
+        schema.hxzyBarcodeTable.date,
+        new Date(params.startDate),
+        new Date(params.endDate),
+      ),
+    )
+    .limit(1);
+  const rows = await db.query.hxzyBarcodeTable.findMany({
+    where: sql.between(
+      schema.hxzyBarcodeTable.date,
+      new Date(params.startDate),
+      new Date(params.endDate),
+    ),
+    offset: params.pageIndex * params.pageSize,
+    limit: params.pageSize,
+  });
+  return { rows, count };
+};
+
+const doTask = withLog(api_set);
+let timer: NodeJS.Timeout | null = null;
+
+const autoUploadHandler = async () => {
+  const delay = hxzy_hmis.get("autoUploadInterval") * 1000;
+  timer = setTimeout(autoUploadHandler, delay);
+
+  const barcodes = await db.query.hxzyBarcodeTable.findMany({
+    where: sql.eq(schema.hxzyBarcodeTable.isUploaded, false),
+  });
+
+  for (const barcode of barcodes) {
+    await doTask(barcode.id).catch(Boolean);
+  }
+};
+
+const initAutoUpload = () => {
+  if (hxzy_hmis.get("autoUpload")) {
+    autoUploadHandler();
+  }
+
+  hxzy_hmis.onDidChange("autoUpload", (value) => {
+    if (value) {
+      autoUploadHandler();
+      return;
+    }
+
+    if (!timer) return;
+    clearTimeout(timer);
+  });
+};
+
+const initIpc = () => {
+  ipcMain.handle(
+    channel.hxzy_hmis_api_get,
+    withLog(async (e, barcode: string) => {
+      void e;
+      return await api_get(barcode);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.hxzy_hmis_api_set,
+    withLog(async (e, id: number) => {
+      void e;
+      return await api_set(id);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.hxzy_hmis_api_verifies,
+    withLog(async (e, id: string) => {
+      void e;
+      return await idToUploadVerifiesData(id);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.hxzy_hmis_setting_get,
+    withLog(async () => hxzy_hmis.store),
+  );
+
+  ipcMain.handle(
+    channel.hxzy_hmis_setting_set,
+    withLog(async (e, data: PRELOAD.HxzyHmisSettingSetParams) => {
+      void e;
+      hxzy_hmis.set(data);
+      return hxzy_hmis.store;
+    }),
+  );
+
+  ipcMain.handle(
+    channel.hxzy_hmis_sqlite_get,
+    withLog(
+      async (
+        e,
+        params: PRELOAD.HxzyBarcodeGetParams,
+      ): Promise<PRELOAD.HxzyBarcodeGetResult> => {
+        void e;
+        const data = await sqlite_get(params);
+        return data;
+      },
+    ),
+  );
+};
+
+export const init = () => {
+  initIpc();
+  initAutoUpload();
 };

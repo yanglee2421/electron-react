@@ -1,3 +1,10 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import dayjs from "dayjs";
+import * as store from "./store";
+
+const execFileAsync = promisify(execFile);
+
 export type Detection = {
   bFlaws: boolean | null;
   bSickLD: boolean | null;
@@ -86,4 +93,40 @@ export type VerifyData = {
   nFWOut: number;
   nTAIndex: number;
   opid: string | null;
+};
+
+export type AutoInputToVCParams = {
+  zx: string;
+  zh: string;
+  czzzdw: string;
+  sczzdw: string;
+  mczzdw: string;
+  czzzrq: string;
+  sczzrq: string;
+  mczzrq: string;
+  ztx: string;
+  ytx: string;
+};
+
+export const autoInputToVC = async (data: AutoInputToVCParams) => {
+  const driverPath = store.settings.get("driverPath");
+  const cp = await execFileAsync(driverPath, [
+    "autoInputToVC",
+    data.zx,
+    data.zh,
+    data.czzzdw,
+    data.sczzdw,
+    data.mczzdw,
+    dayjs(data.czzzrq).format("YYYYMM"),
+    dayjs(data.sczzrq).format("YYYYMMDD"),
+    dayjs(data.mczzrq).format("YYYYMMDD"),
+    data.ztx,
+    data.ytx,
+  ]);
+
+  if (cp.stderr) {
+    throw cp.stderr;
+  }
+
+  return cp.stdout;
 };

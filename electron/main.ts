@@ -6,14 +6,11 @@ import * as channel from "./channel";
 import {
   getCpuSerial,
   runWinword,
-  execFileAsync,
   getDataFromAccessDatabase,
   withLog,
   DATE_FORMAT_DATABASE,
   getSerialFromStdout,
 } from "./lib";
-import { settings } from "./store";
-import dayjs from "dayjs";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
@@ -21,7 +18,7 @@ import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
-import type { AutoInputToVCParams } from "#/electron/autoInput_types";
+import * as store from "./store";
 import type * as PRELOAD from "./preload";
 
 // The built directory structure
@@ -52,7 +49,7 @@ if (import.meta.env.DEV) {
 let win: BrowserWindow | null;
 
 const createWindow = () => {
-  const alwaysOnTop = settings.get("alwaysOnTop");
+  const alwaysOnTop = store.settings.get("alwaysOnTop");
 
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
@@ -137,8 +134,9 @@ if (!gotTheLock) {
   }
 
   app.whenReady().then(async () => {
-    const mode = settings.get("mode");
+    const mode = store.settings.get("mode");
     nativeTheme.themeSource = mode;
+    hxzyHmis.init();
     createWindow();
   });
 }
@@ -193,7 +191,7 @@ ipcMain.handle(
   withLog(async () => {
     const cpuSerial = await getCpuSerial();
     const serial = getSerialFromStdout(cpuSerial);
-    const activateCode = settings.get("activateCode");
+    const activateCode = store.settings.get("activateCode");
     if (!activateCode) return { isOk: false, serial };
     if (!serial) throw new Error("获取CPU序列号失败");
     const exceptedCode = createHash("md5")
@@ -206,33 +204,6 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-  channel.autoInputToVC,
-  withLog(async (e, data: AutoInputToVCParams) => {
-    // Prevent unused variable warning
-    void e;
-    const cp = await execFileAsync(data.driverPath, [
-      "autoInputToVC",
-      data.zx,
-      data.zh,
-      data.czzzdw,
-      data.sczzdw,
-      data.mczzdw,
-      dayjs(data.czzzrq).format("YYYYMM"),
-      dayjs(data.sczzrq).format("YYYYMMDD"),
-      dayjs(data.mczzrq).format("YYYYMMDD"),
-      data.ztx,
-      data.ytx,
-    ]);
-
-    if (cp.stderr) {
-      throw cp.stderr;
-    }
-
-    return cp.stdout;
-  }),
-);
-
-ipcMain.handle(
   channel.getDataFromAccessDatabase,
   withLog(async (e, sql: string) => {
     void e;
@@ -241,31 +212,7 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-  channel.hxzy_hmis_get_data,
-  withLog(async (e, barcode: string) => {
-    void e;
-    return await hxzyHmis.getFn(barcode);
-  }),
-);
-
-ipcMain.handle(
-  channel.hxzy_hmis_save_data,
-  withLog(async (e, id: number) => {
-    void e;
-    return await hxzyHmis.uploadBarcode(id);
-  }),
-);
-
-ipcMain.handle(
-  channel.hxzy_hmis_upload_verifies,
-  withLog(async (e, id: string) => {
-    void e;
-    return await hxzyHmis.idToUploadVerifiesData(id);
-  }),
-);
-
-ipcMain.handle(
-  channel.jtv_hmis_get_data,
+  channel.jtv_hmis_api_get,
   withLog(async (e, barcode: string) => {
     void e;
     return await jtvHmis.getFn(barcode);
@@ -273,7 +220,7 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-  channel.jtv_hmis_save_data,
+  channel.jtv_hmis_api_set,
   withLog(async (e, id: number) => {
     void e;
     return await jtvHmis.uploadBarcode(id);
@@ -281,7 +228,7 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-  channel.jtv_hmis_xuzhoubei_get_data,
+  channel.jtv_hmis_xuzhoubei_api_get,
   withLog(async (e, barcode: string) => {
     void e;
     return await jtvHmisXuzhoubei.getFn(barcode);
@@ -289,7 +236,7 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-  channel.jtv_hmis_xuzhoubei_save_data,
+  channel.jtv_hmis_xuzhoubei_api_set,
   withLog(async (e, id: number) => {
     void e;
     return await jtvHmisXuzhoubei.uploadBarcode(id);
@@ -297,7 +244,7 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-  channel.kh_hmis_get_data,
+  channel.kh_hmis_api_get,
   withLog(async (e, barcode: string) => {
     void e;
     return await khHmis.getFn(barcode);
@@ -305,7 +252,7 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-  channel.kh_hmis_save_data,
+  channel.kh_hmis_api_set,
   withLog(async (e, id: number) => {
     void e;
     return await khHmis.uploadBarcode(id);
@@ -314,22 +261,20 @@ ipcMain.handle(
 
 ipcMain.handle(
   channel.getSetting,
-  withLog(async () => settings.store),
+  withLog(async () => store.settings.store),
 );
 
 ipcMain.handle(
   channel.setSetting,
   withLog(async (e, data: PRELOAD.SetSettingParams) => {
     void e;
-
-    Object.entries(data).forEach(([key, value]) => settings.set(key, value));
-
-    return settings.store;
+    store.settings.set(data);
+    return store.settings.store;
   }),
 );
 
 ipcMain.handle(
-  channel.jtvBarcodeGet,
+  channel.jtv_hmis_sqlite_get,
   withLog(
     async (
       e,

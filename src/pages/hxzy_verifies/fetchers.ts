@@ -1,17 +1,12 @@
 import { queryOptions, useMutation } from "@tanstack/react-query";
-import type {
-  GetDataFromAccessDatabaseParams,
-  Verify,
-} from "#/electron/database_types";
-import type { UploadVerifiesParams } from "#/electron/hxzy_hmis";
+import type { Verify } from "#/electron/cmd";
 
-export const fetchVerifies = (params: GetDataFromAccessDatabaseParams) =>
+export const fetchVerifies = (sql: string) =>
   queryOptions({
-    queryKey: ["window.electronAPI.getDataFromAccessDatabase", params],
+    queryKey: ["window.electronAPI.getDataFromAccessDatabase", sql],
     queryFn: async () => {
-      const data = await window.electronAPI.getDataFromAccessDatabase<Verify>(
-        params
-      );
+      const data =
+        await window.electronAPI.getDataFromAccessDatabase<Verify>(sql);
 
       return data;
     },
@@ -19,8 +14,8 @@ export const fetchVerifies = (params: GetDataFromAccessDatabaseParams) =>
 
 export const useUploadVerifies = () => {
   return useMutation({
-    mutationFn: async (params: UploadVerifiesParams) => {
-      const data = await window.electronAPI.hxzy_hmis_upload_verifies(params);
+    mutationFn: async (id: string) => {
+      const data = await window.electronAPI.hxzy_hmis_upload_verifies(id);
       return data;
     },
   });

@@ -6,7 +6,6 @@ import {
   getDetectionByZH,
   log,
   getCorporation,
-  createEmit,
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
@@ -14,9 +13,6 @@ import { kh_hmis } from "./store";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
-import * as channel from "./channel";
-
-export const emit = createEmit(channel.khBarcodeEmit);
 
 export type GetResponse = {
   data: {
@@ -276,5 +272,4 @@ export const uploadBarcode = async (id: number) => {
     .update(schema.khBarcodeTable)
     .set({ isUploaded: true })
     .where(sql.eq(schema.khBarcodeTable.id, id));
-  emit();
 };

@@ -14,23 +14,13 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Menu,
 } from "@mui/material";
-import {
-  RefreshOutlined,
-  MoreVertOutlined,
-  CloudUploadOutlined,
-} from "@mui/icons-material";
+import { RefreshOutlined } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
-import { useSnackbar } from "notistack";
-import { fetchVerifies, useUploadVerifies } from "./fetchers";
-import { useIndexedStore } from "@/hooks/useIndexedStore";
+import { fetchVerifies } from "./fetchers";
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -38,61 +28,9 @@ import {
   flexRender,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import type { Verify } from "#/electron/database_types";
+import type { Verify } from "#/electron/cmd";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
-
-type ActionCellProps = {
-  id: string;
-};
-
-const ActionCell = (props: ActionCellProps) => {
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-
-  const snackbar = useSnackbar();
-  const uploadVerifies = useUploadVerifies();
-  const settings = useIndexedStore((s) => s.settings);
-  const hmis = useIndexedStore((s) => s.hxzy_hmis);
-
-  const handleClose = () => setAnchorEl(null);
-
-  return (
-    <>
-      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-        <MoreVertOutlined />
-      </IconButton>
-      <Menu open={!!anchorEl} onClose={handleClose} anchorEl={anchorEl}>
-        <MenuItem
-          onClick={() => {
-            uploadVerifies.mutate(
-              {
-                driverPath: settings.driverPath,
-                databasePath: settings.databasePath,
-                id: props.id,
-                host: hmis.host,
-              },
-              {
-                onError: (error) => {
-                  snackbar.enqueueSnackbar(error.message, { variant: "error" });
-                },
-                onSuccess: (data) => {
-                  snackbar.enqueueSnackbar("上传成功", { variant: "success" });
-                  console.log(data);
-                  handleClose();
-                },
-              }
-            );
-          }}
-        >
-          <ListItemIcon>
-            <CloudUploadOutlined />
-          </ListItemIcon>
-          <ListItemText primary="上传" />
-        </MenuItem>
-      </Menu>
-    </>
-  );
-};
 
 const initDate = () => dayjs();
 
@@ -118,14 +56,12 @@ const columns = [
     id: "actions",
     header: "操作",
     footer: "操作",
-    cell: ({ row }) => <ActionCell id={row.getValue("szIDs")} />,
+    cell: () => <></>,
   }),
 ];
 
 export const Component = () => {
   const [date, setDate] = React.useState(initDate);
-
-  const settings = useIndexedStore((s) => s.settings);
 
   const sql = `SELECT * FROM verifies WHERE tmnow BETWEEN #${date
     .startOf("day")
@@ -133,13 +69,7 @@ export const Component = () => {
     .endOf("day")
     .format(DATE_FORMAT_DATABASE)}#`;
 
-  const query = useQuery(
-    fetchVerifies({
-      driverPath: settings.driverPath,
-      databasePath: settings.databasePath,
-      query: sql,
-    })
-  );
+  const query = useQuery(fetchVerifies(sql));
 
   const data = React.useMemo(() => query.data || [], [query.data]);
 
@@ -248,7 +178,7 @@ export const Component = () => {
                   >
                     {flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableCell>
                 ))}
@@ -266,7 +196,7 @@ export const Component = () => {
                   >
                     {flexRender(
                       header.column.columnDef.footer,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableCell>
                 ))}

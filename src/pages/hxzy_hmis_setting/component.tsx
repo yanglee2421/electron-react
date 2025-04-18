@@ -1,4 +1,3 @@
-import { useIndexedStore } from "@/hooks/useIndexedStore";
 import {
   Button,
   Card,
@@ -17,6 +16,8 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useSnackbar } from "notistack";
+import { useQuery } from "@tanstack/react-query";
+import { fetchHxzyHmisSetting, useUpdateHxzyHmisSetting } from "./fetchers";
 
 const schema = z.object({
   ip: z
@@ -33,7 +34,7 @@ const schema = z.object({
   autoUploadInterval: z
     .number({ message: "自动上传间隔必须是数字" })
     .int({ message: "自动上传间隔必须是整数" })
-    .min(1000 * 10, { message: "自动上传间隔不能小于10秒" }),
+    .min(10, { message: "自动上传间隔不能小于10秒" }),
   gd: z.string(),
 });
 
@@ -49,7 +50,7 @@ const useSettingForm = (defaultValues: FormValues) =>
 const renderNumberValue = (
   value: number,
   focusValue: string,
-  focused: boolean
+  focused: boolean,
 ) => {
   if (focused) {
     return focusValue;
@@ -111,9 +112,13 @@ const NumberField = (props: NumberFieldProps) => {
 export const Component = () => {
   const formId = React.useId();
 
-  const set = useIndexedStore((s) => s.set);
-  const hmis = useIndexedStore((s) => s.hxzy_hmis);
+  const hmisSetting = useQuery(fetchHxzyHmisSetting());
   const snackbar = useSnackbar();
+  const update = useUpdateHxzyHmisSetting();
+  const hmis = hmisSetting.data;
+
+  if (!hmis) throw new Error("hmisSetting is falsy");
+
   const form = useSettingForm({
     ip: hmis.host.split(":")[0],
     port: +hmis.host.split(":")[1],
@@ -132,14 +137,21 @@ export const Component = () => {
           noValidate
           autoComplete="off"
           onSubmit={form.handleSubmit((data) => {
-            set((d) => {
-              d.hxzy_hmis.autoInput = data.autoInput;
-              d.hxzy_hmis.autoUpload = data.autoUpload;
-              d.hxzy_hmis.autoUploadInterval = data.autoUploadInterval;
-              d.hxzy_hmis.host = `${data.ip}:${data.port}`;
-              d.hxzy_hmis.gd = data.gd;
-            });
-            snackbar.enqueueSnackbar("保存成功", { variant: "success" });
+            update.mutate(
+              {
+                autoInput: data.autoInput,
+                autoUpload: data.autoUpload,
+                autoUploadInterval: data.autoUploadInterval,
+                host: `${data.ip}:${data.port}`,
+                gd: data.gd,
+              },
+              {
+                onSuccess: () => {
+                  form.reset(data);
+                  snackbar.enqueueSnackbar("保存成功", { variant: "success" });
+                },
+              },
+            );
           }, console.warn)}
         >
           <Grid container spacing={3}>

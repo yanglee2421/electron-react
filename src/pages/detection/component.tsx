@@ -27,7 +27,7 @@ import {
   flexRender,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import type { Detection } from "#/electron/database_types";
+import type { Detection } from "#/electron/cmd";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
@@ -63,7 +63,7 @@ export const Component = () => {
     .endOf("day")
     .format(DATE_FORMAT_DATABASE)}#`;
 
-  const query = useQuery(fetchDetections({ query: sql }));
+  const query = useQuery(fetchDetections(sql));
 
   const data = React.useMemo(() => query.data || [], [query.data]);
 

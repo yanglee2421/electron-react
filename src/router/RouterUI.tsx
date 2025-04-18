@@ -721,7 +721,7 @@ const routes: RouteObject[] = [
               {
                 id: "hxzy_hmis_setting",
                 path: "hxzy_hmis_setting",
-                lazy: () => import("@/pages/hxzy_hmis_setting/component"),
+                lazy: () => import("@/pages/hxzy_hmis_setting"),
               },
               {
                 id: "hxzy_verifies",

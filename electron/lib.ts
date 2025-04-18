@@ -6,18 +6,14 @@ import { BrowserWindow } from "electron";
 import dayjs from "dayjs";
 import * as channel from "./channel";
 import { settings } from "./store";
-import type {
-  Corporation,
-  Detection,
-  DetectionData,
-} from "#/electron/database_types";
+import type { Corporation, Detection, DetectionData } from "./cmd";
 import type { Log } from "#/src/lib/db";
 
 export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 export const execAsync = promisify(exec);
 export const execFileAsync = promisify(execFile);
 
-export const log = async (message: string, type = "info") => {
+export const log = (message: string, type = "info") => {
   const data: Log = {
     id: 0,
     date: new Date().toISOString(),
@@ -57,7 +53,7 @@ export const withLog = <TArgs extends unknown[], TReturn = void>(
       console.error(error);
       // Log the error message
       const message = errorToMessage(error);
-      await log(message, "error");
+      log(message, "error");
       // Throw message instead of error to avoid electron issue #24427
       throw message;
     }
@@ -244,12 +240,4 @@ export const getPlace = (nChannel: number) => {
 
 export const getSerialFromStdout = (stdout: string) => {
   return stdout.trim().split("\n").at(-1) || "";
-};
-
-export const createEmit = (channel: string) => {
-  return () => {
-    BrowserWindow.getAllWindows().forEach((win) => {
-      win.webContents.send(channel);
-    });
-  };
 };

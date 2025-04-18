@@ -8,7 +8,6 @@ import {
   log,
   getPlace,
   getDirection,
-  createEmit,
 } from "./lib";
 import dayjs from "dayjs";
 import { URL } from "node:url";
@@ -16,9 +15,6 @@ import { jtv_hmis_xuzhoubei } from "./store";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
-import * as channel from "./channel";
-
-export const emit = createEmit(channel.jtvXuzhoubeiBarcodeEmit);
 
 export type GetResponse = [
   {
@@ -210,5 +206,4 @@ export const uploadBarcode = async (id: number) => {
       isUploaded: true,
     })
     .where(sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id));
-  emit();
 };
