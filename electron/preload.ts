@@ -314,6 +314,11 @@ const settings = async (param?: SetSettingParams): Promise<STORE.Settings> => {
   return data;
 };
 
+const settingsOpenInEditor = async (): Promise<void> => {
+  const data = await ipcRenderer.invoke(channel.settingsOpenInEditor);
+  return data;
+};
+
 const electronAPI = {
   // Windows 10
   verifyActivation,
@@ -360,6 +365,7 @@ const electronAPI = {
 
   // Common
   settings,
+  settingsOpenInEditor,
 
   // Subscribe
   subscribeLog,

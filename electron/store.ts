@@ -1,12 +1,14 @@
 import Store from "electron-store";
-import { BrowserWindow, app, nativeTheme } from "electron";
+import { BrowserWindow, app, nativeTheme, ipcMain } from "electron";
+import { withLog } from "./lib";
+import * as channel from "./channel";
+import type * as PRELOAD from "./preload";
 
 export type Settings = {
   databasePath: string;
   driverPath: string;
   activateCode: string;
   alwaysOnTop: boolean;
-  openAtLogin: boolean;
   mode: "system" | "light" | "dark";
   homePath: string;
 };
@@ -30,10 +32,6 @@ export const settings = new Store<Settings>({
       type: "boolean",
       default: false,
     },
-    openAtLogin: {
-      type: "boolean",
-      default: false,
-    },
     mode: {
       type: "string",
       default: "system",
@@ -44,21 +42,6 @@ export const settings = new Store<Settings>({
       default: "/settings",
     },
   },
-});
-
-settings.onDidChange("alwaysOnTop", (value) => {
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.setAlwaysOnTop(!!value);
-  });
-});
-
-settings.onDidChange("openAtLogin", (value) => {
-  app.setLoginItemSettings({ openAtLogin: value });
-});
-
-settings.onDidChange("mode", (value) => {
-  if (!value) return;
-  nativeTheme.themeSource = value;
 });
 
 export type HXZY_HMIS = {
@@ -206,3 +189,41 @@ export const kh_hmis = new Store<KH_HMIS>({
     },
   },
 });
+
+const initDidChange = () => {
+  settings.onDidChange("alwaysOnTop", (value) => {
+    BrowserWindow.getAllWindows().forEach((win) => {
+      win.setAlwaysOnTop(!!value);
+    });
+  });
+
+  settings.onDidChange("mode", (value) => {
+    if (!value) return;
+    nativeTheme.themeSource = value;
+  });
+};
+
+const initIpc = () => {
+  ipcMain.handle(
+    channel.settings,
+    withLog(async (e, data?: PRELOAD.SetSettingParams): Promise<Settings> => {
+      void e;
+      if (data) {
+        settings.set(data);
+      }
+      return settings.store;
+    }),
+  );
+
+  ipcMain.handle(
+    channel.settingsOpenInEditor,
+    withLog(async () => {
+      await settings.openInEditor();
+    }),
+  );
+};
+
+export const init = () => {
+  initDidChange();
+  initIpc();
+};

@@ -204,7 +204,6 @@ export const Component = () => {
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
-
   const formId = React.useId();
 
   const params = {
@@ -219,7 +218,7 @@ export const Component = () => {
   const autoInput = useAutoInputToVC();
   const saveData = useJtvHmisApiSet();
   const getData = useJtvHmisApiGet();
-  const hmis = useQuery(fetchJtvHmisSetting());
+  const { data: hmis } = useQuery(fetchJtvHmisSetting());
   const barcode = useQuery(fetchJtvHmisSqliteGet(params));
 
   const setInputFocus = React.useCallback(() => {
@@ -299,10 +298,6 @@ export const Component = () => {
     });
   };
 
-  if (!hmis.data) {
-    throw new Error("Settings not found");
-  }
-
   return (
     <Card>
       <CardHeader title="京天威HMIS" subheader="统型" />
@@ -318,7 +313,6 @@ export const Component = () => {
                 if (saveData.isPending) return;
 
                 form.reset();
-
                 const data = await getData.mutateAsync(values.barCode, {
                   onError: (error) => {
                     snackbar.enqueueSnackbar(error.message, {
@@ -327,9 +321,10 @@ export const Component = () => {
                   },
                 });
 
-                if (!hmis.data.autoInput) return;
+                if (!hmis) return;
+                if (!hmis.autoInput) return;
 
-                await autoInput.mutateAsync(
+                autoInput.mutate(
                   {
                     zx: data.data[0].ZX,
                     zh: data.data[0].ZH,

@@ -307,7 +307,6 @@ export const Component = () => {
                 if (getData.isPending) return;
 
                 form.reset();
-
                 const data = await getData.mutateAsync(values.barCode, {
                   onError: (error) => {
                     snackbar.enqueueSnackbar(error.message, {
@@ -319,7 +318,7 @@ export const Component = () => {
                 if (!hmis) return;
                 if (!hmis.autoInput) return;
 
-                await autoInput.mutateAsync(
+                autoInput.mutate(
                   {
                     zx: data.data.zx,
                     zh: data.data.zh,

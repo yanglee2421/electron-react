@@ -46,3 +46,4 @@ export const getVersion = "getVersion";
 
 // Common
 export const settings = "settings";
+export const settingsOpenInEditor = "settingsOpenInEditor";

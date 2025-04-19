@@ -12,8 +12,6 @@ import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
 import * as store from "./store";
 import * as cmd from "./cmd";
-import type * as PRELOAD from "./preload";
-import type * as STORE from "./store";
 
 // The built directory structure
 //
@@ -135,6 +133,7 @@ if (!gotTheLock) {
     jtvHmis.init();
     khHmis.init();
     cmd.initIpc();
+    store.init();
     createWindow();
   });
 }
@@ -199,17 +198,4 @@ ipcMain.handle(
 
     return { isOk: activateCode === exceptedCode, serial };
   }),
-);
-
-ipcMain.handle(
-  channel.settings,
-  withLog(
-    async (e, data?: PRELOAD.SetSettingParams): Promise<STORE.Settings> => {
-      void e;
-      if (data) {
-        store.settings.set(data);
-      }
-      return store.settings.store;
-    },
-  ),
 );

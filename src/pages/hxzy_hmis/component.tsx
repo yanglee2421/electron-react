@@ -322,24 +322,30 @@ export const Component = () => {
                   },
                 });
 
-                if (!hmis) {
-                  throw new Error("请先设置HMIS参数");
-                }
-
+                if (!hmis) return;
                 if (!hmis.autoInput) return;
 
-                autoInput.mutate({
-                  zx: data.data[0].ZX,
-                  zh: data.data[0].ZH,
-                  czzzdw: data.data[0].CZZZDW,
-                  sczzdw: data.data[0].SCZZDW,
-                  mczzdw: data.data[0].MCZZDW,
-                  czzzrq: data.data[0].CZZZRQ,
-                  sczzrq: data.data[0].SCZZRQ,
-                  mczzrq: data.data[0].MCZZRQ,
-                  ztx: "1",
-                  ytx: "1",
-                });
+                autoInput.mutate(
+                  {
+                    zx: data.data[0].ZX,
+                    zh: data.data[0].ZH,
+                    czzzdw: data.data[0].CZZZDW,
+                    sczzdw: data.data[0].SCZZDW,
+                    mczzdw: data.data[0].MCZZDW,
+                    czzzrq: data.data[0].CZZZRQ,
+                    sczzrq: data.data[0].SCZZRQ,
+                    mczzrq: data.data[0].MCZZRQ,
+                    ztx: "1",
+                    ytx: "1",
+                  },
+                  {
+                    onError: (error) => {
+                      snackbar.enqueueSnackbar(error.message, {
+                        variant: "error",
+                      });
+                    },
+                  },
+                );
               }, console.warn)}
               onReset={() => form.reset()}
             >

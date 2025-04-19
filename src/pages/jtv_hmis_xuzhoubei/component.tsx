@@ -289,7 +289,6 @@ export const Component = () => {
                 if (getData.isPending) return;
 
                 form.reset();
-
                 const data = await getData.mutateAsync(values.barCode, {
                   onError: (error) => {
                     snackbar.enqueueSnackbar(error.message, {
@@ -298,13 +297,10 @@ export const Component = () => {
                   },
                 });
 
-                if (!hmis) {
-                  throw new Error("HMIS settings not found");
-                }
-
+                if (!hmis) return;
                 if (!hmis.autoInput) return;
 
-                await autoInput.mutateAsync(
+                autoInput.mutate(
                   {
                     zx: data[0].ZX,
                     zh: data[0].ZH,

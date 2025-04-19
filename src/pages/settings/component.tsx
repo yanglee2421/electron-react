@@ -104,6 +104,7 @@ const useOpenAtLogin = () => {
 
 export const Component = () => {
   const formId = React.useId();
+  const [isPending, startTransition] = React.useTransition();
 
   const form = useSettingForm();
   const mutate = useUpdateSettings();
@@ -261,6 +262,15 @@ export const Component = () => {
             disabled={mutate.isPending}
           >
             保存
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              startTransition(window.electronAPI.settingsOpenInEditor);
+            }}
+            disabled={isPending}
+          >
+            在编辑器中打开
           </Button>
         </CardActions>
       </Card>
