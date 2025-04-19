@@ -1,17 +1,7 @@
 import { networkInterfaces } from "node:os";
-import { promisify } from "node:util";
-import { exec, execFile } from "node:child_process";
-import { access, constants } from "node:fs/promises";
 import { BrowserWindow } from "electron";
-import dayjs from "dayjs";
 import * as channel from "./channel";
-import { settings } from "./store";
-import type { Corporation, Detection, DetectionData } from "./cmd";
 import type { Log } from "#/src/lib/db";
-
-export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
-export const execAsync = promisify(exec);
-export const execFileAsync = promisify(execFile);
 
 export const log = (message: string, type = "info") => {
   const data: Log = {
@@ -80,130 +70,6 @@ export const getIP = () => {
       return !i.internal;
     })?.address;
   return IP || "";
-};
-
-export const getCpuSerial = async () => {
-  const data = await execAsync(
-    "Get-CimInstance -ClassName Win32_Processor | Select-Object ProcessorId",
-    { shell: "powershell" },
-  );
-
-  if (data.stderr) {
-    throw data.stderr;
-  }
-
-  return data.stdout;
-};
-
-export const getMotherboardSerial = async () => {
-  const data = await execAsync(
-    "Get-WmiObject win32_baseboard | Select-Object SerialNumber",
-    { shell: "powershell" },
-  );
-
-  if (data.stderr) {
-    throw data.stderr;
-  }
-
-  return data.stdout;
-};
-
-const winword_paths = [
-  "C:\\Program Files (x86)\\Microsoft Office\\Office16\\WINWORD.EXE",
-  "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
-  "C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
-  "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
-];
-
-export const verifyPath = async (path: string) => {
-  await access(path, constants.R_OK);
-  return path;
-};
-
-export const runWinword = async (data: string) => {
-  const winwords = await Promise.allSettled(
-    winword_paths.map((path) => verifyPath(path)),
-  );
-
-  const winword = winwords.find(
-    (result) => result.status === "fulfilled",
-  )?.value;
-
-  if (!winword) {
-    throw "Find winword failed";
-  }
-
-  const cp = await execFileAsync(
-    winword,
-    [
-      data,
-      "/save",
-      "/q",
-      "/pxslt",
-      "/a",
-      "/mFilePrint",
-      "/mFileCloseOrExit",
-      "/n",
-      "/w",
-      "/x",
-    ],
-    { windowsVerbatimArguments: false, shell: false },
-  );
-  return cp;
-};
-
-export const getDataFromAccessDatabase = async <T = unknown>(sql: string) => {
-  const config = settings.store;
-  const data = await execFileAsync(config.driverPath, [
-    "GetDataFromAccessDatabase",
-    config.databasePath,
-    sql,
-  ]);
-
-  if (data.stderr) {
-    throw data.stderr;
-  }
-
-  return JSON.parse(data.stdout) as T[];
-};
-
-export const getCorporation = async () => {
-  const [corporation] = await getDataFromAccessDatabase<Corporation>(
-    "SELECT TOP 1 * FROM corporation",
-  );
-
-  if (!corporation) {
-    throw "未找到公司信息";
-  }
-
-  return corporation;
-};
-
-export const getDetectionByZH = async (params: {
-  zh: string;
-  startDate: string;
-  endDate: string;
-}) => {
-  const startDate = dayjs(params.startDate).format(DATE_FORMAT_DATABASE);
-  const endDate = dayjs(params.endDate).format(DATE_FORMAT_DATABASE);
-
-  const [detection] = await getDataFromAccessDatabase<Detection>(
-    `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
-  );
-
-  if (!detection) {
-    throw `未找到轴号[${params.zh}]的detections记录`;
-  }
-
-  return detection;
-};
-
-export const getDetectionDatasByOPID = async (opid: string) => {
-  const detectionDatas = await getDataFromAccessDatabase<DetectionData>(
-    `SELECT * FROM detections_data WHERE opid ='${opid}'`,
-  );
-
-  return detectionDatas;
 };
 
 export const getDirection = (nBoard: number) => {

@@ -1,19 +1,16 @@
 // 成都北 华兴致远
 
 import { net, ipcMain } from "electron";
+import { log, getIP, withLog } from "./lib";
 import {
   getDetectionByZH,
   getDetectionDatasByOPID,
   getDataFromAccessDatabase,
-  log,
   getCorporation,
-  getIP,
-  withLog,
-} from "./lib";
+} from "./cmd";
 import dayjs from "dayjs";
 import { URL } from "node:url";
 import { hxzy_hmis } from "./store";
-import { autoInputToVC } from "./cmd";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
@@ -21,6 +18,46 @@ import * as channel from "./channel";
 import type { DetectionData, Verify, VerifyData } from "./cmd";
 import type * as PRELOAD from "./preload";
 
+/**
+ * Sqlite barcode
+ */
+const sqlite_get = async (
+  params: PRELOAD.HxzyBarcodeGetParams,
+): Promise<PRELOAD.HxzyBarcodeGetResult> => {
+  const [{ count }] = await db
+    .select({ count: sql.count() })
+    .from(schema.hxzyBarcodeTable)
+    .where(
+      sql.between(
+        schema.hxzyBarcodeTable.date,
+        new Date(params.startDate),
+        new Date(params.endDate),
+      ),
+    )
+    .limit(1);
+  const rows = await db.query.hxzyBarcodeTable.findMany({
+    where: sql.between(
+      schema.hxzyBarcodeTable.date,
+      new Date(params.startDate),
+      new Date(params.endDate),
+    ),
+    offset: params.pageIndex * params.pageSize,
+    limit: params.pageSize,
+  });
+  return { rows, count };
+};
+
+const sqlite_delete = async (id: number): Promise<schema.HxzyBarcode> => {
+  const [result] = await db
+    .delete(schema.hxzyBarcodeTable)
+    .where(sql.eq(schema.hxzyBarcodeTable.id, id))
+    .returning();
+  return result;
+};
+
+/**
+ * HMIS API
+ */
 type GetResponse = {
   code: "200";
   msg: "数据读取成功";
@@ -113,7 +150,42 @@ const fetch_set = async (request: PostRequestItem[]) => {
   return data;
 };
 
-const recordToPostParams = async (
+/**
+ * Ipc handlers
+ */
+const api_get = async (barcode: string) => {
+  const data = await fetch_get(barcode);
+
+  const [result] = await db
+    .insert(schema.hxzyBarcodeTable)
+    .values({
+      barCode: barcode,
+      zh: data.data[0].ZH,
+      date: new Date(),
+      isUploaded: false,
+    })
+    .returning();
+
+  return result;
+
+  // const autoInput = hxzy_hmis.get("autoInput");
+
+  // if (autoInput) return;
+  // await autoInputToVC({
+  //   zx: data.data[0].ZX,
+  //   zh: data.data[0].ZH,
+  //   czzzdw: data.data[0].CZZZDW,
+  //   sczzdw: data.data[0].SCZZDW,
+  //   mczzdw: data.data[0].MCZZDW,
+  //   czzzrq: data.data[0].CZZZRQ,
+  //   sczzrq: data.data[0].SCZZRQ,
+  //   mczzrq: data.data[0].MCZZRQ,
+  //   ztx: "1",
+  //   ytx: "1",
+  // });
+};
+
+const recordToBody = async (
   record: schema.HxzyBarcode,
 ): Promise<PostRequestItem> => {
   const id = record.id;
@@ -205,33 +277,6 @@ const recordToPostParams = async (
   };
 };
 
-const api_get = async (barcode: string) => {
-  const data = await fetch_get(barcode);
-
-  await db.insert(schema.hxzyBarcodeTable).values({
-    barCode: barcode,
-    zh: data.data[0].ZH,
-    date: new Date(),
-    isUploaded: false,
-  });
-
-  const autoInput = hxzy_hmis.get("autoInput");
-
-  if (autoInput) return;
-  await autoInputToVC({
-    zx: data.data[0].ZX,
-    zh: data.data[0].ZH,
-    czzzdw: data.data[0].CZZZDW,
-    sczzdw: data.data[0].SCZZDW,
-    mczzdw: data.data[0].MCZZDW,
-    czzzrq: data.data[0].CZZZRQ,
-    sczzrq: data.data[0].SCZZRQ,
-    mczzrq: data.data[0].MCZZRQ,
-    ztx: "1",
-    ytx: "1",
-  });
-};
-
 const api_set = async (id: number) => {
   const record = await db.query.hxzyBarcodeTable.findFirst({
     where: sql.eq(schema.hxzyBarcodeTable.id, id),
@@ -245,13 +290,16 @@ const api_set = async (id: number) => {
     throw new Error(`记录#${id}轴号不存在`);
   }
 
-  const postParams = await recordToPostParams(record);
+  const postParams = await recordToBody(record);
 
   await fetch_set([postParams]);
-  await db
+  const [result] = await db
     .update(schema.hxzyBarcodeTable)
     .set({ isUploaded: true })
-    .where(sql.eq(schema.hxzyBarcodeTable.id, id));
+    .where(sql.eq(schema.hxzyBarcodeTable.id, id))
+    .returning();
+
+  return result;
 };
 
 const idToUploadVerifiesData = async (id: string) => {
@@ -273,39 +321,9 @@ const idToUploadVerifiesData = async (id: string) => {
   };
 };
 
-const sqlite_get = async (
-  params: PRELOAD.HxzyBarcodeGetParams,
-): Promise<PRELOAD.HxzyBarcodeGetResult> => {
-  const [{ count }] = await db
-    .select({ count: sql.count() })
-    .from(schema.hxzyBarcodeTable)
-    .where(
-      sql.between(
-        schema.hxzyBarcodeTable.date,
-        new Date(params.startDate),
-        new Date(params.endDate),
-      ),
-    )
-    .limit(1);
-  const rows = await db.query.hxzyBarcodeTable.findMany({
-    where: sql.between(
-      schema.hxzyBarcodeTable.date,
-      new Date(params.startDate),
-      new Date(params.endDate),
-    ),
-    offset: params.pageIndex * params.pageSize,
-    limit: params.pageSize,
-  });
-  return { rows, count };
-};
-
-const sqlite_delete = async (id: number): Promise<number> => {
-  await db
-    .delete(schema.hxzyBarcodeTable)
-    .where(sql.eq(schema.hxzyBarcodeTable.id, id));
-  return id;
-};
-
+/**
+ * Auto upload
+ */
 const doTask = withLog(api_set);
 let timer: NodeJS.Timeout | null = null;
 
@@ -338,7 +356,32 @@ const initAutoUpload = () => {
   });
 };
 
+/**
+ * Initialize
+ */
 const initIpc = () => {
+  ipcMain.handle(
+    channel.hxzy_hmis_sqlite_get,
+    withLog(
+      async (
+        e,
+        params: PRELOAD.HxzyBarcodeGetParams,
+      ): Promise<PRELOAD.HxzyBarcodeGetResult> => {
+        void e;
+        const data = await sqlite_get(params);
+        return data;
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    channel.hxzy_hmis_sqlite_delete,
+    withLog(async (e, id: number): Promise<schema.HxzyBarcode> => {
+      void e;
+      return await sqlite_delete(id);
+    }),
+  );
+
   ipcMain.handle(
     channel.hxzy_hmis_api_get,
     withLog(async (e, barcode: string) => {
@@ -364,39 +407,13 @@ const initIpc = () => {
   );
 
   ipcMain.handle(
-    channel.hxzy_hmis_setting_get,
-    withLog(async () => hxzy_hmis.store),
-  );
-
-  ipcMain.handle(
-    channel.hxzy_hmis_setting_set,
-    withLog(async (e, data: PRELOAD.HxzyHmisSettingSetParams) => {
+    channel.hxzy_hmis_setting,
+    withLog(async (e, data?: PRELOAD.HxzyHmisSettingParams) => {
       void e;
-      hxzy_hmis.set(data);
+      if (data) {
+        hxzy_hmis.set(data);
+      }
       return hxzy_hmis.store;
-    }),
-  );
-
-  ipcMain.handle(
-    channel.hxzy_hmis_sqlite_get,
-    withLog(
-      async (
-        e,
-        params: PRELOAD.HxzyBarcodeGetParams,
-      ): Promise<PRELOAD.HxzyBarcodeGetResult> => {
-        void e;
-        const data = await sqlite_get(params);
-        return data;
-      },
-    ),
-  );
-
-  // 添加删除SQLite记录的IPC处理
-  ipcMain.handle(
-    channel.hxzy_hmis_sqlite_delete,
-    withLog(async (e, id: number): Promise<number> => {
-      void e;
-      return await sqlite_delete(id);
     }),
   );
 };

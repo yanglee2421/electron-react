@@ -6,9 +6,9 @@ import {
 
 export const fetchHxzyHmisSetting = () =>
   queryOptions({
-    queryKey: ["window.electronAPI.hxzy_hmis_setting_get"],
+    queryKey: ["window.electronAPI.hxzy_hmis_setting"],
     queryFn: async () => {
-      return window.electronAPI.hxzy_hmis_setting_get();
+      return window.electronAPI.hxzy_hmis_setting();
     },
   });
 
@@ -16,9 +16,9 @@ export const useUpdateHxzyHmisSetting = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (
-      ...rest: Parameters<typeof window.electronAPI.hxzy_hmis_setting_set>
+      ...rest: Parameters<typeof window.electronAPI.hxzy_hmis_setting>
     ) => {
-      return window.electronAPI.hxzy_hmis_setting_set(...rest);
+      return window.electronAPI.hxzy_hmis_setting(...rest);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

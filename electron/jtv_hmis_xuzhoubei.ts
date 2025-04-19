@@ -1,16 +1,12 @@
 // 京天威 徐州北
 
 import { net, ipcMain } from "electron";
+import { log, getPlace, getDirection, withLog } from "./lib";
 import {
   getCorporation,
   getDetectionByZH,
   getDetectionDatasByOPID,
-  log,
-  getPlace,
-  getDirection,
-  withLog,
-} from "./lib";
-import { autoInputToVC } from "./cmd";
+} from "./cmd";
 import dayjs from "dayjs";
 import { URL } from "node:url";
 import { jtv_hmis_xuzhoubei } from "./store";
@@ -20,6 +16,48 @@ import * as schema from "./schema";
 import * as channel from "./channel";
 import type * as PRELOAD from "./preload";
 
+/*
+ * SQLite barcode
+ */
+const sqlite_get = async (
+  params: PRELOAD.JtvXuzhoubeiBarcodeGetParams,
+): Promise<PRELOAD.JtvXuzhoubeiBarcodeGetResult> => {
+  const [{ count }] = await db
+    .select({ count: sql.count() })
+    .from(schema.jtvXuzhoubeiBarcodeTable)
+    .where(
+      sql.between(
+        schema.jtvXuzhoubeiBarcodeTable.date,
+        new Date(params.startDate),
+        new Date(params.endDate),
+      ),
+    )
+    .limit(1);
+  const rows = await db.query.jtvXuzhoubeiBarcodeTable.findMany({
+    where: sql.between(
+      schema.jtvXuzhoubeiBarcodeTable.date,
+      new Date(params.startDate),
+      new Date(params.endDate),
+    ),
+    offset: params.pageIndex * params.pageSize,
+    limit: params.pageSize,
+  });
+  return { rows, count };
+};
+
+const sqlite_delete = async (
+  id: number,
+): Promise<schema.JtvXuzhoubeiBarcode> => {
+  const [result] = await db
+    .delete(schema.jtvXuzhoubeiBarcodeTable)
+    .where(sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id))
+    .returning();
+  return result;
+};
+
+/**
+ * HMIS API
+ */
 type GetResponse = [
   {
     SCZZRQ: "1990-10-19";
@@ -123,8 +161,8 @@ const hasQX = (result: string | null) => {
   }
 };
 
-/*
- * HMIS相关操作
+/**
+ * Ipc handlers
  */
 const api_get = async (barCode: string) => {
   const data = await fetch_get(barCode);
@@ -142,21 +180,21 @@ const api_get = async (barCode: string) => {
     PJ_MCZZDW: data[0].MCZZDW,
   });
 
-  const autoInput = jtv_hmis_xuzhoubei.get("autoInput");
+  // const autoInput = jtv_hmis_xuzhoubei.get("autoInput");
 
-  if (autoInput) return;
-  await autoInputToVC({
-    zx: data[0].ZX,
-    zh: data[0].ZH,
-    czzzdw: data[0].CZZZDW,
-    sczzdw: data[0].SCZZDW,
-    mczzdw: data[0].MCZZDW,
-    czzzrq: data[0].CZZZRQ,
-    sczzrq: data[0].SCZZRQ,
-    mczzrq: data[0].MCZZRQ,
-    ztx: "1",
-    ytx: "1",
-  });
+  // if (autoInput) return;
+  // await autoInputToVC({
+  //   zx: data[0].ZX,
+  //   zh: data[0].ZH,
+  //   czzzdw: data[0].CZZZDW,
+  //   sczzdw: data[0].SCZZDW,
+  //   mczzdw: data[0].MCZZDW,
+  //   czzzrq: data[0].CZZZRQ,
+  //   sczzrq: data[0].SCZZRQ,
+  //   mczzrq: data[0].MCZZRQ,
+  //   ztx: "1",
+  //   ytx: "1",
+  // });
 };
 
 const recordToBody = async (
@@ -260,43 +298,9 @@ const api_set = async (id: number) => {
     .where(sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id));
 };
 
-/*
- * SQLite操作相关
+/**
+ * Auto upload
  */
-const sqlite_get = async (
-  params: PRELOAD.GetJtvXuzhoubeiBarcodeParams,
-): Promise<PRELOAD.GetJtvXuzhoubeiBarcodeResult> => {
-  const [{ count }] = await db
-    .select({ count: sql.count() })
-    .from(schema.jtvXuzhoubeiBarcodeTable)
-    .where(
-      sql.between(
-        schema.jtvXuzhoubeiBarcodeTable.date,
-        new Date(params.startDate),
-        new Date(params.endDate),
-      ),
-    )
-    .limit(1);
-  const rows = await db.query.jtvXuzhoubeiBarcodeTable.findMany({
-    where: sql.between(
-      schema.jtvXuzhoubeiBarcodeTable.date,
-      new Date(params.startDate),
-      new Date(params.endDate),
-    ),
-    offset: params.pageIndex * params.pageSize,
-    limit: params.pageSize,
-  });
-  return { rows, count };
-};
-
-const sqlite_delete = async (id: number): Promise<number> => {
-  await db
-    .delete(schema.jtvXuzhoubeiBarcodeTable)
-    .where(sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id));
-  return id;
-};
-
-// 自动上传相关
 const doTask = withLog(api_set);
 let timer: NodeJS.Timeout | null = null;
 
@@ -329,8 +333,32 @@ const initAutoUpload = () => {
   });
 };
 
-// IPC通信初始化
+/**
+ * Initialize
+ */
 const initIpc = () => {
+  ipcMain.handle(
+    channel.jtv_hmis_xuzhoubei_sqlite_get,
+    withLog(
+      async (
+        e,
+        params: PRELOAD.JtvXuzhoubeiBarcodeGetParams,
+      ): Promise<PRELOAD.JtvXuzhoubeiBarcodeGetResult> => {
+        void e;
+        const data = await sqlite_get(params);
+        return data;
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    channel.jtv_hmis_xuzhoubei_sqlite_delete,
+    withLog(async (e, id: number): Promise<schema.JtvXuzhoubeiBarcode> => {
+      void e;
+      return await sqlite_delete(id);
+    }),
+  );
+
   ipcMain.handle(
     channel.jtv_hmis_xuzhoubei_api_get,
     withLog(async (e, barcode: string) => {
@@ -348,43 +376,17 @@ const initIpc = () => {
   );
 
   ipcMain.handle(
-    channel.jtv_hmis_xuzhoubei_setting_get,
-    withLog(async () => jtv_hmis_xuzhoubei.store),
-  );
-
-  ipcMain.handle(
-    channel.jtv_hmis_xuzhoubei_setting_set,
-    withLog(async (e, data: PRELOAD.JtvHmisXuzhoubeiSettingSetParams) => {
+    channel.jtv_hmis_xuzhoubei_setting,
+    withLog(async (e, data?: PRELOAD.JtvHmisXuzhoubeiSettingParams) => {
       void e;
-      jtv_hmis_xuzhoubei.set(data);
+      if (data) {
+        jtv_hmis_xuzhoubei.set(data);
+      }
       return jtv_hmis_xuzhoubei.store;
-    }),
-  );
-
-  ipcMain.handle(
-    channel.jtv_hmis_xuzhoubei_sqlite_get,
-    withLog(
-      async (
-        e,
-        params: PRELOAD.GetJtvXuzhoubeiBarcodeParams,
-      ): Promise<PRELOAD.GetJtvXuzhoubeiBarcodeResult> => {
-        void e;
-        const data = await sqlite_get(params);
-        return data;
-      },
-    ),
-  );
-
-  ipcMain.handle(
-    channel.jtv_hmis_xuzhoubei_sqlite_delete,
-    withLog(async (e, id: number): Promise<number> => {
-      void e;
-      return await sqlite_delete(id);
     }),
   );
 };
 
-// 导出初始化函数
 export const init = () => {
   initIpc();
   initAutoUpload();

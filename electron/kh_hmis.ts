@@ -1,19 +1,57 @@
 // 康华 安康
 
-import { net } from "electron";
-import {
-  getDetectionDatasByOPID,
-  getDetectionByZH,
-  log,
-  getCorporation,
-} from "./lib";
+import { net, ipcMain } from "electron";
+import { log, withLog } from "./lib";
+import { getCorporation, getDetectionByZH } from "./cmd";
 import dayjs from "dayjs";
 import { URL } from "node:url";
 import { kh_hmis } from "./store";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
+import * as channel from "./channel";
+import type * as PRELOAD from "./preload";
 
+/**
+ * Sqlite barcode
+ */
+const sqlite_get = async (
+  params: PRELOAD.KhBarcodeGetParams,
+): Promise<PRELOAD.KhBarcodeGetResult> => {
+  const [{ count }] = await db
+    .select({ count: sql.count() })
+    .from(schema.khBarcodeTable)
+    .where(
+      sql.between(
+        schema.khBarcodeTable.date,
+        new Date(params.startDate),
+        new Date(params.endDate),
+      ),
+    )
+    .limit(1);
+  const rows = await db.query.khBarcodeTable.findMany({
+    where: sql.between(
+      schema.khBarcodeTable.date,
+      new Date(params.startDate),
+      new Date(params.endDate),
+    ),
+    offset: params.pageIndex * params.pageSize,
+    limit: params.pageSize,
+  });
+  return { rows, count };
+};
+
+const sqlite_delete = async (id: number): Promise<schema.KhBarcode> => {
+  const [result] = await db
+    .delete(schema.khBarcodeTable)
+    .where(sql.eq(schema.khBarcodeTable.id, id))
+    .returning();
+  return result;
+};
+
+/**
+ * HMIS API
+ */
 export type GetResponse = {
   data: {
     mesureId: "A23051641563052";
@@ -32,7 +70,7 @@ export type GetResponse = {
   msg: "success";
 };
 
-export const getFn = async (barCode: string) => {
+const fetch_get = async (barCode: string) => {
   const host = kh_hmis.get("host");
   const url = new URL(`http://${host}/api/lzdx_csbtsj_get/get`);
   const body = JSON.stringify({
@@ -78,7 +116,7 @@ type PostResponse = {
   msg: "success";
 };
 
-const postFn = async (params: PostRequestItem) => {
+const fetch_set = async (params: PostRequestItem) => {
   const host = kh_hmis.get("host");
   const url = new URL(`http://${host}/api/lzdx_csbtsj_tsjg/save`);
   const body = JSON.stringify(params);
@@ -167,10 +205,27 @@ const saveQXData = async (params: QXDataParams) => {
   return data;
 };
 
-export const upload = async (id: number) => {
-  const record = await db.query.khBarcodeTable.findFirst({
-    where: sql.eq(schema.khBarcodeTable.id, id),
-  });
+/**
+ * Ipc handlers
+ */
+const api_get = async (barCode: string) => {
+  const data = await fetch_get(barCode);
+
+  const [result] = await db
+    .insert(schema.khBarcodeTable)
+    .values({
+      barCode: barCode,
+      zh: data.data.zh,
+      date: new Date(),
+      isUploaded: false,
+    })
+    .returning();
+
+  return result;
+};
+
+const recordToBody = async (record: schema.KhBarcode) => {
+  const id = record.id;
 
   if (!record) {
     throw new Error(`记录#${id}不存在`);
@@ -214,62 +269,141 @@ export const upload = async (id: number) => {
     sbbh: corporation.DeviceNO || "",
   };
 
-  await postFn(basicBody);
-
-  if (JCJG === "1") return;
-
-  await getDetectionDatasByOPID(detection.szIDs);
-
-  const qxBody: QXDataParams = {
-    mesureid: record.barCode,
-    zh: record.zh,
-    testdatetime: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-    testtype: "超声波",
-    btcw: "车轴",
-    tsr: detection.szUsername || "",
-    tsgz: hmis.tsgz,
-    tszjy: hmis.tszjy,
-    tsysy: hmis.tsysy,
-    gzmc: "裂纹",
-    clff: "人工复探",
-    // qxlzzdmjlnc: "",
-    // qxlzzdmjlwc: "",
-    // qxlzydmjlnc: "",
-    // qxlzydmjlwc: "",
-    // qxlzzlwcnc: "",
-    // qxlzzlwcwc: "",
-    // qxlzylwcnc: "",
-    // qxlzylwcwc: "",
-    // qxlzzlwsnc: "",
-    // qxlzzlwswc: "",
-    // qxlzylwsnc: "",
-    // qxlzylwswc: "",
-    // qxzjzdmjlzj: "",
-    // qxzjzdmjlzs: "",
-    // qxzjydmjlzj: "",
-    // qxzjydmjlzs: "",
-    // qxzjzlwczj: "",
-    // qxzjzlwczs: "",
-    // qxzjylwczj: "",
-    // qxzjylwczs: "",
-    // qxzjzlwszj: "",
-    // qxzjzlwszs: "",
-    // qxzjylwszj: "",
-    // qxzjylwszs: "",
-    // qxclzlwcz: "0",
-    // qxclzlwcy: "0",
-    // qxclylwcz: "0",
-    // qxclylwcy: "0",
-    bz: "",
+  return {
+    basicBody,
+    qxBody: {
+      mesureid: record.barCode,
+      zh: record.zh,
+      testdatetime: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
+      testtype: "超声波",
+      btcw: "车轴",
+      tsr: detection.szUsername || "",
+      tsgz: hmis.tsgz,
+      tszjy: hmis.tszjy,
+      tsysy: hmis.tsysy,
+      gzmc: "裂纹",
+      clff: "人工复探",
+      bz: "",
+    } as QXDataParams,
+    isQualified: JCJG === "1",
   };
-
-  await saveQXData(qxBody);
 };
 
-export const uploadBarcode = async (id: number) => {
-  await upload(id);
-  await db
+const api_set = async (id: number) => {
+  const record = await db.query.khBarcodeTable.findFirst({
+    where: sql.eq(schema.khBarcodeTable.id, id),
+  });
+
+  if (!record) {
+    throw new Error(`记录#${id}不存在`);
+  }
+
+  const data = await recordToBody(record);
+  await fetch_set(data.basicBody);
+
+  if (!data.isQualified) {
+    await saveQXData(data.qxBody);
+  }
+
+  const [result] = await db
     .update(schema.khBarcodeTable)
     .set({ isUploaded: true })
-    .where(sql.eq(schema.khBarcodeTable.id, id));
+    .where(sql.eq(schema.khBarcodeTable.id, id))
+    .returning();
+
+  return result;
+};
+
+/**
+ * Auto upload
+ */
+const doTask = withLog(api_set);
+let timer: NodeJS.Timeout | null = null;
+
+const autoUploadHandler = async () => {
+  const delay = kh_hmis.get("autoUploadInterval") * 1000;
+  timer = setTimeout(autoUploadHandler, delay);
+
+  const barcodes = await db.query.khBarcodeTable.findMany({
+    where: sql.eq(schema.khBarcodeTable.isUploaded, false),
+  });
+
+  for (const barcode of barcodes) {
+    await doTask(barcode.id).catch(Boolean);
+  }
+};
+
+const initAutoUpload = () => {
+  if (kh_hmis.get("autoUpload")) {
+    autoUploadHandler();
+  }
+
+  kh_hmis.onDidChange("autoUpload", (value) => {
+    if (value) {
+      autoUploadHandler();
+      return;
+    }
+
+    if (!timer) return;
+    clearTimeout(timer);
+  });
+};
+
+/**
+ * Initialize
+ */
+const initIpc = () => {
+  ipcMain.handle(
+    channel.kh_hmis_sqlite_get,
+    withLog(
+      async (
+        e,
+        params: PRELOAD.KhBarcodeGetParams,
+      ): Promise<PRELOAD.KhBarcodeGetResult> => {
+        void e;
+        const data = await sqlite_get(params);
+        return data;
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    channel.kh_hmis_sqlite_delete,
+    withLog(async (e, id: number): Promise<schema.KhBarcode> => {
+      void e;
+      return await sqlite_delete(id);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.kh_hmis_api_get,
+    withLog(async (e, barcode: string) => {
+      void e;
+      return await api_get(barcode);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.kh_hmis_api_set,
+    withLog(async (e, id: number) => {
+      void e;
+      return await api_set(id);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.kh_hmis_setting,
+    withLog(async (e, data?: PRELOAD.KhHmisSettingParams) => {
+      void e;
+      if (data) {
+        kh_hmis.set(data);
+      }
+      return kh_hmis.store;
+    }),
+  );
+};
+
+export const init = () => {
+  initIpc();
+  initAutoUpload();
 };

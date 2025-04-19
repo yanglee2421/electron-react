@@ -3,22 +3,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import * as channel from "./channel";
-import {
-  getCpuSerial,
-  runWinword,
-  getDataFromAccessDatabase,
-  withLog,
-  DATE_FORMAT_DATABASE,
-  getSerialFromStdout,
-} from "./lib";
-import { db } from "./db";
-import * as sql from "drizzle-orm";
-import * as schema from "./schema";
+import { withLog, getSerialFromStdout } from "./lib";
+import { getCpuSerial, runWinword } from "./win";
+import { DATE_FORMAT_DATABASE } from "./cmd";
 import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
 import * as store from "./store";
+import * as cmd from "./cmd";
 import type * as PRELOAD from "./preload";
 
 // The built directory structure
@@ -138,6 +131,9 @@ if (!gotTheLock) {
     nativeTheme.themeSource = mode;
     hxzyHmis.init();
     jtvHmisXuzhoubei.init();
+    jtvHmis.init();
+    khHmis.init();
+    cmd.initIpc();
     createWindow();
   });
 }
@@ -204,86 +200,14 @@ ipcMain.handle(
   }),
 );
 
+// 合并两个处理器为一个，根据是否有参数来决定是获取还是设置
 ipcMain.handle(
-  channel.getDataFromAccessDatabase,
-  withLog(async (e, sql: string) => {
+  channel.settings,
+  withLog(async (e, data?: PRELOAD.SetSettingParams) => {
     void e;
-    return await getDataFromAccessDatabase(sql);
-  }),
-);
-
-ipcMain.handle(
-  channel.jtv_hmis_api_get,
-  withLog(async (e, barcode: string) => {
-    void e;
-    return await jtvHmis.getFn(barcode);
-  }),
-);
-
-ipcMain.handle(
-  channel.jtv_hmis_api_set,
-  withLog(async (e, id: number) => {
-    void e;
-    return await jtvHmis.uploadBarcode(id);
-  }),
-);
-
-ipcMain.handle(
-  channel.kh_hmis_api_get,
-  withLog(async (e, barcode: string) => {
-    void e;
-    return await khHmis.getFn(barcode);
-  }),
-);
-
-ipcMain.handle(
-  channel.kh_hmis_api_set,
-  withLog(async (e, id: number) => {
-    void e;
-    return await khHmis.uploadBarcode(id);
-  }),
-);
-
-ipcMain.handle(
-  channel.getSetting,
-  withLog(async () => store.settings.store),
-);
-
-ipcMain.handle(
-  channel.setSetting,
-  withLog(async (e, data: PRELOAD.SetSettingParams) => {
-    void e;
-    store.settings.set(data);
+    if (data) {
+      store.settings.set(data);
+    }
     return store.settings.store;
   }),
-);
-
-ipcMain.handle(
-  channel.jtv_hmis_sqlite_get,
-  withLog(
-    async (
-      e,
-      params: PRELOAD.GetJtvBarcodeParams,
-    ): Promise<PRELOAD.GetJtvBarcodeResult> => {
-      void e;
-      const [{ count }] = await db
-        .select({ count: sql.count() })
-        .from(schema.jtvBarcodeTable)
-        .where(
-          sql.between(
-            schema.jtvBarcodeTable.date,
-            new Date(),
-            new Date(params.endDate),
-          ),
-        )
-        .limit(1);
-      const rows = await db.query.jtvBarcodeTable.findMany({
-        limit: params.pageSize,
-        offset: params.pageIndex * params.pageSize,
-        where: (jtvBarcode, { between }) =>
-          between(jtvBarcode.date, new Date(), new Date(params.endDate)),
-      });
-      return { rows, count };
-    },
-  ),
 );

@@ -2,8 +2,12 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import dayjs from "dayjs";
 import * as store from "./store";
+import { ipcMain } from "electron";
+import * as channel from "./channel";
+import { withLog } from "./lib";
 
 const execFileAsync = promisify(execFile);
+export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 
 export type Detection = {
   bFlaws: boolean | null;
@@ -33,6 +37,48 @@ export type Detection = {
   tmnow: string | null;
 };
 
+export const getDataFromAccessDatabase = async <T = unknown>(sql: string) => {
+  const config = store.settings.store;
+  const data = await execFileAsync(config.driverPath, [
+    "GetDataFromAccessDatabase",
+    config.databasePath,
+    sql,
+  ]);
+
+  if (data.stderr) {
+    throw data.stderr;
+  }
+
+  return JSON.parse(data.stdout) as T[];
+};
+
+export const getDetectionByZH = async (params: {
+  zh: string;
+  startDate: string;
+  endDate: string;
+}) => {
+  const startDate = dayjs(params.startDate).format(DATE_FORMAT_DATABASE);
+  const endDate = dayjs(params.endDate).format(DATE_FORMAT_DATABASE);
+
+  const [detection] = await getDataFromAccessDatabase<Detection>(
+    `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
+  );
+
+  if (!detection) {
+    throw `未找到轴号[${params.zh}]的detections记录`;
+  }
+
+  return detection;
+};
+
+export const getDetectionDatasByOPID = async (opid: string) => {
+  const detectionDatas = await getDataFromAccessDatabase<DetectionData>(
+    `SELECT * FROM detections_data WHERE opid ='${opid}'`,
+  );
+
+  return detectionDatas;
+};
+
 export type DetectionData = {
   ManualRes: string | null;
   bEnable: boolean;
@@ -53,6 +99,18 @@ export type DetectionData = {
 
 export type Corporation = {
   DeviceNO: string | null;
+};
+
+export const getCorporation = async () => {
+  const [corporation] = await getDataFromAccessDatabase<Corporation>(
+    "SELECT TOP 1 * FROM corporation",
+  );
+
+  if (!corporation) {
+    throw "未找到公司信息";
+  }
+
+  return corporation;
 };
 
 export type Verify = {
@@ -108,7 +166,7 @@ export type AutoInputToVCParams = {
   ytx: string;
 };
 
-export const autoInputToVC = async (data: AutoInputToVCParams) => {
+const autoInputToVC = async (data: AutoInputToVCParams) => {
   const driverPath = store.settings.get("driverPath");
   const cp = await execFileAsync(driverPath, [
     "autoInputToVC",
@@ -129,4 +187,28 @@ export const autoInputToVC = async (data: AutoInputToVCParams) => {
   }
 
   return cp.stdout;
+};
+
+/**
+ * 初始化IPC通信
+ * 注册cmd模块中的ipcMain处理器
+ */
+export const initIpc = () => {
+  // 注册getDataFromAccessDatabase处理器
+  ipcMain.handle(
+    channel.getDataFromAccessDatabase,
+    withLog(async (e, sql: string) => {
+      void e;
+      return await getDataFromAccessDatabase(sql);
+    }),
+  );
+
+  // 注册autoInputToVC处理器
+  ipcMain.handle(
+    channel.autoInputToVC,
+    withLog(async (e, data: AutoInputToVCParams) => {
+      void e; // 避免未使用变量警告
+      return await autoInputToVC(data);
+    }),
+  );
 };

@@ -1,22 +1,63 @@
 // 京天威 统型
 
-import { net } from "electron";
+import { net, ipcMain } from "electron";
+import { log, getIP, withLog } from "./lib";
 import {
-  getDetectionDatasByOPID,
-  getDetectionByZH,
-  log,
-  getIP,
   getCorporation,
-} from "./lib";
+  getDetectionByZH,
+  getDetectionDatasByOPID,
+} from "./cmd";
 import dayjs from "dayjs";
 import { URL } from "node:url";
 import { jtv_hmis } from "./store";
 import { db } from "./db";
 import * as schema from "./schema";
 import * as sql from "drizzle-orm";
+import * as channel from "./channel";
 import type { DetectionData } from "./cmd";
+import type * as PRELOAD from "./preload";
 
-export type GetResponse = {
+/**
+ * Sqlite barcode
+ */
+const sqlite_get = async (
+  params: PRELOAD.JtvBarcodeGetParams,
+): Promise<PRELOAD.JtvBarcodeGetResult> => {
+  const [{ count }] = await db
+    .select({ count: sql.count() })
+    .from(schema.jtvBarcodeTable)
+    .where(
+      sql.between(
+        schema.jtvBarcodeTable.date,
+        new Date(params.startDate),
+        new Date(params.endDate),
+      ),
+    )
+    .limit(1);
+  const rows = await db.query.jtvBarcodeTable.findMany({
+    where: sql.between(
+      schema.jtvBarcodeTable.date,
+      new Date(params.startDate),
+      new Date(params.endDate),
+    ),
+    offset: params.pageIndex * params.pageSize,
+    limit: params.pageSize,
+  });
+  return { rows, count };
+};
+
+const sqlite_delete = async (id: number): Promise<schema.JTVBarcode> => {
+  const [result] = await db
+    .delete(schema.jtvBarcodeTable)
+    .where(sql.eq(schema.jtvBarcodeTable.id, id))
+    .returning();
+  return result;
+};
+
+/**
+ * HMIS API
+ */
+type GetResponse = {
   code: "200";
   msg: "数据读取成功";
   data: [
@@ -36,7 +77,7 @@ export type GetResponse = {
   ];
 };
 
-export const getFn = async (barcode: string) => {
+const fetch_get = async (barcode: string) => {
   const host = jtv_hmis.get("host");
   const unitCode = jtv_hmis.get("unitCode");
   const url = new URL(`http://${host}/api/getData`);
@@ -52,7 +93,7 @@ export const getFn = async (barcode: string) => {
   return data;
 };
 
-export type PostRequestItem = {
+type PostRequestItem = {
   eq_ip: string; // 设备IP
   eq_bh: string; // 设备编号
   dh: string; // 扫码单号
@@ -74,12 +115,12 @@ export type PostRequestItem = {
   CT_RESULT: string; // 合格
 };
 
-export type PostResponse = {
+type PostResponse = {
   code: "200";
   msg: "数据上传成功";
 };
 
-export const postFn = async (request: PostRequestItem[]) => {
+const fetch_set = async (request: PostRequestItem[]) => {
   const host = jtv_hmis.get("host");
   const url = new URL(`http://${host}/api/saveData`);
   url.searchParams.set("type", "csbts");
@@ -103,7 +144,26 @@ export const postFn = async (request: PostRequestItem[]) => {
   return data;
 };
 
-const recordToPostParams = async (
+/**
+ * Ipc handlers
+ */
+const api_get = async (barcode: string): Promise<schema.JTVBarcode> => {
+  const data = await fetch_get(barcode);
+
+  const [result] = await db
+    .insert(schema.jtvBarcodeTable)
+    .values({
+      barCode: barcode,
+      zh: data.data[0].ZH,
+      date: new Date(),
+      isUploaded: false,
+    })
+    .returning();
+
+  return result;
+};
+
+const recordToBody = async (
   record: schema.JTVBarcode,
 ): Promise<PostRequestItem> => {
   const id = record.id;
@@ -193,7 +253,7 @@ const recordToPostParams = async (
   };
 };
 
-export const uploadBarcode = async (id: number) => {
+const api_set = async (id: number): Promise<schema.JTVBarcode> => {
   const record = await db.query.jtvBarcodeTable.findFirst({
     where: sql.eq(schema.jtvBarcodeTable.id, id),
   });
@@ -202,10 +262,106 @@ export const uploadBarcode = async (id: number) => {
     throw new Error(`记录#${id}不存在`);
   }
 
-  const postData = await recordToPostParams(record);
-  await postFn([postData]);
-  await db
+  const body = await recordToBody(record);
+  await fetch_set([body]);
+  const [result] = await db
     .update(schema.jtvBarcodeTable)
     .set({ isUploaded: true })
-    .where(sql.eq(schema.jtvBarcodeTable.id, record.id));
+    .where(sql.eq(schema.jtvBarcodeTable.id, record.id))
+    .returning();
+  return result;
+};
+
+/**
+ * Auto upload
+ */
+const doTask = withLog(api_set);
+let timer: NodeJS.Timeout | null = null;
+
+const autoUploadHandler = async () => {
+  const delay = jtv_hmis.get("autoUploadInterval") * 1000;
+  timer = setTimeout(autoUploadHandler, delay);
+
+  const barcodes = await db.query.jtvBarcodeTable.findMany({
+    where: sql.eq(schema.jtvBarcodeTable.isUploaded, false),
+  });
+
+  for (const barcode of barcodes) {
+    await doTask(barcode.id).catch(Boolean);
+  }
+};
+
+const initAutoUpload = () => {
+  if (jtv_hmis.get("autoUpload")) {
+    autoUploadHandler();
+  }
+
+  jtv_hmis.onDidChange("autoUpload", (value) => {
+    if (value) {
+      autoUploadHandler();
+      return;
+    }
+
+    if (!timer) return;
+    clearTimeout(timer);
+  });
+};
+
+/**
+ * Initialize
+ */
+const initIpc = () => {
+  ipcMain.handle(
+    channel.jtv_hmis_sqlite_get,
+    withLog(
+      async (
+        e,
+        params: PRELOAD.JtvBarcodeGetParams,
+      ): Promise<PRELOAD.JtvBarcodeGetResult> => {
+        void e;
+        const data = await sqlite_get(params);
+        return data;
+      },
+    ),
+  );
+
+  ipcMain.handle(
+    channel.jtv_hmis_sqlite_delete,
+    withLog(async (e, id: number): Promise<schema.JTVBarcode> => {
+      void e;
+      return await sqlite_delete(id);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.jtv_hmis_api_get,
+    withLog(async (e, barcode: string) => {
+      void e;
+      return await api_get(barcode);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.jtv_hmis_api_set,
+    withLog(async (e, id: number) => {
+      void e;
+      return await api_set(id);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.jtv_hmis_setting,
+    withLog(async (e, data?: PRELOAD.JtvHmisSettingParams) => {
+      void e;
+      if (data) {
+        jtv_hmis.set(data);
+      }
+      return jtv_hmis.store;
+    }),
+  );
+};
+
+export const init = () => {
+  initIpc();
+  initAutoUpload();
 };
