@@ -17,7 +17,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useSnackbar } from "notistack";
 import { useQuery } from "@tanstack/react-query";
-import { fetchHxzyHmisSetting, useUpdateHxzyHmisSetting } from "./fetchers";
+import {
+  fetchHxzyHmisSetting,
+  useUpdateHxzyHmisSetting,
+} from "@/api/fetch_preload";
 
 const schema = z.object({
   ip: z

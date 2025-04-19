@@ -1,4 +1,3 @@
-import { useIndexedStore } from "@/hooks/useIndexedStore";
 import {
   Button,
   Card,
@@ -17,6 +16,11 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useSnackbar } from "notistack";
+import {
+  fetchJtvHmisXuzhoubeiSetting,
+  useUpdateJtvHmisXuzhoubeiSetting,
+} from "@/api/fetch_preload";
+import { useQuery } from "@tanstack/react-query";
 
 const schema = z.object({
   ip: z
@@ -39,17 +43,30 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const useSettingForm = (defaultValues: FormValues) =>
-  useForm<FormValues>({
-    defaultValues,
+const useSettingForm = () => {
+  const { data: hmis } = useQuery(fetchJtvHmisXuzhoubeiSetting());
 
+  if (!hmis) {
+    throw new Error("fetchJtvHmisXuzhoubeiSetting data not found");
+  }
+
+  return useForm<FormValues>({
+    defaultValues: {
+      ip: hmis.host.split(":")[0],
+      port: Number.parseInt(hmis.host.split(":")[1]),
+      autoInput: hmis.autoInput,
+      autoUpload: hmis.autoUpload,
+      autoUploadInterval: hmis.autoUploadInterval,
+      username_prefix: hmis.username_prefix,
+    },
     resolver: zodResolver(schema),
   });
+};
 
 const renderNumberValue = (
   value: number,
   focusValue: string,
-  focused: boolean
+  focused: boolean,
 ) => {
   if (focused) {
     return focusValue;
@@ -111,17 +128,9 @@ const NumberField = (props: NumberFieldProps) => {
 export const Component = () => {
   const formId = React.useId();
 
-  const set = useIndexedStore((s) => s.set);
-  const hmis = useIndexedStore((s) => s.jtv_hmis_xuzhoubei);
   const snackbar = useSnackbar();
-  const form = useSettingForm({
-    ip: hmis.host.split(":")[0],
-    port: +hmis.host.split(":")[1],
-    autoInput: hmis.autoInput,
-    autoUpload: hmis.autoUpload,
-    autoUploadInterval: hmis.autoUploadInterval,
-    username_prefix: hmis.username_prefix,
-  });
+  const form = useSettingForm();
+  const update = useUpdateJtvHmisXuzhoubeiSetting();
 
   return (
     <Card>
@@ -132,14 +141,23 @@ export const Component = () => {
           noValidate
           autoComplete="off"
           onSubmit={form.handleSubmit((data) => {
-            set((d) => {
-              d.jtv_hmis_xuzhoubei.autoInput = data.autoInput;
-              d.jtv_hmis_xuzhoubei.autoUpload = data.autoUpload;
-              d.jtv_hmis_xuzhoubei.autoUploadInterval = data.autoUploadInterval;
-              d.jtv_hmis_xuzhoubei.host = `${data.ip}:${data.port}`;
-              d.jtv_hmis_xuzhoubei.username_prefix = data.username_prefix;
-            });
-            snackbar.enqueueSnackbar("保存成功", { variant: "success" });
+            update.mutate(
+              {
+                host: `${data.ip}:${data.port}`,
+                autoInput: data.autoInput,
+                autoUpload: data.autoUpload,
+                autoUploadInterval: data.autoUploadInterval,
+                username_prefix: data.username_prefix,
+              },
+              {
+                onError: (error) => {
+                  snackbar.enqueueSnackbar(error.message, { variant: "error" });
+                },
+                onSuccess: () => {
+                  snackbar.enqueueSnackbar("保存成功", { variant: "success" });
+                },
+              },
+            );
           }, console.warn)}
         >
           <Grid container spacing={3}>
@@ -241,7 +259,7 @@ export const Component = () => {
         </form>
       </CardContent>
       <CardActions>
-        <Button form={formId} type="submit">
+        <Button form={formId} type="submit" disabled={update.isPending}>
           保存
         </Button>
       </CardActions>

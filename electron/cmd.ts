@@ -194,7 +194,6 @@ const autoInputToVC = async (data: AutoInputToVCParams) => {
  * 注册cmd模块中的ipcMain处理器
  */
 export const initIpc = () => {
-  // 注册getDataFromAccessDatabase处理器
   ipcMain.handle(
     channel.getDataFromAccessDatabase,
     withLog(async (e, sql: string) => {
@@ -203,11 +202,10 @@ export const initIpc = () => {
     }),
   );
 
-  // 注册autoInputToVC处理器
   ipcMain.handle(
     channel.autoInputToVC,
     withLog(async (e, data: AutoInputToVCParams) => {
-      void e; // 避免未使用变量警告
+      void e;
       return await autoInputToVC(data);
     }),
   );

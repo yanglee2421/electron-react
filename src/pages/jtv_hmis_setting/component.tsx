@@ -1,4 +1,3 @@
-import { useIndexedStore } from "@/hooks/useIndexedStore";
 import {
   Button,
   Card,
@@ -17,6 +16,11 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useSnackbar } from "notistack";
+import { useQuery } from "@tanstack/react-query";
+import {
+  fetchJtvHmisSetting,
+  useUpdateJtvHmisSetting,
+} from "@/api/fetch_preload";
 
 const schema = z.object({
   ip: z
@@ -39,17 +43,31 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const useSettingForm = (defaultValues: FormValues) =>
-  useForm<FormValues>({
-    defaultValues,
+const useSettingForm = () => {
+  const { data: hmis } = useQuery(fetchJtvHmisSetting());
+
+  if (!hmis) {
+    throw new Error("fetchJtvHmisSetting data not found");
+  }
+
+  return useForm<FormValues>({
+    defaultValues: {
+      ip: hmis.host.split(":")[0],
+      port: Number.parseInt(hmis.host.split(":")[1]),
+      autoInput: hmis.autoInput,
+      autoUpload: hmis.autoUpload,
+      autoUploadInterval: hmis.autoUploadInterval,
+      unitCode: hmis.unitCode,
+    },
 
     resolver: zodResolver(schema),
   });
+};
 
 const renderNumberValue = (
   value: number,
   focusValue: string,
-  focused: boolean
+  focused: boolean,
 ) => {
   if (focused) {
     return focusValue;
@@ -111,17 +129,9 @@ const NumberField = (props: NumberFieldProps) => {
 export const Component = () => {
   const formId = React.useId();
 
-  const set = useIndexedStore((s) => s.set);
-  const hmis = useIndexedStore((s) => s.jtv_hmis);
   const snackbar = useSnackbar();
-  const form = useSettingForm({
-    ip: hmis.host.split(":")[0],
-    port: +hmis.host.split(":")[1],
-    autoInput: hmis.autoInput,
-    autoUpload: hmis.autoUpload,
-    autoUploadInterval: hmis.autoUploadInterval,
-    unitCode: hmis.unitCode,
-  });
+  const form = useSettingForm();
+  const updateSettings = useUpdateJtvHmisSetting();
 
   return (
     <Card>
@@ -132,14 +142,31 @@ export const Component = () => {
           noValidate
           autoComplete="off"
           onSubmit={form.handleSubmit((data) => {
-            set((d) => {
-              d.jtv_hmis.autoInput = data.autoInput;
-              d.jtv_hmis.autoUpload = data.autoUpload;
-              d.jtv_hmis.autoUploadInterval = data.autoUploadInterval;
-              d.jtv_hmis.host = `${data.ip}:${data.port}`;
-              d.jtv_hmis.unitCode = data.unitCode;
-            });
-            snackbar.enqueueSnackbar("保存成功", { variant: "success" });
+            updateSettings.mutate(
+              {
+                host: `${data.ip}:${data.port}`,
+                autoInput: data.autoInput,
+                autoUpload: data.autoUpload,
+                autoUploadInterval: data.autoUploadInterval,
+                unitCode: data.unitCode,
+              },
+              {
+                onError: (error) => {
+                  snackbar.enqueueSnackbar(error.message, { variant: "error" });
+                },
+                onSuccess: (data) => {
+                  form.reset({
+                    ip: data.host.split(":")[0],
+                    port: Number.parseInt(data.host.split(":")[1]),
+                    autoInput: data.autoInput,
+                    autoUpload: data.autoUpload,
+                    autoUploadInterval: data.autoUploadInterval,
+                    unitCode: data.unitCode,
+                  });
+                  snackbar.enqueueSnackbar("保存成功", { variant: "success" });
+                },
+              },
+            );
           }, console.warn)}
         >
           <Grid container spacing={3}>
@@ -241,7 +268,7 @@ export const Component = () => {
         </form>
       </CardContent>
       <CardActions>
-        <Button form={formId} type="submit">
+        <Button form={formId} type="submit" disabled={updateSettings.isPending}>
           保存
         </Button>
       </CardActions>

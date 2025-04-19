@@ -13,6 +13,7 @@ import * as khHmis from "./kh_hmis";
 import * as store from "./store";
 import * as cmd from "./cmd";
 import type * as PRELOAD from "./preload";
+import type * as STORE from "./store";
 
 // The built directory structure
 //
@@ -140,7 +141,7 @@ if (!gotTheLock) {
 
 ipcMain.handle(
   channel.openDevTools,
-  withLog(async () => {
+  withLog(async (): Promise<void> => {
     if (!win) return;
     win.webContents.openDevTools();
   }),
@@ -148,7 +149,7 @@ ipcMain.handle(
 
 ipcMain.handle(
   channel.openPath,
-  withLog(async (e, path: string) => {
+  withLog(async (e, path: string): Promise<string> => {
     // Prevent unused variable error
     void e;
     const data = await shell.openPath(path);
@@ -158,7 +159,7 @@ ipcMain.handle(
 
 ipcMain.handle(
   channel.mem,
-  withLog(async () => {
+  withLog(async (): Promise<{ totalmem: number; freemem: number }> => {
     const processMemoryInfo = await process.getProcessMemoryInfo();
     const freemem = processMemoryInfo.residentSet;
 
@@ -171,21 +172,21 @@ ipcMain.handle(
 
 ipcMain.handle(
   channel.getVersion,
-  withLog(async () => app.getVersion()),
+  withLog(async (): Promise<string> => app.getVersion()),
 );
 
 ipcMain.handle(
   channel.printer,
-  withLog(async (e, data: string) => {
+  withLog(async (e, data: string): Promise<void> => {
     void e;
     // Ensure an error is thrown when the promise is rejected
-    return await runWinword(data).catch(() => shell.openPath(data));
+    await runWinword(data).catch(() => shell.openPath(data));
   }),
 );
 
 ipcMain.handle(
   channel.verifyActivation,
-  withLog(async () => {
+  withLog(async (): Promise<{ isOk: boolean; serial: string }> => {
     const cpuSerial = await getCpuSerial();
     const serial = getSerialFromStdout(cpuSerial);
     const activateCode = store.settings.get("activateCode");
@@ -200,14 +201,15 @@ ipcMain.handle(
   }),
 );
 
-// 合并两个处理器为一个，根据是否有参数来决定是获取还是设置
 ipcMain.handle(
   channel.settings,
-  withLog(async (e, data?: PRELOAD.SetSettingParams) => {
-    void e;
-    if (data) {
-      store.settings.set(data);
-    }
-    return store.settings.store;
-  }),
+  withLog(
+    async (e, data?: PRELOAD.SetSettingParams): Promise<STORE.Settings> => {
+      void e;
+      if (data) {
+        store.settings.set(data);
+      }
+      return store.settings.store;
+    },
+  ),
 );

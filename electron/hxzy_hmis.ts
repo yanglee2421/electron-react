@@ -58,7 +58,7 @@ const sqlite_delete = async (id: number): Promise<schema.HxzyBarcode> => {
 /**
  * HMIS API
  */
-type GetResponse = {
+export type GetResponse = {
   code: "200";
   msg: "数据读取成功";
   data: [
@@ -153,36 +153,17 @@ const fetch_set = async (request: PostRequestItem[]) => {
 /**
  * Ipc handlers
  */
-const api_get = async (barcode: string) => {
+const api_get = async (barcode: string): Promise<GetResponse> => {
   const data = await fetch_get(barcode);
 
-  const [result] = await db
-    .insert(schema.hxzyBarcodeTable)
-    .values({
-      barCode: barcode,
-      zh: data.data[0].ZH,
-      date: new Date(),
-      isUploaded: false,
-    })
-    .returning();
+  await db.insert(schema.hxzyBarcodeTable).values({
+    barCode: barcode,
+    zh: data.data[0].ZH,
+    date: new Date(),
+    isUploaded: false,
+  });
 
-  return result;
-
-  // const autoInput = hxzy_hmis.get("autoInput");
-
-  // if (autoInput) return;
-  // await autoInputToVC({
-  //   zx: data.data[0].ZX,
-  //   zh: data.data[0].ZH,
-  //   czzzdw: data.data[0].CZZZDW,
-  //   sczzdw: data.data[0].SCZZDW,
-  //   mczzdw: data.data[0].MCZZDW,
-  //   czzzrq: data.data[0].CZZZRQ,
-  //   sczzrq: data.data[0].SCZZRQ,
-  //   mczzrq: data.data[0].MCZZRQ,
-  //   ztx: "1",
-  //   ytx: "1",
-  // });
+  return data;
 };
 
 const recordToBody = async (
@@ -384,7 +365,7 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.hxzy_hmis_api_get,
-    withLog(async (e, barcode: string) => {
+    withLog(async (e, barcode: string): Promise<GetResponse> => {
       void e;
       return await api_get(barcode);
     }),
@@ -392,7 +373,7 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.hxzy_hmis_api_set,
-    withLog(async (e, id: number) => {
+    withLog(async (e, id: number): Promise<schema.HxzyBarcode> => {
       void e;
       return await api_set(id);
     }),
@@ -400,10 +381,15 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.hxzy_hmis_api_verifies,
-    withLog(async (e, id: string) => {
-      void e;
-      return await idToUploadVerifiesData(id);
-    }),
+    withLog(
+      async (
+        e,
+        id: string,
+      ): Promise<{ verifies: Verify; verifiesData: VerifyData[] }> => {
+        void e;
+        return await idToUploadVerifiesData(id);
+      },
+    ),
   );
 
   ipcMain.handle(

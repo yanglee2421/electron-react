@@ -11,6 +11,7 @@ import * as sql from "drizzle-orm";
 import * as schema from "./schema";
 import * as channel from "./channel";
 import type * as PRELOAD from "./preload";
+import type * as STORE from "./store";
 
 /**
  * Sqlite barcode
@@ -208,10 +209,11 @@ const saveQXData = async (params: QXDataParams) => {
 /**
  * Ipc handlers
  */
-const api_get = async (barCode: string) => {
+const api_get = async (barCode: string): Promise<GetResponse> => {
   const data = await fetch_get(barCode);
 
-  const [result] = await db
+  // 仍然保存到数据库，但不返回数据库记录
+  await db
     .insert(schema.khBarcodeTable)
     .values({
       barCode: barCode,
@@ -221,7 +223,7 @@ const api_get = async (barCode: string) => {
     })
     .returning();
 
-  return result;
+  return data;
 };
 
 const recordToBody = async (record: schema.KhBarcode) => {
@@ -377,7 +379,7 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.kh_hmis_api_get,
-    withLog(async (e, barcode: string) => {
+    withLog(async (e, barcode: string): Promise<GetResponse> => {
       void e;
       return await api_get(barcode);
     }),
@@ -385,7 +387,7 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.kh_hmis_api_set,
-    withLog(async (e, id: number) => {
+    withLog(async (e, id: number): Promise<schema.KhBarcode> => {
       void e;
       return await api_set(id);
     }),
@@ -393,13 +395,15 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.kh_hmis_setting,
-    withLog(async (e, data?: PRELOAD.KhHmisSettingParams) => {
-      void e;
-      if (data) {
-        kh_hmis.set(data);
-      }
-      return kh_hmis.store;
-    }),
+    withLog(
+      async (e, data?: PRELOAD.KhHmisSettingParams): Promise<STORE.KH_HMIS> => {
+        void e;
+        if (data) {
+          kh_hmis.set(data);
+        }
+        return kh_hmis.store;
+      },
+    ),
   );
 };
 

@@ -1,9 +1,13 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import * as channel from "./channel";
-import type { Verify, VerifyData } from "./cmd";
+import type { Verify, VerifyData, AutoInputToVCParams } from "./cmd";
 import type * as SCHEMA from "./schema";
 import type * as STORE from "./store";
 import type { Log } from "#/src/lib/db";
+import type * as HXZY_HMIS from "./hxzy_hmis";
+import type * as JTV_HMIS from "./jtv_hmis";
+import type * as KH_HMIS from "./kh_hmis";
+import type * as JTV_HMIS_XUZHOUBEI from "./jtv_hmis_xuzhoubei";
 
 type LogCallback = (data: Log) => void;
 type SubscribeLog = (handler: LogCallback) => () => void;
@@ -27,6 +31,11 @@ const getDataFromAccessDatabase = async <TRecord = unknown>(
   sql: string,
 ): Promise<TRecord[]> => {
   const data = await ipcRenderer.invoke(channel.getDataFromAccessDatabase, sql);
+  return data;
+};
+
+const autoInputToVC = async (params: AutoInputToVCParams): Promise<string> => {
+  const data = await ipcRenderer.invoke(channel.autoInputToVC, params);
   return data;
 };
 
@@ -60,7 +69,7 @@ const hxzy_hmis_sqlite_delete = async (
 
 const hxzy_hmis_api_get = async (
   barcode: string,
-): Promise<SCHEMA.HxzyBarcode> => {
+): Promise<HXZY_HMIS.GetResponse> => {
   const data = await ipcRenderer.invoke(channel.hxzy_hmis_api_get, barcode);
   return data;
 };
@@ -122,14 +131,21 @@ const jtv_hmis_xuzhoubei_sqlite_delete = async (
   return data;
 };
 
-const jtv_hmis_xuzhoubei_api_get = async (barcode: string): Promise<string> => {
-  await ipcRenderer.invoke(channel.jtv_hmis_xuzhoubei_api_get, barcode);
-  return barcode;
+const jtv_hmis_xuzhoubei_api_get = async (
+  barcode: string,
+): Promise<JTV_HMIS_XUZHOUBEI.GetResponse> => {
+  const data = await ipcRenderer.invoke(
+    channel.jtv_hmis_xuzhoubei_api_get,
+    barcode,
+  );
+  return data;
 };
 
-const jtv_hmis_xuzhoubei_api_set = async (id: number): Promise<number> => {
-  await ipcRenderer.invoke(channel.jtv_hmis_xuzhoubei_api_set, id);
-  return id;
+const jtv_hmis_xuzhoubei_api_set = async (
+  id: number,
+): Promise<SCHEMA.JtvXuzhoubeiBarcode> => {
+  const data = await ipcRenderer.invoke(channel.jtv_hmis_xuzhoubei_api_set, id);
+  return data;
 };
 
 export type JtvHmisXuzhoubeiSettingParams = Partial<STORE.JTV_HMIS_XUZHOUBEI>;
@@ -171,9 +187,11 @@ const jtv_hmis_sqlite_delete = async (
   return data;
 };
 
-const jtv_hmis_api_get = async (barcode: string): Promise<string> => {
-  await ipcRenderer.invoke(channel.jtv_hmis_api_get, barcode);
-  return barcode;
+const jtv_hmis_api_get = async (
+  barcode: string,
+): Promise<JTV_HMIS.GetResponse> => {
+  const data = await ipcRenderer.invoke(channel.jtv_hmis_api_get, barcode);
+  return data;
 };
 
 const jtv_hmis_api_set = async (id: number): Promise<number> => {
@@ -215,7 +233,9 @@ const kh_hmis_sqlite_delete = async (id: number): Promise<SCHEMA.KhBarcode> => {
   return data;
 };
 
-const kh_hmis_api_get = async (barcode: string): Promise<SCHEMA.KhBarcode> => {
+const kh_hmis_api_get = async (
+  barcode: string,
+): Promise<KH_HMIS.GetResponse> => {
   const data = await ipcRenderer.invoke(channel.kh_hmis_api_get, barcode);
   return data;
 };
@@ -300,6 +320,7 @@ const electronAPI = {
 
   // C# Driver
   getDataFromAccessDatabase,
+  autoInputToVC,
 
   // 华兴致远HMIS (成都北)
   hxzy_hmis_api_get,

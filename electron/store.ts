@@ -8,6 +8,7 @@ export type Settings = {
   alwaysOnTop: boolean;
   openAtLogin: boolean;
   mode: "system" | "light" | "dark";
+  homePath: string;
 };
 
 export const settings = new Store<Settings>({
@@ -37,6 +38,10 @@ export const settings = new Store<Settings>({
       type: "string",
       default: "system",
       enum: ["system", "light", "dark"],
+    },
+    homePath: {
+      type: "string",
+      default: "/settings",
     },
   },
 });

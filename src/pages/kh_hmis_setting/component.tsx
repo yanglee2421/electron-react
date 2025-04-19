@@ -1,4 +1,3 @@
-import { useIndexedStore } from "@/hooks/useIndexedStore";
 import {
   Button,
   Card,
@@ -17,6 +16,11 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useSnackbar } from "notistack";
+import { useQuery } from "@tanstack/react-query";
+import {
+  fetchKhHmisSetting,
+  useUpdateKhHmisSetting,
+} from "@/api/fetch_preload";
 
 const schema = z.object({
   ip: z
@@ -41,17 +45,32 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const useSettingForm = (defaultValues: FormValues) =>
-  useForm<FormValues>({
-    defaultValues,
+const useSettingForm = () => {
+  const { data: hmis } = useQuery(fetchKhHmisSetting());
 
+  if (!hmis) {
+    throw new Error("fetchKhHmisSetting data not found");
+  }
+
+  return useForm<FormValues>({
+    defaultValues: {
+      ip: hmis.host.split(":")[0],
+      port: Number.parseInt(hmis.host.split(":")[1]),
+      autoInput: hmis.autoInput,
+      autoUpload: hmis.autoUpload,
+      autoUploadInterval: hmis.autoUploadInterval,
+      tsgz: hmis.tsgz,
+      tszjy: hmis.tszjy,
+      tsysy: hmis.tsysy,
+    },
     resolver: zodResolver(schema),
   });
+};
 
 const renderNumberValue = (
   value: number,
   focusValue: string,
-  focused: boolean
+  focused: boolean,
 ) => {
   if (focused) {
     return focusValue;
@@ -113,19 +132,9 @@ const NumberField = (props: NumberFieldProps) => {
 export const Component = () => {
   const formId = React.useId();
 
-  const set = useIndexedStore((s) => s.set);
-  const hmis = useIndexedStore((s) => s.kh_hmis);
   const snackbar = useSnackbar();
-  const form = useSettingForm({
-    ip: hmis.host.split(":")[0],
-    port: +hmis.host.split(":")[1],
-    autoInput: hmis.autoInput,
-    autoUpload: hmis.autoUpload,
-    autoUploadInterval: hmis.autoUploadInterval,
-    tsgz: hmis.tsgz,
-    tszjy: hmis.tszjy,
-    tsysy: hmis.tsysy,
-  });
+  const form = useSettingForm();
+  const update = useUpdateKhHmisSetting();
 
   return (
     <Card>
@@ -136,16 +145,35 @@ export const Component = () => {
           noValidate
           autoComplete="off"
           onSubmit={form.handleSubmit((data) => {
-            set((d) => {
-              d.kh_hmis.autoInput = data.autoInput;
-              d.kh_hmis.autoUpload = data.autoUpload;
-              d.kh_hmis.autoUploadInterval = data.autoUploadInterval;
-              d.kh_hmis.host = `${data.ip}:${data.port}`;
-              d.kh_hmis.tsgz = data.tsgz;
-              d.kh_hmis.tszjy = data.tszjy;
-              d.kh_hmis.tsysy = data.tsysy;
-            });
-            snackbar.enqueueSnackbar("保存成功", { variant: "success" });
+            update.mutate(
+              {
+                host: `${data.ip}:${data.port}`,
+                autoInput: data.autoInput,
+                autoUpload: data.autoUpload,
+                autoUploadInterval: data.autoUploadInterval,
+                tsgz: data.tsgz,
+                tszjy: data.tszjy,
+                tsysy: data.tsysy,
+              },
+              {
+                onError: () => {
+                  snackbar.enqueueSnackbar("保存失败", { variant: "error" });
+                },
+                onSuccess: (data) => {
+                  form.reset({
+                    ip: data.host.split(":")[0],
+                    port: Number.parseInt(data.host.split(":")[1]),
+                    autoInput: data.autoInput,
+                    autoUpload: data.autoUpload,
+                    autoUploadInterval: data.autoUploadInterval,
+                    tsgz: data.tsgz,
+                    tszjy: data.tszjy,
+                    tsysy: data.tsysy,
+                  });
+                  snackbar.enqueueSnackbar("保存成功", { variant: "success" });
+                },
+              },
+            );
           }, console.warn)}
         >
           <Grid container spacing={3}>
@@ -277,7 +305,7 @@ export const Component = () => {
         </form>
       </CardContent>
       <CardActions>
-        <Button form={formId} type="submit">
+        <Button form={formId} type="submit" disabled={update.isPending}>
           保存
         </Button>
       </CardActions>

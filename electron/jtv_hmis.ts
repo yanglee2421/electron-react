@@ -16,6 +16,7 @@ import * as sql from "drizzle-orm";
 import * as channel from "./channel";
 import type { DetectionData } from "./cmd";
 import type * as PRELOAD from "./preload";
+import type { JTV_HMIS } from "./store";
 
 /**
  * Sqlite barcode
@@ -57,7 +58,7 @@ const sqlite_delete = async (id: number): Promise<schema.JTVBarcode> => {
 /**
  * HMIS API
  */
-type GetResponse = {
+export type GetResponse = {
   code: "200";
   msg: "数据读取成功";
   data: [
@@ -147,20 +148,17 @@ const fetch_set = async (request: PostRequestItem[]) => {
 /**
  * Ipc handlers
  */
-const api_get = async (barcode: string): Promise<schema.JTVBarcode> => {
+const api_get = async (barcode: string): Promise<GetResponse> => {
   const data = await fetch_get(barcode);
 
-  const [result] = await db
-    .insert(schema.jtvBarcodeTable)
-    .values({
-      barCode: barcode,
-      zh: data.data[0].ZH,
-      date: new Date(),
-      isUploaded: false,
-    })
-    .returning();
+  await db.insert(schema.jtvBarcodeTable).values({
+    barCode: barcode,
+    zh: data.data[0].ZH,
+    date: new Date(),
+    isUploaded: false,
+  });
 
-  return result;
+  return data;
 };
 
 const recordToBody = async (
@@ -335,7 +333,7 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.jtv_hmis_api_get,
-    withLog(async (e, barcode: string) => {
+    withLog(async (e, barcode: string): Promise<GetResponse> => {
       void e;
       return await api_get(barcode);
     }),
@@ -343,21 +341,24 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.jtv_hmis_api_set,
-    withLog(async (e, id: number) => {
+    withLog(async (e, id: number): Promise<schema.JTVBarcode> => {
       void e;
-      return await api_set(id);
+      const data = await api_set(id);
+      return data;
     }),
   );
 
   ipcMain.handle(
     channel.jtv_hmis_setting,
-    withLog(async (e, data?: PRELOAD.JtvHmisSettingParams) => {
-      void e;
-      if (data) {
-        jtv_hmis.set(data);
-      }
-      return jtv_hmis.store;
-    }),
+    withLog(
+      async (e, data?: PRELOAD.JtvHmisSettingParams): Promise<JTV_HMIS> => {
+        void e;
+        if (data) {
+          jtv_hmis.set(data);
+        }
+        return jtv_hmis.store;
+      },
+    ),
   );
 };
 

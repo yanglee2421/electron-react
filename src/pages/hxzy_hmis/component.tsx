@@ -38,11 +38,13 @@ import { z } from "zod";
 import React from "react";
 import { useSnackbar } from "notistack";
 import {
-  fetchHxzyHmisBarcode,
-  useDeleteBarcode,
-  useGetData,
-  useSaveData,
-} from "./fetchers";
+  fetchHxzyHmisSqliteGet,
+  fetchHxzyHmisSetting,
+  useHxzyHmisApiGet,
+  useHxzyHmisApiSet,
+  useHxzyHmisSqliteDelete,
+  useAutoInputToVC,
+} from "@/api/fetch_preload";
 import {
   createColumnHelper,
   flexRender,
@@ -62,18 +64,20 @@ type ActionCellProps = {
 const ActionCell = (props: ActionCellProps) => {
   const [showAlert, setShowAlert] = React.useState(false);
 
-  const saveData = useSaveData();
+  const saveData = useHxzyHmisApiSet();
   const snackbar = useSnackbar();
-  const deleteBarcode = useDeleteBarcode();
+  const deleteBarcode = useHxzyHmisSqliteDelete();
 
   const handleClose = () => setShowAlert(false);
   const handleDelete = () => {
-    handleClose();
     deleteBarcode.mutate(props.id, {
       onError: (error) => {
         snackbar.enqueueSnackbar(error.message, {
           variant: "error",
         });
+      },
+      onSuccess: () => {
+        handleClose();
       },
     });
   };
@@ -203,21 +207,21 @@ export const Component = () => {
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
-
   const formId = React.useId();
 
+  const params = {
+    pageIndex,
+    pageSize,
+    startDate: dayjs(date).startOf("day").toISOString(),
+    endDate: dayjs(date).endOf("day").toISOString(),
+  };
+
   const form = useScanerForm();
-  const getData = useGetData();
-  const saveData = useSaveData();
+  const getData = useHxzyHmisApiGet();
   const snackbar = useSnackbar();
-  const barcode = useQuery(
-    fetchHxzyHmisBarcode({
-      pageIndex,
-      pageSize,
-      startDate: dayjs(date).startOf("day").toISOString(),
-      endDate: dayjs(date).endOf("day").toISOString(),
-    }),
-  );
+  const barcode = useQuery(fetchHxzyHmisSqliteGet(params));
+  const { data: hmis } = useQuery(fetchHxzyHmisSetting());
+  const autoInput = useAutoInputToVC();
 
   const setInputFocus = React.useCallback(() => {
     inputRef.current?.focus();
@@ -307,15 +311,34 @@ export const Component = () => {
               noValidate
               autoComplete="off"
               onSubmit={form.handleSubmit(async (values) => {
-                if (saveData.isPending) return;
+                if (getData.isPending) return;
 
                 form.reset();
-                getData.mutate(values.barCode, {
+                const data = await getData.mutateAsync(values.barCode, {
                   onError: (error) => {
                     snackbar.enqueueSnackbar(error.message, {
                       variant: "error",
                     });
                   },
+                });
+
+                if (!hmis) {
+                  throw new Error("请先设置HMIS参数");
+                }
+
+                if (!hmis.autoInput) return;
+
+                autoInput.mutate({
+                  zx: data.data[0].ZX,
+                  zh: data.data[0].ZH,
+                  czzzdw: data.data[0].CZZZDW,
+                  sczzdw: data.data[0].SCZZDW,
+                  mczzdw: data.data[0].MCZZDW,
+                  czzzrq: data.data[0].CZZZRQ,
+                  sczzrq: data.data[0].SCZZRQ,
+                  mczzrq: data.data[0].MCZZRQ,
+                  ztx: "1",
+                  ytx: "1",
                 });
               }, console.warn)}
               onReset={() => form.reset()}

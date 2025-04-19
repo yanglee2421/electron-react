@@ -24,7 +24,6 @@
     "dayjs": "^1.11.13",
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",
-    "docx": "^9.4.0",
     "drizzle-orm": "^0.42.0",
     "electron-store": "^10.0.1",
     "exceljs": "^4.4.0",

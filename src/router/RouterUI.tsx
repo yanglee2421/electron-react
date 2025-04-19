@@ -59,14 +59,20 @@ import {
   Link,
   ScrollRestoration,
   useLocation,
-  useLoaderData,
+  useRouteLoaderData,
 } from "react-router";
 import NProgress from "nprogress";
 import { ASIDE_SIZE, HEADER_SIZE_SM, HEADER_SIZE_XS } from "@/lib/constants";
 import { Loading } from "@/components/Loading";
 import { NavMenu } from "./nav";
 import { QueryProvider } from "@/components/query";
-import { fetchSettins } from "@/api/fetch_settings";
+import {
+  fetchHxzyHmisSetting,
+  fetchJtvHmisSetting,
+  fetchJtvHmisXuzhoubeiSetting,
+  fetchKhHmisSetting,
+  fetchSettings,
+} from "@/api/fetch_preload";
 
 const AuthAsideWrapper = styled("div")(({ theme }) => ({
   position: "fixed",
@@ -153,42 +159,39 @@ const renderModeIcon = (mode: string) => {
 };
 
 const useMode = () => {
-  const [mode, setMode] = React.useState<null | "system" | "light" | "dark">(
-    null,
-  );
+  const [modeInState, setModeInState] = React.useState<
+    null | "system" | "light" | "dark"
+  >(null);
 
-  const loaderData = useLoaderData<typeof authLayoutLoader>();
+  const loaderData = useRouteLoaderData<typeof authLayoutLoader>("auth_layout");
 
-  const getTheme = () => {
-    if (typeof mode === "string") {
-      return mode;
-    }
-    return loaderData.mode;
-  };
+  if (!loaderData) {
+    throw new Error("useMode must be used within a authLayoutLoader");
+  }
 
-  const theme = getTheme();
+  const modeInUI = modeInState ?? loaderData.mode;
 
   const [, startTransition] = React.useTransition();
-  const [optimisticValue, setOptimisticValue] = React.useOptimistic(
-    theme,
-    (prev: typeof theme, next: typeof theme) => {
+  const [optimisticModeInUI, setOptimisticModeInUI] = React.useOptimistic(
+    modeInUI,
+    (prev: typeof modeInUI, next: typeof modeInUI) => {
       void prev;
       return next;
     },
   );
 
-  const fn = React.useCallback(
+  const modeInUIAction = React.useCallback(
     (mode: "system" | "light" | "dark") => {
       startTransition(async () => {
-        setOptimisticValue(mode);
-        await window.electronAPI.setSetting({ mode });
-        setMode(mode);
+        setOptimisticModeInUI(mode);
+        await window.electronAPI.settings({ mode });
+        setModeInState(mode);
       });
     },
-    [setOptimisticValue],
+    [setOptimisticModeInUI],
   );
 
-  return [optimisticValue, fn] as const;
+  return [optimisticModeInUI, modeInUIAction] as const;
 };
 
 const ModeToggle = () => {
@@ -244,49 +247,40 @@ const ModeToggle = () => {
   );
 };
 
-const authLayoutLoader = async () => {
-  const queryClient = QueryProvider.queryClient;
-  return await queryClient.ensureQueryData(fetchSettins());
-};
-
 const reducer = (prev: boolean, next: boolean) => {
   void prev;
   return next;
 };
 
 const useAlwaysOnTop = () => {
-  const [checked, setChecked] = React.useState<null | boolean>(null);
+  const [pinInState, setPinInState] = React.useState<null | boolean>(null);
 
-  const loaderData = useLoaderData<typeof authLayoutLoader>();
+  const loaderData = useRouteLoaderData<typeof authLayoutLoader>("auth_layout");
 
-  const getPin = () => {
-    if (typeof checked === "boolean") {
-      return checked;
-    }
+  if (!loaderData) {
+    throw new Error("useAlwaysOnTop must be used within a authLayoutLoader");
+  }
 
-    return loaderData.alwaysOnTop;
-  };
-
-  const pin = getPin();
+  const pinInUI = pinInState ?? loaderData.alwaysOnTop;
 
   const [, startTransition] = React.useTransition();
-  const [optimisticValue, setOptimisticValue] = React.useOptimistic(
-    pin,
+  const [optimisticPinInUI, setOptimisticPinInUI] = React.useOptimistic(
+    pinInUI,
     reducer,
   );
 
-  const fn = React.useCallback(
+  const pinInUIAction = React.useCallback(
     (checked: boolean) => {
       startTransition(async () => {
-        setOptimisticValue(checked);
-        await window.electronAPI.setSetting({ alwaysOnTop: checked });
-        setChecked(checked);
+        setOptimisticPinInUI(checked);
+        await window.electronAPI.settings({ alwaysOnTop: checked });
+        setPinInState(checked);
       });
     },
-    [setOptimisticValue],
+    [setOptimisticPinInUI],
   );
 
-  return [optimisticValue, fn] as const;
+  return [optimisticPinInUI, pinInUIAction] as const;
 };
 
 const AuthLayout = () => {
@@ -383,7 +377,7 @@ const useActivate = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (activateCode: string) => {
-      const data = await window.electronAPI.setSetting({
+      const data = await window.electronAPI.settings({
         activateCode,
       });
       return data;
@@ -659,10 +653,34 @@ const RootErrorBoundary = () => {
   return <Box sx={{ padding: 6 }}>{renderError(error)}</Box>;
 };
 
+const authLayoutLoader = async () => {
+  const queryClient = QueryProvider.queryClient;
+  return await queryClient.ensureQueryData(fetchSettings());
+};
+
+const hxzyLoader = async () => {
+  const queryClient = QueryProvider.queryClient;
+  return await queryClient.ensureQueryData(fetchHxzyHmisSetting());
+};
+
+const jtvXuzhoubeiLoader = async () => {
+  const queryClient = QueryProvider.queryClient;
+  return await queryClient.ensureQueryData(fetchJtvHmisXuzhoubeiSetting());
+};
+
+const jtvLoader = async () => {
+  const queryClient = QueryProvider.queryClient;
+  return await queryClient.ensureQueryData(fetchJtvHmisSetting());
+};
+
+const khLoader = async () => {
+  const queryClient = QueryProvider.queryClient;
+  return await queryClient.ensureQueryData(fetchKhHmisSetting());
+};
+
 const routes: RouteObject[] = [
   {
     id: "root",
-    path: "",
     Component: RootRoute,
     ErrorBoundary: RootErrorBoundary,
     children: [
@@ -693,7 +711,6 @@ const routes: RouteObject[] = [
           },
           {
             id: "activation_guard",
-            path: "",
             Component: ActivationGuard,
             loader: async () => {
               await QueryProvider.queryClient.ensureQueryData(
@@ -712,52 +729,75 @@ const routes: RouteObject[] = [
                 path: "quartors",
                 lazy: () => import("@/pages/quartors/component"),
               },
-
               {
-                id: "hxzy_hmis",
-                path: "hxzy_hmis",
-                lazy: () => import("@/pages/hxzy_hmis/component"),
+                id: "hxzy_layout",
+                loader: hxzyLoader,
+                children: [
+                  {
+                    id: "hxzy_hmis",
+                    path: "hxzy_hmis",
+                    lazy: () => import("@/pages/hxzy_hmis/component"),
+                  },
+                  {
+                    id: "hxzy_hmis_setting",
+                    path: "hxzy_hmis_setting",
+                    lazy: () => import("@/pages/hxzy_hmis_setting/component"),
+                  },
+                  {
+                    id: "hxzy_verifies",
+                    path: "hxzy_verifies",
+                    lazy: () => import("@/pages/hxzy_verifies/component"),
+                  },
+                ],
               },
               {
-                id: "hxzy_hmis_setting",
-                path: "hxzy_hmis_setting",
-                lazy: () => import("@/pages/hxzy_hmis_setting"),
+                id: "jtv_layout",
+                loader: jtvLoader,
+                children: [
+                  {
+                    id: "jtv_hmis",
+                    path: "jtv_hmis",
+                    lazy: () => import("@/pages/jtv_hmis/component"),
+                  },
+                  {
+                    id: "jtv_hmis_setting",
+                    path: "jtv_hmis_setting",
+                    lazy: () => import("@/pages/jtv_hmis_setting/component"),
+                  },
+                ],
               },
               {
-                id: "hxzy_verifies",
-                path: "hxzy_verifies",
-                lazy: () => import("@/pages/hxzy_verifies/component"),
+                id: "jtv_hmis_xuzhoubei_layout",
+                loader: jtvXuzhoubeiLoader,
+                children: [
+                  {
+                    id: "jtv_hmis_xuzhoubei",
+                    path: "jtv_hmis_xuzhoubei",
+                    lazy: () => import("@/pages/jtv_hmis_xuzhoubei/component"),
+                  },
+                  {
+                    id: "jtv_hmis_xuzhoubei_setting",
+                    path: "jtv_hmis_xuzhoubei_setting",
+                    lazy: () =>
+                      import("@/pages/jtv_hmis_xuzhoubei_setting/component"),
+                  },
+                ],
               },
               {
-                id: "jtv_hmis",
-                path: "jtv_hmis",
-                lazy: () => import("@/pages/jtv_hmis/component"),
-              },
-              {
-                id: "jtv_hmis_setting",
-                path: "jtv_hmis_setting",
-                lazy: () => import("@/pages/jtv_hmis_setting/component"),
-              },
-              {
-                id: "jtv_hmis_xuzhoubei",
-                path: "jtv_hmis_xuzhoubei",
-                lazy: () => import("@/pages/jtv_hmis_xuzhoubei/component"),
-              },
-              {
-                id: "jtv_hmis_xuzhoubei_setting",
-                path: "jtv_hmis_xuzhoubei_setting",
-                lazy: () =>
-                  import("@/pages/jtv_hmis_xuzhoubei_setting/component"),
-              },
-              {
-                id: "kh_hmis",
-                path: "kh_hmis",
-                lazy: () => import("@/pages/kh_hmis/component"),
-              },
-              {
-                id: "kh_hmis_setting",
-                path: "kh_hmis_setting",
-                lazy: () => import("@/pages/kh_hmis_setting/component"),
+                id: "kh_hmis_layout",
+                loader: khLoader,
+                children: [
+                  {
+                    id: "kh_hmis",
+                    path: "kh_hmis",
+                    lazy: () => import("@/pages/kh_hmis/component"),
+                  },
+                  {
+                    id: "kh_hmis_setting",
+                    path: "kh_hmis_setting",
+                    lazy: () => import("@/pages/kh_hmis_setting/component"),
+                  },
+                ],
               },
             ],
           },

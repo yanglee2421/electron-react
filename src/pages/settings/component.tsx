@@ -1,8 +1,5 @@
-import { useIndexedStore } from "@/hooks/useIndexedStore";
 import {
   BugReportOutlined,
-  FileDownloadOutlined,
-  FileUploadOutlined,
   FindInPageOutlined,
   SaveOutlined,
 } from "@mui/icons-material";
@@ -31,10 +28,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useSnackbar } from "notistack";
 import { NavMenu } from "@/router/nav";
-import { fetchSettins, fetchVersion, useUpdateSettings } from "./fetchers";
-import { useQuery } from "@tanstack/react-query";
-import { useLoaderData } from "react-router";
-import { loader } from "./loader";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  fetchSettings,
+  useUpdateSettings,
+  fetchVersion,
+} from "@/api/fetch_preload";
 
 const schema = z.object({
   databasePath: z.string().min(1, { message: "数据库路径不能为空" }),
@@ -45,13 +44,17 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const useSettingForm = () => {
-  const settings = useIndexedStore((s) => s);
-  const config = useQuery(fetchSettins());
+  const { data: settings } = useQuery(fetchSettings());
+
+  if (!settings) {
+    throw new Error("Settings not found");
+  }
+
   return useForm<FormValues>({
     defaultValues: {
-      home_path: settings.home_path,
-      databasePath: config.data?.databasePath || "",
-      driverPath: config.data?.driverPath || "",
+      home_path: settings.homePath,
+      databasePath: settings.databasePath,
+      driverPath: settings.driverPath,
     },
     resolver: zodResolver(schema),
   });
@@ -63,48 +66,45 @@ const reducer = (prev: boolean, action: boolean) => {
 };
 
 const useOpenAtLogin = () => {
-  const [openAtLogin, setOpenAtLogin] = React.useState<null | boolean>(null);
+  const [openAtLoginInState, setOpenAtLoginInState] = React.useState<
+    null | boolean
+  >(null);
 
-  const loaderData = useLoaderData<typeof loader>();
+  const { data: settings } = useQuery(fetchSettings());
+  const queryClient = useQueryClient();
 
-  const getSwitchChecked = () => {
-    switch (openAtLogin) {
-      case true:
-      case false:
-        return openAtLogin;
-      default:
-        return loaderData.settings.openAtLogin;
-    }
-  };
+  if (!settings) {
+    throw new Error("Settings not found");
+  }
 
-  const switchedChecked = getSwitchChecked();
+  const openAtLoginInUI = openAtLoginInState ?? settings.openAtLogin;
 
   const [, startTransition] = React.useTransition();
-  const [optimisticChecked, setOptimisticChecked] = React.useOptimistic(
-    switchedChecked,
-    reducer,
-  );
+  const [optimisticOpenAtLoginInUI, setOptimisticOpenAtLoginInUI] =
+    React.useOptimistic(openAtLoginInUI, reducer);
 
-  const fn = React.useCallback(
+  const openAtLoginAction = React.useCallback(
     async (checked: boolean) => {
       startTransition(async () => {
-        setOptimisticChecked(checked);
-        await window.electronAPI.setSetting({
+        setOptimisticOpenAtLoginInUI(checked);
+        await window.electronAPI.settings({
           openAtLogin: checked,
         });
-        setOpenAtLogin(checked);
+        await queryClient.invalidateQueries({
+          queryKey: fetchSettings().queryKey,
+        });
+        setOpenAtLoginInState(checked);
       });
     },
-    [setOptimisticChecked],
+    [setOptimisticOpenAtLoginInUI, queryClient],
   );
 
-  return [optimisticChecked, fn] as const;
+  return [optimisticOpenAtLoginInUI, openAtLoginAction] as const;
 };
 
 export const Component = () => {
   const formId = React.useId();
 
-  const set = useIndexedStore((s) => s.set);
   const form = useSettingForm();
   const mutate = useUpdateSettings();
   const snackbar = useSnackbar();
@@ -130,12 +130,10 @@ export const Component = () => {
           <form
             id={formId}
             onSubmit={form.handleSubmit(async (data) => {
-              set((d) => {
-                d.home_path = data.home_path;
-              });
               mutate.mutate({
                 databasePath: data.databasePath,
                 driverPath: data.driverPath,
+                homePath: data.home_path,
               });
               snackbar.enqueueSnackbar("保存成功", { variant: "success" });
             }, console.warn)}
@@ -263,50 +261,6 @@ export const Component = () => {
             disabled={mutate.isPending}
           >
             保存
-          </Button>
-          <Button
-            component="label"
-            startIcon={<FileDownloadOutlined />}
-            sx={{ display: "none" }}
-          >
-            <input
-              type="file"
-              accept="application/json,.json"
-              hidden
-              value={""}
-              onChange={(e) => {
-                const file = e.target.files?.item(0);
-                if (!file) return;
-                const reader = new FileReader();
-
-                reader.onload = (e) => {
-                  console.log(e.target?.result);
-                };
-
-                reader.readAsText(file);
-              }}
-            />
-            导入
-          </Button>
-          <Button
-            onClick={() => {
-              const data = useIndexedStore.getState();
-              const version = useIndexedStore.persist.getOptions().version || 0;
-              const jsonString = JSON.stringify(data, null, 2);
-              const blob = new Blob([jsonString], {
-                type: "application/json",
-              });
-              const link = document.createElement("a");
-              link.href = URL.createObjectURL(blob);
-              link.download = `backup-v${version}.json`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }}
-            startIcon={<FileUploadOutlined />}
-            sx={{ display: "none" }}
-          >
-            导出
           </Button>
         </CardActions>
       </Card>

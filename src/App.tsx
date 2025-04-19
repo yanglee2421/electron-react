@@ -8,10 +8,6 @@ import "dayjs/locale/zh";
 import "dayjs/locale/en";
 import { Loading } from "@/components/Loading";
 import { useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
-import {
-  useIndexedStore,
-  useIndexedStoreHasHydrated,
-} from "@/hooks/useIndexedStore";
 import { QueryProvider } from "./components/query";
 import { db } from "./lib/db";
 import type { Log } from "./lib/db";
@@ -56,8 +52,6 @@ const MuiProvider = (props: Props) => {
 };
 
 const useLog = () => {
-  const set = useIndexedStore((s) => s.set);
-
   React.useEffect(() => {
     const listener = (data: Log) => {
       db.log.add({ type: data.type, message: data.message, date: data.date });
@@ -68,20 +62,15 @@ const useLog = () => {
     return () => {
       unsubscribe();
     };
-  }, [set]);
+  }, []);
 };
 
 export const App = () => {
   useLog();
 
-  const indexedHasHydrated = useIndexedStoreHasHydrated();
   const localHasHydrated = useLocalStoreHasHydrated();
 
   const renderRouter = () => {
-    if (!indexedHasHydrated) {
-      return <Loading />;
-    }
-
     if (!localHasHydrated) {
       return <Loading />;
     }

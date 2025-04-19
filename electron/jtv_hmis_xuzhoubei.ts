@@ -15,6 +15,7 @@ import * as sql from "drizzle-orm";
 import * as schema from "./schema";
 import * as channel from "./channel";
 import type * as PRELOAD from "./preload";
+import type * as STORE from "./store";
 
 /*
  * SQLite barcode
@@ -58,7 +59,7 @@ const sqlite_delete = async (
 /**
  * HMIS API
  */
-type GetResponse = [
+export type GetResponse = [
   {
     SCZZRQ: "1990-10-19";
     DH: "50409100225";
@@ -164,7 +165,7 @@ const hasQX = (result: string | null) => {
 /**
  * Ipc handlers
  */
-const api_get = async (barCode: string) => {
+const api_get = async (barCode: string): Promise<GetResponse> => {
   const data = await fetch_get(barCode);
 
   await db.insert(schema.jtvXuzhoubeiBarcodeTable).values({
@@ -180,21 +181,7 @@ const api_get = async (barCode: string) => {
     PJ_MCZZDW: data[0].MCZZDW,
   });
 
-  // const autoInput = jtv_hmis_xuzhoubei.get("autoInput");
-
-  // if (autoInput) return;
-  // await autoInputToVC({
-  //   zx: data[0].ZX,
-  //   zh: data[0].ZH,
-  //   czzzdw: data[0].CZZZDW,
-  //   sczzdw: data[0].SCZZDW,
-  //   mczzdw: data[0].MCZZDW,
-  //   czzzrq: data[0].CZZZRQ,
-  //   sczzrq: data[0].SCZZRQ,
-  //   mczzrq: data[0].MCZZRQ,
-  //   ztx: "1",
-  //   ytx: "1",
-  // });
+  return data;
 };
 
 const recordToBody = async (
@@ -274,7 +261,7 @@ const recordToBody = async (
   return body;
 };
 
-const api_set = async (id: number) => {
+const api_set = async (id: number): Promise<schema.JtvXuzhoubeiBarcode> => {
   const record = await db.query.jtvXuzhoubeiBarcodeTable.findFirst({
     where: sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id),
   });
@@ -290,12 +277,14 @@ const api_set = async (id: number) => {
   const body = await recordToBody(record);
 
   await fetch_set(body);
-  await db
+  const [result] = await db
     .update(schema.jtvXuzhoubeiBarcodeTable)
     .set({
       isUploaded: true,
     })
-    .where(sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id));
+    .where(sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id))
+    .returning();
+  return result;
 };
 
 /**
@@ -361,7 +350,7 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.jtv_hmis_xuzhoubei_api_get,
-    withLog(async (e, barcode: string) => {
+    withLog(async (e, barcode: string): Promise<GetResponse> => {
       void e;
       return await api_get(barcode);
     }),
@@ -369,7 +358,7 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.jtv_hmis_xuzhoubei_api_set,
-    withLog(async (e, id: number) => {
+    withLog(async (e, id: number): Promise<schema.JtvXuzhoubeiBarcode> => {
       void e;
       return await api_set(id);
     }),
@@ -377,13 +366,18 @@ const initIpc = () => {
 
   ipcMain.handle(
     channel.jtv_hmis_xuzhoubei_setting,
-    withLog(async (e, data?: PRELOAD.JtvHmisXuzhoubeiSettingParams) => {
-      void e;
-      if (data) {
-        jtv_hmis_xuzhoubei.set(data);
-      }
-      return jtv_hmis_xuzhoubei.store;
-    }),
+    withLog(
+      async (
+        e,
+        data?: PRELOAD.JtvHmisXuzhoubeiSettingParams,
+      ): Promise<STORE.JTV_HMIS_XUZHOUBEI> => {
+        void e;
+        if (data) {
+          jtv_hmis_xuzhoubei.set(data);
+        }
+        return jtv_hmis_xuzhoubei.store;
+      },
+    ),
   );
 };
 

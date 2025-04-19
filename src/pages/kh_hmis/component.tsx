@@ -30,75 +30,71 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Link,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
 import { useSnackbar } from "notistack";
-import { useGetData, useSaveData } from "./fetchers";
-import { useIndexedStore } from "@/hooks/useIndexedStore";
-import { useAutoInputToVC } from "@/hooks/useAutoInputToVC";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import type { History } from "@/hooks/useIndexedStore";
+import {
+  useAutoInputToVC,
+  useKhHmisApiGet,
+  useKhHmisApiSet,
+  useKhHmisSqliteDelete,
+  fetchKhHmisSqliteGet,
+  fetchHxzyHmisSetting,
+} from "@/api/fetch_preload";
+import type { KhBarcode } from "#/electron/schema";
+import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 
 type ActionCellProps = {
-  row: History;
+  id: number;
 };
 
 const ActionCell = (props: ActionCellProps) => {
   const [show, setShow] = React.useState(false);
 
-  const saveData = useSaveData();
+  const saveData = useKhHmisApiSet();
   const snackbar = useSnackbar();
-  const set = useIndexedStore((s) => s.set);
-  const settings = useIndexedStore((s) => s.settings);
-  const hmis = useIndexedStore((s) => s.kh_hmis);
+  const deleteBarcode = useKhHmisSqliteDelete();
 
   const handleClose = () => setShow(false);
 
   const handleDelete = () => {
-    set((d) => {
-      d.kh_hmis.history = d.kh_hmis.history.filter(
-        (row) => row.id !== props.row.id
-      );
+    deleteBarcode.mutate(props.id, {
+      onError(error) {
+        snackbar.enqueueSnackbar(error.message, {
+          variant: "error",
+        });
+      },
+      onSuccess() {
+        handleClose();
+      },
     });
-    handleClose();
   };
 
   const handleUpload = () => {
-    saveData.mutate(
-      {
-        databasePath: settings.databasePath,
-        driverPath: settings.driverPath,
-        host: hmis.host,
-        tsgz: hmis.tsgz,
-        tszjy: hmis.tszjy,
-        tsysy: hmis.tsysy,
-        dh: props.row.barCode,
-        zh: props.row.zh,
-        date: props.row.date,
+    saveData.mutate(props.id, {
+      onError(error) {
+        snackbar.enqueueSnackbar(error.message, {
+          variant: "error",
+        });
       },
-      {
-        onError(error) {
-          snackbar.enqueueSnackbar(error.message, {
-            variant: "error",
-          });
-        },
-        onSuccess() {
-          snackbar.enqueueSnackbar("上传成功", {
-            variant: "success",
-          });
-          handleClose();
-        },
-      }
-    );
+      onSuccess() {
+        snackbar.enqueueSnackbar("上传成功", {
+          variant: "success",
+        });
+        handleClose();
+      },
+    });
   };
 
   return (
@@ -137,7 +133,7 @@ const useScanerForm = () =>
     resolver: zodResolver(schema),
   });
 
-const columnHelper = createColumnHelper<History>();
+const columnHelper = createColumnHelper<KhBarcode>();
 
 const columns = [
   columnHelper.display({
@@ -166,7 +162,7 @@ const columns = [
   columnHelper.accessor("id", {
     header: "ID",
     footer: "ID",
-    cell: ({ getValue }) => getValue().slice(0, 7),
+    cell: ({ getValue }) => <Link underline="none">#{getValue()}</Link>,
   }),
   columnHelper.accessor("barCode", {
     header: "单号",
@@ -179,7 +175,7 @@ const columns = [
   columnHelper.accessor("date", {
     header: "时间",
     footer: "时间",
-    cell: ({ getValue }) => new Date(getValue()).toLocaleString(),
+    cell: ({ getValue }) => getValue()?.toLocaleString(),
   }),
   columnHelper.accessor("isUploaded", {
     header: "已上传",
@@ -190,83 +186,50 @@ const columns = [
   columnHelper.display({
     id: "action",
     header: "操作",
-    cell: ({ row }) => <ActionCell row={row.original} />,
+    cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
   }),
 ];
 
+const initDate = () => dayjs();
+
 export const Component = () => {
+  const [date, setDate] = React.useState(initDate);
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(10);
+
   const formRef = React.useRef<HTMLFormElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
-
   const formId = React.useId();
 
+  const params = {
+    pageIndex,
+    pageSize,
+    startDate: date.startOf("day").toISOString(),
+    endDate: date.endOf("day").toISOString(),
+  };
+
   const form = useScanerForm();
-  const getData = useGetData();
-  const saveData = useSaveData();
+  const getData = useKhHmisApiGet();
   const snackbar = useSnackbar();
   const autoInput = useAutoInputToVC();
-  const hmis = useIndexedStore((s) => s.kh_hmis);
-  const setting = useIndexedStore((s) => s.settings);
-  const history = useIndexedStore((s) => s.kh_hmis.history);
+  const { data: hmis } = useQuery(fetchHxzyHmisSetting());
+  const barcode = useQuery(fetchKhHmisSqliteGet(params));
 
   const setInputFocus = React.useCallback(() => {
     inputRef.current?.focus();
   }, []);
 
+  const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
+
   const table = useReactTable({
-    data: history,
+    data,
     columns,
-    getRowId: (row) => row.id,
+    getRowId: (row) => row.id.toString(),
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+
+    manualPagination: true,
+    rowCount: barcode.data?.count || 0,
   });
-
-  const uploadQueue = React.useMemo(
-    () =>
-      history
-        .filter((row) => !row.isUploaded)
-        .map((row) => ({ dh: row.barCode, zh: row.zh, date: row.date })),
-    [history]
-  );
-
-  const saveDataMutate = saveData.mutate;
-
-  React.useEffect(() => {
-    if (!hmis.autoUpload) return;
-    if (!uploadQueue.length) return;
-
-    const timer = setInterval(() => {
-      const firstItem = uploadQueue[0];
-      if (!firstItem) return;
-
-      saveDataMutate({
-        databasePath: setting.databasePath,
-        driverPath: setting.driverPath,
-        host: hmis.host,
-        tsgz: hmis.tsgz,
-        tszjy: hmis.tszjy,
-        tsysy: hmis.tsysy,
-        dh: firstItem.dh,
-        zh: firstItem.zh,
-        date: firstItem.date,
-      });
-    }, hmis.autoUploadInterval);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, [
-    uploadQueue,
-    saveDataMutate,
-    setting.databasePath,
-    setting.driverPath,
-    hmis.host,
-    hmis.tsgz,
-    hmis.tszjy,
-    hmis.tsysy,
-    hmis.autoUpload,
-    hmis.autoUploadInterval,
-  ]);
 
   React.useEffect(() => {
     const unsubscribe = window.electronAPI.subscribeWindowFocus(setInputFocus);
@@ -292,7 +255,7 @@ export const Component = () => {
         if (document.visibilityState !== "visible") return;
         setInputFocus();
       },
-      controller
+      controller,
     );
 
     return () => {
@@ -341,29 +304,23 @@ export const Component = () => {
               noValidate
               autoComplete="off"
               onSubmit={form.handleSubmit(async (values) => {
-                if (saveData.isPending) return;
+                if (getData.isPending) return;
 
                 form.reset();
 
-                const data = await getData.mutateAsync(
-                  {
-                    barCode: values.barCode,
-                    host: hmis.host,
+                const data = await getData.mutateAsync(values.barCode, {
+                  onError: (error) => {
+                    snackbar.enqueueSnackbar(error.message, {
+                      variant: "error",
+                    });
                   },
-                  {
-                    onError: (error) => {
-                      snackbar.enqueueSnackbar(error.message, {
-                        variant: "error",
-                      });
-                    },
-                  }
-                );
+                });
 
+                if (!hmis) return;
                 if (!hmis.autoInput) return;
 
                 await autoInput.mutateAsync(
                   {
-                    driverPath: setting.driverPath,
                     zx: data.data.zx,
                     zh: data.data.zh,
                     czzzdw: data.data.czzzdw,
@@ -381,7 +338,7 @@ export const Component = () => {
                         variant: "error",
                       });
                     },
-                  }
+                  },
                 );
               }, console.warn)}
               onReset={() => form.reset()}
@@ -436,7 +393,7 @@ export const Component = () => {
                   >
                     {flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableCell>
                 ))}
@@ -454,7 +411,7 @@ export const Component = () => {
                   >
                     {flexRender(
                       header.column.columnDef.footer,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableCell>
                 ))}
@@ -465,16 +422,16 @@ export const Component = () => {
       </TableContainer>
       <TablePagination
         component={"div"}
-        page={table.getState().pagination.pageIndex}
+        page={pageIndex}
         count={table.getRowCount()}
-        rowsPerPage={table.getState().pagination.pageSize}
+        rowsPerPage={pageSize}
         rowsPerPageOptions={rowsPerPageOptions}
         onPageChange={(e, page) => {
           void e;
-          table.setPageIndex(page);
+          setPageIndex(page);
         }}
         onRowsPerPageChange={(e) => {
-          table.setPageSize(Number.parseInt(e.target.value, 10));
+          setPageSize(Number.parseInt(e.target.value, 10));
         }}
         labelRowsPerPage="每页行数"
       />

@@ -14,6 +14,7 @@ import type {
   KhBarcodeGetParams,
   SetSettingParams,
 } from "#/electron/preload";
+import type { AutoInputToVCParams } from "#/electron/cmd";
 
 // Windows 激活验证
 export const fetchVerifyActivation = () =>
@@ -32,6 +33,15 @@ export const fetchDataFromAccessDatabase = <TRecord = unknown>(sql: string) =>
       return await window.electronAPI.getDataFromAccessDatabase<TRecord>(sql);
     },
   });
+
+// 自动录入功能
+export const useAutoInputToVC = () => {
+  return useMutation({
+    mutationFn: async (params: AutoInputToVCParams) => {
+      return await window.electronAPI.autoInputToVC(params);
+    },
+  });
+};
 
 // 华兴致远HMIS (成都北)
 export const fetchHxzyHmisSqliteGet = (params: HxzyBarcodeGetParams) =>

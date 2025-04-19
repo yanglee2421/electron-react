@@ -25,81 +25,74 @@ import {
   Button,
   Divider,
   Checkbox,
-  Stack,
   Dialog,
   DialogContent,
   DialogTitle,
   DialogActions,
   DialogContentText,
+  Link,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
 import { useSnackbar } from "notistack";
-import { useGetData, useSaveData } from "./fetchers";
-import { useIndexedStore } from "@/hooks/useIndexedStore";
-import { useAutoInputToVC } from "@/hooks/useAutoInputToVC";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import type { History } from "@/hooks/useIndexedStore";
+import type { JTVBarcode } from "#/electron/schema";
+import { useQuery } from "@tanstack/react-query";
+import {
+  fetchJtvHmisSetting,
+  fetchJtvHmisSqliteGet,
+  useAutoInputToVC,
+  useJtvHmisApiGet,
+  useJtvHmisApiSet,
+  useJtvHmisSqliteDelete,
+} from "@/api/fetch_preload";
+import dayjs from "dayjs";
 
 type ActionCellProps = {
-  id: string;
-  dh: string;
-  zh: string;
+  id: number;
 };
 
 const ActionCell = (props: ActionCellProps) => {
   const [showAlert, setShowAlert] = React.useState(false);
 
-  const saveData = useSaveData();
   const snackbar = useSnackbar();
-  const set = useIndexedStore((s) => s.set);
-  const settings = useIndexedStore((s) => s.settings);
-  const hmis = useIndexedStore((s) => s.jtv_hmis);
+  const saveData = useJtvHmisApiSet();
+  const deleteBarcode = useJtvHmisSqliteDelete();
 
   const handleClose = () => setShowAlert(false);
   const handleDelete = () => {
-    set((d) => {
-      d.jtv_hmis.history = d.jtv_hmis.history.filter(
-        (row) => row.id !== props.id
-      );
+    deleteBarcode.mutate(props.id, {
+      onError(error) {
+        snackbar.enqueueSnackbar(error.message, {
+          variant: "error",
+        });
+      },
+      onSuccess() {
+        handleClose();
+      },
     });
-    handleClose();
   };
   const handleUpload = () => {
-    saveData.mutate(
-      {
-        databasePath: settings.databasePath,
-        driverPath: settings.driverPath,
-        host: hmis.host,
-        records: [
-          {
-            dh: props.dh,
-            zh: props.zh,
-          },
-        ],
+    saveData.mutate(props.id, {
+      onError(error) {
+        snackbar.enqueueSnackbar(error.message, {
+          variant: "error",
+        });
       },
-      {
-        onError(error) {
-          snackbar.enqueueSnackbar(error.message, {
-            variant: "error",
-          });
-        },
-        onSuccess(data) {
-          snackbar.enqueueSnackbar(data.result.msg, {
-            variant: "success",
-          });
-          handleClose();
-        },
-      }
-    );
+      onSuccess() {
+        handleClose();
+        snackbar.enqueueSnackbar("上传成功", {
+          variant: "success",
+        });
+      },
+    });
   };
 
   return (
@@ -120,7 +113,11 @@ const ActionCell = (props: ActionCellProps) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>取消</Button>
-          <Button onClick={handleDelete} color="error">
+          <Button
+            onClick={handleDelete}
+            color="error"
+            disabled={deleteBarcode.isPending}
+          >
             删除
           </Button>
         </DialogActions>
@@ -141,7 +138,7 @@ const useScanerForm = () =>
     resolver: zodResolver(schema),
   });
 
-const columnHelper = createColumnHelper<History>();
+const columnHelper = createColumnHelper<JTVBarcode>();
 
 const columns = [
   columnHelper.display({
@@ -170,7 +167,7 @@ const columns = [
   columnHelper.accessor("id", {
     header: "ID",
     footer: "ID",
-    cell: ({ getValue }) => getValue().slice(0, 7),
+    cell: ({ getValue }) => <Link underline="none">#{getValue()}</Link>,
   }),
   columnHelper.accessor("barCode", {
     header: "单号",
@@ -183,7 +180,7 @@ const columns = [
   columnHelper.accessor("date", {
     header: "时间",
     footer: "时间",
-    cell: ({ getValue }) => new Date(getValue()).toLocaleString(),
+    cell: ({ getValue }) => getValue()?.toLocaleString(),
   }),
   columnHelper.accessor("isUploaded", {
     header: "已上传",
@@ -194,81 +191,52 @@ const columns = [
   columnHelper.display({
     id: "action",
     header: "操作",
-    cell: ({ row }) => (
-      <ActionCell
-        id={row.getValue("id")}
-        dh={row.getValue("barCode")}
-        zh={row.getValue("zh")}
-      />
-    ),
+    cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
   }),
 ];
 
+const initDate = () => dayjs();
+
 export const Component = () => {
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(20);
+  const [date, setDate] = React.useState(initDate());
+
   const formRef = React.useRef<HTMLFormElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const formId = React.useId();
 
+  const params = {
+    pageIndex,
+    pageSize,
+    startDate: date.startOf("day").toISOString(),
+    endDate: date.endOf("day").toISOString(),
+  };
+
   const form = useScanerForm();
-  const getData = useGetData();
-  const saveData = useSaveData();
   const snackbar = useSnackbar();
   const autoInput = useAutoInputToVC();
-  const set = useIndexedStore((s) => s.set);
-  const hmis = useIndexedStore((s) => s.jtv_hmis);
-  const setting = useIndexedStore((s) => s.settings);
-  const history = useIndexedStore((s) => s.jtv_hmis.history);
+  const saveData = useJtvHmisApiSet();
+  const getData = useJtvHmisApiGet();
+  const hmis = useQuery(fetchJtvHmisSetting());
+  const barcode = useQuery(fetchJtvHmisSqliteGet(params));
 
   const setInputFocus = React.useCallback(() => {
     inputRef.current?.focus();
   }, []);
 
+  const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
+
   const table = useReactTable({
-    data: history,
+    data,
     columns,
-    getRowId: (row) => row.id,
+    getRowId: (row) => row.id.toString(),
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+
+    manualPagination: true,
+    rowCount: barcode.data?.count || 0,
   });
-
-  const selectedRows = table.getSelectedRowModel().flatRows;
-  const noSelectedRow = !selectedRows.length;
-  const uploadQueue = React.useMemo(
-    () =>
-      history
-        .filter((row) => !row.isUploaded)
-        .map((row) => ({ dh: row.barCode, zh: row.zh })),
-    [history]
-  );
-
-  const saveDataMutate = saveData.mutate;
-
-  React.useEffect(() => {
-    if (!hmis.autoUpload) return;
-    if (!uploadQueue.length) return;
-
-    const timer = setInterval(() => {
-      saveDataMutate({
-        databasePath: setting.databasePath,
-        driverPath: setting.driverPath,
-        host: hmis.host,
-        records: uploadQueue,
-      });
-    }, hmis.autoUploadInterval);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, [
-    uploadQueue,
-    saveDataMutate,
-    setting.databasePath,
-    setting.driverPath,
-    hmis.host,
-    hmis.autoUpload,
-    hmis.autoUploadInterval,
-  ]);
 
   React.useEffect(() => {
     const unsubscribe = window.electronAPI.subscribeWindowFocus(setInputFocus);
@@ -294,7 +262,7 @@ export const Component = () => {
         if (document.visibilityState !== "visible") return;
         setInputFocus();
       },
-      controller
+      controller,
     );
 
     return () => {
@@ -331,6 +299,10 @@ export const Component = () => {
     });
   };
 
+  if (!hmis.data) {
+    throw new Error("Settings not found");
+  }
+
   return (
     <Card>
       <CardHeader title="京天威HMIS" subheader="统型" />
@@ -347,26 +319,18 @@ export const Component = () => {
 
                 form.reset();
 
-                const data = await getData.mutateAsync(
-                  {
-                    barCode: values.barCode,
-                    host: hmis.host,
-                    unitCode: hmis.unitCode,
+                const data = await getData.mutateAsync(values.barCode, {
+                  onError: (error) => {
+                    snackbar.enqueueSnackbar(error.message, {
+                      variant: "error",
+                    });
                   },
-                  {
-                    onError: (error) => {
-                      snackbar.enqueueSnackbar(error.message, {
-                        variant: "error",
-                      });
-                    },
-                  }
-                );
+                });
 
-                if (!hmis.autoInput) return;
+                if (!hmis.data.autoInput) return;
 
                 await autoInput.mutateAsync(
                   {
-                    driverPath: setting.driverPath,
                     zx: data.data[0].ZX,
                     zh: data.data[0].ZH,
                     czzzdw: data.data[0].CZZZDW,
@@ -384,7 +348,7 @@ export const Component = () => {
                         variant: "error",
                       });
                     },
-                  }
+                  },
                 );
               }, console.warn)}
               onReset={() => form.reset()}
@@ -427,53 +391,6 @@ export const Component = () => {
         </Grid>
       </CardContent>
       <Divider />
-      <CardContent>
-        <Stack direction={"row"} spacing={3}>
-          <Button
-            onClick={() => {
-              saveData.mutate(
-                {
-                  databasePath: setting.databasePath,
-                  driverPath: setting.driverPath,
-                  host: hmis.host,
-                  records: selectedRows.map((row) => ({
-                    dh: row.original.barCode,
-                    zh: row.original.zh,
-                  })),
-                },
-                {
-                  onError(error) {
-                    snackbar.enqueueSnackbar(error.message, {
-                      variant: "error",
-                    });
-                  },
-                }
-              );
-            }}
-            disabled={noSelectedRow || saveData.isPending}
-            variant="outlined"
-            startIcon={<CloudUploadOutlined />}
-          >
-            上传
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<DeleteOutlined />}
-            color="error"
-            disabled={noSelectedRow}
-            onClick={() => {
-              const deleteIds = new Set(selectedRows.map((i) => i.id));
-              set((d) => {
-                d.jtv_hmis.history = d.jtv_hmis.history.filter(
-                  (i) => !deleteIds.has(i.id)
-                );
-              });
-            }}
-          >
-            删除
-          </Button>
-        </Stack>
-      </CardContent>
       <TableContainer>
         <Table>
           <TableHead>
@@ -486,7 +403,7 @@ export const Component = () => {
                   >
                     {flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableCell>
                 ))}
@@ -504,7 +421,7 @@ export const Component = () => {
                   >
                     {flexRender(
                       header.column.columnDef.footer,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableCell>
                 ))}
@@ -515,16 +432,16 @@ export const Component = () => {
       </TableContainer>
       <TablePagination
         component={"div"}
-        page={table.getState().pagination.pageIndex}
+        page={pageIndex}
         count={table.getRowCount()}
-        rowsPerPage={table.getState().pagination.pageSize}
+        rowsPerPage={pageSize}
         rowsPerPageOptions={rowsPerPageOptions}
         onPageChange={(e, page) => {
           void e;
-          table.setPageIndex(page);
+          setPageIndex(page);
         }}
         onRowsPerPageChange={(e) => {
-          table.setPageSize(Number.parseInt(e.target.value, 10));
+          setPageSize(Number.parseInt(e.target.value, 10));
         }}
         labelRowsPerPage="每页行数"
       />
