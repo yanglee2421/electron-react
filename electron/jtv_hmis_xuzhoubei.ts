@@ -298,7 +298,14 @@ const autoUploadHandler = async () => {
   timer = setTimeout(autoUploadHandler, delay);
 
   const barcodes = await db.query.jtvXuzhoubeiBarcodeTable.findMany({
-    where: sql.eq(schema.jtvXuzhoubeiBarcodeTable.isUploaded, false),
+    where: sql.and(
+      sql.eq(schema.jtvXuzhoubeiBarcodeTable.isUploaded, false),
+      sql.between(
+        schema.jtvXuzhoubeiBarcodeTable.date,
+        dayjs().startOf("day").toDate(),
+        dayjs().endOf("day").toDate(),
+      ),
+    ),
   });
 
   for (const barcode of barcodes) {

@@ -2,6 +2,7 @@ import {
   BugReportOutlined,
   FindInPageOutlined,
   SaveOutlined,
+  OpenInNewOutlined,
 } from "@mui/icons-material";
 import {
   Card,
@@ -231,6 +232,9 @@ export const Component = () => {
               startTransition(window.electronAPI.settingsOpenInEditor);
             }}
             disabled={isPending}
+            startIcon={
+              isPending ? <CircularProgress size={16} /> : <OpenInNewOutlined />
+            }
           >
             在编辑器中打开
           </Button>

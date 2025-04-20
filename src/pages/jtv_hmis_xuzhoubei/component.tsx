@@ -4,6 +4,7 @@ import {
   ClearOutlined,
   CloudUploadOutlined,
   DeleteOutlined,
+  FilterListOutlined,
   KeyboardReturnOutlined,
 } from "@mui/icons-material";
 import {
@@ -53,6 +54,7 @@ import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import type { JTVBarcode } from "#/electron/schema";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import { DatePicker } from "@mui/x-date-pickers";
 
 type ActionCellProps = {
   id: number;
@@ -177,6 +179,7 @@ export const Component = () => {
   const [date, setDate] = React.useState(initDate);
   const [pageIndex, setPageIndex] = React.useState(0);
   const [pageSize, setPageSize] = React.useState(10);
+  const [showFilter, setShowFilter] = React.useState(false);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -274,9 +277,42 @@ export const Component = () => {
     });
   };
 
+  const renderFilter = () => {
+    if (!showFilter) return null;
+    return (
+      <CardContent>
+        <Grid container spacing={6}>
+          <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+            <DatePicker
+              label="日期"
+              value={date}
+              onChange={(e) => {
+                if (!e) return;
+                setDate(e);
+              }}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                },
+              }}
+            />
+          </Grid>
+        </Grid>
+      </CardContent>
+    );
+  };
+
   return (
     <Card>
-      <CardHeader title="京天威HMIS" subheader="徐州北" />
+      <CardHeader
+        title="京天威HMIS"
+        subheader="徐州北"
+        action={
+          <IconButton onClick={() => setShowFilter((prev) => !prev)}>
+            <FilterListOutlined color={showFilter ? "primary" : void 0} />
+          </IconButton>
+        }
+      />
       <CardContent>
         <Grid container spacing={6}>
           <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
@@ -362,6 +398,7 @@ export const Component = () => {
         </Grid>
       </CardContent>
       <Divider />
+      {renderFilter()}
       <TableContainer>
         <Table>
           <TableHead>

@@ -14,10 +14,28 @@ import type { Log } from "./lib/db";
 
 const mediaQuery = matchMedia("(prefers-color-scheme: dark)");
 const spacing = (abs: number) => `${abs * 0.25}rem`;
-const lightTheme = createTheme({ spacing });
+const lightTheme = createTheme({
+  spacing,
+  palette: {
+    primary: {
+      main: "#615fff",
+      light: "rgb(128, 127, 255)",
+      dark: "rgb(67, 66, 178)",
+      contrastText: "#fff",
+    },
+  },
+});
 
 const darkTheme = createTheme({
-  palette: { mode: "dark" },
+  palette: {
+    mode: "dark",
+    primary: {
+      main: "#615fff",
+      light: "rgb(128, 127, 255)",
+      dark: "rgb(67, 66, 178)",
+      contrastText: "#fff",
+    },
+  },
   spacing,
 });
 

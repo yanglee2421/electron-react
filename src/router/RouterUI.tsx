@@ -102,8 +102,8 @@ const AuthAside = styled("aside")(({ theme }) => ({
   overflowY: "auto",
   borderInlineEnd: `1px solid ${theme.palette.divider}`,
   // Not supported :hover :active
-  // scrollbarColor: `${theme.palette.action.disabled} transparent`,
-  // scrollbarWidth: "thin",
+  scrollbarColor: `${theme.palette.divider} transparent`,
+  scrollbarWidth: "thin",
 
   // Not supported in Firefox
   // "&::-webkit-scrollbar": {
@@ -719,7 +719,11 @@ const routes: RouteObject[] = [
                 path: "detection",
                 lazy: () => import("@/pages/detection/component"),
               },
-
+              {
+                id: "verify",
+                path: "verify",
+                lazy: () => import("@/pages/verify/component"),
+              },
               {
                 id: "quartors",
                 path: "quartors",

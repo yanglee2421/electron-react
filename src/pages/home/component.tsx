@@ -1,10 +1,11 @@
 import { fetchSettings } from "@/api/fetch_preload";
-import { Box, CircularProgress } from "@mui/material";
+import { Alert, AlertTitle, Box, CircularProgress } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Navigate } from "react-router";
 
 export const Component = () => {
   const settings = useQuery(fetchSettings());
+
   if (settings.isPending) {
     return (
       <Box
@@ -22,16 +23,10 @@ export const Component = () => {
 
   if (settings.isError) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 6,
-        }}
-      >
-        <h1>Error</h1>
-      </Box>
+      <Alert>
+        <AlertTitle>Error</AlertTitle>
+        Load settings failed. Please try again later.
+      </Alert>
     );
   }
 

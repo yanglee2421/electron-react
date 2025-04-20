@@ -38,7 +38,7 @@ const LinkWrapper = styled("div")(({ theme }) => ({
     color: theme.palette.primary.main,
     backgroundColor: alpha(
       theme.palette.primary.main,
-      theme.palette.action.activatedOpacity
+      theme.palette.action.activatedOpacity,
     ),
   },
 }));
@@ -86,6 +86,11 @@ const list = [
     to: "/detection",
     label: "现车作业",
     icon: <TrainOutlined />,
+  },
+  {
+    to: "/verify",
+    label: "日常校验",
+    icon: <CalendarTodayOutlined />,
   },
   { to: "/quartors", label: "季度校验", icon: <CalendarMonthOutlined /> },
   { to: "/log", label: "日志", icon: <InfoOutlined /> },

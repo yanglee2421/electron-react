@@ -9,6 +9,21 @@ import { withLog } from "./lib";
 const execFileAsync = promisify(execFile);
 export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 
+export const getDataFromAccessDatabase = async <T = unknown>(sql: string) => {
+  const config = store.settings.store;
+  const data = await execFileAsync(config.driverPath, [
+    "GetDataFromAccessDatabase",
+    config.databasePath,
+    sql,
+  ]);
+
+  if (data.stderr) {
+    throw data.stderr;
+  }
+
+  return JSON.parse(data.stdout) as T[];
+};
+
 export type Detection = {
   bFlaws: boolean | null;
   bSickLD: boolean | null;
@@ -37,19 +52,22 @@ export type Detection = {
   tmnow: string | null;
 };
 
-export const getDataFromAccessDatabase = async <T = unknown>(sql: string) => {
-  const config = store.settings.store;
-  const data = await execFileAsync(config.driverPath, [
-    "GetDataFromAccessDatabase",
-    config.databasePath,
-    sql,
-  ]);
-
-  if (data.stderr) {
-    throw data.stderr;
-  }
-
-  return JSON.parse(data.stdout) as T[];
+export type DetectionData = {
+  ManualRes: string | null;
+  bEnable: boolean;
+  fltValueUS: number;
+  fltValueUSH: number;
+  fltValueX: number;
+  fltValueY: number;
+  nAtten: number;
+  nBoard: number;
+  nChannel: number;
+  nFWCount: number;
+  nFWIn: number;
+  nFWIndex: number;
+  nFWOut: number;
+  nTAIndex: number;
+  opid: string | null;
 };
 
 export const getDetectionByZH = async (params: {
@@ -77,24 +95,6 @@ export const getDetectionDatasByOPID = async (opid: string) => {
   );
 
   return detectionDatas;
-};
-
-export type DetectionData = {
-  ManualRes: string | null;
-  bEnable: boolean;
-  fltValueUS: number;
-  fltValueUSH: number;
-  fltValueX: number;
-  fltValueY: number;
-  nAtten: number;
-  nBoard: number;
-  nChannel: number;
-  nFWCount: number;
-  nFWIn: number;
-  nFWIndex: number;
-  nFWOut: number;
-  nTAIndex: number;
-  opid: string | null;
 };
 
 export type Corporation = {
@@ -151,6 +151,51 @@ export type VerifyData = {
   nFWOut: number;
   nTAIndex: number;
   opid: string | null;
+};
+
+export type Quartor = {
+  szIDs: string;
+  szIDsWheel: string | null;
+  szWHModel: string | null;
+  szUsername: string | null;
+  szIDsMake: string | null;
+  szIDsFirst: string | null;
+  szIDsLast: string | null;
+  szTMMake: string | null;
+  szTMFirst: string | null;
+  szTMLast: string | null;
+  ftRadiu: number | null;
+  bFlaws: boolean | null;
+  bWheelLS: boolean | null;
+  bWheelRS: boolean | null;
+  bSickLD: boolean | null;
+  bSickRD: boolean | null;
+  tmnow: string | null;
+  szResult: string | null;
+  szMemo: string | null;
+  DB: string | null;
+  bJiXiaoReportOut: boolean | null;
+  bHeGe: boolean | null;
+  startTime: string | null;
+  endTime: string | null;
+};
+
+export type QuartorData = {
+  opid: string | null;
+  nBoard: number;
+  nChannel: number;
+  nTAIndex: number;
+  nAtten: number;
+  nFWIndex: number;
+  nFWIn: number;
+  nFWOut: number;
+  nFWCount: number;
+  fltValueX: number;
+  fltValueY: number;
+  fltValueUS: number;
+  fltValueUSH: number;
+  bEnable: boolean;
+  ManualRes: string | null;
 };
 
 export type AutoInputToVCParams = {
