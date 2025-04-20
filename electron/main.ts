@@ -153,7 +153,7 @@ ipcMain.handle(
       app.setLoginItemSettings({ openAtLogin });
     }
 
-    return app.getLoginItemSettings().openAtLogin;
+    return app.getLoginItemSettings().launchItems.some((i) => i.enabled);
   }),
 );
 
