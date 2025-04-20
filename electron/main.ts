@@ -139,6 +139,25 @@ if (!gotTheLock) {
 }
 
 ipcMain.handle(
+  channel.getVersion,
+  withLog(async (): Promise<string> => app.getVersion()),
+);
+
+ipcMain.handle(
+  channel.openAtLogin,
+  withLog(async (e, openAtLogin?: boolean): Promise<boolean> => {
+    void e;
+    console.log("openAtLogin", openAtLogin);
+
+    if (typeof openAtLogin === "boolean") {
+      app.setLoginItemSettings({ openAtLogin });
+    }
+
+    return app.getLoginItemSettings().openAtLogin;
+  }),
+);
+
+ipcMain.handle(
   channel.openDevTools,
   withLog(async (): Promise<void> => {
     if (!win) return;
@@ -167,11 +186,6 @@ ipcMain.handle(
       freemem,
     };
   }),
-);
-
-ipcMain.handle(
-  channel.getVersion,
-  withLog(async (): Promise<string> => app.getVersion()),
 );
 
 ipcMain.handle(

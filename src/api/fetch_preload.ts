@@ -395,6 +395,28 @@ export const useKhHmisSqliteDelete = () => {
 };
 
 // Electron 相关函数
+export const fetchOpenAtLogin = () =>
+  queryOptions({
+    queryKey: ["window.electronAPI.openAtLogin"],
+    queryFn: async () => {
+      return await window.electronAPI.openAtLogin();
+    },
+  });
+
+export const useOpenAtLogin = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (openAtLogin: boolean) => {
+      return await window.electronAPI.openAtLogin(openAtLogin);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: fetchOpenAtLogin().queryKey,
+      });
+    },
+  });
+};
+
 export const useOpenPath = () => {
   return useMutation({
     mutationFn: async (path: string) => {

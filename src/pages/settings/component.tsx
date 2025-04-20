@@ -33,6 +33,8 @@ import {
   fetchSettings,
   useUpdateSettings,
   fetchVersion,
+  fetchOpenAtLogin,
+  useOpenAtLogin,
 } from "@/api/fetch_preload";
 
 const schema = z.object({
@@ -60,48 +62,6 @@ const useSettingForm = () => {
   });
 };
 
-const reducer = (prev: boolean, action: boolean) => {
-  void prev;
-  return action;
-};
-
-const useOpenAtLogin = () => {
-  const [openAtLoginInState, setOpenAtLoginInState] = React.useState<
-    null | boolean
-  >(null);
-
-  const { data: settings } = useQuery(fetchSettings());
-  const queryClient = useQueryClient();
-
-  if (!settings) {
-    throw new Error("Settings not found");
-  }
-
-  const openAtLoginInUI = openAtLoginInState ?? settings.openAtLogin;
-
-  const [, startTransition] = React.useTransition();
-  const [optimisticOpenAtLoginInUI, setOptimisticOpenAtLoginInUI] =
-    React.useOptimistic(openAtLoginInUI, reducer);
-
-  const openAtLoginAction = React.useCallback(
-    async (checked: boolean) => {
-      startTransition(async () => {
-        setOptimisticOpenAtLoginInUI(checked);
-        await window.electronAPI.settings({
-          openAtLogin: checked,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: fetchSettings().queryKey,
-        });
-        setOpenAtLoginInState(checked);
-      });
-    },
-    [setOptimisticOpenAtLoginInUI, queryClient],
-  );
-
-  return [optimisticOpenAtLoginInUI, openAtLoginAction] as const;
-};
-
 export const Component = () => {
   const formId = React.useId();
   const [isPending, startTransition] = React.useTransition();
@@ -109,8 +69,10 @@ export const Component = () => {
   const form = useSettingForm();
   const mutate = useUpdateSettings();
   const snackbar = useSnackbar();
+  const queryClient = useQueryClient();
+  const updateOpenAtLogin = useOpenAtLogin();
   const version = useQuery(fetchVersion());
-  const [openAtLogin, setOpenAtLogin] = useOpenAtLogin();
+  const openAtLogin = useQuery(fetchOpenAtLogin());
 
   return (
     <Stack spacing={6}>
@@ -279,10 +241,14 @@ export const Component = () => {
           <ListItem
             secondaryAction={
               <Switch
-                checked={openAtLogin}
+                checked={openAtLogin.data}
                 onChange={(e, checked) => {
                   void e;
-                  setOpenAtLogin(checked);
+                  queryClient.setQueryData(
+                    fetchOpenAtLogin().queryKey,
+                    checked,
+                  );
+                  updateOpenAtLogin.mutate(checked);
                 }}
               />
             }

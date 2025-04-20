@@ -259,14 +259,19 @@ const getPathForFile = (file: File): string => {
   return webUtils.getPathForFile(file);
 };
 
-const openPath = async (path: string): Promise<string> => {
-  const data = await ipcRenderer.invoke(channel.openPath, path);
+const openAtLogin = async (open?: boolean): Promise<boolean> => {
+  const data = await ipcRenderer.invoke(channel.openAtLogin, open);
   return data;
 };
 
 const openDevTools = async (): Promise<boolean> => {
   await ipcRenderer.invoke(channel.openDevTools);
   return true;
+};
+
+const openPath = async (path: string): Promise<string> => {
+  const data = await ipcRenderer.invoke(channel.openPath, path);
+  return data;
 };
 
 const subscribeLog: SubscribeLog = (handler) => {
@@ -357,6 +362,7 @@ const electronAPI = {
   kh_hmis_sqlite_delete,
 
   // Electron
+  openAtLogin,
   openPath,
   openDevTools,
   getPathForFile,

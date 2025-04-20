@@ -36,8 +36,9 @@ export const kh_hmis_sqlite_delete = "kh_hmis_sqlite_delete";
 // Electron
 export const log = "log";
 export const mem = "mem";
-export const openPath = "openPath";
+export const openAtLogin = "openAtLogin";
 export const openDevTools = "openDevTools";
+export const openPath = "openPath";
 export const windowFocus = "windowFocus";
 export const windowBlur = "windowBlur";
 export const windowShow = "windowShow";

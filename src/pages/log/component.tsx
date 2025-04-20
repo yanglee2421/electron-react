@@ -19,11 +19,13 @@ export const Component = () => {
   const logs = useLiveQuery(() => db.log.toArray(), []);
 
   React.useEffect(() => {
+    if (!logs?.length) return;
+
     scrollCursorRef.current?.scrollIntoView({
       behavior: "instant",
-      block: "start",
+      block: "end",
     });
-  }, []);
+  }, [logs?.length]);
 
   const renderLog = () => {
     return (

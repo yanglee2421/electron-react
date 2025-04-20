@@ -59,7 +59,6 @@ import {
   Link,
   ScrollRestoration,
   useLocation,
-  useRouteLoaderData,
 } from "react-router";
 import NProgress from "nprogress";
 import { ASIDE_SIZE, HEADER_SIZE_SM, HEADER_SIZE_XS } from "@/lib/constants";
@@ -72,6 +71,7 @@ import {
   fetchJtvHmisXuzhoubeiSetting,
   fetchKhHmisSetting,
   fetchSettings,
+  useUpdateSettings,
 } from "@/api/fetch_preload";
 
 const AuthAsideWrapper = styled("div")(({ theme }) => ({
@@ -158,46 +158,44 @@ const renderModeIcon = (mode: string) => {
   }
 };
 
-const useMode = () => {
-  const [modeInState, setModeInState] = React.useState<
-    null | "system" | "light" | "dark"
-  >(null);
-
-  const loaderData = useRouteLoaderData<typeof authLayoutLoader>("auth_layout");
-
-  if (!loaderData) {
-    throw new Error("useMode must be used within a authLayoutLoader");
-  }
-
-  const modeInUI = modeInState ?? loaderData.mode;
-
-  const [, startTransition] = React.useTransition();
-  const [optimisticModeInUI, setOptimisticModeInUI] = React.useOptimistic(
-    modeInUI,
-    (prev: typeof modeInUI, next: typeof modeInUI) => {
-      void prev;
-      return next;
-    },
-  );
-
-  const modeInUIAction = React.useCallback(
-    (mode: "system" | "light" | "dark") => {
-      startTransition(async () => {
-        setOptimisticModeInUI(mode);
-        await window.electronAPI.settings({ mode });
-        setModeInState(mode);
-      });
-    },
-    [setOptimisticModeInUI],
-  );
-
-  return [optimisticModeInUI, modeInUIAction] as const;
-};
-
 const ModeToggle = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
-  const [mode, setMode] = useMode();
+  const fetcher = fetchSettings();
+  const { data: settings } = useQuery(fetcher);
+  const updateSettings = useUpdateSettings();
+  const queryClient = useQueryClient();
+  const snackbar = useSnackbar();
+
+  /**
+   * Already ensured query data in the loader
+   * @see authLayoutLoader
+   * But we need to check if the data is valid
+   */
+  if (!settings) {
+    throw new Error("请先加载设置");
+  }
+
+  const mode = settings.mode;
+  const setMode = (newMode: "system" | "light" | "dark") => {
+    queryClient.setQueryData(fetcher.queryKey, (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        mode: newMode,
+      };
+    });
+    updateSettings.mutate(
+      { mode: newMode },
+      {
+        onError: () => {
+          snackbar.enqueueSnackbar("设置失败", {
+            variant: "error",
+          });
+        },
+      },
+    );
+  };
 
   return (
     <>
@@ -247,48 +245,27 @@ const ModeToggle = () => {
   );
 };
 
-const reducer = (prev: boolean, next: boolean) => {
-  void prev;
-  return next;
-};
-
-const useAlwaysOnTop = () => {
-  const [pinInState, setPinInState] = React.useState<null | boolean>(null);
-
-  const loaderData = useRouteLoaderData<typeof authLayoutLoader>("auth_layout");
-
-  if (!loaderData) {
-    throw new Error("useAlwaysOnTop must be used within a authLayoutLoader");
-  }
-
-  const pinInUI = pinInState ?? loaderData.alwaysOnTop;
-
-  const [, startTransition] = React.useTransition();
-  const [optimisticPinInUI, setOptimisticPinInUI] = React.useOptimistic(
-    pinInUI,
-    reducer,
-  );
-
-  const pinInUIAction = React.useCallback(
-    (checked: boolean) => {
-      startTransition(async () => {
-        setOptimisticPinInUI(checked);
-        await window.electronAPI.settings({ alwaysOnTop: checked });
-        setPinInState(checked);
-      });
-    },
-    [setOptimisticPinInUI],
-  );
-
-  return [optimisticPinInUI, pinInUIAction] as const;
-};
-
 const AuthLayout = () => {
   const [key, update] = React.useState("");
 
   const location = useLocation();
-  const [alwaysOnTop, setAlwaysOnTop] = useAlwaysOnTop();
+  const fetcher = fetchSettings();
+  const { data: settings } = useQuery(fetcher);
+  const updateSettings = useUpdateSettings();
+  const queryClient = useQueryClient();
+  const snackbar = useSnackbar();
+
+  /**
+   * Already ensured query data in the loader
+   * @see authLayoutLoader
+   * But we need to check if the data is valid
+   */
+  if (!settings) {
+    throw new Error("请先加载设置");
+  }
+
   const showMenuInMobile = Object.is(key, location.key);
+  const alwaysOnTop = settings.alwaysOnTop;
 
   return (
     <>
@@ -331,7 +308,26 @@ const AuthLayout = () => {
           <Box sx={{ marginInlineStart: "auto" }} />
           <IconButton
             onClick={() => {
-              setAlwaysOnTop(!alwaysOnTop);
+              queryClient.setQueryData(fetcher.queryKey, (old) => {
+                if (!old) return old;
+                return {
+                  ...old,
+                  alwaysOnTop: !old.alwaysOnTop,
+                };
+              });
+
+              updateSettings.mutate(
+                {
+                  alwaysOnTop: !alwaysOnTop,
+                },
+                {
+                  onError: () => {
+                    snackbar.enqueueSnackbar("设置失败", {
+                      variant: "error",
+                    });
+                  },
+                },
+              );
             }}
           >
             {alwaysOnTop ? <PushPin /> : <PushPinOutlined />}
