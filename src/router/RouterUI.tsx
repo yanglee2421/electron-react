@@ -33,8 +33,8 @@ import {
   ListItemText,
   Menu,
   MenuItem,
-  styled,
   Toolbar,
+  useMediaQuery,
 } from "@mui/material";
 import {
   CloseOutlined,
@@ -45,6 +45,7 @@ import {
   HomeOutlined,
   LightModeOutlined,
   MenuOutlined,
+  PhonelinkOutlined,
   PushPin,
   PushPinOutlined,
 } from "@mui/icons-material";
@@ -61,7 +62,6 @@ import {
   useLocation,
 } from "react-router";
 import NProgress from "nprogress";
-import { ASIDE_SIZE, HEADER_SIZE_SM, HEADER_SIZE_XS } from "@/lib/constants";
 import { Loading } from "@/components/Loading";
 import { NavMenu } from "./nav";
 import { QueryProvider } from "@/components/query";
@@ -71,80 +71,10 @@ import {
   fetchJtvHmisXuzhoubeiSetting,
   fetchKhHmisSetting,
   fetchSettings,
+  useMobileMode,
   useUpdateSettings,
 } from "@/api/fetch_preload";
-
-const AuthAsideWrapper = styled("div")(({ theme }) => ({
-  position: "fixed",
-  zIndex: theme.zIndex.appBar - 1,
-  insetInlineStart: 0,
-  insetBlockStart: 0,
-
-  inlineSize: "100dvw",
-  blockSize: "100dvh",
-
-  paddingBlockStart: theme.spacing(HEADER_SIZE_XS),
-  [theme.breakpoints.up("sm")]: {
-    maxInlineSize: theme.spacing(ASIDE_SIZE),
-
-    paddingBlockStart: theme.spacing(HEADER_SIZE_SM),
-  },
-
-  overflow: "hidden",
-
-  backgroundColor: theme.palette.background.default,
-}));
-
-const AuthAside = styled("aside")(({ theme }) => ({
-  blockSize: "100%",
-
-  overflowX: "visible",
-  overflowY: "auto",
-  borderInlineEnd: `1px solid ${theme.palette.divider}`,
-  // Not supported :hover :active
-  scrollbarColor: `${theme.palette.divider} transparent`,
-  scrollbarWidth: "thin",
-
-  // Not supported in Firefox
-  // "&::-webkit-scrollbar": {
-  //   width: theme.spacing(1.5),
-  // },
-  // "&::-webkit-scrollbar-thumb": {
-  //   backgroundColor: alpha(
-  //     theme.palette.text.primary,
-  //     theme.palette.action.disabledOpacity
-  //   ),
-  //   borderRadius: theme.spacing(0.5),
-  // },
-  // "&::-webkit-scrollbar-thumb:hover": {
-  //   backgroundColor: alpha(
-  //     theme.palette.text.primary,
-  //     theme.palette.action.hoverOpacity
-  //   ),
-  // },
-  // "&::-webkit-scrollbar-thumb:active": {
-  //   backgroundColor: alpha(
-  //     theme.palette.text.primary,
-  //     theme.palette.action.activatedOpacity
-  //   ),
-  // },
-}));
-
-const AuthContainer = styled("div")(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  minBlockSize: "100dvh",
-
-  paddingBlockStart: theme.spacing(HEADER_SIZE_XS),
-  [theme.breakpoints.up("sm")]: {
-    paddingInlineStart: theme.spacing(ASIDE_SIZE),
-    paddingBlockStart: theme.spacing(HEADER_SIZE_SM),
-  },
-}));
-
-const AuthMain = styled("main")(({ theme }) => ({
-  padding: theme.spacing(4),
-}));
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 const renderModeIcon = (mode: string) => {
   switch (mode) {
@@ -245,8 +175,54 @@ const ModeToggle = () => {
   );
 };
 
+const MobileModeButton = () => {
+  const mobileMode = useMobileMode();
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  return (
+    <IconButton
+      onClick={() => {
+        mobileMode.mutate(!isSmallScreen);
+      }}
+    >
+      <PhonelinkOutlined color={isSmallScreen ? "primary" : void 0} />
+    </IconButton>
+  );
+};
+
+const useSize = (enable: boolean) => {
+  const [height, setHeight] = React.useState(0);
+
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!enable) return;
+
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      entries.forEach((entry) => {
+        entry.contentBoxSize.forEach((contentBox) => {
+          setHeight(contentBox.blockSize);
+        });
+      });
+    });
+
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [enable]);
+
+  return [height, ref] as const;
+};
+
 const AuthLayout = () => {
   const [key, update] = React.useState("");
+  const [dragging, setDragging] = React.useState(false);
 
   const location = useLocation();
   const fetcher = fetchSettings();
@@ -254,22 +230,97 @@ const AuthLayout = () => {
   const updateSettings = useUpdateSettings();
   const queryClient = useQueryClient();
   const snackbar = useSnackbar();
-
-  /**
-   * Already ensured query data in the loader
-   * @see authLayoutLoader
-   * But we need to check if the data is valid
-   */
-  if (!settings) {
-    throw new Error("请先加载设置");
-  }
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const [height, ref] = useSize(isSmallScreen);
 
   const showMenuInMobile = Object.is(key, location.key);
-  const alwaysOnTop = settings.alwaysOnTop;
+  const alwaysOnTop = settings?.alwaysOnTop;
+
+  const renderMobile = () => {
+    if (showMenuInMobile) {
+      return (
+        <Box sx={{ paddingBlockStart: `${height}px` }}>
+          <NavMenu />
+        </Box>
+      );
+    }
+
+    return (
+      <Box sx={{ paddingBlockStart: `${height}px` }}>
+        <Box sx={{ padding: 4 }}>
+          <Outlet />
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderPanel = () => {
+    if (isSmallScreen) {
+      return (
+        <>
+          {renderMobile()}
+          <GlobalStyles
+            styles={{
+              "*": {
+                scrollbarWidth: "thin",
+                scrollbarColor: `${theme.palette.divider} transparent`,
+              },
+            }}
+          />
+        </>
+      );
+    }
+
+    return (
+      <PanelGroup direction="horizontal" autoSaveId={"layout"}>
+        <Panel id="nav" order={1} defaultSize={30} minSize={30}>
+          <Box
+            sx={{
+              inlineSize: "100%",
+              blockSize: "100%",
+              overflowY: "auto",
+              scrollbarWidth: "thin",
+              scrollbarColor: `${theme.palette.divider} transparent`,
+            }}
+          >
+            <NavMenu />
+          </Box>
+        </Panel>
+        <PanelResizeHandle onDragging={setDragging}>
+          <Box
+            sx={{
+              blockSize: "100%",
+              inlineSize: dragging ? 2 : 1,
+              backgroundColor: dragging
+                ? theme.palette.primary.main
+                : theme.palette.divider,
+            }}
+          />
+        </PanelResizeHandle>
+        <Panel id="content" order={2} defaultSize={70} minSize={30}>
+          <Box
+            sx={{
+              inlineSize: "100%",
+              blockSize: "100%",
+              overflowY: "auto",
+              scrollbarWidth: "thin",
+              scrollbarColor: `${theme.palette.divider} transparent`,
+            }}
+          >
+            <Box sx={{ padding: 4 }}>
+              <Outlet />
+            </Box>
+          </Box>
+        </Panel>
+      </PanelGroup>
+    );
+  };
 
   return (
-    <>
+    <Box sx={{ display: "flex", flexDirection: "column", blockSize: "100dvh" }}>
       <AppBar
+        ref={ref}
         elevation={0}
         sx={(theme) => ({
           bgcolor: "transparent",
@@ -277,6 +328,7 @@ const AuthLayout = () => {
           backgroundColor: alpha(theme.palette.background.default, 0.6),
           backdropFilter: "blur(8px)",
         })}
+        position={isSmallScreen ? "fixed" : "static"}
       >
         <Toolbar>
           <Box
@@ -306,6 +358,7 @@ const AuthLayout = () => {
             {showMenuInMobile ? <CloseOutlined /> : <MenuOutlined />}
           </IconButton>
           <Box sx={{ marginInlineStart: "auto" }} />
+          <MobileModeButton />
           <IconButton
             onClick={() => {
               queryClient.setQueryData(fetcher.queryKey, (old) => {
@@ -335,25 +388,8 @@ const AuthLayout = () => {
           <ModeToggle />
         </Toolbar>
       </AppBar>
-      <AuthAsideWrapper
-        sx={{
-          maxInlineSize: showMenuInMobile ? "none" : 0,
-        }}
-      >
-        <AuthAside>
-          <NavMenu />
-        </AuthAside>
-      </AuthAsideWrapper>
-      <AuthContainer
-        sx={{
-          display: showMenuInMobile ? "none" : "flex",
-        }}
-      >
-        <AuthMain>
-          <Outlet />
-        </AuthMain>
-      </AuthContainer>
-    </>
+      {renderPanel()}
+    </Box>
   );
 };
 

@@ -49,6 +49,7 @@ const createWindow = () => {
 
     width: 1024,
     height: 768,
+    minWidth: 500,
     // show: false,
   });
 
@@ -181,5 +182,23 @@ ipcMain.handle(
       totalmem: process.getSystemMemoryInfo().total,
       freemem,
     };
+  }),
+);
+
+ipcMain.handle(
+  channel.mobileMode,
+  withLog(async (e, mobile: boolean): Promise<boolean> => {
+    void e;
+
+    BrowserWindow.getAllWindows().forEach((win) => {
+      if (mobile) {
+        win.setSize(500, 800);
+      } else {
+        win.setSize(1024, 768);
+      }
+      win.center();
+    });
+
+    return mobile;
   }),
 );

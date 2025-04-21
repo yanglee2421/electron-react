@@ -449,6 +449,14 @@ export const fetchVersion = () =>
     },
   });
 
+export const useMobileMode = () => {
+  return useMutation({
+    mutationFn: async (mobile: boolean) => {
+      return await window.electronAPI.mobileMode(mobile);
+    },
+  });
+};
+
 export const fetchSettings = () =>
   queryOptions({
     queryKey: ["window.electronAPI.settings"],

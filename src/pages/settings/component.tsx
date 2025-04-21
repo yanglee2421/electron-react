@@ -217,7 +217,7 @@ export const Component = () => {
             form={formId}
             startIcon={
               mutate.isPending ? (
-                <CircularProgress size={16} />
+                <CircularProgress size={16} color="inherit" />
               ) : (
                 <SaveOutlined />
               )
@@ -233,7 +233,11 @@ export const Component = () => {
             }}
             disabled={isPending}
             startIcon={
-              isPending ? <CircularProgress size={16} /> : <OpenInNewOutlined />
+              isPending ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <OpenInNewOutlined />
+              )
             }
           >
             在编辑器中打开

@@ -320,6 +320,11 @@ const getVersion = async (): Promise<string> => {
   return data;
 };
 
+const mobileMode = async (mobile: boolean): Promise<boolean> => {
+  const data = await ipcRenderer.invoke(channel.mobileMode, mobile);
+  return data;
+};
+
 export type SetSettingParams = Partial<STORE.Settings>;
 
 const settings = async (param?: SetSettingParams): Promise<STORE.Settings> => {
@@ -376,6 +381,7 @@ const electronAPI = {
   getPathForFile,
   getMem,
   getVersion,
+  mobileMode,
 
   // Common
   settings,

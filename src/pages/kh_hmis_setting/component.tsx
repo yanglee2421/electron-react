@@ -10,6 +10,7 @@ import {
   TextField,
   TextFieldProps,
   FormGroup,
+  CircularProgress,
 } from "@mui/material";
 import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
@@ -21,6 +22,7 @@ import {
   fetchKhHmisSetting,
   useUpdateKhHmisSetting,
 } from "@/api/fetch_preload";
+import { SaveOutlined } from "@mui/icons-material";
 
 const schema = z.object({
   ip: z
@@ -305,7 +307,18 @@ export const Component = () => {
         </form>
       </CardContent>
       <CardActions>
-        <Button form={formId} type="submit" disabled={update.isPending}>
+        <Button
+          form={formId}
+          type="submit"
+          disabled={update.isPending}
+          startIcon={
+            update.isPending ? (
+              <CircularProgress size={16} color="inherit" />
+            ) : (
+              <SaveOutlined />
+            )
+          }
+        >
           保存
         </Button>
       </CardActions>

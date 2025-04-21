@@ -190,7 +190,7 @@ const columns = [
     header: "已上传",
     footer: "已上传",
     cell: ({ getValue }) =>
-      getValue() ? <CheckOutlined /> : <ClearOutlined />,
+      getValue() ? <CheckOutlined color="success" /> : <ClearOutlined />,
   }),
   columnHelper.display({
     id: "action",
@@ -414,7 +414,7 @@ export const Component = () => {
                               type="submit"
                               endIcon={
                                 getData.isPending ? (
-                                  <CircularProgress size={16} />
+                                  <CircularProgress size={16} color="inherit" />
                                 ) : (
                                   <KeyboardReturnOutlined />
                                 )
@@ -441,7 +441,7 @@ export const Component = () => {
       <Divider />
       {renderFilter()}
       <TableContainer>
-        <Table>
+        <Table sx={{ minWidth: 720 }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

@@ -32,6 +32,7 @@ import {
   DialogContentText,
   DialogActions,
   Link,
+  CircularProgress,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -183,7 +184,7 @@ const columns = [
     header: "已上传",
     footer: "已上传",
     cell: ({ getValue }) =>
-      getValue() ? <CheckOutlined /> : <ClearOutlined />,
+      getValue() ? <CheckOutlined color="success" /> : <ClearOutlined />,
   }),
   columnHelper.display({
     id: "action",
@@ -406,7 +407,13 @@ export const Component = () => {
                             <Button
                               form={formId}
                               type="submit"
-                              endIcon={<KeyboardReturnOutlined />}
+                              endIcon={
+                                getData.isPending ? (
+                                  <CircularProgress size={16} color="inherit" />
+                                ) : (
+                                  <KeyboardReturnOutlined />
+                                )
+                              }
                               variant="contained"
                               disabled={getData.isPending}
                             >
@@ -429,7 +436,7 @@ export const Component = () => {
       <Divider />
       {renderFilter()}
       <TableContainer>
-        <Table>
+        <Table sx={{ minWidth: 720 }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

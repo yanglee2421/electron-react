@@ -162,7 +162,7 @@ export const Component = () => {
       </CardContent>
       <Divider />
       <TableContainer>
-        <Table>
+        <Table sx={{ minWidth: 720 }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

@@ -44,6 +44,7 @@ export const windowBlur = "windowBlur";
 export const windowShow = "windowShow";
 export const windowHide = "windowHide";
 export const getVersion = "getVersion";
+export const mobileMode = "mobileMode";
 
 // Common
 export const settings = "settings";
