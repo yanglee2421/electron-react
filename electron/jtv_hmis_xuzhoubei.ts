@@ -1,7 +1,7 @@
 // 京天威 徐州北
 
 import { net, ipcMain } from "electron";
-import { log, getPlace, getDirection, withLog } from "./lib";
+import { log, getPlace, getDirection, withLog, createEmit } from "./lib";
 import {
   getCorporation,
   getDetectionByZH,
@@ -261,6 +261,8 @@ const recordToBody = async (
   return body;
 };
 
+const emit = createEmit(channel.jtv_hmis_xuzhoubei_api_set);
+
 const api_set = async (id: number): Promise<schema.JtvXuzhoubeiBarcode> => {
   const record = await db.query.jtvXuzhoubeiBarcodeTable.findFirst({
     where: sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id),
@@ -284,6 +286,9 @@ const api_set = async (id: number): Promise<schema.JtvXuzhoubeiBarcode> => {
     })
     .where(sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id))
     .returning();
+
+  emit();
+
   return result;
 };
 

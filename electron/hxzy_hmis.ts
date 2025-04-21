@@ -1,7 +1,7 @@
 // 成都北 华兴致远
 
 import { net, ipcMain } from "electron";
-import { log, getIP, withLog } from "./lib";
+import { log, getIP, withLog, createEmit } from "./lib";
 import {
   getDetectionByZH,
   getDetectionDatasByOPID,
@@ -258,6 +258,8 @@ const recordToBody = async (
   };
 };
 
+const emit = createEmit(channel.hxzy_hmis_api_set);
+
 const api_set = async (id: number) => {
   const record = await db.query.hxzyBarcodeTable.findFirst({
     where: sql.eq(schema.hxzyBarcodeTable.id, id),
@@ -279,6 +281,7 @@ const api_set = async (id: number) => {
     .set({ isUploaded: true })
     .where(sql.eq(schema.hxzyBarcodeTable.id, id))
     .returning();
+  emit();
 
   return result;
 };

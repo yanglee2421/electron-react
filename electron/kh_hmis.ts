@@ -1,7 +1,7 @@
 // 康华 安康
 
 import { net, ipcMain } from "electron";
-import { log, withLog } from "./lib";
+import { createEmit, log, withLog } from "./lib";
 import { getCorporation, getDetectionByZH } from "./cmd";
 import dayjs from "dayjs";
 import { URL } from "node:url";
@@ -291,6 +291,8 @@ const recordToBody = async (record: schema.KhBarcode) => {
   };
 };
 
+const emit = createEmit(channel.kh_hmis_api_set);
+
 const api_set = async (id: number) => {
   const record = await db.query.khBarcodeTable.findFirst({
     where: sql.eq(schema.khBarcodeTable.id, id),
@@ -312,6 +314,7 @@ const api_set = async (id: number) => {
     .set({ isUploaded: true })
     .where(sql.eq(schema.khBarcodeTable.id, id))
     .returning();
+  emit();
 
   return result;
 };

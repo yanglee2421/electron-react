@@ -1,7 +1,7 @@
 // 京天威 统型
 
 import { net, ipcMain } from "electron";
-import { log, getIP, withLog } from "./lib";
+import { log, getIP, withLog, createEmit } from "./lib";
 import {
   getCorporation,
   getDetectionByZH,
@@ -251,6 +251,8 @@ const recordToBody = async (
   };
 };
 
+const emit = createEmit(channel.jtv_hmis_api_set);
+
 const api_set = async (id: number): Promise<schema.JTVBarcode> => {
   const record = await db.query.jtvBarcodeTable.findFirst({
     where: sql.eq(schema.jtvBarcodeTable.id, id),
@@ -267,6 +269,8 @@ const api_set = async (id: number): Promise<schema.JTVBarcode> => {
     .set({ isUploaded: true })
     .where(sql.eq(schema.jtvBarcodeTable.id, record.id))
     .returning();
+  emit();
+
   return result;
 };
 

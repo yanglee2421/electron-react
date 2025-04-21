@@ -306,6 +306,12 @@ const subscribeWindowFocus = createSubscribe(channel.windowFocus);
 const subscribeWindowBlur = createSubscribe(channel.windowBlur);
 const subscribeWindowShow = createSubscribe(channel.windowShow);
 const subscribeWindowHide = createSubscribe(channel.windowHide);
+const subscribeHxzyHmisAPISet = createSubscribe(channel.hxzy_hmis_api_set);
+const subscribeJtvHmisAPISet = createSubscribe(channel.jtv_hmis_api_set);
+const subscribeKhHmisAPISet = createSubscribe(channel.kh_hmis_api_set);
+const subscribeJtvHmisXuzhoubeiAPISet = createSubscribe(
+  channel.jtv_hmis_xuzhoubei_api_set,
+);
 
 const getVersion = async (): Promise<string> => {
   const data = await ipcRenderer.invoke(channel.getVersion);
@@ -379,6 +385,10 @@ const electronAPI = {
   subscribeWindowBlur,
   subscribeWindowShow,
   subscribeWindowHide,
+  subscribeHxzyHmisAPISet,
+  subscribeJtvHmisXuzhoubeiAPISet,
+  subscribeJtvHmisAPISet,
+  subscribeKhHmisAPISet,
 };
 
 // --------- Expose some API to the Renderer process ---------
