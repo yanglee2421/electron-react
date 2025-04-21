@@ -1,11 +1,21 @@
 import { execFile, exec } from "node:child_process";
 import { promisify } from "node:util";
 import { access, constants } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { settings } from "./store";
+import { DATE_FORMAT_DATABASE } from "./cmd";
+import { withLog } from "./lib";
+import * as channel from "./channel";
+import { ipcMain, shell } from "electron";
 
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
+const stdoutMap = new WeakMap<() => void, string>();
 
 export const getCpuSerial = async () => {
+  const cache = stdoutMap.get(getCpuSerial);
+  if (cache) return cache;
+
   const data = await execAsync(
     "Get-CimInstance -ClassName Win32_Processor | Select-Object ProcessorId",
     { shell: "powershell" },
@@ -15,10 +25,19 @@ export const getCpuSerial = async () => {
     throw data.stderr;
   }
 
+  /**
+   * Performance opmtisic
+   * prefetch CPU serial
+   * CPU serial will not change in all runtime
+   */
+  stdoutMap.set(getCpuSerial, data.stdout);
   return data.stdout;
 };
 
 export const getMotherboardSerial = async () => {
+  const cache = stdoutMap.get(getMotherboardSerial);
+  if (cache) return cache;
+
   const data = await execAsync(
     "Get-WmiObject win32_baseboard | Select-Object SerialNumber",
     { shell: "powershell" },
@@ -28,7 +47,29 @@ export const getMotherboardSerial = async () => {
     throw data.stderr;
   }
 
+  /**
+   * Performance opmtisic
+   * prefetch motherboard serial
+   * motherboard serial will not change in all runtime
+   */
+  stdoutMap.set(getMotherboardSerial, data.stdout);
   return data.stdout;
+};
+
+export const getSerialFromStdout = (stdout: string) => {
+  return stdout.trim().split("\n").at(-1) || "";
+};
+
+export const verifyActivation = async () => {
+  const cpuSerial = await getCpuSerial();
+  const serial = getSerialFromStdout(cpuSerial);
+  const activateCode = settings.get("activateCode");
+  const exceptedCode = createHash("md5")
+    .update([serial, DATE_FORMAT_DATABASE].join(""))
+    .digest("hex")
+    .toUpperCase();
+
+  return Object.is(activateCode, exceptedCode);
 };
 
 const winword_paths = [
@@ -53,7 +94,7 @@ export const runWinword = async (data: string) => {
   )?.value;
 
   if (!winword) {
-    throw "Find winword failed";
+    throw new Error("Find winword failed");
   }
 
   const cp = await execFileAsync(
@@ -73,4 +114,26 @@ export const runWinword = async (data: string) => {
     { windowsVerbatimArguments: false, shell: false },
   );
   return cp;
+};
+
+export const initIpc = () => {
+  ipcMain.handle(
+    channel.printer,
+    withLog(async (e, data: string): Promise<void> => {
+      void e;
+      // Ensure an error is thrown when the promise is rejected
+      await runWinword(data).catch(() => shell.openPath(data));
+    }),
+  );
+
+  ipcMain.handle(
+    channel.verifyActivation,
+    withLog(async (): Promise<{ isOk: boolean; serial: string }> => {
+      const cpuSerial = await getCpuSerial();
+      const serial = getSerialFromStdout(cpuSerial);
+      const isOk = await verifyActivation();
+
+      return { isOk, serial };
+    }),
+  );
 };

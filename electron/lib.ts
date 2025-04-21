@@ -104,10 +104,6 @@ export const getPlace = (nChannel: number) => {
   }
 };
 
-export const getSerialFromStdout = (stdout: string) => {
-  return stdout.trim().split("\n").at(-1) || "";
-};
-
 export const createEmit = <TData = void>(channel: string) => {
   return (data: TData) => {
     BrowserWindow.getAllWindows().forEach((win) => {

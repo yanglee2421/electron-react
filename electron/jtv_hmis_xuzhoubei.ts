@@ -14,6 +14,7 @@ import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
 import * as channel from "./channel";
+import * as win from "./win";
 import type * as PRELOAD from "./preload";
 import type * as STORE from "./store";
 
@@ -301,6 +302,9 @@ let timer: NodeJS.Timeout | null = null;
 const autoUploadHandler = async () => {
   const delay = jtv_hmis_xuzhoubei.get("autoUploadInterval") * 1000;
   timer = setTimeout(autoUploadHandler, delay);
+
+  const activated = win.verifyActivation();
+  if (!activated) return;
 
   const barcodes = await db.query.jtvXuzhoubeiBarcodeTable.findMany({
     where: sql.and(

@@ -1,11 +1,9 @@
 import { app, BrowserWindow, ipcMain, nativeTheme, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createHash } from "node:crypto";
 import * as channel from "./channel";
-import { withLog, getSerialFromStdout } from "./lib";
-import { getCpuSerial, runWinword } from "./win";
-import { DATE_FORMAT_DATABASE } from "./cmd";
+import { withLog } from "./lib";
+import * as windows from "./win";
 import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
@@ -34,12 +32,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   ? path.join(process.env.APP_ROOT, "public")
   : RENDERER_DIST;
 
-if (import.meta.env.DEV) {
-  console.log(app.getPath("userData"));
-}
-
 let win: BrowserWindow | null;
-let cpuSerial: string | null = null;
 
 const createWindow = () => {
   const alwaysOnTop = store.settings.get("alwaysOnTop");
@@ -127,8 +120,6 @@ if (!gotTheLock) {
   }
 
   app.whenReady().then(async () => {
-    cpuSerial = await getCpuSerial();
-
     const mode = store.settings.get("mode");
     nativeTheme.themeSource = mode;
     hxzyHmis.init();
@@ -137,6 +128,8 @@ if (!gotTheLock) {
     khHmis.init();
     cmd.initIpc();
     store.init();
+    windows.initIpc();
+
     createWindow();
   });
 }
@@ -188,33 +181,5 @@ ipcMain.handle(
       totalmem: process.getSystemMemoryInfo().total,
       freemem,
     };
-  }),
-);
-
-ipcMain.handle(
-  channel.printer,
-  withLog(async (e, data: string): Promise<void> => {
-    void e;
-    // Ensure an error is thrown when the promise is rejected
-    await runWinword(data).catch(() => shell.openPath(data));
-  }),
-);
-
-ipcMain.handle(
-  channel.verifyActivation,
-  withLog(async (): Promise<{ isOk: boolean; serial: string }> => {
-    if (!cpuSerial) {
-      cpuSerial = await getCpuSerial();
-    }
-    const serial = getSerialFromStdout(cpuSerial);
-    const activateCode = store.settings.get("activateCode");
-    if (!activateCode) return { isOk: false, serial };
-    if (!serial) throw new Error("获取CPU序列号失败");
-    const exceptedCode = createHash("md5")
-      .update([serial, DATE_FORMAT_DATABASE].join(""))
-      .digest("hex")
-      .toUpperCase();
-
-    return { isOk: activateCode === exceptedCode, serial };
   }),
 );
