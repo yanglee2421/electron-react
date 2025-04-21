@@ -298,7 +298,9 @@ const createSubscribe = (channel: string) => {
     // Create a new listener function to ensure reference equality for the off method
     const listener = () => handler();
     ipcRenderer.on(channel, listener);
-    return () => ipcRenderer.off(channel, listener);
+    return () => {
+      ipcRenderer.off(channel, listener);
+    };
   };
 };
 

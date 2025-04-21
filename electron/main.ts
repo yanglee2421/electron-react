@@ -39,6 +39,7 @@ if (import.meta.env.DEV) {
 }
 
 let win: BrowserWindow | null;
+let cpuSerial: string | null = null;
 
 const createWindow = () => {
   const alwaysOnTop = store.settings.get("alwaysOnTop");
@@ -126,6 +127,8 @@ if (!gotTheLock) {
   }
 
   app.whenReady().then(async () => {
+    cpuSerial = await getCpuSerial();
+
     const mode = store.settings.get("mode");
     nativeTheme.themeSource = mode;
     hxzyHmis.init();
@@ -200,7 +203,9 @@ ipcMain.handle(
 ipcMain.handle(
   channel.verifyActivation,
   withLog(async (): Promise<{ isOk: boolean; serial: string }> => {
-    const cpuSerial = await getCpuSerial();
+    if (!cpuSerial) {
+      cpuSerial = await getCpuSerial();
+    }
     const serial = getSerialFromStdout(cpuSerial);
     const activateCode = store.settings.get("activateCode");
     if (!activateCode) return { isOk: false, serial };

@@ -272,6 +272,16 @@ export const Component = () => {
     };
   }, [setInputFocus]);
 
+  const refetchBarcode = barcode.refetch;
+
+  React.useEffect(() => {
+    const unsubscribe = window.electronAPI.subscribeHxzyHmisAPISet(() => {
+      refetchBarcode();
+    });
+
+    return () => unsubscribe();
+  }, [refetchBarcode]);
+
   const renderRow = () => {
     if (!table.getRowCount()) {
       return (
