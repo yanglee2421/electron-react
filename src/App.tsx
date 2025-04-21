@@ -1,6 +1,11 @@
 import { RouterUI } from "./router/RouterUI";
 import { SnackbarProvider } from "notistack";
-import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
+import {
+  ThemeProvider,
+  CssBaseline,
+  createTheme,
+  GlobalStyles,
+} from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import React from "react";
@@ -65,6 +70,14 @@ const MuiProvider = (props: Props) => {
         {props.children}
       </LocalizationProvider>
       <CssBaseline />
+      <GlobalStyles
+        styles={{
+          "*": {
+            scrollbarWidth: "thin",
+            scrollbarColor: `${theme.palette.divider} transparent`,
+          },
+        }}
+      />
     </ThemeProvider>
   );
 };

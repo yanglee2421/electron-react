@@ -257,19 +257,7 @@ const AuthLayout = () => {
 
   const renderPanel = () => {
     if (isSmallScreen) {
-      return (
-        <>
-          {renderMobile()}
-          <GlobalStyles
-            styles={{
-              "*": {
-                scrollbarWidth: "thin",
-                scrollbarColor: `${theme.palette.divider} transparent`,
-              },
-            }}
-          />
-        </>
-      );
+      return renderMobile();
     }
 
     return (
