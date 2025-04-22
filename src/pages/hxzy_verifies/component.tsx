@@ -9,7 +9,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableFooter,
   TableHead,
   TablePagination,
@@ -28,9 +27,10 @@ import {
   flexRender,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import type { Verify } from "#/electron/cmd";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
+import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { ScrollView as TableContainer } from "@/components/scrollbar";
+import type { Verify } from "#/electron/cmd";
 
 const initDate = () => dayjs();
 

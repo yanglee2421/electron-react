@@ -15,7 +15,6 @@ import {
   IconButton,
   InputAdornment,
   Table,
-  TableContainer,
   TableFooter,
   TextField,
   TableHead,
@@ -57,6 +56,7 @@ import {
 } from "@/api/fetch_preload";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
+import { ScrollView as TableContainer } from "@/components/scrollbar";
 
 type ActionCellProps = {
   id: number;

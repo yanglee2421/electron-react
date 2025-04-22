@@ -75,6 +75,7 @@ import {
   useUpdateSettings,
 } from "@/api/fetch_preload";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { ScrollView } from "@/components/scrollbar";
 
 const renderModeIcon = (mode: string) => {
   switch (mode) {
@@ -257,23 +258,15 @@ const AuthLayout = () => {
 
   const renderPanel = () => {
     if (isSmallScreen) {
-      return renderMobile();
+      return <ScrollView>{renderMobile()}</ScrollView>;
     }
 
     return (
       <PanelGroup direction="horizontal" autoSaveId={"layout"}>
         <Panel id="nav" order={1} defaultSize={30} minSize={30}>
-          <Box
-            sx={{
-              inlineSize: "100%",
-              blockSize: "100%",
-              overflowY: "auto",
-              scrollbarWidth: "thin",
-              scrollbarColor: `${theme.palette.divider} transparent`,
-            }}
-          >
+          <ScrollView>
             <NavMenu />
-          </Box>
+          </ScrollView>
         </Panel>
         <PanelResizeHandle onDragging={setDragging}>
           <Box
@@ -287,19 +280,11 @@ const AuthLayout = () => {
           />
         </PanelResizeHandle>
         <Panel id="content" order={2} defaultSize={70} minSize={30}>
-          <Box
-            sx={{
-              inlineSize: "100%",
-              blockSize: "100%",
-              overflowY: "auto",
-              scrollbarWidth: "thin",
-              scrollbarColor: `${theme.palette.divider} transparent`,
-            }}
-          >
+          <ScrollView disable_viewport_slot_display_table>
             <Box sx={{ padding: 4 }}>
               <Outlet />
             </Box>
-          </Box>
+          </ScrollView>
         </Panel>
       </PanelGroup>
     );

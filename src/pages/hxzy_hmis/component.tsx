@@ -15,7 +15,6 @@ import {
   IconButton,
   InputAdornment,
   Table,
-  TableContainer,
   TableFooter,
   TextField,
   TableHead,
@@ -56,6 +55,7 @@ import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
+import { ScrollView as TableContainer } from "@/components/scrollbar";
 import type { HxzyBarcode } from "#/electron/schema";
 
 type ActionCellProps = {

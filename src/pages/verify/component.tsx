@@ -9,7 +9,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableFooter,
   TableHead,
   TablePagination,
@@ -30,6 +29,7 @@ import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
+import { ScrollView as TableContainer } from "@/components/scrollbar";
 import type { Verify } from "#/electron/cmd";
 
 const initDate = () => dayjs();
