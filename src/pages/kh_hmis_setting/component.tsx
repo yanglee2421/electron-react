@@ -8,7 +8,6 @@ import {
   Grid,
   Checkbox,
   TextField,
-  TextFieldProps,
   FormGroup,
   CircularProgress,
 } from "@mui/material";
@@ -23,6 +22,7 @@ import {
   useUpdateKhHmisSetting,
 } from "@/api/fetch_preload";
 import { SaveOutlined } from "@mui/icons-material";
+import { NumberField } from "@/components/number";
 
 const schema = z.object({
   ip: z
@@ -67,68 +67,6 @@ const useSettingForm = () => {
     },
     resolver: zodResolver(schema),
   });
-};
-
-const renderNumberValue = (
-  value: number,
-  focusValue: string,
-  focused: boolean,
-) => {
-  if (focused) {
-    return focusValue;
-  }
-
-  if (Number.isNaN(value)) {
-    return "";
-  }
-
-  return value;
-};
-
-const numberToFocusedValue = (value: number) => {
-  if (Number.isNaN(value)) {
-    return "";
-  }
-
-  return value.toString();
-};
-
-type NumberFieldProps = TextFieldProps & {
-  field: {
-    value: number;
-    onChange: (value: number) => void;
-    onBlur: () => void;
-  };
-};
-
-const NumberField = (props: NumberFieldProps) => {
-  const { field, ...restProps } = props;
-
-  const [focused, setFocused] = React.useState(false);
-  const [focusedValue, setFocusedValue] = React.useState("");
-
-  return (
-    <TextField
-      value={renderNumberValue(field.value, focusedValue, focused)}
-      onChange={(e) => {
-        setFocusedValue(e.target.value);
-        const numberValue = Number.parseFloat(e.target.value);
-        const isNan = Number.isNaN(numberValue);
-        if (isNan) return;
-        field.onChange(numberValue);
-      }}
-      onFocus={() => {
-        setFocused(true);
-        setFocusedValue(numberToFocusedValue(field.value));
-      }}
-      onBlur={(e) => {
-        setFocused(false);
-        field.onBlur();
-        field.onChange(Number.parseFloat(e.target.value.trim()));
-      }}
-      {...restProps}
-    />
-  );
 };
 
 export const Component = () => {
