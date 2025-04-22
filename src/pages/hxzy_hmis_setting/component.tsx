@@ -82,6 +82,7 @@ type NumberFieldProps = TextFieldProps & {
     onChange: (value: number) => void;
     onBlur: () => void;
   };
+  _step?: number;
 };
 
 const NumberField = (props: NumberFieldProps) => {
@@ -108,6 +109,15 @@ const NumberField = (props: NumberFieldProps) => {
         setFocused(false);
         field.onBlur();
         field.onChange(Number.parseFloat(e.target.value.trim()));
+      }}
+      onKeyDown={(e) => {
+        switch (e.key) {
+          case "ArrowUp":
+            break;
+          case "ArrowDown":
+            break;
+          default:
+        }
       }}
       {...restProps}
     />
