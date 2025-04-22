@@ -188,7 +188,7 @@ const recordToBody = async (
   const EQ_IP = corporation.DeviceNO || "";
   const EQ_BH = getIP();
   const GD = hxzy_hmis.get("gd");
-  const startDate = dayjs(record.date).startOf("day").toISOString();
+  const startDate = dayjs(record.date).toISOString();
   const endDate = dayjs(record.date).endOf("day").toISOString();
 
   const detection = await getDetectionByZH({

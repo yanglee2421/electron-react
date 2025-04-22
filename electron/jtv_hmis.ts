@@ -179,7 +179,7 @@ const recordToBody = async (
     throw new Error(`记录#${id}条形码不存在`);
   }
 
-  const startDate = dayjs(record.date).startOf("day").toISOString();
+  const startDate = dayjs(record.date).toISOString();
   const endDate = dayjs(record.date).endOf("day").toISOString();
   const eq_ip = getIP();
   const corporation = await getCorporation();
