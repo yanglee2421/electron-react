@@ -60,9 +60,9 @@ export const NumberField = (props: NumberFieldProps) => {
         field.onChange(Number.parseFloat(e.target.value.trim()));
       }}
       onKeyDown={(e) => {
-        e.preventDefault();
         switch (e.key) {
           case "ArrowUp":
+            e.preventDefault();
             setFocusedValue((prev) => {
               const nextValue = (Number.parseFloat(prev) || 0) + _step;
               return nextValue.toString();
