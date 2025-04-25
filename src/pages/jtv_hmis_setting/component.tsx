@@ -39,7 +39,7 @@ const schema = z.object({
   autoUploadInterval: z
     .number({ message: "自动上传间隔必须是数字" })
     .int({ message: "自动上传间隔必须是整数" })
-    .min(1000 * 10, { message: "自动上传间隔不能小于10秒" }),
+    .min(10, { message: "自动上传间隔不能小于10秒" }),
   unitCode: z.string(),
 });
 
