@@ -196,6 +196,7 @@ const columns = [
 const initDate = () => dayjs();
 
 export const Component = () => {
+  "use no memo";
   const [date, setDate] = React.useState(initDate);
   const [pageIndex, setPageIndex] = React.useState(0);
   const [pageSize, setPageSize] = React.useState(10);

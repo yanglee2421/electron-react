@@ -20,6 +20,12 @@ const require = createRequire(import.meta.url);
 const odbc: typeof import("odbc") = require("odbc");
 ```
 
+If you need react dev tools
+
+```bash
+npx react-devtools
+```
+
 ## Rebuild
 
 When use native module like better-sqlite3 need to rebuild it by @electron/rebuild

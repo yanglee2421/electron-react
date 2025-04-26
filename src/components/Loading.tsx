@@ -1,16 +1,29 @@
-import { Box, CircularProgress } from "@mui/material";
+import {
+  Box,
+  BoxProps,
+  CircularProgress,
+  CircularProgressProps,
+} from "@mui/material";
 
-export const Loading = () => {
+type LoadingProps = {
+  slotProps?: {
+    box?: BoxProps;
+    circularProgress?: CircularProgressProps;
+  };
+};
+
+export const Loading = (props: LoadingProps) => {
+  const { slotProps = {} } = props;
+
   return (
     <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 6,
-      }}
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      padding={6}
+      {...slotProps.box}
     >
-      <CircularProgress />
+      <CircularProgress {...slotProps.circularProgress} />
     </Box>
   );
 };

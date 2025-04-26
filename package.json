@@ -1,7 +1,7 @@
 {
   "name": "wtzy_toolkit",
   "private": true,
-  "version": "0.0.24",
+  "version": "0.0.25",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -49,11 +49,12 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.0",
+    "babel-plugin-react-compiler": "^19.1.0-rc.1",
     "drizzle-kit": "^0.31.0",
     "electron": "^35.1.5",
     "electron-builder": "^26.0.12",
     "eslint": "^9.24.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^6.0.0-rc.1",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "prettier": "^3.5.3",

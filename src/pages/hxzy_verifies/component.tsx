@@ -31,6 +31,7 @@ import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { ScrollView as TableContainer } from "@/components/scrollbar";
 import type { Verify } from "#/electron/cmd";
+import { Loading } from "@/components/Loading";
 
 const initDate = () => dayjs();
 
@@ -61,6 +62,7 @@ const columns = [
 ];
 
 export const Component = () => {
+  "use no memo";
   const [date, setDate] = React.useState(initDate);
 
   const sql = `SELECT * FROM verifies WHERE tmnow BETWEEN #${date
@@ -87,7 +89,13 @@ export const Component = () => {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            加载中...
+            <Loading
+              slotProps={{
+                box: {
+                  padding: 0,
+                },
+              }}
+            />
           </TableCell>
         </TableRow>
       );
