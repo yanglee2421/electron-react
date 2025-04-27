@@ -1,24 +1,14 @@
 import { fetchSettings } from "@/api/fetch_preload";
-import { Alert, AlertTitle, Box, CircularProgress } from "@mui/material";
+import { Alert, AlertTitle } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Navigate } from "react-router";
+import { Loading } from "@/components/Loading";
 
 export const Component = () => {
   const settings = useQuery(fetchSettings());
 
   if (settings.isPending) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 6,
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <Loading />;
   }
 
   if (settings.isError) {
