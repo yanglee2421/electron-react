@@ -74,6 +74,8 @@ export type GetResponse = [
     ZH: "18426";
     ZX: "RD2";
     SCZZDW: "183";
+    ZTX?: null | string;
+    YTX?: null | string;
   },
 ];
 
