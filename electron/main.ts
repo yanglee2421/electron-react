@@ -144,7 +144,6 @@ ipcMain.handle(
   channel.openAtLogin,
   withLog(async (e, openAtLogin?: boolean): Promise<boolean> => {
     void e;
-    console.log("openAtLogin", openAtLogin);
 
     if (typeof openAtLogin === "boolean") {
       app.setLoginItemSettings({ openAtLogin });
