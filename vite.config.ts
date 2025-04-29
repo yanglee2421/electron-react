@@ -11,28 +11,27 @@ const ReactCompilerConfig = {
   target: "19", // '17' | '18' | '19'
 };
 
-const htmlPlugin = () => ({
+const htmlPlugin = (isBuild: boolean) => ({
   name: "html-transform",
   transformIndexHtml: (html: string) => {
-    if (process.env.NODE_ENV !== "development") {
-      return (
-        html
-          /**
-           * Remove the React DevTools script tag in production build.
-           * This is a workaround for the issue that React DevTools script tag is not removed in production build.
-           */
-          .replace(/<script src="http:\/\/localhost:8097"><\/script>/, "")
-          // Remove all empty lines in the HTML file.
-          .replace(/^\s*[\r\n]/gm, "")
-      );
+    if (!isBuild) {
+      return html;
     }
-
-    return html;
+    return (
+      html
+        /**
+         * Remove the React DevTools script tag in production build.
+         * This is a workaround for the issue that React DevTools script tag is not removed in production build.
+         */
+        .replace(/<script src="http:\/\/localhost:8097"><\/script>/, "")
+        // Remove all empty lines in the HTML file.
+        .replace(/^\s*[\r\n]/gm, "")
+    );
   },
 });
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig((config) => ({
   plugins: [
     react({
       babel: {
@@ -88,7 +87,7 @@ export default defineConfig({
           : {},
     }),
     renderer(),
-    htmlPlugin(),
+    htmlPlugin(config.command === "build"),
   ],
 
   resolve: {
@@ -142,4 +141,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
