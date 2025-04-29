@@ -42,7 +42,7 @@ export default defineConfig({
     electron({
       main: {
         // Shortcut of `build.lib.entry`.
-        entry: "electron/main.ts",
+        entry: "backend/main.ts",
         vite: {
           resolve: {
             alias: {
@@ -52,7 +52,7 @@ export default defineConfig({
           },
           build: {
             rollupOptions: {
-              external: ["better-sqlite3"],
+              external: ["better-sqlite3", "electron/main", "electron/common"],
             },
           },
         },
@@ -60,7 +60,7 @@ export default defineConfig({
       preload: {
         // Shortcut of `build.rollupOptions.input`.
         // Preload scripts may contain Web assets, so use the `build.rollupOptions.input` instead `build.lib.entry`.
-        input: path.join(__dirname, "electron/preload.ts"),
+        input: path.join(__dirname, "backend/preload.ts"),
         vite: {
           resolve: {
             alias: {
@@ -70,6 +70,7 @@ export default defineConfig({
           },
           build: {
             rollupOptions: {
+              external: ["electron/renderer"],
               output: {
                 inlineDynamicImports: true,
               },

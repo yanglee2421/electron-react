@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webUtils } from "electron";
+import * as electronRenderer from "electron/renderer";
 import * as channel from "./channel";
 import type { Verify, VerifyData, AutoInputToVCParams } from "./cmd";
 import type * as SCHEMA from "./schema";
@@ -8,6 +8,8 @@ import type * as HXZY_HMIS from "./hxzy_hmis";
 import type * as JTV_HMIS from "./jtv_hmis";
 import type * as KH_HMIS from "./kh_hmis";
 import type * as JTV_HMIS_XUZHOUBEI from "./jtv_hmis_xuzhoubei";
+
+const { ipcRenderer, contextBridge, webUtils } = electronRenderer;
 
 type LogCallback = (data: Log) => void;
 type SubscribeLog = (handler: LogCallback) => () => void;

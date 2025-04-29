@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, nativeTheme, shell } from "electron";
+import * as electronMain from "electron/main";
+import * as electronCommon from "electron/common";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as channel from "./channel";
@@ -10,6 +11,7 @@ import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
 import * as store from "./store";
 import * as cmd from "./cmd";
+import type { BrowserWindow as BrowserWindowType } from "electron/main";
 
 // The built directory structure
 //
@@ -20,7 +22,8 @@ import * as cmd from "./cmd";
 // │ │ ├── main.js
 // │ │ └── preload.mjs
 // │
-
+const { app, BrowserWindow, ipcMain, nativeTheme } = electronMain;
+const { shell } = electronCommon;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
@@ -32,7 +35,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   ? path.join(process.env.APP_ROOT, "public")
   : RENDERER_DIST;
 
-let win: BrowserWindow | null;
+let win: BrowserWindowType | null;
 
 const createWindow = () => {
   const alwaysOnTop = store.settings.get("alwaysOnTop");
@@ -53,6 +56,11 @@ const createWindow = () => {
     // show: false,
   });
 
+  /**
+   * Performace optimization
+   * https://www.electronjs.org/docs/latest/tutorial/performance#8-call-menusetapplicationmenunull-when-you-do-not-need-a-default-menu
+   */
+  electronMain.Menu.setApplicationMenu(null);
   win.menuBarVisible = false;
 
   // Test active push message to Renderer-process.
