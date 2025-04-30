@@ -51,7 +51,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import type { JTVBarcode } from "#/electron/schema";
+import type { JTVBarcode } from "#/backend/schema";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -361,8 +361,8 @@ export const Component = () => {
                     czzzrq: data[0].CZZZRQ,
                     sczzrq: data[0].SCZZRQ,
                     mczzrq: data[0].MCZZRQ,
-                    ztx: data[0].ZTX ? "1" : "0",
-                    ytx: data[0].YTX ? "1" : "0",
+                    ztx: data[0].ZTX ? "0" : "1",
+                    ytx: data[0].YTX ? "0" : "1",
                   },
                   {
                     onError(error) {

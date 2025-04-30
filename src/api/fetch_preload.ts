@@ -13,8 +13,8 @@ import type {
   KhHmisSettingParams,
   KhBarcodeGetParams,
   SetSettingParams,
-} from "#/electron/preload";
-import type { AutoInputToVCParams } from "#/electron/cmd";
+} from "#/backend/preload";
+import type { AutoInputToVCParams } from "#/backend/cmd";
 
 // Windows 激活验证
 export const fetchVerifyActivation = () =>

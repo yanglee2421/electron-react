@@ -1,5 +1,5 @@
 import { queryOptions, useMutation } from "@tanstack/react-query";
-import type { Verify } from "#/electron/cmd";
+import type { Verify } from "#/backend/cmd";
 
 export const fetchVerifies = (sql: string) =>
   queryOptions({

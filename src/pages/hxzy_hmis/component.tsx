@@ -56,7 +56,7 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
 import { ScrollView as TableContainer } from "@/components/scrollbar";
-import type { HxzyBarcode } from "#/electron/schema";
+import type { HxzyBarcode } from "#/backend/schema";
 
 type ActionCellProps = {
   id: number;

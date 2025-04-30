@@ -30,7 +30,7 @@ import {
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { ScrollView as TableContainer } from "@/components/scrollbar";
-import type { Verify } from "#/electron/cmd";
+import type { Verify } from "#/backend/cmd";
 import { Loading } from "@/components/Loading";
 
 const initDate = () => dayjs();

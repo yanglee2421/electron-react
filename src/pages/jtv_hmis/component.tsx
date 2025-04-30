@@ -44,7 +44,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import type { JTVBarcode } from "#/electron/schema";
+import type { JTVBarcode } from "#/backend/schema";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchJtvHmisSetting,

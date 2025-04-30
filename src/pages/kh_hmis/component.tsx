@@ -52,7 +52,7 @@ import {
   fetchKhHmisSqliteGet,
   fetchHxzyHmisSetting,
 } from "@/api/fetch_preload";
-import type { KhBarcode } from "#/electron/schema";
+import type { KhBarcode } from "#/backend/schema";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
