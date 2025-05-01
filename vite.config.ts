@@ -8,25 +8,29 @@ import renderer from "vite-plugin-electron-renderer";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const ReactCompilerConfig = {
-  target: "19", // '17' | '18' | '19'
+  // '17' | '18' | '19'
+  target: "19",
 };
 
+/**
+ * @description
+ * Vite plugin to remove the React DevTools script tag in production build.
+ *
+ *
+ * This is a workaround for the issue that React DevTools script tag is not removed in production build.
+ *
+ *
+ * Remove all empty lines in the HTML file.
+ */
 const htmlPlugin = (isBuild: boolean) => ({
   name: "html-transform",
   transformIndexHtml: (html: string) => {
     if (!isBuild) {
       return html;
     }
-    return (
-      html
-        /**
-         * Remove the React DevTools script tag in production build.
-         * This is a workaround for the issue that React DevTools script tag is not removed in production build.
-         */
-        .replace(/<script src="http:\/\/localhost:8097"><\/script>/, "")
-        // Remove all empty lines in the HTML file.
-        .replace(/^\s*[\r\n]/gm, "")
-    );
+    return html
+      .replace(/<script src="http:\/\/localhost:8097"><\/script>/, "")
+      .replace(/^\s*[\r\n]/gm, "");
   },
 });
 
@@ -35,6 +39,9 @@ export default defineConfig((config) => ({
   plugins: [
     react({
       babel: {
+        /**
+         * Enable react compiler for React 19.
+         */
         plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
       },
     }),
@@ -51,8 +58,19 @@ export default defineConfig((config) => ({
           },
           build: {
             rollupOptions: {
+              /**
+               * Below packages not need to be bundled by Vite.
+               * 1. `better-sqlite3` is a native module, it needs to be compiled by `electron-rebuild`.
+               * 2. `electron/main` and `electron/common` are Electron modules, they are not needed to be bundled by Vite.
+               */
               external: ["better-sqlite3", "electron/main", "electron/common"],
             },
+            /**
+             * In main process, the `chunkSizeWarningLimit` is set to 10MB.
+             * This is because the main process do not need to load JS by network,
+             * and the main process is not a web page, so the `chunkSizeWarningLimit` is set to 10MB.
+             */
+            chunkSizeWarningLimit: 1024 * 10,
           },
         },
       },
@@ -69,11 +87,19 @@ export default defineConfig((config) => ({
           },
           build: {
             rollupOptions: {
+              /**
+               * Below packages not need to be bundled by Vite.
+               */
               external: ["electron/renderer"],
               output: {
+                /**
+                 * Ensure that the preload script is single bundle.
+                 */
                 inlineDynamicImports: true,
               },
             },
+
+            chunkSizeWarningLimit: 500,
           },
         },
       },
