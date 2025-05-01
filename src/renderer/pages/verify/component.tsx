@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Divider,
   Grid,
   IconButton,
   Table,
@@ -31,19 +30,19 @@ import { RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 import { ScrollView as TableContainer } from "@/components/scrollbar";
-import type { Detection } from "#/backend/cmd";
+import type { Verify } from "#/cmd";
 import { Loading } from "@/components/Loading";
 
 const initDate = () => dayjs();
 
-const columnHelper = createColumnHelper<Detection>();
+const columnHelper = createColumnHelper<Verify>();
 
 const columns = [
   columnHelper.accessor("szIDs", { header: "ID", footer: "ID" }),
   columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
-  columnHelper.accessor("tmnow", {
+  columnHelper.accessor("tmNow", {
     header: "时间",
     footer: "时间",
     cell: ({ getValue }) => {
@@ -60,13 +59,13 @@ export const Component = () => {
   "use no memo";
   const [date, setDate] = React.useState(initDate);
 
-  const sql = `SELECT * FROM detections WHERE tmnow BETWEEN #${date
+  const sql = `SELECT * FROM verifies WHERE tmNow BETWEEN #${date
     .startOf("day")
     .format(DATE_FORMAT_DATABASE)}# AND #${date
     .endOf("day")
     .format(DATE_FORMAT_DATABASE)}#`;
 
-  const query = useQuery(fetchDataFromAccessDatabase<Detection>(sql));
+  const query = useQuery(fetchDataFromAccessDatabase<Verify>(sql));
 
   const data = React.useMemo(() => query.data || [], [query.data]);
 
@@ -140,7 +139,7 @@ export const Component = () => {
   return (
     <Card>
       <CardHeader
-        title="现车作业"
+        title="日常校验"
         action={
           <IconButton
             onClick={() => query.refetch()}
@@ -168,7 +167,6 @@ export const Component = () => {
           </Grid>
         </Grid>
       </CardContent>
-      <Divider />
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>

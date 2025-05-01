@@ -7,6 +7,12 @@ import renderer from "vite-plugin-electron-renderer";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const alias = {
+  "@": fileURLToPath(new URL("./src/renderer", import.meta.url)),
+  "#": fileURLToPath(new URL("./src/main", import.meta.url)),
+  "~": fileURLToPath(new URL("./src/preload", import.meta.url)),
+};
+
 const ReactCompilerConfig = {
   // '17' | '18' | '19'
   target: "19",
@@ -48,14 +54,9 @@ export default defineConfig((config) => ({
     electron({
       main: {
         // Shortcut of `build.lib.entry`.
-        entry: "backend/main.ts",
+        entry: path.join(__dirname, "src/main/main.ts"),
         vite: {
-          resolve: {
-            alias: {
-              "@": fileURLToPath(new URL("./src", import.meta.url)),
-              "#": fileURLToPath(new URL("./", import.meta.url)),
-            },
-          },
+          resolve: { alias },
           build: {
             rollupOptions: {
               /**
@@ -77,14 +78,9 @@ export default defineConfig((config) => ({
       preload: {
         // Shortcut of `build.rollupOptions.input`.
         // Preload scripts may contain Web assets, so use the `build.rollupOptions.input` instead `build.lib.entry`.
-        input: path.join(__dirname, "backend/preload.ts"),
+        input: path.join(__dirname, "src/preload/main.ts"),
         vite: {
-          resolve: {
-            alias: {
-              "@": fileURLToPath(new URL("./src", import.meta.url)),
-              "#": fileURLToPath(new URL("./", import.meta.url)),
-            },
-          },
+          resolve: { alias },
           build: {
             rollupOptions: {
               /**
@@ -116,12 +112,7 @@ export default defineConfig((config) => ({
     htmlPlugin(config.command === "build"),
   ],
 
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "#": fileURLToPath(new URL("./", import.meta.url)),
-    },
-  },
+  resolve: { alias },
 
   build: {
     rollupOptions: {

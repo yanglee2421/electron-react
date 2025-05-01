@@ -4,6 +4,7 @@ import {
   Card,
   CardContent,
   CardHeader,
+  Divider,
   Grid,
   IconButton,
   Table,
@@ -14,12 +15,10 @@ import {
   TablePagination,
   TableRow,
 } from "@mui/material";
-import { RefreshOutlined } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
-import { fetchVerifies } from "./fetchers";
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -27,22 +26,24 @@ import {
   flexRender,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { RefreshOutlined } from "@mui/icons-material";
+import { DATE_FORMAT_DATABASE } from "@/lib/constants";
+import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 import { ScrollView as TableContainer } from "@/components/scrollbar";
-import type { Verify } from "#/backend/cmd";
+import type { Detection } from "#/cmd";
 import { Loading } from "@/components/Loading";
 
 const initDate = () => dayjs();
 
-const columnHelper = createColumnHelper<Verify>();
+const columnHelper = createColumnHelper<Detection>();
 
 const columns = [
   columnHelper.accessor("szIDs", { header: "ID", footer: "ID" }),
   columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
-  columnHelper.accessor("tmNow", {
+  columnHelper.accessor("tmnow", {
     header: "时间",
     footer: "时间",
     cell: ({ getValue }) => {
@@ -53,25 +54,19 @@ const columns = [
     },
   }),
   columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
-  columnHelper.display({
-    id: "actions",
-    header: "操作",
-    footer: "操作",
-    cell: () => <></>,
-  }),
 ];
 
 export const Component = () => {
   "use no memo";
   const [date, setDate] = React.useState(initDate);
 
-  const sql = `SELECT * FROM verifies WHERE tmnow BETWEEN #${date
+  const sql = `SELECT * FROM detections WHERE tmnow BETWEEN #${date
     .startOf("day")
     .format(DATE_FORMAT_DATABASE)}# AND #${date
     .endOf("day")
     .format(DATE_FORMAT_DATABASE)}#`;
 
-  const query = useQuery(fetchVerifies(sql));
+  const query = useQuery(fetchDataFromAccessDatabase<Detection>(sql));
 
   const data = React.useMemo(() => query.data || [], [query.data]);
 
@@ -145,8 +140,7 @@ export const Component = () => {
   return (
     <Card>
       <CardHeader
-        title="华兴致远日常校验"
-        subheader="成都北"
+        title="现车作业"
         action={
           <IconButton
             onClick={() => query.refetch()}
@@ -174,6 +168,7 @@ export const Component = () => {
           </Grid>
         </Grid>
       </CardContent>
+      <Divider />
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>

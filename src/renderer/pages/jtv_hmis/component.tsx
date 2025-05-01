@@ -26,10 +26,10 @@ import {
   Divider,
   Checkbox,
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogContentText,
+  DialogTitle,
   DialogActions,
+  DialogContentText,
   Link,
   CircularProgress,
 } from "@mui/material";
@@ -44,16 +44,16 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import {
-  useAutoInputToVC,
-  useKhHmisApiGet,
-  useKhHmisApiSet,
-  useKhHmisSqliteDelete,
-  fetchKhHmisSqliteGet,
-  fetchHxzyHmisSetting,
-} from "@/api/fetch_preload";
-import type { KhBarcode } from "#/backend/schema";
+import type { JTVBarcode } from "#/schema";
 import { useQuery } from "@tanstack/react-query";
+import {
+  fetchJtvHmisSetting,
+  fetchJtvHmisSqliteGet,
+  useAutoInputToVC,
+  useJtvHmisApiGet,
+  useJtvHmisApiSet,
+  useJtvHmisSqliteDelete,
+} from "@/api/fetch_preload";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
 import { ScrollView as TableContainer } from "@/components/scrollbar";
@@ -63,14 +63,13 @@ type ActionCellProps = {
 };
 
 const ActionCell = (props: ActionCellProps) => {
-  const [show, setShow] = React.useState(false);
+  const [showAlert, setShowAlert] = React.useState(false);
 
-  const saveData = useKhHmisApiSet();
   const snackbar = useSnackbar();
-  const deleteBarcode = useKhHmisSqliteDelete();
+  const saveData = useJtvHmisApiSet();
+  const deleteBarcode = useJtvHmisSqliteDelete();
 
-  const handleClose = () => setShow(false);
-
+  const handleClose = () => setShowAlert(false);
   const handleDelete = () => {
     deleteBarcode.mutate(props.id, {
       onError(error) {
@@ -83,7 +82,6 @@ const ActionCell = (props: ActionCellProps) => {
       },
     });
   };
-
   const handleUpload = () => {
     saveData.mutate(props.id, {
       onError(error) {
@@ -92,30 +90,37 @@ const ActionCell = (props: ActionCellProps) => {
         });
       },
       onSuccess() {
+        handleClose();
         snackbar.enqueueSnackbar("上传成功", {
           variant: "success",
         });
-        handleClose();
       },
     });
   };
 
   return (
     <>
-      <IconButton disabled={saveData.isPending} onClick={handleUpload}>
+      <IconButton onClick={handleUpload} disabled={saveData.isPending}>
         <CloudUploadOutlined />
       </IconButton>
-      <IconButton onClick={() => setShow(true)}>
+      <IconButton
+        onClick={() => setShowAlert(true)}
+        disabled={saveData.isPending}
+      >
         <DeleteOutlined color="error" />
       </IconButton>
-      <Dialog open={show} onClose={handleClose}>
-        <DialogTitle>警告</DialogTitle>
+      <Dialog open={showAlert} onClose={handleClose}>
+        <DialogTitle>删除</DialogTitle>
         <DialogContent>
-          <DialogContentText>确定要删除该条数据吗？</DialogContentText>
+          <DialogContentText>确定要删除这条记录吗？</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>取消</Button>
-          <Button onClick={handleDelete} color="error">
+          <Button
+            onClick={handleDelete}
+            color="error"
+            disabled={deleteBarcode.isPending}
+          >
             删除
           </Button>
         </DialogActions>
@@ -136,7 +141,7 @@ const useScanerForm = () =>
     resolver: zodResolver(schema),
   });
 
-const columnHelper = createColumnHelper<KhBarcode>();
+const columnHelper = createColumnHelper<JTVBarcode>();
 
 const columns = [
   columnHelper.display({
@@ -197,9 +202,9 @@ const initDate = () => dayjs();
 
 export const Component = () => {
   "use no memo";
-  const [date, setDate] = React.useState(initDate);
   const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(10);
+  const [pageSize, setPageSize] = React.useState(20);
+  const [date, setDate] = React.useState(initDate);
   const [showFilter, setShowFilter] = React.useState(false);
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -214,11 +219,12 @@ export const Component = () => {
   };
 
   const form = useScanerForm();
-  const getData = useKhHmisApiGet();
   const snackbar = useSnackbar();
   const autoInput = useAutoInputToVC();
-  const { data: hmis } = useQuery(fetchHxzyHmisSetting());
-  const barcode = useQuery(fetchKhHmisSqliteGet(params));
+  const saveData = useJtvHmisApiSet();
+  const getData = useJtvHmisApiGet();
+  const { data: hmis } = useQuery(fetchJtvHmisSetting());
+  const barcode = useQuery(fetchJtvHmisSqliteGet(params));
 
   const setInputFocus = React.useCallback(() => {
     inputRef.current?.focus();
@@ -270,7 +276,7 @@ export const Component = () => {
 
   const refetchBarcode = barcode.refetch;
   React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeKhHmisAPISet(() => {
+    const unsubscribe = window.electronAPI.subscribeJtvHmisAPISet(() => {
       refetchBarcode();
     });
 
@@ -336,8 +342,8 @@ export const Component = () => {
   return (
     <Card>
       <CardHeader
-        title="康华HMIS"
-        subheader="安康"
+        title="京天威HMIS"
+        subheader="统型"
         action={
           <IconButton onClick={() => setShowFilter((prev) => !prev)}>
             <FilterListOutlined color={showFilter ? "primary" : void 0} />
@@ -353,7 +359,7 @@ export const Component = () => {
               noValidate
               autoComplete="off"
               onSubmit={form.handleSubmit(async (values) => {
-                if (getData.isPending) return;
+                if (saveData.isPending) return;
 
                 form.reset();
                 const data = await getData.mutateAsync(values.barCode, {
@@ -369,14 +375,14 @@ export const Component = () => {
 
                 autoInput.mutate(
                   {
-                    zx: data.data.zx,
-                    zh: data.data.zh,
-                    czzzdw: data.data.czzzdw,
-                    sczzdw: data.data.ldszdw,
-                    mczzdw: data.data.ldmzdw,
-                    czzzrq: data.data.czzzrq,
-                    sczzrq: data.data.ldszrq,
-                    mczzrq: data.data.ldmzrq,
+                    zx: data.data[0].ZX,
+                    zh: data.data[0].ZH,
+                    czzzdw: data.data[0].CZZZDW,
+                    sczzdw: data.data[0].SCZZDW,
+                    mczzdw: data.data[0].MCZZDW,
+                    czzzrq: data.data[0].CZZZRQ,
+                    sczzrq: data.data[0].SCZZRQ,
+                    mczzrq: data.data[0].MCZZRQ,
                     ztx: "1",
                     ytx: "1",
                   },

@@ -14,10 +14,12 @@ import {
   TablePagination,
   TableRow,
 } from "@mui/material";
+import { RefreshOutlined } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
+import { fetchVerifies } from "./fetchers";
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -25,12 +27,10 @@ import {
   flexRender,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import { RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
-import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
+import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { ScrollView as TableContainer } from "@/components/scrollbar";
-import type { Verify } from "#/backend/cmd";
+import type { Verify } from "#/cmd";
 import { Loading } from "@/components/Loading";
 
 const initDate = () => dayjs();
@@ -53,19 +53,25 @@ const columns = [
     },
   }),
   columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
+  columnHelper.display({
+    id: "actions",
+    header: "操作",
+    footer: "操作",
+    cell: () => <></>,
+  }),
 ];
 
 export const Component = () => {
   "use no memo";
   const [date, setDate] = React.useState(initDate);
 
-  const sql = `SELECT * FROM verifies WHERE tmNow BETWEEN #${date
+  const sql = `SELECT * FROM verifies WHERE tmnow BETWEEN #${date
     .startOf("day")
     .format(DATE_FORMAT_DATABASE)}# AND #${date
     .endOf("day")
     .format(DATE_FORMAT_DATABASE)}#`;
 
-  const query = useQuery(fetchDataFromAccessDatabase<Verify>(sql));
+  const query = useQuery(fetchVerifies(sql));
 
   const data = React.useMemo(() => query.data || [], [query.data]);
 
@@ -139,7 +145,8 @@ export const Component = () => {
   return (
     <Card>
       <CardHeader
-        title="日常校验"
+        title="华兴致远日常校验"
+        subheader="成都北"
         action={
           <IconButton
             onClick={() => query.refetch()}

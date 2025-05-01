@@ -31,7 +31,7 @@ import { RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 import { ScrollView as TableContainer } from "@/components/scrollbar";
-import type { Quartor } from "#/backend/cmd";
+import type { Quartor } from "#/cmd";
 import { Loading } from "@/components/Loading";
 
 const initDate = () => dayjs();

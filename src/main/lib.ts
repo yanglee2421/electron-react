@@ -1,7 +1,7 @@
 import { networkInterfaces } from "node:os";
 import { BrowserWindow } from "electron";
 import * as channel from "./channel";
-import type { Log } from "#/src/lib/db";
+import type { Log } from "@/lib/db";
 
 export const log = (message: string, type = "info") => {
   const data: Log = {

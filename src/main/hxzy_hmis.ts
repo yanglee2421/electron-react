@@ -17,7 +17,7 @@ import * as schema from "./schema";
 import * as channel from "./channel";
 import * as win from "./win";
 import type { DetectionData, Verify, VerifyData } from "./cmd";
-import type * as PRELOAD from "./preload";
+import type * as PRELOAD from "~/main";
 
 /**
  * Sqlite barcode

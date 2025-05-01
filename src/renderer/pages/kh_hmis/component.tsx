@@ -24,6 +24,7 @@ import {
   TablePagination,
   Button,
   Divider,
+  Checkbox,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -37,21 +38,21 @@ import { z } from "zod";
 import React from "react";
 import { useSnackbar } from "notistack";
 import {
-  fetchJtvHmisXuzhoubeiSetting,
-  fetchJtvHmisXuzhoubeiSqliteGet,
-  useAutoInputToVC,
-  useJtvHmisXuzhoubeiApiGet,
-  useJtvHmisXuzhoubeiApiSet,
-  useJtvHmisXuzhoubeiSqliteDelete,
-} from "@/api/fetch_preload";
-import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import type { JTVBarcode } from "#/backend/schema";
+import {
+  useAutoInputToVC,
+  useKhHmisApiGet,
+  useKhHmisApiSet,
+  useKhHmisSqliteDelete,
+  fetchKhHmisSqliteGet,
+  fetchHxzyHmisSetting,
+} from "@/api/fetch_preload";
+import type { KhBarcode } from "#/schema";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -62,28 +63,13 @@ type ActionCellProps = {
 };
 
 const ActionCell = (props: ActionCellProps) => {
-  const [showAlert, setShowAlert] = React.useState(false);
+  const [show, setShow] = React.useState(false);
 
+  const saveData = useKhHmisApiSet();
   const snackbar = useSnackbar();
-  const upload = useJtvHmisXuzhoubeiApiSet();
-  const deleteBarcode = useJtvHmisXuzhoubeiSqliteDelete();
+  const deleteBarcode = useKhHmisSqliteDelete();
 
-  const handleClose = () => setShowAlert(false);
-
-  const handleUpload = () => {
-    upload.mutate(props.id, {
-      onError(error) {
-        snackbar.enqueueSnackbar(error.message, {
-          variant: "error",
-        });
-      },
-      onSuccess() {
-        snackbar.enqueueSnackbar("上传成功", {
-          variant: "success",
-        });
-      },
-    });
-  };
+  const handleClose = () => setShow(false);
 
   const handleDelete = () => {
     deleteBarcode.mutate(props.id, {
@@ -98,28 +84,38 @@ const ActionCell = (props: ActionCellProps) => {
     });
   };
 
+  const handleUpload = () => {
+    saveData.mutate(props.id, {
+      onError(error) {
+        snackbar.enqueueSnackbar(error.message, {
+          variant: "error",
+        });
+      },
+      onSuccess() {
+        snackbar.enqueueSnackbar("上传成功", {
+          variant: "success",
+        });
+        handleClose();
+      },
+    });
+  };
+
   return (
     <>
-      <IconButton disabled={upload.isPending} onClick={handleUpload}>
+      <IconButton disabled={saveData.isPending} onClick={handleUpload}>
         <CloudUploadOutlined />
       </IconButton>
-      <IconButton>
-        <DeleteOutlined color="error" onClick={() => setShowAlert(true)} />
+      <IconButton onClick={() => setShow(true)}>
+        <DeleteOutlined color="error" />
       </IconButton>
-      <Dialog open={showAlert} onClose={handleClose}>
-        <DialogTitle>删除</DialogTitle>
+      <Dialog open={show} onClose={handleClose}>
+        <DialogTitle>警告</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            确定要删除该记录吗？删除后无法恢复。
-          </DialogContentText>
+          <DialogContentText>确定要删除该条数据吗？</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>取消</Button>
-          <Button
-            color="error"
-            onClick={handleDelete}
-            disabled={deleteBarcode.isPending}
-          >
+          <Button onClick={handleDelete} color="error">
             删除
           </Button>
         </DialogActions>
@@ -140,9 +136,32 @@ const useScanerForm = () =>
     resolver: zodResolver(schema),
   });
 
-const columnHelper = createColumnHelper<JTVBarcode>();
+const columnHelper = createColumnHelper<KhBarcode>();
 
 const columns = [
+  columnHelper.display({
+    id: "checkbox",
+    header: ({ table }) => (
+      <Checkbox
+        indeterminate={table.getIsSomeRowsSelected()}
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onChange={row.getToggleSelectedHandler()}
+      />
+    ),
+    footer: ({ table }) => (
+      <Checkbox
+        indeterminate={table.getIsSomeRowsSelected()}
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+      />
+    ),
+  }),
   columnHelper.accessor("id", {
     header: "ID",
     footer: "ID",
@@ -185,7 +204,6 @@ export const Component = () => {
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
-
   const formId = React.useId();
 
   const params = {
@@ -196,17 +214,17 @@ export const Component = () => {
   };
 
   const form = useScanerForm();
+  const getData = useKhHmisApiGet();
   const snackbar = useSnackbar();
   const autoInput = useAutoInputToVC();
-  const getData = useJtvHmisXuzhoubeiApiGet();
-  const { data: hmis } = useQuery(fetchJtvHmisXuzhoubeiSetting());
-  const barcode = useQuery(fetchJtvHmisXuzhoubeiSqliteGet(params));
+  const { data: hmis } = useQuery(fetchHxzyHmisSetting());
+  const barcode = useQuery(fetchKhHmisSqliteGet(params));
 
   const setInputFocus = React.useCallback(() => {
     inputRef.current?.focus();
   }, []);
 
-  const data = React.useMemo(() => barcode.data?.rows ?? [], [barcode.data]);
+  const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
 
   const table = useReactTable({
     data,
@@ -215,7 +233,7 @@ export const Component = () => {
     getCoreRowModel: getCoreRowModel(),
 
     manualPagination: true,
-    rowCount: barcode.data?.count ?? 0,
+    rowCount: barcode.data?.count || 0,
   });
 
   React.useEffect(() => {
@@ -252,11 +270,9 @@ export const Component = () => {
 
   const refetchBarcode = barcode.refetch;
   React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeJtvHmisXuzhoubeiAPISet(
-      () => {
-        refetchBarcode();
-      },
-    );
+    const unsubscribe = window.electronAPI.subscribeKhHmisAPISet(() => {
+      refetchBarcode();
+    });
 
     return () => {
       unsubscribe();
@@ -320,8 +336,8 @@ export const Component = () => {
   return (
     <Card>
       <CardHeader
-        title="京天威HMIS"
-        subheader="徐州北"
+        title="康华HMIS"
+        subheader="安康"
         action={
           <IconButton onClick={() => setShowFilter((prev) => !prev)}>
             <FilterListOutlined color={showFilter ? "primary" : void 0} />
@@ -353,16 +369,16 @@ export const Component = () => {
 
                 autoInput.mutate(
                   {
-                    zx: data[0].ZX,
-                    zh: data[0].ZH,
-                    czzzdw: data[0].CZZZDW,
-                    sczzdw: data[0].SCZZDW,
-                    mczzdw: data[0].MCZZDW,
-                    czzzrq: data[0].CZZZRQ,
-                    sczzrq: data[0].SCZZRQ,
-                    mczzrq: data[0].MCZZRQ,
-                    ztx: data[0].ZTX ? "0" : "1",
-                    ytx: data[0].YTX ? "0" : "1",
+                    zx: data.data.zx,
+                    zh: data.data.zh,
+                    czzzdw: data.data.czzzdw,
+                    sczzdw: data.data.ldszdw,
+                    mczzdw: data.data.ldmzdw,
+                    czzzrq: data.data.czzzrq,
+                    sczzrq: data.data.ldszrq,
+                    mczzrq: data.data.ldmzrq,
+                    ztx: "1",
+                    ytx: "1",
                   },
                   {
                     onError(error) {
