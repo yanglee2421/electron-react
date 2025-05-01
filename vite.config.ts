@@ -92,6 +92,7 @@ export default defineConfig((config) => ({
                  * Ensure that the preload script is single bundle.
                  */
                 inlineDynamicImports: true,
+                entryFileNames: "preload.mjs",
               },
             },
 
