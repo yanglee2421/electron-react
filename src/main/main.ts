@@ -22,6 +22,7 @@ import type { BrowserWindow as BrowserWindowType } from "electron/main";
 // │ │ ├── main.js
 // │ │ └── preload.mjs
 // │
+
 const { app, BrowserWindow, ipcMain, nativeTheme } = electronMain;
 const { shell } = electronCommon;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
