@@ -8,12 +8,19 @@ import Database from "better-sqlite3";
 
 /**
  * In Node.js:
- * Importing a .cjs file from an ESM module is allowed (but only the default export is accessible).
+ * Importing a .cjs file from within an ESM module is allowed (but only the default export is accessible).
  * However, importing a .node file directly in ESM is not allowed.
  * .node files must be loaded using `require`, not `import`.
- * Therefore, if you want to use a .node file in ESM, there are two options:
- * 1. Use `createRequire` to create a `require` function and load the .node file;
- * 2. Create a .cjs file that requires the .node file, and then import that .cjs file in your ESM module.
+ * Therefore, if you want to use a .node file in an ESM module, there are two options:
+ * 1. Use `createRequire` to create a CommonJS-style `require` function and load the .node file;
+ * 2. Create a .cjs file that uses `require` to load the .node file, and then import that .cjs file in your ESM module.
+ *
+ * NOTE:
+ * A .node file is a compiled native addon for Node.js, typically written in C or C++.
+ * It is a dynamically-linked binary module that allows high-performance or low-level system functionality
+ * to be accessed from JavaScript.
+ * These files are loaded using `require()` and expose functions or objects that can be used like regular modules.
+ * .node files are commonly used for performance-critical tasks, such as cryptography, image processing, or hardware access.
  */
 // import { createRequire } from "node:module";
 // const require = createRequire(import.meta.url);
