@@ -24,7 +24,6 @@ import {
   TablePagination,
   Button,
   Divider,
-  Checkbox,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -139,29 +138,6 @@ const useScanerForm = () =>
 const columnHelper = createColumnHelper<KhBarcode>();
 
 const columns = [
-  columnHelper.display({
-    id: "checkbox",
-    header: ({ table }) => (
-      <Checkbox
-        indeterminate={table.getIsSomeRowsSelected()}
-        checked={table.getIsAllRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onChange={row.getToggleSelectedHandler()}
-      />
-    ),
-    footer: ({ table }) => (
-      <Checkbox
-        indeterminate={table.getIsSomeRowsSelected()}
-        checked={table.getIsAllRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-      />
-    ),
-  }),
   columnHelper.accessor("id", {
     header: "ID",
     footer: "ID",

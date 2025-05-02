@@ -24,7 +24,6 @@ import {
   TablePagination,
   Button,
   Divider,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -144,29 +143,6 @@ const useScanerForm = () =>
 const columnHelper = createColumnHelper<JTVBarcode>();
 
 const columns = [
-  columnHelper.display({
-    id: "checkbox",
-    header: ({ table }) => (
-      <Checkbox
-        indeterminate={table.getIsSomeRowsSelected()}
-        checked={table.getIsAllRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onChange={row.getToggleSelectedHandler()}
-      />
-    ),
-    footer: ({ table }) => (
-      <Checkbox
-        indeterminate={table.getIsSomeRowsSelected()}
-        checked={table.getIsAllRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-      />
-    ),
-  }),
   columnHelper.accessor("id", {
     header: "ID",
     footer: "ID",
