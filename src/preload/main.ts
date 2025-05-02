@@ -1,9 +1,13 @@
 /**
- * Preload scripts entry point
- * Preload scripts run in renderer process
- * electron/renderer is available in renderer process
- * electron/main is not available in renderer process
- * electron/common is available in renderer process (non-sandboxed only)
+ * Preload Scripts Entry Point
+ *
+ * This script runs in the renderer process with privileged access to Node.js APIs.
+ * It serves as a secure bridge between the main and renderer processes.
+ *
+ * Note:
+ * - electron/renderer: Available in the renderer process
+ * - electron/main: Not available in the renderer process
+ * - electron/common: Available in the renderer process (non-sandboxed only)
  */
 import { ipcRenderer, contextBridge, webUtils } from "electron/renderer";
 import * as channel from "#/channel";

@@ -1,16 +1,26 @@
 /**
- * import type for bellow packages
- * 1. electron/main
- * 2. electron/renderer
- * 3. electron/common
+ * Type Declarations Import
+ *
+ * This import provides TypeScript type definitions for the following Electron modules:
+ * 1. electron/main - APIs for the main process
+ * 2. electron/renderer - APIs for the renderer process (not available in main process)
+ * 3. electron/common - APIs shared between main and renderer processes
  */
 import "electron";
+
 /**
- * Main scripts entry point
- * Main scripts run in main process
- * electron/main is available in main process
- * electron/renderer is not available in main process
- * electron/common is available in main process
+ * Main Process Entry Point
+ *
+ * The main process is the core process of an Electron application, responsible for:
+ * - Application lifecycle management
+ * - Creating and managing renderer processes
+ * - Accessing native system functionality
+ * - Coordinating inter-process communication
+ *
+ * Note:
+ * - electron/renderer: Available in the renderer process
+ * - electron/main: Not available in the renderer process
+ * - electron/common: Available in the renderer process (non-sandboxed only)
  */
 import { BrowserWindow, ipcMain, nativeTheme, app, Menu } from "electron/main";
 import { shell } from "electron/common";
@@ -47,12 +57,12 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   ? join(process.env.APP_ROOT, "public")
   : RENDERER_DIST;
 
-let win: BrowserWindow | null;
+// let win: BrowserWindow | null;
 
 const createWindow = () => {
   const alwaysOnTop = store.settings.get("alwaysOnTop");
 
-  win = new BrowserWindow({
+  const win = new BrowserWindow({
     icon: join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
       preload: join(__dirname, "preload.mjs"),
@@ -110,7 +120,6 @@ const createWindow = () => {
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
-    win = null;
   }
 });
 
@@ -128,11 +137,15 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on("second-instance", () => {
+    const win = BrowserWindow.getAllWindows().at(0);
+    if (!win) return;
+
     // Someone tried to run a second instance, we should focus our window.
-    if (win) {
-      if (win.isMinimized()) win.restore();
-      win.focus();
+    if (win.isMinimized()) {
+      win.restore();
     }
+
+    win.focus();
   });
 
   if (import.meta.env.DEV) {
@@ -176,6 +189,7 @@ ipcMain.handle(
 ipcMain.handle(
   channel.openDevTools,
   withLog(async (): Promise<void> => {
+    const win = BrowserWindow.getAllWindows().at(0);
     if (!win) return;
     win.webContents.openDevTools();
   }),
