@@ -36,6 +36,8 @@ import {
   fetchVersion,
   fetchOpenAtLogin,
   useOpenAtLogin,
+  useOpenDevTools,
+  useSettingsOpenInEditor,
 } from "@/api/fetch_preload";
 
 const schema = z.object({
@@ -65,7 +67,6 @@ const useSettingForm = () => {
 
 export const Component = () => {
   const formId = React.useId();
-  const [isPending, startTransition] = React.useTransition();
 
   const form = useSettingForm();
   const mutate = useUpdateSettings();
@@ -74,6 +75,8 @@ export const Component = () => {
   const updateOpenAtLogin = useOpenAtLogin();
   const version = useQuery(fetchVersion());
   const openAtLogin = useQuery(fetchOpenAtLogin());
+  const openDevTools = useOpenDevTools();
+  const settingsOpenInEditor = useSettingsOpenInEditor();
 
   return (
     <Stack spacing={6}>
@@ -83,8 +86,9 @@ export const Component = () => {
           action={
             <IconButton
               onClick={() => {
-                window.electronAPI.openDevTools();
+                openDevTools.mutate();
               }}
+              disabled={openDevTools.isPaused}
             >
               <BugReportOutlined />
             </IconButton>
@@ -229,11 +233,11 @@ export const Component = () => {
           <Button
             type="button"
             onClick={() => {
-              startTransition(window.electronAPI.settingsOpenInEditor);
+              settingsOpenInEditor.mutate();
             }}
-            disabled={isPending}
+            disabled={settingsOpenInEditor.isPending}
             startIcon={
-              isPending ? (
+              settingsOpenInEditor.isPending ? (
                 <CircularProgress size={16} color="inherit" />
               ) : (
                 <OpenInNewOutlined />

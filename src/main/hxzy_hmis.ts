@@ -1,6 +1,6 @@
 // 成都北 华兴致远
 
-import { net, ipcMain } from "electron";
+import { net, ipcMain } from "electron/main";
 import { log, getIP, withLog, createEmit } from "./lib";
 import {
   getDetectionByZH,

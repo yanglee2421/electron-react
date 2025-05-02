@@ -1,6 +1,6 @@
 // 康华 安康
 
-import { net, ipcMain } from "electron";
+import { net, ipcMain } from "electron/main";
 import { createEmit, log, withLog } from "./lib";
 import { getCorporation, getDetectionByZH } from "./cmd";
 import dayjs from "dayjs";

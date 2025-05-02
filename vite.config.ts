@@ -1,11 +1,11 @@
 import { defineConfig } from "vite";
-import path from "node:path";
-import electron from "vite-plugin-electron/simple";
-import react from "@vitejs/plugin-react";
+import { dirname, join } from "node:path";
 import { fileURLToPath, URL } from "node:url";
+import react from "@vitejs/plugin-react";
+import electron from "vite-plugin-electron/simple";
 import renderer from "vite-plugin-electron-renderer";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const alias = {
   "@": fileURLToPath(new URL("./src/renderer", import.meta.url)),
@@ -54,7 +54,7 @@ export default defineConfig((config) => ({
     electron({
       main: {
         // Shortcut of `build.lib.entry`.
-        entry: path.join(__dirname, "src/main/main.ts"),
+        entry: join(__dirname, "src/main/main.ts"),
         vite: {
           resolve: { alias },
           build: {
@@ -78,7 +78,7 @@ export default defineConfig((config) => ({
       preload: {
         // Shortcut of `build.rollupOptions.input`.
         // Preload scripts may contain Web assets, so use the `build.rollupOptions.input` instead `build.lib.entry`.
-        input: path.join(__dirname, "src/preload/main.ts"),
+        input: join(__dirname, "src/preload/main.ts"),
         vite: {
           resolve: { alias },
           build: {

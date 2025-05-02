@@ -1,12 +1,13 @@
-import { execFile, exec } from "node:child_process";
+import { ipcMain } from "electron/main";
+import { shell } from "electron/common";
 import { promisify } from "node:util";
-import { access, constants } from "node:fs/promises";
 import { createHash } from "node:crypto";
+import { execFile, exec } from "node:child_process";
+import { access, constants } from "node:fs/promises";
 import { settings } from "./store";
 import { DATE_FORMAT_DATABASE } from "./cmd";
 import { withLog } from "./lib";
 import * as channel from "./channel";
-import { ipcMain, shell } from "electron";
 
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);

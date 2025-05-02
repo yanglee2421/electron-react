@@ -1,6 +1,20 @@
-import * as electronMain from "electron/main";
-import * as electronCommon from "electron/common";
-import path from "node:path";
+/**
+ * import type for bellow packages
+ * 1. electron/main
+ * 2. electron/renderer
+ * 3. electron/common
+ */
+import "electron";
+/**
+ * Main scripts entry point
+ * Main scripts run in main process
+ * electron/main is available in main process
+ * electron/renderer is not available in main process
+ * electron/common is available in main process
+ */
+import { BrowserWindow, ipcMain, nativeTheme, app, Menu } from "electron/main";
+import { shell } from "electron/common";
+import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as channel from "./channel";
 import { withLog } from "./lib";
@@ -11,7 +25,6 @@ import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
 import * as store from "./store";
 import * as cmd from "./cmd";
-import type { BrowserWindow as BrowserWindowType } from "electron/main";
 
 // The built directory structure
 //
@@ -23,28 +36,26 @@ import type { BrowserWindow as BrowserWindowType } from "electron/main";
 // │ │ └── preload.mjs
 // │
 
-const { app, BrowserWindow, ipcMain, nativeTheme } = electronMain;
-const { shell } = electronCommon;
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
-process.env.APP_ROOT = path.join(__dirname, "..");
+process.env.APP_ROOT = join(__dirname, "..");
 export const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
-export const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
-export const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
+export const MAIN_DIST = join(process.env.APP_ROOT, "dist-electron");
+export const RENDERER_DIST = join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
-  ? path.join(process.env.APP_ROOT, "public")
+  ? join(process.env.APP_ROOT, "public")
   : RENDERER_DIST;
 
-let win: BrowserWindowType | null;
+let win: BrowserWindow | null;
 
 const createWindow = () => {
   const alwaysOnTop = store.settings.get("alwaysOnTop");
 
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    icon: join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: path.join(__dirname, "preload.mjs"),
+      preload: join(__dirname, "preload.mjs"),
       nodeIntegration: false,
     },
 
@@ -61,7 +72,7 @@ const createWindow = () => {
    * Performace optimization
    * https://www.electronjs.org/docs/latest/tutorial/performance#8-call-menusetapplicationmenunull-when-you-do-not-need-a-default-menu
    */
-  electronMain.Menu.setApplicationMenu(null);
+  Menu.setApplicationMenu(null);
   win.menuBarVisible = false;
 
   // Test active push message to Renderer-process.
@@ -89,7 +100,7 @@ const createWindow = () => {
     win.loadURL(VITE_DEV_SERVER_URL);
   } else {
     // win.loadFile('dist/index.html')
-    win.loadFile(path.join(RENDERER_DIST, "index.html"));
+    win.loadFile(join(RENDERER_DIST, "index.html"));
   }
 };
 

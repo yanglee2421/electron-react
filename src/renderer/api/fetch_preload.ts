@@ -428,7 +428,8 @@ export const useOpenPath = () => {
 export const useOpenDevTools = () => {
   return useMutation({
     mutationFn: async () => {
-      return await window.electronAPI.openDevTools();
+      await window.electronAPI.openDevTools();
+      return true;
     },
   });
 };
@@ -475,6 +476,15 @@ export const useUpdateSettings = () => {
       await queryClient.invalidateQueries({
         queryKey: fetchSettings().queryKey,
       });
+    },
+  });
+};
+
+export const useSettingsOpenInEditor = () => {
+  return useMutation({
+    mutationFn: async () => {
+      await window.electronAPI.settingsOpenInEditor();
+      return true;
     },
   });
 };

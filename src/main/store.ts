@@ -1,5 +1,5 @@
 import Store from "electron-store";
-import { BrowserWindow, nativeTheme, ipcMain } from "electron";
+import { BrowserWindow, nativeTheme, ipcMain } from "electron/main";
 import { withLog } from "./lib";
 import * as channel from "./channel";
 import type * as PRELOAD from "~/main";

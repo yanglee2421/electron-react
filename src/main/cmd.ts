@@ -1,15 +1,17 @@
+import { ipcMain } from "electron/main";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import dayjs from "dayjs";
-import * as store from "./store";
-import { ipcMain } from "electron";
-import * as channel from "./channel";
 import { withLog } from "./lib";
+import * as store from "./store";
+import * as channel from "./channel";
 
 const execFileAsync = promisify(execFile);
 export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 
-export const getDataFromAccessDatabase = async <T = unknown>(sql: string) => {
+export const getDataFromAccessDatabase = async <TRecord = unknown>(
+  sql: string,
+) => {
   const config = store.settings.store;
   const data = await execFileAsync(config.driverPath, [
     "GetDataFromAccessDatabase",
@@ -18,10 +20,10 @@ export const getDataFromAccessDatabase = async <T = unknown>(sql: string) => {
   ]);
 
   if (data.stderr) {
-    throw data.stderr;
+    throw new Error(data.stderr);
   }
 
-  return JSON.parse(data.stdout) as T[];
+  return JSON.parse(data.stdout) as TRecord[];
 };
 
 export type Detection = {
@@ -234,10 +236,6 @@ const autoInputToVC = async (data: AutoInputToVCParams) => {
   return cp.stdout;
 };
 
-/**
- * 初始化IPC通信
- * 注册cmd模块中的ipcMain处理器
- */
 export const initIpc = () => {
   ipcMain.handle(
     channel.getDataFromAccessDatabase,
