@@ -49,3 +49,4 @@ export const mobileMode = "mobileMode";
 // Common
 export const settings = "settings";
 export const settingsOpenInEditor = "settingsOpenInEditor";
+export const excel_quartor = "excel:quartor";

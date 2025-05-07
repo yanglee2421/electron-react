@@ -242,6 +242,7 @@ const settings = (param?: SetSettingParams) =>
   invoke<STORE.Settings>(channel.settings, param);
 
 const settingsOpenInEditor = () => invoke(channel.settingsOpenInEditor);
+const excelQuartor = () => invoke(channel.excel_quartor);
 
 const electronAPI = {
   // Windows 10
@@ -292,6 +293,7 @@ const electronAPI = {
   // Common
   settings,
   settingsOpenInEditor,
+  excelQuartor,
 
   // Subscribe
   subscribeLog,

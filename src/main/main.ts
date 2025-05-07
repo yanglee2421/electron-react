@@ -35,6 +35,7 @@ import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
 import * as store from "./store";
 import * as cmd from "./cmd";
+import * as excel from "./excel";
 
 // The built directory structure
 //
@@ -163,6 +164,7 @@ if (!gotTheLock) {
     cmd.initIpc();
     store.init();
     windows.initIpc();
+    excel.initIpc();
 
     createWindow();
   });

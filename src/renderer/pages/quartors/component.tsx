@@ -1,9 +1,11 @@
 import {
   Alert,
   AlertTitle,
+  Button,
   Card,
   CardContent,
   CardHeader,
+  CircularProgress,
   Divider,
   Grid,
   IconButton,
@@ -27,7 +29,7 @@ import {
   getPaginationRowModel,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import { RefreshOutlined } from "@mui/icons-material";
+import { PrintOutlined, RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 import { ScrollView as TableContainer } from "@/components/scrollbar";
@@ -59,6 +61,7 @@ const columns = [
 export const Component = () => {
   "use no memo";
   const [date, setDate] = React.useState(initDate);
+  const [isPending, startTransition] = React.useTransition();
 
   const sql = `SELECT * FROM quartors WHERE tmnow BETWEEN #${date
     .startOf("day")
@@ -169,6 +172,24 @@ export const Component = () => {
         </Grid>
       </CardContent>
       <Divider />
+      <CardContent>
+        <Button
+          onClick={() => {
+            startTransition(async () => {
+              await window.electronAPI.excelQuartor();
+            });
+          }}
+          startIcon={
+            isPending ? (
+              <CircularProgress size={16} color="inherit" />
+            ) : (
+              <PrintOutlined />
+            )
+          }
+        >
+          Excel
+        </Button>
+      </CardContent>
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>
