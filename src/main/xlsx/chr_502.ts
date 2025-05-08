@@ -1,20 +1,51 @@
-import { ipcMain, app } from "electron/main";
+import { app, screen } from "electron/main";
 import { shell } from "electron/common";
 import { join } from "node:path";
-import Excel from "exceljs";
-import { withLog } from "./lib";
+import Excel from "@yanglee2421/exceljs";
 
-const calcHeight = (num: number) => (num / 2) * 3;
-const calcWidth = (num: number) => num + 0.64;
+const calcHeight = (num: number) => {
+  const scale = screen.getPrimaryDisplay().scaleFactor;
+  return num * scale;
+};
+/**
+ * 100 -0.62
+ * 125 -0.78
+ * 150 -0.64
+ * 175 0.21
+ * 200 -0.55
+ * @param num
+ * @returns
+ */
+const calcWidthOffset = () => {
+  const scale = screen.getPrimaryDisplay().scaleFactor;
+  switch (scale) {
+    case 1:
+      return -0.62;
+    case 1.25:
+      return -0.78;
+    case 1.5:
+      return -0.64;
+    case 1.75:
+      return 0.21;
+    case 2:
+      return 0.55;
+    default:
+      return 0;
+  }
+};
+
+const calcWidth = (num: number) => {
+  return num - calcWidthOffset();
+};
 
 const rowHeights = [
-  15, 51.8, 39.8, 35.3, 28.5, 26.3, 23.3, 18.8, 18.8, 18, 18.8, 18.8, 18.8,
+  15, 51.75, 39.75, 35.3, 28.5, 26.3, 23.3, 18.8, 18.8, 18, 18.8, 18.8, 18.8,
   18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 21, 21, 20.3, 21, 14.3,
   54.8,
 ];
 
 const columnWidths = [
-  7.92, 8.75, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+  7.88, 8.75, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
   2, 2, 7,
 ];
 
@@ -38,9 +69,11 @@ const typography = {
   underline: false,
 } as const;
 
-export const quartor = async () => {
+export const chr_502 = async () => {
   const workbook = new Excel.Workbook();
   const sheet = workbook.addWorksheet("Sheet1");
+  sheet.properties.defaultColWidth = 8.38;
+  sheet.properties.defaultRowHeight = 14.25;
 
   sheet.mergeCells("A1:AA1");
   const cellA1 = sheet.getCell("A1");
@@ -1092,13 +1125,10 @@ export const quartor = async () => {
   columnWidths.forEach((columnWidth, idx) => {
     sheet.getColumn(idx + 1).width = calcWidth(columnWidth);
   });
-
-  await sheet.protect("123456", {});
+  if (import.meta.env.PROD) {
+    await sheet.protect("123456", { formatColumns: true, formatRows: true });
+  }
   const outputPath = join(app.getPath("documents"), "output.xlsx");
   await workbook.xlsx.writeFile(outputPath);
   await shell.openPath(outputPath);
-};
-
-export const initIpc = () => {
-  ipcMain.handle("excel:quartor", withLog(quartor));
 };

@@ -1655,6 +1655,21 @@
   resolved "https://registry.yarnpkg.com/@xmldom/xmldom/-/xmldom-0.8.10.tgz#a1337ca426aa61cef9fe15b5b28e340a72f6fa99"
   integrity sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==
 
+"@yanglee2421/exceljs@^4.4.0":
+  version "4.4.0"
+  resolved "https://registry.yarnpkg.com/@yanglee2421/exceljs/-/exceljs-4.4.0.tgz#5efb4e35ee16166b70c2048cd4aaacf8ab3567f1"
+  integrity sha512-mNsW+bNZOZXbgcLY4SjvbAIdY4wb/vwm9hXJIQ5pT1wlfDki4bnR+pJV+4+D/atjQpWJ/pno/EO0/z+DpsXZNw==
+  dependencies:
+    archiver "^5.0.0"
+    dayjs "^1.8.34"
+    fast-csv "^4.3.1"
+    jszip "^3.10.1"
+    readable-stream "^3.6.0"
+    saxes "^5.0.1"
+    tmp "^0.2.0"
+    unzipper "^0.10.11"
+    uuid "^8.3.0"
+
 abbrev@^1.0.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.1.1.tgz#f8f2c887ad10bf67f634f005b6987fed3179aac8"

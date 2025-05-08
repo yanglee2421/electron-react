@@ -21,6 +21,7 @@
     "@tanstack/react-query": "^5.74.4",
     "@tanstack/react-query-devtools": "^5.74.4",
     "@tanstack/react-table": "^8.21.3",
+    "@yanglee2421/exceljs": "^4.4.0",
     "better-sqlite3": "^11.9.1",
     "dayjs": "^1.11.13",
     "dexie": "^4.0.11",

@@ -35,7 +35,7 @@ import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
 import * as store from "./store";
 import * as cmd from "./cmd";
-import * as excel from "./excel";
+import * as excel from "./xlsx";
 
 // The built directory structure
 //

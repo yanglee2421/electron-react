@@ -50,3 +50,4 @@ export const mobileMode = "mobileMode";
 export const settings = "settings";
 export const settingsOpenInEditor = "settingsOpenInEditor";
 export const excel_quartor = "excel:quartor";
+export const excel_detection = "excel:detection";
