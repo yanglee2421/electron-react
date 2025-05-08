@@ -1,9 +1,11 @@
 import {
   Alert,
   AlertTitle,
+  Button,
   Card,
   CardContent,
   CardHeader,
+  CircularProgress,
   Divider,
   Grid,
   IconButton,
@@ -27,10 +29,10 @@ import {
   getPaginationRowModel,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import { RefreshOutlined } from "@mui/icons-material";
+import { PrintOutlined, RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
-import { ScrollView as TableContainer } from "@/components/scrollbar";
+import { ScrollView } from "@/components/scrollbar";
 import type { Detection } from "#/cmd";
 import { Loading } from "@/components/Loading";
 
@@ -59,6 +61,8 @@ const columns = [
 export const Component = () => {
   "use no memo";
   const [date, setDate] = React.useState(initDate);
+
+  const [isPending, startTransition] = React.useTransition();
 
   const sql = `SELECT * FROM detections WHERE tmnow BETWEEN #${date
     .startOf("day")
@@ -150,6 +154,7 @@ export const Component = () => {
           </IconButton>
         }
       />
+      <Divider />
       <CardContent>
         <Grid container spacing={6}>
           <Grid size={12}>
@@ -169,7 +174,24 @@ export const Component = () => {
         </Grid>
       </CardContent>
       <Divider />
-      <TableContainer>
+      <CardContent>
+        <Button
+          onClick={() => {
+            startTransition(window.electronAPI.xlsxCHR53A);
+          }}
+          disabled={isPending}
+          startIcon={
+            isPending ? (
+              <CircularProgress color="inherit" size={16} />
+            ) : (
+              <PrintOutlined />
+            )
+          }
+        >
+          Excel
+        </Button>
+      </CardContent>
+      <ScrollView>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -207,7 +229,8 @@ export const Component = () => {
             ))}
           </TableFooter>
         </Table>
-      </TableContainer>
+      </ScrollView>
+      <Divider />
       <TablePagination
         component={"div"}
         page={table.getState().pagination.pageIndex}

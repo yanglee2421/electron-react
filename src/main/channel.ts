@@ -49,5 +49,5 @@ export const mobileMode = "mobileMode";
 // Common
 export const settings = "settings";
 export const settingsOpenInEditor = "settingsOpenInEditor";
-export const excel_quartor = "excel:quartor";
-export const excel_detection = "excel:detection";
+export const xlsx_chr_502 = "excel:quartor";
+export const xlsx_chr_53a = "excel:detection";

@@ -11,6 +11,6 @@ import { chr_53a } from "./chr_53a";
  * CHR503 Yearly Validate
  */
 export const initIpc = () => {
-  ipcMain.handle(channel.excel_quartor, withLog(chr_502));
-  ipcMain.handle(channel.excel_detection, withLog(chr_53a));
+  ipcMain.handle(channel.xlsx_chr_502, withLog(chr_502));
+  ipcMain.handle(channel.xlsx_chr_53a, withLog(chr_53a));
 };
