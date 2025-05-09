@@ -90,9 +90,7 @@ export const Component = () => {
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
             <Loading
               slotProps={{
-                box: {
-                  padding: 0,
-                },
+                box: { padding: 0 },
               }}
             />
           </TableCell>
@@ -154,7 +152,6 @@ export const Component = () => {
           </IconButton>
         }
       />
-      <Divider />
       <CardContent>
         <Grid container spacing={6}>
           <Grid size={12}>
@@ -191,6 +188,7 @@ export const Component = () => {
           Excel
         </Button>
       </CardContent>
+      <Divider />
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>

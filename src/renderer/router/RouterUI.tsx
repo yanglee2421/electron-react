@@ -51,6 +51,8 @@ import {
 } from "@/api/fetch_preload";
 import {
   DashboardLayout,
+  DialogsProvider,
+  NotificationsProvider,
   PageContainer,
   useNotifications,
 } from "@toolpad/core";
@@ -266,7 +268,18 @@ const RootRoute = () => {
       theme={theme}
     >
       <NprogressBar />
-      <Outlet />
+      <NotificationsProvider
+        slotProps={{
+          snackbar: {
+            anchorOrigin: { vertical: "top", horizontal: "center" },
+            autoHideDuration: 1000 * 3,
+          },
+        }}
+      >
+        <DialogsProvider>
+          <Outlet />
+        </DialogsProvider>
+      </NotificationsProvider>
       <ScrollRestoration />
     </ReactRouterAppProvider>
   );

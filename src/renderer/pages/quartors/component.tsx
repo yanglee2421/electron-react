@@ -16,6 +16,7 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  TableContainer,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -32,7 +33,6 @@ import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { PrintOutlined, RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
-import { ScrollView as TableContainer } from "@/components/scrollbar";
 import type { Quartor } from "#/cmd";
 import { Loading } from "@/components/Loading";
 
@@ -190,6 +190,7 @@ export const Component = () => {
           Excel
         </Button>
       </CardContent>
+      <Divider />
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>

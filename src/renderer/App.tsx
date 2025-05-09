@@ -9,7 +9,6 @@ import { Loading } from "@/components/Loading";
 import { useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
 import { QueryProvider } from "./components/query";
 import { db } from "./lib/db";
-import { NotificationsProvider, DialogsProvider } from "@toolpad/core";
 import type { Log } from "./lib/db";
 
 const mediaQuery = matchMedia("(prefers-color-scheme: dark)");
@@ -82,18 +81,7 @@ export const App = () => {
 
   return (
     <QueryProvider>
-      <MuiProvider>
-        <NotificationsProvider
-          slotProps={{
-            snackbar: {
-              anchorOrigin: { vertical: "top", horizontal: "center" },
-              autoHideDuration: 1000 * 3,
-            },
-          }}
-        >
-          <DialogsProvider>{renderRouter()}</DialogsProvider>
-        </NotificationsProvider>
-      </MuiProvider>
+      <MuiProvider>{renderRouter()}</MuiProvider>
     </QueryProvider>
   );
 };

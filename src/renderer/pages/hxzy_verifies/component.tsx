@@ -13,6 +13,7 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  TableContainer,
 } from "@mui/material";
 import { RefreshOutlined } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -29,7 +30,6 @@ import {
 } from "@tanstack/react-table";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import { ScrollView as TableContainer } from "@/components/scrollbar";
 import type { Verify } from "#/cmd";
 import { Loading } from "@/components/Loading";
 
