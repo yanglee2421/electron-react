@@ -24,18 +24,13 @@ import {
   TablePagination,
   Button,
   Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Link,
   CircularProgress,
+  TableContainer,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
-import { useSnackbar } from "notistack";
 import {
   fetchHxzyHmisSqliteGet,
   fetchHxzyHmisSetting,
@@ -54,7 +49,7 @@ import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
-import { ScrollView as TableContainer } from "@/components/scrollbar";
+import { useDialogs, useNotifications } from "@toolpad/core";
 import type { HxzyBarcode } from "#/schema";
 
 type ActionCellProps = {
@@ -62,38 +57,22 @@ type ActionCellProps = {
 };
 
 const ActionCell = (props: ActionCellProps) => {
-  const [showAlert, setShowAlert] = React.useState(false);
-
   const saveData = useHxzyHmisApiSet();
-  const snackbar = useSnackbar();
+  const snackbar = useNotifications();
+  const dialog = useDialogs();
   const deleteBarcode = useHxzyHmisSqliteDelete();
-
-  const handleClose = () => setShowAlert(false);
-  const handleDelete = () => {
-    deleteBarcode.mutate(props.id, {
-      onError: (error) => {
-        snackbar.enqueueSnackbar(error.message, {
-          variant: "error",
-        });
-      },
-      onSuccess: () => {
-        handleClose();
-      },
-    });
-  };
 
   const handleUpload = () => {
     saveData.mutate(props.id, {
       onError(error) {
-        snackbar.enqueueSnackbar(error.message, {
-          variant: "error",
+        snackbar.show(error.message, {
+          severity: "error",
         });
       },
       onSuccess(data) {
-        snackbar.enqueueSnackbar(`#${data}上传成功`, {
-          variant: "success",
+        snackbar.show(`#${data}上传成功`, {
+          severity: "success",
         });
-        handleClose();
       },
     });
   };
@@ -104,27 +83,27 @@ const ActionCell = (props: ActionCellProps) => {
         <CloudUploadOutlined />
       </IconButton>
       <IconButton
-        onClick={() => setShowAlert(true)}
+        onClick={async () => {
+          const confirmed = await dialog.confirm("确定要删除这条记录吗？", {
+            okText: "删除",
+            title: "警告",
+            cancelText: "取消",
+          });
+
+          if (confirmed) {
+            deleteBarcode.mutate(props.id, {
+              onError: (error) => {
+                snackbar.show(error.message, {
+                  severity: "error",
+                });
+              },
+            });
+          }
+        }}
         disabled={saveData.isPending}
       >
         <DeleteOutlined color="error" />
       </IconButton>
-      <Dialog open={showAlert} onClose={handleClose}>
-        <DialogTitle>删除</DialogTitle>
-        <DialogContent>
-          <DialogContentText>确定要删除这条记录吗？</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>取消</Button>
-          <Button
-            onClick={handleDelete}
-            disabled={deleteBarcode.isPending}
-            color="error"
-          >
-            删除
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };
@@ -197,7 +176,7 @@ export const Component = () => {
 
   const form = useScanerForm();
   const getData = useHxzyHmisApiGet();
-  const snackbar = useSnackbar();
+  const snackbar = useNotifications();
   const barcode = useQuery(fetchHxzyHmisSqliteGet(params));
   const { data: hmis } = useQuery(fetchHxzyHmisSetting());
   const autoInput = useAutoInputToVC();
@@ -339,8 +318,8 @@ export const Component = () => {
                 form.reset();
                 const data = await getData.mutateAsync(values.barCode, {
                   onError: (error) => {
-                    snackbar.enqueueSnackbar(error.message, {
-                      variant: "error",
+                    snackbar.show(error.message, {
+                      severity: "error",
                     });
                   },
                 });
@@ -363,8 +342,8 @@ export const Component = () => {
                   },
                   {
                     onError: (error) => {
-                      snackbar.enqueueSnackbar(error.message, {
-                        variant: "error",
+                      snackbar.show(error.message, {
+                        severity: "error",
                       });
                     },
                   },

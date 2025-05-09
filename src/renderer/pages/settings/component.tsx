@@ -15,7 +15,6 @@ import {
   CardActions,
   Button,
   Stack,
-  MenuItem,
   Switch,
   Paper,
   List,
@@ -26,9 +25,8 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNotifications } from "@toolpad/core";
 import React from "react";
-import { useSnackbar } from "notistack";
-import { NavMenu } from "@/router/nav";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchSettings,
@@ -70,7 +68,7 @@ export const Component = () => {
 
   const form = useSettingForm();
   const mutate = useUpdateSettings();
-  const snackbar = useSnackbar();
+  const snackbar = useNotifications();
   const queryClient = useQueryClient();
   const updateOpenAtLogin = useOpenAtLogin();
   const version = useQuery(fetchVersion());
@@ -103,7 +101,7 @@ export const Component = () => {
                 driverPath: data.driverPath,
                 homePath: data.home_path,
               });
-              snackbar.enqueueSnackbar("保存成功", { variant: "success" });
+              snackbar.show("保存成功", { severity: "success" });
             }, console.warn)}
             onReset={() => form.reset()}
             noValidate
@@ -190,7 +188,7 @@ export const Component = () => {
                   )}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              {/* <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   control={form.control}
                   name="home_path"
@@ -204,14 +202,14 @@ export const Component = () => {
                       select
                     >
                       {NavMenu.list.map((i) => (
-                        <MenuItem key={i.to} value={i.to}>
+                        <MenuItem key={i.} value={i.to}>
                           {i.label}
                         </MenuItem>
                       ))}
                     </TextField>
                   )}
                 />
-              </Grid>
+              </Grid> */}
             </Grid>
           </form>
         </CardContent>

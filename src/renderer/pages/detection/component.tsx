@@ -12,6 +12,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableFooter,
   TableHead,
   TablePagination,
@@ -31,10 +32,9 @@ import {
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { PrintOutlined, RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
-import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
-import { ScrollView } from "@/components/scrollbar";
 import type { Detection } from "#/cmd";
 import { Loading } from "@/components/Loading";
+import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 
 const initDate = () => dayjs();
 
@@ -191,7 +191,7 @@ export const Component = () => {
           Excel
         </Button>
       </CardContent>
-      <ScrollView>
+      <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -229,7 +229,7 @@ export const Component = () => {
             ))}
           </TableFooter>
         </Table>
-      </ScrollView>
+      </TableContainer>
       <Divider />
       <TablePagination
         component={"div"}

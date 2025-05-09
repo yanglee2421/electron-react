@@ -24,18 +24,14 @@ import {
   TablePagination,
   Button,
   Divider,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogActions,
-  DialogContentText,
   Link,
   CircularProgress,
+  TableContainer,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
-import { useSnackbar } from "notistack";
+import { useDialogs, useNotifications } from "@toolpad/core";
 import {
   createColumnHelper,
   flexRender,
@@ -55,43 +51,27 @@ import {
 } from "@/api/fetch_preload";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
-import { ScrollView as TableContainer } from "@/components/scrollbar";
 
 type ActionCellProps = {
   id: number;
 };
 
 const ActionCell = (props: ActionCellProps) => {
-  const [showAlert, setShowAlert] = React.useState(false);
-
-  const snackbar = useSnackbar();
+  const snackbar = useNotifications();
+  const dialog = useDialogs();
   const saveData = useJtvHmisApiSet();
   const deleteBarcode = useJtvHmisSqliteDelete();
 
-  const handleClose = () => setShowAlert(false);
-  const handleDelete = () => {
-    deleteBarcode.mutate(props.id, {
-      onError(error) {
-        snackbar.enqueueSnackbar(error.message, {
-          variant: "error",
-        });
-      },
-      onSuccess() {
-        handleClose();
-      },
-    });
-  };
   const handleUpload = () => {
     saveData.mutate(props.id, {
       onError(error) {
-        snackbar.enqueueSnackbar(error.message, {
-          variant: "error",
+        snackbar.show(error.message, {
+          severity: "error",
         });
       },
       onSuccess() {
-        handleClose();
-        snackbar.enqueueSnackbar("上传成功", {
-          variant: "success",
+        snackbar.show("上传成功", {
+          severity: "success",
         });
       },
     });
@@ -103,27 +83,26 @@ const ActionCell = (props: ActionCellProps) => {
         <CloudUploadOutlined />
       </IconButton>
       <IconButton
-        onClick={() => setShowAlert(true)}
+        onClick={async () => {
+          const confirmed = await dialog.confirm("确定要删除这条记录吗？", {
+            okText: "删除",
+            cancelText: "取消",
+            title: "警告",
+          });
+          if (confirmed) {
+            deleteBarcode.mutate(props.id, {
+              onError(error) {
+                snackbar.show(error.message, {
+                  severity: "error",
+                });
+              },
+            });
+          }
+        }}
         disabled={saveData.isPending}
       >
         <DeleteOutlined color="error" />
       </IconButton>
-      <Dialog open={showAlert} onClose={handleClose}>
-        <DialogTitle>删除</DialogTitle>
-        <DialogContent>
-          <DialogContentText>确定要删除这条记录吗？</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>取消</Button>
-          <Button
-            onClick={handleDelete}
-            color="error"
-            disabled={deleteBarcode.isPending}
-          >
-            删除
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };
@@ -195,7 +174,7 @@ export const Component = () => {
   };
 
   const form = useScanerForm();
-  const snackbar = useSnackbar();
+  const snackbar = useNotifications();
   const autoInput = useAutoInputToVC();
   const saveData = useJtvHmisApiSet();
   const getData = useJtvHmisApiGet();
@@ -340,8 +319,8 @@ export const Component = () => {
                 form.reset();
                 const data = await getData.mutateAsync(values.barCode, {
                   onError: (error) => {
-                    snackbar.enqueueSnackbar(error.message, {
-                      variant: "error",
+                    snackbar.show(error.message, {
+                      severity: "error",
                     });
                   },
                 });
@@ -364,8 +343,8 @@ export const Component = () => {
                   },
                   {
                     onError(error) {
-                      snackbar.enqueueSnackbar(error.message, {
-                        variant: "error",
+                      snackbar.show(error.message, {
+                        severity: "error",
                       });
                     },
                   },

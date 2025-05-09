@@ -15,7 +15,7 @@ import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
-import { useSnackbar } from "notistack";
+import { useNotifications } from "@toolpad/core";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchJtvHmisSetting,
@@ -69,7 +69,7 @@ const useSettingForm = () => {
 export const Component = () => {
   const formId = React.useId();
 
-  const snackbar = useSnackbar();
+  const snackbar = useNotifications();
   const form = useSettingForm();
   const updateSettings = useUpdateJtvHmisSetting();
 
@@ -92,7 +92,7 @@ export const Component = () => {
               },
               {
                 onError: (error) => {
-                  snackbar.enqueueSnackbar(error.message, { variant: "error" });
+                  snackbar.show(error.message, { severity: "error" });
                 },
                 onSuccess: (data) => {
                   form.reset({
@@ -103,7 +103,7 @@ export const Component = () => {
                     autoUploadInterval: data.autoUploadInterval,
                     unitCode: data.unitCode,
                   });
-                  snackbar.enqueueSnackbar("保存成功", { variant: "success" });
+                  snackbar.show("保存成功", { severity: "success" });
                 },
               },
             );

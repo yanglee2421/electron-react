@@ -24,18 +24,14 @@ import {
   TablePagination,
   Button,
   Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Link,
   CircularProgress,
+  TableContainer,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
-import { useSnackbar } from "notistack";
+import { useNotifications, useDialogs } from "@toolpad/core";
 import {
   fetchJtvHmisXuzhoubeiSetting,
   fetchJtvHmisXuzhoubeiSqliteGet,
@@ -55,45 +51,28 @@ import type { JTVBarcode } from "#/schema";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
-import { ScrollView as TableContainer } from "@/components/scrollbar";
 
 type ActionCellProps = {
   id: number;
 };
 
 const ActionCell = (props: ActionCellProps) => {
-  const [showAlert, setShowAlert] = React.useState(false);
-
-  const snackbar = useSnackbar();
+  const snackbar = useNotifications();
+  const dialog = useDialogs();
   const upload = useJtvHmisXuzhoubeiApiSet();
   const deleteBarcode = useJtvHmisXuzhoubeiSqliteDelete();
-
-  const handleClose = () => setShowAlert(false);
 
   const handleUpload = () => {
     upload.mutate(props.id, {
       onError(error) {
-        snackbar.enqueueSnackbar(error.message, {
-          variant: "error",
+        snackbar.show(error.message, {
+          severity: "error",
         });
       },
       onSuccess() {
-        snackbar.enqueueSnackbar("上传成功", {
-          variant: "success",
+        snackbar.show("上传成功", {
+          severity: "success",
         });
-      },
-    });
-  };
-
-  const handleDelete = () => {
-    deleteBarcode.mutate(props.id, {
-      onError(error) {
-        snackbar.enqueueSnackbar(error.message, {
-          variant: "error",
-        });
-      },
-      onSuccess() {
-        handleClose();
       },
     });
   };
@@ -104,26 +83,26 @@ const ActionCell = (props: ActionCellProps) => {
         <CloudUploadOutlined />
       </IconButton>
       <IconButton>
-        <DeleteOutlined color="error" onClick={() => setShowAlert(true)} />
+        <DeleteOutlined
+          color="error"
+          onClick={async () => {
+            const confirmed = await dialog.confirm("确定要删除这条记录吗？", {
+              okText: "删除",
+              cancelText: "取消",
+              title: "警告",
+            });
+            if (confirmed) {
+              deleteBarcode.mutate(props.id, {
+                onError(error) {
+                  snackbar.show(error.message, {
+                    severity: "error",
+                  });
+                },
+              });
+            }
+          }}
+        />
       </IconButton>
-      <Dialog open={showAlert} onClose={handleClose}>
-        <DialogTitle>删除</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            确定要删除该记录吗？删除后无法恢复。
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>取消</Button>
-          <Button
-            color="error"
-            onClick={handleDelete}
-            disabled={deleteBarcode.isPending}
-          >
-            删除
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };
@@ -196,7 +175,7 @@ export const Component = () => {
   };
 
   const form = useScanerForm();
-  const snackbar = useSnackbar();
+  const snackbar = useNotifications();
   const autoInput = useAutoInputToVC();
   const getData = useJtvHmisXuzhoubeiApiGet();
   const { data: hmis } = useQuery(fetchJtvHmisXuzhoubeiSetting());
@@ -342,8 +321,8 @@ export const Component = () => {
                 form.reset();
                 const data = await getData.mutateAsync(values.barCode, {
                   onError: (error) => {
-                    snackbar.enqueueSnackbar(error.message, {
-                      variant: "error",
+                    snackbar.show(error.message, {
+                      severity: "error",
                     });
                   },
                 });
@@ -366,8 +345,8 @@ export const Component = () => {
                   },
                   {
                     onError(error) {
-                      snackbar.enqueueSnackbar(error.message, {
-                        variant: "error",
+                      snackbar.show(error.message, {
+                        severity: "error",
                       });
                     },
                   },

@@ -1,11 +1,5 @@
 import { RouterUI } from "./router/RouterUI";
-import { SnackbarProvider } from "notistack";
-import {
-  ThemeProvider,
-  CssBaseline,
-  createTheme,
-  GlobalStyles,
-} from "@mui/material";
+import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import React from "react";
@@ -15,33 +9,18 @@ import { Loading } from "@/components/Loading";
 import { useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
 import { QueryProvider } from "./components/query";
 import { db } from "./lib/db";
+import { NotificationsProvider, DialogsProvider } from "@toolpad/core";
 import type { Log } from "./lib/db";
 
 const mediaQuery = matchMedia("(prefers-color-scheme: dark)");
-const spacing = (abs: number) => `${abs * 0.25}rem`;
 const lightTheme = createTheme({
-  spacing,
-  palette: {
-    primary: {
-      main: "#615fff",
-      light: "rgb(128, 127, 255)",
-      dark: "rgb(67, 66, 178)",
-      contrastText: "#fff",
-    },
-  },
+  palette: {},
 });
 
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
-    primary: {
-      main: "#615fff",
-      light: "rgb(128, 127, 255)",
-      dark: "rgb(67, 66, 178)",
-      contrastText: "#fff",
-    },
   },
-  spacing,
 });
 
 const useIsDark = () =>
@@ -70,14 +49,6 @@ const MuiProvider = (props: Props) => {
         {props.children}
       </LocalizationProvider>
       <CssBaseline />
-      <GlobalStyles
-        styles={{
-          "*": {
-            scrollbarWidth: "thin",
-            scrollbarColor: `${theme.palette.divider} transparent`,
-          },
-        }}
-      />
     </ThemeProvider>
   );
 };
@@ -112,13 +83,16 @@ export const App = () => {
   return (
     <QueryProvider>
       <MuiProvider>
-        <SnackbarProvider
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-          autoHideDuration={3000}
-          maxSnack={3}
+        <NotificationsProvider
+          slotProps={{
+            snackbar: {
+              anchorOrigin: { vertical: "top", horizontal: "center" },
+              autoHideDuration: 1000 * 3,
+            },
+          }}
         >
-          {renderRouter()}
-        </SnackbarProvider>
+          <DialogsProvider>{renderRouter()}</DialogsProvider>
+        </NotificationsProvider>
       </MuiProvider>
     </QueryProvider>
   );
