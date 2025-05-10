@@ -21,6 +21,7 @@ import {
   ListItem,
   ListItemText,
   CircularProgress,
+  MenuItem,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import z from "zod";
@@ -37,6 +38,7 @@ import {
   useOpenDevTools,
   useSettingsOpenInEditor,
 } from "@/api/fetch_preload";
+import { flatRoutes } from "@/router/flatRoutes";
 
 const schema = z.object({
   databasePath: z.string().min(1, { message: "数据库路径不能为空" }),
@@ -188,7 +190,7 @@ export const Component = () => {
                   )}
                 />
               </Grid>
-              {/* <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   control={form.control}
                   name="home_path"
@@ -201,15 +203,15 @@ export const Component = () => {
                       label="主页路径"
                       select
                     >
-                      {NavMenu.list.map((i) => (
-                        <MenuItem key={i.} value={i.to}>
-                          {i.label}
+                      {flatRoutes.map((i) => (
+                        <MenuItem key={i.path} value={i.path}>
+                          {i.title}
                         </MenuItem>
                       ))}
                     </TextField>
                   )}
                 />
-              </Grid> */}
+              </Grid>
             </Grid>
           </form>
         </CardContent>

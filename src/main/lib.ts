@@ -85,20 +85,20 @@ export const getDirection = (nBoard: number) => {
 };
 
 export const getPlace = (nChannel: number) => {
-  //channel：0.穿透 1~2.轮座 3~8.轴颈
+  //channel：0.穿透 1~2.轴颈 3~8.轮座
   switch (nChannel) {
     case 0:
       return "穿透";
     case 1:
     case 2:
-      return "轮座";
+      return "卸荷槽";
     case 3:
     case 4:
     case 5:
     case 6:
     case 7:
     case 8:
-      return "轴颈";
+      return "轮座";
     default:
       return "车轴";
   }

@@ -244,6 +244,7 @@ const settings = (param?: SetSettingParams) =>
 const settingsOpenInEditor = () => invoke(channel.settingsOpenInEditor);
 const excelQuartor = () => invoke(channel.xlsx_chr_502);
 const xlsxCHR53A = () => invoke(channel.xlsx_chr_53a);
+const xlsxCHR501 = () => invoke(channel.xlsx_chr_501);
 
 const electronAPI = {
   // Windows 10
@@ -296,6 +297,7 @@ const electronAPI = {
   settingsOpenInEditor,
   excelQuartor,
   xlsxCHR53A,
+  xlsxCHR501,
 
   // Subscribe
   subscribeLog,

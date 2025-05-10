@@ -15,11 +15,14 @@ import {
   TableRow,
   TableContainer,
   Divider,
+  Button,
+  Link,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
+import { Link as RouterLink } from "react-router";
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -28,18 +31,31 @@ import {
   getPaginationRowModel,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import { RefreshOutlined } from "@mui/icons-material";
+import { PrintOutlined, RefreshOutlined } from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 import type { Verify } from "#/cmd";
 import { Loading } from "@/components/Loading";
 
 const initDate = () => dayjs();
+const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 
 const columnHelper = createColumnHelper<Verify>();
 
 const columns = [
-  columnHelper.accessor("szIDs", { header: "ID", footer: "ID" }),
+  columnHelper.accessor("szIDs", {
+    header: "ID",
+    footer: "ID",
+    cell: ({ getValue }) => {
+      const szID = getValue();
+
+      return (
+        <Link component={RouterLink} to={`/verify/${szID}`}>
+          #{szIDToId(szID)}
+        </Link>
+      );
+    },
+  }),
   columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
@@ -167,6 +183,15 @@ export const Component = () => {
             />
           </Grid>
         </Grid>
+      </CardContent>
+      <Divider />
+      <CardContent>
+        <Button
+          startIcon={<PrintOutlined />}
+          onClick={() => window.electronAPI.xlsxCHR501()}
+        >
+          Excel
+        </Button>
       </CardContent>
       <Divider />
       <TableContainer>

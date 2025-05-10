@@ -1,0 +1,18 @@
+export const flatRoutes = [
+  // { title: "404", path: "*" },
+  // { title: "home", path: "/" },
+  { title: "settings", path: "/settings" },
+  { title: "log", path: "/log" },
+  { title: "detection", path: "/detection" },
+  { title: "verify", path: "/verify" },
+  { title: "quartors", path: "/quartors" },
+  { title: "hxzy_hmis", path: "/hxzy" },
+  { title: "hxzy_hmis_setting", path: "/hxzy/setting" },
+  { title: "hxzy_verifies", path: "/hxzy/verifies" },
+  { title: "jtv_hmis", path: "/jtv" },
+  { title: "jtv_hmis_setting", path: "/jtv/setting" },
+  { title: "jtv_hmis_xuzhoubei", path: "/jtv_xuzhoubei" },
+  { title: "jtv_hmis_xuzhoubei_setting", path: "/jtv_xuzhoubei/setting" },
+  { title: "kh_hmis", path: "/kh" },
+  { title: "kh_hmis_setting", path: "/kh/setting" },
+];

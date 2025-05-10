@@ -54,6 +54,7 @@ import {
   DialogsProvider,
   NotificationsProvider,
   PageContainer,
+  useActivePage,
   useNotifications,
 } from "@toolpad/core";
 import { ReactRouterAppProvider } from "@toolpad/core/react-router";
@@ -215,6 +216,8 @@ const AlwaysOnTop = () => {
 };
 
 const DashLayout = () => {
+  const activePage = useActivePage();
+
   return (
     <DashboardLayout
       slots={{
@@ -227,7 +230,7 @@ const DashLayout = () => {
         ),
       }}
     >
-      <PageContainer>
+      <PageContainer breadcrumbs={activePage?.breadcrumbs}>
         <Outlet />
       </PageContainer>
     </DashboardLayout>
@@ -405,7 +408,18 @@ const routes: RouteObject[] = [
               {
                 id: "verify",
                 path: "verify",
-                lazy: () => import("@/pages/verify/component"),
+                children: [
+                  {
+                    id: "verify_list",
+                    index: true,
+                    lazy: () => import("@/pages/verify/component"),
+                  },
+                  {
+                    id: "verify_show",
+                    path: ":id",
+                    lazy: () => import("@/pages/verify_show"),
+                  },
+                ],
               },
               {
                 id: "quartors",
