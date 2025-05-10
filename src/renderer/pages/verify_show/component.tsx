@@ -22,6 +22,7 @@ import {
   TableRow,
   TextField,
   Typography,
+  CardActionArea,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router";
@@ -214,50 +215,92 @@ export const Component = () => {
       </Grid>
       <Grid size={6}>
         <Card>
-          <CardContent>
-            <Typography variant="h4">{map.get("左穿透")?.size}</Typography>
-            <Typography>左穿透</Typography>
-          </CardContent>
+          <CardActionArea
+            onClick={() => {
+              setDirection("左");
+              setPlace("穿透");
+            }}
+          >
+            <CardContent>
+              <Typography variant="h4">{map.get("左穿透")?.size}</Typography>
+              <Typography>左穿透</Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
       <Grid size={6}>
         <Card>
-          <CardContent>
-            <Typography variant="h4">{map.get("右穿透")?.size}</Typography>
-            <Typography>右穿透</Typography>
-          </CardContent>
+          <CardActionArea
+            onClick={() => {
+              setDirection("右");
+              setPlace("穿透");
+            }}
+          >
+            <CardContent>
+              <Typography variant="h4">{map.get("右穿透")?.size}</Typography>
+              <Typography>右穿透</Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
       <Grid size={6}>
         <Card>
-          <CardContent>
-            <Typography variant="h4">{map.get("左卸荷槽")?.size}</Typography>
-            <Typography>左卸荷槽</Typography>
-          </CardContent>
+          <CardActionArea
+            onClick={() => {
+              setDirection("左");
+              setPlace("卸荷槽");
+            }}
+          >
+            <CardContent>
+              <Typography variant="h4">{map.get("左卸荷槽")?.size}</Typography>
+              <Typography>左卸荷槽</Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
       <Grid size={6}>
         <Card>
-          <CardContent>
-            <Typography variant="h4">{map.get("右卸荷槽")?.size}</Typography>
-            <Typography>右卸荷槽</Typography>
-          </CardContent>
+          <CardActionArea
+            onClick={() => {
+              setDirection("右");
+              setPlace("卸荷槽");
+            }}
+          >
+            <CardContent>
+              <Typography variant="h4">{map.get("右卸荷槽")?.size}</Typography>
+              <Typography>右卸荷槽</Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
       <Grid size={6}>
         <Card>
-          <CardContent>
-            <Typography variant="h4">{map.get("左轮座")?.size}</Typography>
-            <Typography>左轮座</Typography>
-          </CardContent>
+          <CardActionArea
+            onClick={() => {
+              setDirection("左");
+              setPlace("轮座");
+            }}
+          >
+            <CardContent>
+              <Typography variant="h4">{map.get("左轮座")?.size}</Typography>
+              <Typography>左轮座</Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
       <Grid size={6}>
         <Card>
-          <CardContent>
-            <Typography variant="h4">{map.get("右轮座")?.size}</Typography>
-            <Typography>右轮座</Typography>
-          </CardContent>
+          <CardActionArea
+            onClick={() => {
+              setDirection("右");
+              setPlace("轮座");
+            }}
+          >
+            <CardContent>
+              <Typography variant="h4">{map.get("右轮座")?.size}</Typography>
+              <Typography>右轮座</Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
       <Grid size={12}>
