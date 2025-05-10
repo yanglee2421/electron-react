@@ -116,7 +116,7 @@ export const Component = () => {
             );
           }, console.warn)}
         >
-          <Grid container spacing={3}>
+          <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller
                 control={form.control}

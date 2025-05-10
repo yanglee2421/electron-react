@@ -181,7 +181,7 @@ export const Component = () => {
   };
 
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={1.5}>
       <Grid size={12}>
         <Box
           sx={{
@@ -300,7 +300,7 @@ export const Component = () => {
         <Card>
           <CardHeader title="详情" />
           <CardContent>
-            <Grid container spacing={3}>
+            <Grid container spacing={1.5}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   value={direction}
