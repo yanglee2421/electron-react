@@ -121,22 +121,15 @@ export const Component = () => {
       );
     }
 
-    return table.getRowModel().rows.map((row) => {
-      return (
-        <TableRow key={row.id}>
-          {row.getVisibleCells().map((cell) => {
-            return (
-              <TableCell
-                key={cell.id}
-                padding={cellPaddingMap.get(cell.column.id)}
-              >
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            );
-          })}
-        </TableRow>
-      );
-    });
+    return table.getRowModel().rows.map((row) => (
+      <TableRow key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    ));
   };
 
   return (

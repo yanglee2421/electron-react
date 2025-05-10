@@ -23,10 +23,11 @@ import {
   TableBody,
   TablePagination,
   Button,
-  Divider,
   Link,
   CircularProgress,
   TableContainer,
+  LinearProgress,
+  Divider,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -46,7 +47,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import { useQuery } from "@tanstack/react-query";
+import { useIsMutating, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useDialogs, useNotifications } from "@toolpad/core";
@@ -180,6 +181,7 @@ export const Component = () => {
   const barcode = useQuery(fetchHxzyHmisSqliteGet(params));
   const { data: hmis } = useQuery(fetchHxzyHmisSetting());
   const autoInput = useAutoInputToVC();
+  const isMutating = useIsMutating();
 
   const setInputFocus = React.useCallback(() => {
     inputRef.current?.focus();
@@ -249,47 +251,43 @@ export const Component = () => {
       );
     }
 
-    return table.getRowModel().rows.map((row) => {
-      return (
-        <TableRow key={row.id}>
-          {row.getVisibleCells().map((cell) => {
-            return (
-              <TableCell
-                key={cell.id}
-                padding={cellPaddingMap.get(cell.column.id)}
-              >
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            );
-          })}
-        </TableRow>
-      );
-    });
+    return table.getRowModel().rows.map((row) => (
+      <TableRow key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    ));
   };
 
   const renderFilter = () => {
     if (!showFilter) return null;
 
     return (
-      <CardContent>
-        <Grid container spacing={6}>
-          <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
-            <DatePicker
-              value={date}
-              onChange={(e) => {
-                if (!e) return;
-                setDate(e);
-              }}
-              label="日期"
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                },
-              }}
-            />
+      <>
+        <Divider />
+        <CardContent>
+          <Grid container spacing={6}>
+            <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+              <DatePicker
+                value={date}
+                onChange={(e) => {
+                  if (!e) return;
+                  setDate(e);
+                }}
+                label="日期"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+            </Grid>
           </Grid>
-        </Grid>
-      </CardContent>
+        </CardContent>
+      </>
     );
   };
 
@@ -394,8 +392,8 @@ export const Component = () => {
           </Grid>
         </Grid>
       </CardContent>
-      <Divider />
       {renderFilter()}
+      {!!isMutating && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>
