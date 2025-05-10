@@ -9,6 +9,7 @@ import {
   Divider,
   Grid,
   IconButton,
+  LinearProgress,
   Table,
   TableBody,
   TableCell,
@@ -177,11 +178,12 @@ export const Component = () => {
               <PrintOutlined />
             )
           }
+          variant="outlined"
         >
           Excel
         </Button>
       </CardContent>
-      <Divider />
+      {query.isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>

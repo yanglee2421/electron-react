@@ -14,6 +14,7 @@ import {
   TablePagination,
   TableRow,
   TableContainer,
+  LinearProgress,
 } from "@mui/material";
 import { RefreshOutlined } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -167,6 +168,7 @@ export const Component = () => {
           </Grid>
         </Grid>
       </CardContent>
+      {query.isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>

@@ -27,6 +27,7 @@ import {
   Link,
   CircularProgress,
   TableContainer,
+  LinearProgress,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -267,25 +268,28 @@ export const Component = () => {
   const renderFilter = () => {
     if (!showFilter) return null;
     return (
-      <CardContent>
-        <Grid container spacing={6}>
-          <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
-            <DatePicker
-              label="日期"
-              value={date}
-              onChange={(e) => {
-                if (!e) return;
-                setDate(e);
-              }}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                },
-              }}
-            />
+      <>
+        <Divider />
+        <CardContent>
+          <Grid container spacing={6}>
+            <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+              <DatePicker
+                label="日期"
+                value={date}
+                onChange={(e) => {
+                  if (!e) return;
+                  setDate(e);
+                }}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+            </Grid>
           </Grid>
-        </Grid>
-      </CardContent>
+        </CardContent>
+      </>
     );
   };
 
@@ -390,8 +394,8 @@ export const Component = () => {
           </Grid>
         </Grid>
       </CardContent>
-      <Divider />
       {renderFilter()}
+      {barcode.isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>

@@ -17,6 +17,7 @@ import {
   TablePagination,
   TableRow,
   TableContainer,
+  LinearProgress,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -179,11 +180,12 @@ export const Component = () => {
               <PrintOutlined />
             )
           }
+          variant="outlined"
         >
           Excel
         </Button>
       </CardContent>
-      <Divider />
+      {query.isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>

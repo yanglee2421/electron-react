@@ -24,6 +24,7 @@ import { QRCodeSVG } from "qrcode.react";
 import React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
+import { Outlet } from "react-router";
 
 const fetchActivation = () =>
   queryOptions({
@@ -83,8 +84,8 @@ const useActivate = () => {
 
 export const ActivationForm = () => {
   const formId = React.useId();
-
   const [isPending, startTransition] = React.useTransition();
+
   const snackbar = useNotifications();
   const form = useActivationForm();
   const activate = useActivate();
@@ -95,7 +96,7 @@ export const ActivationForm = () => {
   }
 
   if (activation.isError) {
-    return <Box>{activation.error.message}</Box>;
+    throw activation.error;
   }
 
   const code = activation.data.serial;
@@ -201,3 +202,21 @@ export const ActivationForm = () => {
 
 ActivationForm.useActivation = useActivation;
 ActivationForm.fetchActivation = fetchActivation;
+
+export const ActivationGuard = () => {
+  const activation = ActivationForm.useActivation();
+
+  if (activation.isPending) {
+    return <Loading />;
+  }
+
+  if (activation.isError) {
+    return <Box>{activation.error.message}</Box>;
+  }
+
+  if (!activation.data.isOk) {
+    return <ActivationForm />;
+  }
+
+  return <Outlet />;
+};

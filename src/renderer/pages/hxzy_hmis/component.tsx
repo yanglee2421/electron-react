@@ -47,7 +47,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import { useIsMutating, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useDialogs, useNotifications } from "@toolpad/core";
@@ -181,7 +181,6 @@ export const Component = () => {
   const barcode = useQuery(fetchHxzyHmisSqliteGet(params));
   const { data: hmis } = useQuery(fetchHxzyHmisSetting());
   const autoInput = useAutoInputToVC();
-  const isMutating = useIsMutating();
 
   const setInputFocus = React.useCallback(() => {
     inputRef.current?.focus();
@@ -393,7 +392,7 @@ export const Component = () => {
         </Grid>
       </CardContent>
       {renderFilter()}
-      {!!isMutating && <LinearProgress />}
+      {barcode.isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>

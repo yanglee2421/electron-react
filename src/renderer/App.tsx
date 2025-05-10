@@ -14,11 +14,21 @@ import type { Log } from "./lib/db";
 const mediaQuery = matchMedia("(prefers-color-scheme: dark)");
 const lightTheme = createTheme({
   palette: {},
+  components: {
+    MuiAlert: {
+      defaultProps: { variant: "filled" },
+    },
+  },
 });
 
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
+  },
+  components: {
+    MuiAlert: {
+      defaultProps: { variant: "filled" },
+    },
   },
 });
 

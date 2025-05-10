@@ -17,6 +17,7 @@ import {
   Divider,
   Button,
   Link,
+  LinearProgress,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -182,11 +183,12 @@ export const Component = () => {
         <Button
           startIcon={<PrintOutlined />}
           onClick={() => window.electronAPI.xlsxCHR501()}
+          variant="outlined"
         >
           Excel
         </Button>
       </CardContent>
-      <Divider />
+      {query.isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>
