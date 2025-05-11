@@ -2,36 +2,14 @@ import { app } from "electron/main";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { z } from "zod";
-import { t } from "#/lib/try";
-import { devError, debounce } from "#/lib/utils";
 
-const STORAGE_FILENAME = "storage.json";
+type CreateProxy = <TData extends NonNullable<unknown>>(
+  data: TData,
+  onChange: () => void,
+) => TData;
 
-const getStoragePath = () =>
-  path.join(app.getPath("userData"), STORAGE_FILENAME);
-
-const saveToFile = async (data: unknown) => {
-  const json = JSON.stringify(data);
-  const filePath = getStoragePath();
-  await fs.writeFile(filePath, json, "utf-8");
-};
-
-const saveToFileWithCatch = async (data: unknown) => {
-  const [ok, error] = await t(saveToFile, data);
-
-  if (ok) {
-    return;
-  } else {
-    devError(error);
-  }
-};
-
-const debounceSaveToFile = debounce(saveToFileWithCatch);
-
-const createRecursiveProxy = <TTarget extends NonNullable<unknown>>(
-  target: TTarget,
-) =>
-  new Proxy<TTarget>(target, {
+const createProxy: CreateProxy = (data, onChange) =>
+  new Proxy(data, {
     get(object, property) {
       const value = Reflect.get(object, property);
 
@@ -39,24 +17,67 @@ const createRecursiveProxy = <TTarget extends NonNullable<unknown>>(
         return value;
       }
 
-      // value is null
       if (!value) {
-        return value;
+        return null;
       }
 
-      // Other object
-      return createRecursiveProxy(value);
+      return createProxy(value, onChange);
     },
     set(object, property, value) {
       const result = Reflect.set(object, property, value);
 
       if (result) {
-        debounceSaveToFile(object);
+        onChange();
       }
 
       return result;
     },
   });
+
+class StorageRef<TData extends NonNullable<unknown>> {
+  private current: TData | null = null;
+  private timer: NodeJS.Timeout | undefined;
+  private data: TData;
+  private filePath: string;
+  constructor(
+    private parse: (data: unknown) => TData,
+    private filename: string,
+  ) {
+    this.data = this.parse({});
+    this.filePath = path.join(app.getPath("userData"), this.filename);
+  }
+
+  private async save() {
+    clearTimeout(this.timer);
+    this.timer = setTimeout(async () => {
+      try {
+        const json = JSON.stringify(this.data);
+        await fs.writeFile(this.filePath, json, "utf-8");
+      } catch (error) {
+        console.error(error);
+      }
+    }, 200);
+  }
+
+  private async hydrate() {
+    try {
+      const json = await fs.readFile(this.filePath, "utf-8");
+      const parsed = JSON.parse(json);
+      this.data = this.parse(parsed);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async ref() {
+    if (!this.current) {
+      await this.hydrate();
+    }
+
+    this.current ||= createProxy(this.data, () => this.save());
+    return this.current;
+  }
+}
 
 const schema = z.object({
   name: z.string().default(""),
@@ -69,40 +90,5 @@ const schema = z.object({
     }),
 });
 
-const getValue = async () => {
-  const filePath = getStoragePath();
-  const json = await fs.readFile(filePath, "utf-8");
-  const presisted = JSON.parse(json);
-  const parsed = schema.safeParse(presisted);
-
-  if (parsed.success) {
-    return parsed.data;
-  }
-
-  return schema.parse({});
-};
-
-let ref;
-let values: z.infer<typeof schema>;
-let hasHydrated = false;
-
-const hydrate = async () => {
-  const [ok, error, result] = await t(getValue);
-
-  if (ok) {
-    values = result;
-  } else {
-    devError(error);
-  }
-
-  hasHydrated = true;
-};
-
-export const getRef = async () => {
-  if (!hasHydrated) {
-    await hydrate();
-  }
-
-  ref = createRecursiveProxy(values);
-  return ref;
-};
+const STORAGE_FILENAME = "storage.json";
+export const storageRef = new StorageRef(schema.parse, STORAGE_FILENAME);
