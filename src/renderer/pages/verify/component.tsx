@@ -83,7 +83,6 @@ export const Component = () => {
     .format(DATE_FORMAT_DATABASE)}#`;
 
   const query = useQuery(fetchDataFromAccessDatabase<Verify>(sql));
-
   const data = React.useMemo(() => query.data || [], [query.data]);
 
   const table = useReactTable({
@@ -160,8 +159,8 @@ export const Component = () => {
         }
       />
       <CardContent>
-        <Grid container spacing={6}>
-          <Grid size={12}>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <DatePicker
               value={date}
               onChange={(day) => {
@@ -171,6 +170,7 @@ export const Component = () => {
               slotProps={{
                 textField: {
                   label: "日期",
+                  fullWidth: true,
                 },
               }}
             />

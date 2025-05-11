@@ -51,7 +51,6 @@ const routes: RouteObject[] = [
         id: "auth_layout",
         Component: DashLayout,
         loader: authLayoutLoader,
-        ErrorBoundary: RootErrorBoundary,
         children: [
           {
             id: "home",
@@ -80,19 +79,30 @@ const routes: RouteObject[] = [
               {
                 id: "detection",
                 path: "detection",
-                lazy: () => import("@/pages/detection/component"),
+                children: [
+                  {
+                    id: "detection/list",
+                    index: true,
+                    lazy: () => import("@/pages/detection/component"),
+                  },
+                  {
+                    id: "detection/show",
+                    path: ":id",
+                    lazy: () => import("@/pages/detection_show"),
+                  },
+                ],
               },
               {
                 id: "verify",
                 path: "verify",
                 children: [
                   {
-                    id: "verify_list",
+                    id: "verify/list",
                     index: true,
                     lazy: () => import("@/pages/verify/component"),
                   },
                   {
-                    id: "verify_show",
+                    id: "verify/show",
                     path: ":id",
                     lazy: () => import("@/pages/verify_show"),
                   },

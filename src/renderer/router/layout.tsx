@@ -41,12 +41,7 @@ import {
 } from "@toolpad/core";
 import { ReactRouterAppProvider } from "@toolpad/core/react-router";
 import React from "react";
-import {
-  Outlet,
-  ScrollRestoration,
-  useParams,
-  useLocation,
-} from "react-router";
+import { Outlet, ScrollRestoration, useLocation } from "react-router";
 import { ActivationForm } from "./activation";
 import { NprogressBar } from "./nprogress";
 import type { Navigation } from "@toolpad/core";
@@ -223,13 +218,12 @@ const segmentAlias = new Map([
 const alias = (title: string) => segmentAlias.get(title) || title;
 
 export const DashLayout = () => {
-  const params = useParams();
   const location = useLocation();
 
   const segments =
     location.pathname.split("/").filter((path) => {
       if (!path) return false;
-      if (path === params.lang) return false;
+
       return true;
     }) || [];
 
@@ -248,7 +242,7 @@ export const DashLayout = () => {
 
       return {
         title: alias(title),
-        path: ["", params.lang, ...segments.slice(0, idx + 1)].join("/"),
+        path: ["", ...segments.slice(0, idx + 1)].join("/"),
       };
     });
   };

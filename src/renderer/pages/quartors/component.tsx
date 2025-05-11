@@ -19,6 +19,7 @@ import {
   TableContainer,
   LinearProgress,
   Link,
+  Checkbox,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -44,6 +45,29 @@ const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Quartor>();
 
 const columns = [
+  columnHelper.display({
+    id: "checkbox",
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onChange={row.getToggleSelectedHandler()}
+      />
+    ),
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+        indeterminate={table.getIsSomeRowsSelected()}
+      />
+    ),
+    footer: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+        indeterminate={table.getIsSomeRowsSelected()}
+      />
+    ),
+  }),
   columnHelper.accessor("szIDs", {
     cell: ({ getValue }) => {
       const szID = getValue();
@@ -75,6 +99,7 @@ const columns = [
 export const Component = () => {
   "use no memo";
   const [date, setDate] = React.useState(initDate);
+
   const [isPending, startTransition] = React.useTransition();
 
   const sql = `SELECT * FROM quartors WHERE tmnow BETWEEN #${date
@@ -84,7 +109,6 @@ export const Component = () => {
     .format(DATE_FORMAT_DATABASE)}#`;
 
   const query = useQuery(fetchDataFromAccessDatabase<Quartor>(sql));
-
   const data = React.useMemo(() => query.data || [], [query.data]);
 
   const table = useReactTable({
@@ -161,8 +185,8 @@ export const Component = () => {
         }
       />
       <CardContent>
-        <Grid container spacing={6}>
-          <Grid size={12}>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <DatePicker
               value={date}
               onChange={(day) => {
@@ -172,6 +196,7 @@ export const Component = () => {
               slotProps={{
                 textField: {
                   label: "日期",
+                  fullWidth: true,
                 },
               }}
             />

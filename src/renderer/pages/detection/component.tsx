@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardHeader,
+  Checkbox,
   CircularProgress,
   Divider,
   Grid,
@@ -37,14 +38,45 @@ import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import type { Detection } from "#/cmd";
 import { Loading } from "@/components/Loading";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
+import { Link as RouterLink } from "react-router";
 
 const initDate = () => dayjs();
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Detection>();
 
 const columns = [
+  columnHelper.display({
+    id: "checkbox",
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onChange={row.getToggleSelectedHandler()}
+      />
+    ),
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+        indeterminate={table.getIsSomeRowsSelected()}
+      />
+    ),
+    footer: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+        indeterminate={table.getIsSomeRowsSelected()}
+      />
+    ),
+  }),
   columnHelper.accessor("szIDs", {
-    cell: ({ getValue }) => <Link>#{szIDToId(getValue())}</Link>,
+    cell: ({ getValue }) => {
+      const szID = getValue();
+      return (
+        <Link component={RouterLink} to={`/detection/${szID}`}>
+          #{szIDToId(szID)}
+        </Link>
+      );
+    },
     header: "ID",
     footer: "ID",
   }),
@@ -77,7 +109,6 @@ export const Component = () => {
     .format(DATE_FORMAT_DATABASE)}#`;
 
   const query = useQuery(fetchDataFromAccessDatabase<Detection>(sql));
-
   const data = React.useMemo(() => query.data || [], [query.data]);
 
   const table = useReactTable({
@@ -152,8 +183,8 @@ export const Component = () => {
         }
       />
       <CardContent>
-        <Grid container spacing={6}>
-          <Grid size={12}>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <DatePicker
               value={date}
               onChange={(day) => {
@@ -163,6 +194,7 @@ export const Component = () => {
               slotProps={{
                 textField: {
                   label: "日期",
+                  fullWidth: true,
                 },
               }}
             />
