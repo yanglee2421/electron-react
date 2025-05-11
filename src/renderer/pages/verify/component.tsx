@@ -40,7 +40,6 @@ import { Loading } from "@/components/Loading";
 
 const initDate = () => dayjs();
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
-
 const columnHelper = createColumnHelper<Verify>();
 
 const columns = [

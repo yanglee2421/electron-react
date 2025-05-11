@@ -6,6 +6,7 @@ export const LOGIN_PATH = "/login";
 
 export const cellPaddingMap = new Map<string, "checkbox" | "none" | "normal">([
   ["checkbox", "checkbox"],
+  ["expand", "checkbox"],
 ]);
 
 export const rowsPerPageOptions = [10, 20, 30];

@@ -65,6 +65,9 @@ export default defineConfig((config) => ({
                * 2. `electron/main` and `electron/common` are Electron modules, they are not needed to be bundled by Vite.
                */
               external: ["better-sqlite3", "electron/main", "electron/common"],
+              output: {
+                entryFileNames: "main.js",
+              },
             },
             /**
              * In main process, the `chunkSizeWarningLimit` is set to 10MB.

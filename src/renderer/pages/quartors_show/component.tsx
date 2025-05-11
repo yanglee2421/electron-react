@@ -1,4 +1,4 @@
-import type { VerifyData } from "#/cmd";
+import type { QuartorData } from "#/cmd";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 import { Loading } from "@/components/Loading";
 import {
@@ -66,7 +66,7 @@ const getPlace = (nChannel: number) => {
   }
 };
 
-const columnHelper = createColumnHelper<VerifyData>();
+const columnHelper = createColumnHelper<QuartorData>();
 const columns = [
   columnHelper.accessor("nBoard", {
     header: "方向",
@@ -93,8 +93,8 @@ export const Component = () => {
 
   const params = useParams();
   const query = useQuery(
-    fetchDataFromAccessDatabase<VerifyData>(
-      `SELECT * FROM verifies_data WHERE opid ='${params.id}'`,
+    fetchDataFromAccessDatabase<QuartorData>(
+      `SELECT * FROM quartors_data WHERE opid ='${params.id}'`,
     ),
   );
 
@@ -123,7 +123,7 @@ export const Component = () => {
     result.set(key, prev.add(row));
 
     return result;
-  }, new Map<string, Set<VerifyData>>());
+  }, new Map<string, Set<QuartorData>>());
 
   const renderRow = () => {
     if (query.isPending) {

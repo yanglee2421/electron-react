@@ -18,6 +18,7 @@ import {
   TableRow,
   TableContainer,
   LinearProgress,
+  Link,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -36,13 +37,25 @@ import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 import type { Quartor } from "#/cmd";
 import { Loading } from "@/components/Loading";
+import { Link as RouterLink } from "react-router";
 
 const initDate = () => dayjs();
-
+const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Quartor>();
 
 const columns = [
-  columnHelper.accessor("szIDs", { header: "ID", footer: "ID" }),
+  columnHelper.accessor("szIDs", {
+    cell: ({ getValue }) => {
+      const szID = getValue();
+      return (
+        <Link component={RouterLink} to={`/quartors/${szID}`}>
+          #{szIDToId(szID)}
+        </Link>
+      );
+    },
+    header: "ID",
+    footer: "ID",
+  }),
   columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),

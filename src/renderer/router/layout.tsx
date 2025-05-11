@@ -34,7 +34,6 @@ import {
 } from "@tanstack/react-query";
 import {
   useNotifications,
-  useActivePage,
   DashboardLayout,
   PageContainer,
   NotificationsProvider,
@@ -42,7 +41,12 @@ import {
 } from "@toolpad/core";
 import { ReactRouterAppProvider } from "@toolpad/core/react-router";
 import React from "react";
-import { Outlet, ScrollRestoration, useParams } from "react-router";
+import {
+  Outlet,
+  ScrollRestoration,
+  useParams,
+  useLocation,
+} from "react-router";
 import { ActivationForm } from "./activation";
 import { NprogressBar } from "./nprogress";
 import type { Navigation } from "@toolpad/core";
@@ -219,11 +223,11 @@ const segmentAlias = new Map([
 const alias = (title: string) => segmentAlias.get(title) || title;
 
 export const DashLayout = () => {
-  const activePage = useActivePage();
   const params = useParams();
+  const location = useLocation();
 
   const segments =
-    activePage?.path.split("/").filter((path) => {
+    location.pathname.split("/").filter((path) => {
       if (!path) return false;
       if (path === params.lang) return false;
       return true;
@@ -239,8 +243,6 @@ export const DashLayout = () => {
   };
 
   const renderBreadcrumbs = () => {
-    if (!activePage) return;
-
     return segments.map((segment, idx) => {
       const title = decodeURIComponent(segment);
 

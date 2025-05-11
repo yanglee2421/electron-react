@@ -101,7 +101,18 @@ const routes: RouteObject[] = [
               {
                 id: "quartors",
                 path: "quartors",
-                lazy: () => import("@/pages/quartors/component"),
+                children: [
+                  {
+                    id: "quartors/list",
+                    index: true,
+                    lazy: () => import("@/pages/quartors/component"),
+                  },
+                  {
+                    id: "quartors/show",
+                    path: ":id",
+                    lazy: () => import("@/pages/quartors_show"),
+                  },
+                ],
               },
               {
                 id: "hxzy_layout",

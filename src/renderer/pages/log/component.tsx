@@ -1,11 +1,10 @@
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
   Chip,
+  Grid,
   IconButton,
-  LinearProgress,
   Link,
   Table,
   TableBody,
@@ -18,7 +17,7 @@ import {
 } from "@mui/material";
 import {
   AddOutlined,
-  ClearOutlined,
+  ClearAllOutlined,
   DeleteOutlined,
   RemoveOutlined,
 } from "@mui/icons-material";
@@ -34,6 +33,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 
 const columnHelper = createColumnHelper<Log>();
 
@@ -48,12 +49,20 @@ const columns = [
   }),
   columnHelper.accessor("id", {
     cell: ({ getValue }) => <Link>#{getValue()}</Link>,
+    header: "ID",
+    footer: "ID",
   }),
   columnHelper.accessor("date", {
     cell: ({ getValue }) => new Date(getValue()).toLocaleString(),
+    header: "日期",
+    footer: "日期",
   }),
   columnHelper.accessor("type", {
-    cell: ({ getValue }) => <Chip label={getValue()} />,
+    cell: ({ getValue }) => (
+      <Chip label={getValue()} sx={{ textTransform: "uppercase" }} />
+    ),
+    header: "类型",
+    footer: "类型",
   }),
   columnHelper.display({
     id: "actions",
@@ -68,23 +77,35 @@ const columns = [
         </IconButton>
       </>
     ),
+    header: "操作",
+    footer: "操作",
   }),
 ];
+
+const initDayjs = () => dayjs();
 
 export const Component = () => {
   "use no memo";
   const [pageIndex, setPageIndex] = React.useState(0);
   const [pageSize, setPageSize] = React.useState(20);
+  const [startDate, setStartDate] = React.useState(initDayjs);
+  const [endDate, setEndDate] = React.useState(initDayjs);
 
   const logs = useLiveQuery(
     () =>
       db.log
-        .orderBy("date")
+        .where("date")
+        .between(
+          startDate.startOf("day").toISOString(),
+          endDate.endOf("day").toISOString(),
+          true,
+          true,
+        )
         .reverse()
         .offset(pageIndex * pageSize)
         .limit(pageSize)
         .toArray(),
-    [pageIndex, pageSize],
+    [pageIndex, pageSize, startDate, endDate],
   );
 
   const count = useLiveQuery(() => db.log.count(), []);
@@ -144,14 +165,46 @@ export const Component = () => {
               db.log.clear();
             }}
           >
-            <ClearOutlined />
+            <ClearAllOutlined />
           </IconButton>
         }
       />
       <CardContent>
-        <Button variant="outlined">Click</Button>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <DatePicker
+              value={startDate}
+              onChange={(e) => {
+                if (!e) return;
+                setStartDate(e);
+              }}
+              maxDate={endDate}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  label: "起始日期",
+                },
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <DatePicker
+              value={endDate}
+              onChange={(e) => {
+                if (!e) return;
+                setEndDate(e);
+              }}
+              minDate={startDate}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  label: "结束日期",
+                },
+              }}
+            />
+          </Grid>
+        </Grid>
       </CardContent>
-      <LinearProgress />
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>

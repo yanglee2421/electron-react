@@ -25,8 +25,8 @@ const columnWidths = new Map([
 ]);
 
 const rowHeights = [
-  21.75, // 1
-  15.6, // 2
+  18, // 1
+  24, // 2
   15.6, // 3
   15.6, // 4
   7.5, // 5
@@ -293,7 +293,7 @@ export const chr_53a = async () => {
   if (import.meta.env.PROD) {
     await sheet.protect("123456", { formatColumns: true, formatRows: true });
   }
-  const outputPath = join(app.getPath("documents"), "output.xlsx");
+  const outputPath = join(app.getPath("temp"), "output.xlsx");
   await workbook.xlsx.writeFile(outputPath);
   await shell.openPath(outputPath);
 };
