@@ -120,7 +120,7 @@ export const Component = () => {
     getCoreRowModel: getCoreRowModel(),
     columns,
     data,
-    getRowId: (row) => JSON.stringify(row),
+    // getRowId: (row) => JSON.stringify(row),
     getPaginationRowModel: getPaginationRowModel(),
   });
 
