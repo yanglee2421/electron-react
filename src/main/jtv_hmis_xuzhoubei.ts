@@ -1,7 +1,7 @@
 // 京天威 徐州北
 
 import { net, ipcMain } from "electron/main";
-import { log, getPlace, getDirection, withLog, createEmit } from "./lib";
+import { log, getDirection, withLog, createEmit } from "./lib";
 import {
   getCorporation,
   getDetectionByZH,
@@ -97,7 +97,7 @@ const fetch_get = async (barCode: string) => {
 
 type PostRequestItem = {
   PJ_JXID: string; // 设备生产ID(主键)
-  SB_SN: string; // 设备编号
+  SB_SN: string | null; // 设备编号
   PJ_TAG: string; // 设备工作状态(开始检修1/结束检修0检修前后更新此标志)
   PJ_ZH: string; // 轴号
   PJ_XH: string; // 轴型
@@ -109,10 +109,10 @@ type PostRequestItem = {
   CZCTY: string; // 车轴穿透右(人员签名)
   LZXRBZ: string; // 轮座镶入部左(人员签名)
   LZXRBY: string; // 轮座镶入部右(人员签名)
-  XHCZ: string; // 卸荷槽左(人员签名)
-  XHCY: string; // 卸荷槽右(人员签名)
-  LW_TFLAW_PLACE: string; // 缺陷部位
-  LW_TFLAW_TYPE: string; // 缺陷类型
+  XHCZ: string | null; // 卸荷槽左(人员签名)
+  XHCY: string | null; // 卸荷槽右(人员签名)
+  LW_TFLAW_PLACE: string | null; // 缺陷部位
+  LW_TFLAW_TYPE: string | null; // 缺陷类型
   LW_TVIEW: string; // 处理意见
   PJ_SCZZRQ: string; // 首次组装日期
   PJ_SCZZDW: string; // 首次组装单位
@@ -187,6 +187,28 @@ const api_get = async (barCode: string): Promise<GetResponse> => {
   return data;
 };
 
+const getPlace = (nChannel: number) => {
+  //channel：0.穿透 1~2.轴颈 3~8.轮座
+  switch (nChannel) {
+    case 0:
+      return "穿透";
+    case 1:
+    case 2:
+      return "轴颈";
+    case 3:
+      return "外";
+    case 4:
+      return "内";
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+      return "轮座";
+    default:
+      return "车轴";
+  }
+};
+
 const recordToBody = async (
   record: schema.JtvXuzhoubeiBarcode,
 ): Promise<PostRequestItem> => {
@@ -222,21 +244,21 @@ const recordToBody = async (
     CZCTY: user, // 车轴穿透右(人员签名)
     LZXRBZ: user, // 轮座镶入部左(人员签名)
     LZXRBY: user, // 轮座镶入部右(人员签名)
-    XHCZ: user, // 卸荷槽左(人员签名)
-    XHCY: user, // 卸荷槽右(人员签名)
-    LW_TFLAW_PLACE: "", // 缺陷部位
-    LW_TFLAW_TYPE: "", // 缺陷类型
-    LW_TVIEW: "", // 处理意见
+    XHCZ: detection.bWheelLS ? user : null, // 卸荷槽左(人员签名)
+    XHCY: detection.bWheelRS ? user : null, // 卸荷槽右(人员签名)
+    LW_TFLAW_PLACE: null, // 缺陷部位
+    LW_TFLAW_TYPE: null, // 缺陷类型
+    LW_TVIEW: "良好", // 处理意见
     PJ_SCZZRQ: formatDate(record.PJ_SCZZRQ), // 首次组装日期
     PJ_SCZZDW: record.PJ_SCZZDW || "", // 首次组装单位
     PJ_MCZZRQ: formatDate(record.PJ_MCZZRQ), // 末次组装日期
     PJ_MCZZDW: record.PJ_MCZZDW || "", // 末次组装单位
-    LW_CZCTZ: user, // 左穿透
-    LW_CZCTY: user, // 右穿透
-    LW_LZXRBZ: user, // 左轮座
-    LW_LZXRBY: user, // 右轮座
-    LW_XHCZ: user, // 左轴颈
-    LW_XHCY: user, // 右轴颈
+    LW_CZCTZ: "正常", // 左穿透
+    LW_CZCTY: "正常", // 右穿透
+    LW_LZXRBZ: "正常", // 左轮座
+    LW_LZXRBY: "正常", // 右轮座
+    LW_XHCZ: "正常", // 左轴颈
+    LW_XHCY: "正常", // 右轴颈
   };
 
   const hasQx = hasQX(detection.szResult);
@@ -257,8 +279,8 @@ const recordToBody = async (
         .join(",");
     }
 
-    body.LW_TVIEW = "人工复探";
-    body.LW_TFLAW_TYPE = "裂纹";
+    body.LW_TVIEW = "疑似裂纹";
+    body.LW_TFLAW_TYPE = "横裂纹";
   }
 
   return body;

@@ -138,6 +138,30 @@ export const chr_53a = async () => {
   cellB2.value = "铁路货车轮轴（轮对、车轴、车轮）超声波（磁粉）探伤记录";
   cellB2.font = { name: "宋体", size: 14, bold: true };
   cellB2.alignment = alignCenter;
+
+  sheet.mergeCells("B4:E4");
+  const cellB4 = sheet.getCell("B4");
+  cellB4.value = "单位名称: ";
+  cellB4.font = { name: "宋体", size: 12 };
+
+  sheet.mergeCells("F4:G4");
+  const cellF4 = sheet.getCell("F4");
+  cellF4.value = "探伤方法: 微控超探";
+  cellF4.font = { underline: true, name: "宋体", size: 12 };
+
+  sheet.mergeCells("H4:J4");
+  const cellH4 = sheet.getCell("H4");
+  cellH4.value = "探伤性质: 初探";
+  cellH4.font = { name: "宋体", size: 12 };
+
+  sheet.mergeCells("K4:M4");
+  const cellK4 = sheet.getCell("K4");
+  cellK4.value = "探伤者: ";
+  cellK4.font = { name: "宋体", size: 12 };
+
+  const cellO4 = sheet.getCell("O4");
+  cellO4.value = new Date().toLocaleDateString();
+
   sheet.mergeCells("B6:B8");
   const cellB6 = sheet.getCell("B6");
   cellB6.value = "顺\n号";

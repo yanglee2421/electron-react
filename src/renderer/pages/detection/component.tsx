@@ -33,7 +33,12 @@ import {
   getPaginationRowModel,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import { PrintOutlined, RefreshOutlined } from "@mui/icons-material";
+import {
+  CheckOutlined,
+  ClearOutlined,
+  PrintOutlined,
+  RefreshOutlined,
+} from "@mui/icons-material";
 import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import type { Detection } from "#/cmd";
 import { Loading } from "@/components/Loading";
@@ -83,6 +88,20 @@ const columns = [
   columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
+  // columnHelper.accessor("bSickLD", {}),
+  // columnHelper.accessor("bSickRD", {}),
+  columnHelper.accessor("bWheelLS", {
+    cell: ({ getValue }) =>
+      getValue() ? <CheckOutlined /> : <ClearOutlined />,
+    header: "左轴承",
+    footer: "左轴承",
+  }),
+  columnHelper.accessor("bWheelRS", {
+    cell: ({ getValue }) =>
+      getValue() ? <CheckOutlined /> : <ClearOutlined />,
+    header: "右轴承",
+    footer: "右轴承",
+  }),
   columnHelper.accessor("tmnow", {
     header: "时间",
     footer: "时间",
@@ -222,7 +241,7 @@ export const Component = () => {
       </CardContent>
       {query.isFetching && <LinearProgress />}
       <TableContainer>
-        <Table sx={{ minWidth: 720 }}>
+        <Table sx={{ minWidth: 1024 }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

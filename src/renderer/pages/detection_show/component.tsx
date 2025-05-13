@@ -47,7 +47,6 @@ const getDirection = (nBoard: number) => {
 };
 
 const getPlace = (nChannel: number) => {
-  //channel：0.穿透 1~2.轴颈 3~8.轮座
   switch (nChannel) {
     case 0:
       return "穿透";
@@ -55,7 +54,9 @@ const getPlace = (nChannel: number) => {
     case 2:
       return "卸荷槽";
     case 3:
+      return "外";
     case 4:
+      return "内";
     case 5:
     case 6:
     case 7:
@@ -76,9 +77,18 @@ const columns = [
     header: "位置",
     cell: ({ getValue }) => getPlace(getValue()),
   }),
-  columnHelper.accessor("fltValueX", {}),
-  columnHelper.accessor("fltValueY", {}),
-  columnHelper.accessor("nAtten", {}),
+  columnHelper.accessor("fltValueX", {
+    header: "横距",
+    footer: "横距",
+  }),
+  columnHelper.accessor("fltValueY", {
+    header: "纵距",
+    footer: "纵距",
+  }),
+  columnHelper.accessor("nAtten", {
+    header: "灵敏度",
+    footer: "灵敏度",
+  }),
 ];
 
 const check = (current: string, excepted: string) => {
@@ -243,12 +253,12 @@ export const Component = () => {
           <CardActionArea
             onClick={() => {
               setDirection("左");
-              setPlace("轮座");
+              setPlace("内");
             }}
           >
             <CardContent>
-              <Typography variant="h4">{map.get("左轮座")?.size}</Typography>
-              <Typography>左轮座</Typography>
+              <Typography variant="h4">{map.get("左内")?.size}</Typography>
+              <Typography>左内</Typography>
             </CardContent>
           </CardActionArea>
         </Card>
@@ -258,12 +268,42 @@ export const Component = () => {
           <CardActionArea
             onClick={() => {
               setDirection("右");
-              setPlace("轮座");
+              setPlace("内");
             }}
           >
             <CardContent>
-              <Typography variant="h4">{map.get("右轮座")?.size}</Typography>
-              <Typography>右轮座</Typography>
+              <Typography variant="h4">{map.get("右内")?.size}</Typography>
+              <Typography>右内</Typography>
+            </CardContent>
+          </CardActionArea>
+        </Card>
+      </Grid>
+      <Grid size={6}>
+        <Card>
+          <CardActionArea
+            onClick={() => {
+              setDirection("左");
+              setPlace("外");
+            }}
+          >
+            <CardContent>
+              <Typography variant="h4">{map.get("左外")?.size}</Typography>
+              <Typography>左外</Typography>
+            </CardContent>
+          </CardActionArea>
+        </Card>
+      </Grid>
+      <Grid size={6}>
+        <Card>
+          <CardActionArea
+            onClick={() => {
+              setDirection("右");
+              setPlace("外");
+            }}
+          >
+            <CardContent>
+              <Typography variant="h4">{map.get("右外")?.size}</Typography>
+              <Typography>右外</Typography>
             </CardContent>
           </CardActionArea>
         </Card>
@@ -297,7 +337,8 @@ export const Component = () => {
                   <MenuItem value="">无</MenuItem>
                   <MenuItem value="穿透">穿透</MenuItem>
                   <MenuItem value="卸荷槽">卸荷槽</MenuItem>
-                  <MenuItem value="轮座">轮座</MenuItem>
+                  <MenuItem value="内">内</MenuItem>
+                  <MenuItem value="外">外</MenuItem>
                 </TextField>
               </Grid>
             </Grid>
