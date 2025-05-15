@@ -276,13 +276,23 @@ export const Component = () => {
           <div key={nBoard}>
             {nChannels.map((nChannel) => (
               <div key={nChannel}>
-                <Copy text={getChannel(nChannel) + ""}>nChannel</Copy>
-                <Copy text={nBoard + ""}>nBoard</Copy>
-                <Copy text={getAtten(nBoard, nChannel) + ""}>nAtten</Copy>
-                <Copy text={getBuChang(nChannel) + ""}>nDBSub</Copy>
-                <Copy text={getManualDB(nBoard, nChannel) + ""}>nManualDB</Copy>
-                <Copy text={getWAngle(getChannel(nChannel)) + ""}>nWAngle</Copy>
-                <Copy text={"10"}>fDBRadio</Copy>
+                <Copy text={getChannel(nChannel) + ""}>
+                  {getChannel(nChannel)}
+                </Copy>
+                <Copy text={nBoard + ""}>{nBoard}</Copy>
+                <Copy text={getAtten(nBoard, nChannel) + ""}>
+                  {getAtten(nBoard, nChannel)}
+                </Copy>
+                <Copy text={getBuChang(nChannel) + ""}>
+                  {getBuChang(nChannel)}
+                </Copy>
+                <Copy text={getManualDB(nBoard, nChannel) + ""}>
+                  {getManualDB(nBoard, nChannel)}
+                </Copy>
+                <Copy text={getWAngle(getChannel(nChannel)) + ""}>
+                  {getWAngle(getChannel(nChannel))}
+                </Copy>
+                <Copy text={"10"}>10</Copy>
               </div>
             ))}
           </div>
