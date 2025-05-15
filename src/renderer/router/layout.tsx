@@ -242,7 +242,9 @@ export const DashLayout = () => {
 
       return {
         title: alias(title),
-        path: ["", ...segments.slice(0, idx + 1)].join("/"),
+        path: Object.is(idx + 1, segments.length)
+          ? void 0
+          : ["", ...segments.slice(0, idx + 1)].join("/"),
       };
     });
   };

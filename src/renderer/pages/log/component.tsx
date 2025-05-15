@@ -108,7 +108,19 @@ export const Component = () => {
     [pageIndex, pageSize, startDate, endDate],
   );
 
-  const count = useLiveQuery(() => db.log.count(), []);
+  const count = useLiveQuery(
+    () =>
+      db.log
+        .where("date")
+        .between(
+          startDate.startOf("day").toISOString(),
+          endDate.endOf("day").toISOString(),
+          true,
+          true,
+        )
+        .count(),
+    [],
+  );
   const data = React.useMemo(() => logs || [], [logs]);
 
   const table = useReactTable({

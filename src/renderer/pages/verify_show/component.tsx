@@ -21,6 +21,7 @@ import {
   TextField,
   Typography,
   CardActionArea,
+  Button,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
@@ -33,6 +34,7 @@ import {
 } from "@tanstack/react-table";
 import React from "react";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { useNotifications } from "@toolpad/core";
 
 const getDirection = (nBoard: number) => {
   //board(板卡)：0.左 1.右
@@ -70,12 +72,14 @@ const getPlace = (nChannel: number) => {
 const columnHelper = createColumnHelper<VerifyData>();
 const columns = [
   columnHelper.accessor("nBoard", {
-    header: "方向",
     cell: ({ getValue }) => getDirection(getValue()),
+    header: "方向",
+    footer: "方向",
   }),
   columnHelper.accessor("nChannel", {
-    header: "位置",
     cell: ({ getValue }) => getPlace(getValue()),
+    header: "位置",
+    footer: "位置",
   }),
   columnHelper.accessor("fltValueX", {
     header: "横距",
@@ -94,6 +98,33 @@ const columns = [
 const check = (current: string, excepted: string) => {
   if (!excepted) return true;
   return Object.is(excepted, current);
+};
+
+const nBoards = [0, 1];
+const nChannels = [0, 1, 3, 4];
+
+type CopyProps = React.PropsWithChildren & {
+  text: string;
+};
+
+const Copy = (props: CopyProps) => {
+  const [isPending, startTransition] = React.useTransition();
+
+  const snackbar = useNotifications();
+
+  return (
+    <Button
+      onClick={() => {
+        startTransition(async () => {
+          await navigator.clipboard.writeText(props.text);
+          snackbar.show("复制成功", { severity: "success" });
+        });
+      }}
+      disabled={isPending}
+    >
+      {props.children}
+    </Button>
+  );
 };
 
 export const Component = () => {
@@ -134,6 +165,57 @@ export const Component = () => {
 
     return result;
   }, new Map<string, Set<VerifyData>>());
+
+  const isRd2 = params.id?.toString().toUpperCase().includes("RD2");
+
+  const getBuChang = (nChannel: number) => {
+    if (isRd2) {
+      return nChannel ? 60 : 80;
+    }
+
+    return nChannel ? 60 : 90;
+  };
+
+  const getManualDB = (nBoard: number, nChannel: number) => {
+    const row = data.find(
+      (i) => Object.is(nBoard, i.nBoard) && Object.is(nChannel, i.nChannel),
+    );
+
+    return row?.nAtten || 0;
+  };
+
+  const getAtten = (nBoard: number, nChannel: number) => {
+    const value = getManualDB(nBoard, nChannel);
+    return value + getBuChang(nChannel);
+  };
+
+  const getChannel = (nChannel: number) => {
+    switch (nChannel) {
+      case 0:
+      case 3:
+      case 4:
+        return nChannel;
+      case 1:
+      default:
+        return isRd2 ? 2 : 1;
+    }
+  };
+
+  const getWAngle = (channel: number) => {
+    switch (channel) {
+      case 1:
+        return 260;
+      case 2:
+        return 225;
+      case 3:
+        return 510;
+      case 4:
+        return 440;
+      case 0:
+      default:
+        return 0;
+    }
+  };
 
   const renderRow = () => {
     if (query.isPending) {
@@ -188,6 +270,24 @@ export const Component = () => {
 
   return (
     <Grid container spacing={1.5}>
+      <Grid size={12}>
+        <Copy text={params.id + ""}>opid</Copy>
+        {nBoards.map((nBoard) => (
+          <div key={nBoard}>
+            {nChannels.map((nChannel) => (
+              <div key={nChannel}>
+                <Copy text={getChannel(nChannel) + ""}>nChannel</Copy>
+                <Copy text={nBoard + ""}>nBoard</Copy>
+                <Copy text={getAtten(nBoard, nChannel) + ""}>nAtten</Copy>
+                <Copy text={getBuChang(nChannel) + ""}>nDBSub</Copy>
+                <Copy text={getManualDB(nBoard, nChannel) + ""}>nManualDB</Copy>
+                <Copy text={getWAngle(getChannel(nChannel)) + ""}>nWAngle</Copy>
+                <Copy text={"10"}>fDBRadio</Copy>
+              </div>
+            ))}
+          </div>
+        ))}
+      </Grid>
       <Grid size={6}>
         <Card>
           <CardActionArea
