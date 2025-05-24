@@ -29,10 +29,7 @@ import { Outlet } from "react-router";
 const fetchActivation = () =>
   queryOptions({
     queryKey: ["fetchActivateCode"],
-    queryFn: async () => {
-      const data = await window.electronAPI.verifyActivation();
-      return data;
-    },
+    queryFn: window.electronAPI.verifyActivation,
   });
 
 const useActivation = () =>

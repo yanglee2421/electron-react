@@ -10,6 +10,7 @@ type GetDataFromMDBParams = {
 
 export const init = async (params: GetDataFromMDBParams) => {
   const databasePath = settings.get("databasePath");
+  if (!databasePath) return;
   const buf = await fs.readFile(databasePath);
   const mdbReader = new MDBReader(buf, {
     password: "Joney",

@@ -78,23 +78,25 @@ const ModeToggle = () => {
 
   const mode = settings.mode;
   const setMode = (newMode: "system" | "light" | "dark") => {
-    queryClient.setQueryData(fetcher.queryKey, (old) => {
-      if (!old) return old;
-      return {
-        ...old,
-        mode: newMode,
-      };
-    });
-    updateSettings.mutate(
-      { mode: newMode },
-      {
-        onError: () => {
-          snackbar.show("设置失败", {
-            severity: "error",
-          });
+    document.startViewTransition(async () => {
+      queryClient.setQueryData(fetcher.queryKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          mode: newMode,
+        };
+      });
+      await updateSettings.mutateAsync(
+        { mode: newMode },
+        {
+          onError: () => {
+            snackbar.show("设置失败", {
+              severity: "error",
+            });
+          },
         },
-      },
-    );
+      );
+    });
   };
 
   return (

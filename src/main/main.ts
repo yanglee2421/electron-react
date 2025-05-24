@@ -36,7 +36,6 @@ import * as khHmis from "./kh_hmis";
 import * as store from "./store";
 import * as cmd from "./cmd";
 import * as excel from "./xlsx";
-import { init } from "./mdb";
 
 // The built directory structure
 //
@@ -152,7 +151,7 @@ if (!gotTheLock) {
 
   if (import.meta.env.DEV) {
     // Disable hardware acceleration to avoid the black screen issue on Windows.
-    app.disableHardwareAcceleration();
+    // app.disableHardwareAcceleration();
   }
 
   app.whenReady().then(async () => {
@@ -166,7 +165,6 @@ if (!gotTheLock) {
     store.init();
     windows.initIpc();
     excel.initIpc();
-    init();
 
     createWindow();
   });
