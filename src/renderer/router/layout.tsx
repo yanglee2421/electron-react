@@ -364,6 +364,11 @@ const NAVIGATION: Navigation = [
     icon: <CalendarMonthOutlined />,
   },
   {
+    segment: "xlsx",
+    title: "xlsx设置",
+    icon: <SettingsOutlined />,
+  },
+  {
     kind: "divider",
   },
   {

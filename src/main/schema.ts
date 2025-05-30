@@ -1,4 +1,10 @@
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  int,
+  sqliteTable,
+  text,
+  numeric,
+  unique,
+} from "drizzle-orm/sqlite-core";
 
 export const jtvBarcodeTable = sqliteTable("jtv_barcode", {
   id: int("id").primaryKey({ autoIncrement: true }),
@@ -45,3 +51,19 @@ export const khBarcodeTable = sqliteTable("kh_barcode", {
 });
 
 export type KhBarcode = typeof khBarcodeTable.$inferSelect;
+
+export const xlsxSizeTable = sqliteTable(
+  "xlsxSize",
+  {
+    id: int("id").primaryKey({ autoIncrement: true }),
+    type: text("type"),
+    index: text("index"),
+    size: numeric("size", { mode: "number" }),
+    xlsxName: text("xlsxName"),
+  },
+  (table) => [
+    unique("xlsxName_position_unique").on(table.index, table.xlsxName),
+  ],
+);
+
+export type XlsxSize = typeof xlsxSizeTable.$inferSelect;

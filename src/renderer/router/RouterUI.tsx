@@ -68,6 +68,38 @@ const routes: RouteObject[] = [
             lazy: () => import("@/pages/log/component"),
           },
           {
+            id: "xlsx",
+            path: "xlsx",
+            children: [
+              {
+                id: "xlsx_list",
+                index: true,
+                lazy: () => import("@/pages/xlsx/component"),
+              },
+              {
+                id: "xlsx/new",
+                path: "new",
+                lazy: () => import("@/pages/xlsx_new/component"),
+              },
+              {
+                id: "xlsx_show",
+                path: ":id",
+                children: [
+                  {
+                    id: "xlsx/show",
+                    index: true,
+                    lazy: () => import("@/pages/xlsx_show/component"),
+                  },
+                  {
+                    id: "xlsx/edit",
+                    path: "edit",
+                    lazy: () => import("@/pages/xlsx_edit/component"),
+                  },
+                ],
+              },
+            ],
+          },
+          {
             id: "activation_guard",
             Component: ActivationGuard,
             loader: async () => {
