@@ -1,6 +1,7 @@
 import {
   Alert,
   AlertTitle,
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -24,6 +25,7 @@ import {
 } from "@tanstack/react-table";
 import { useQuery } from "@tanstack/react-query";
 import { Loading } from "@/components/Loading";
+import { Link } from "react-router";
 
 const cellPaddingMap = consts.cellPaddingMap;
 const columnHelper = createColumnHelper<XlsxSize>();
@@ -101,7 +103,11 @@ export const Component = () => {
   return (
     <Card>
       <CardHeader />
-      <CardContent></CardContent>
+      <CardContent>
+        <Button component={Link} to={"/xlsx/new"}>
+          Add
+        </Button>
+      </CardContent>
       {query.isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>

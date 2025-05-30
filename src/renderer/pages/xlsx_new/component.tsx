@@ -8,8 +8,11 @@ import {
   CardActions,
   CardContent,
   CardHeader,
+  Divider,
+  Grid,
   IconButton,
   TextField,
+  Typography,
 } from "@mui/material";
 import React from "react";
 import { NumberField } from "@/components/number";
@@ -19,22 +22,24 @@ import { devLog } from "#/lib/utils";
 const schema = z.object({
   list: z
     .object({
-      key: z.string().min(1),
-      value: z
+      index: z.string().min(1),
+      size: z
         .number()
         .gt(0)
         .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
           message: "最多只能有两位小数",
         }),
+      xlsxName: z.string().min(1),
+      type: z.string().min(1),
     })
     .array()
     .superRefine((arr, ctx) => {
       const keyMap = new Map<string, number[]>();
       arr.forEach((item, idx) => {
-        if (!keyMap.has(item.key)) {
-          keyMap.set(item.key, []);
+        if (!keyMap.has(item.index)) {
+          keyMap.set(item.index, []);
         }
-        keyMap.get(item.key)!.push(idx);
+        keyMap.get(item.index)!.push(idx);
       });
       keyMap.forEach((indices, key) => {
         if (key && indices.length > 1) {
@@ -77,8 +82,10 @@ export const Component = () => {
           <IconButton
             onClick={() => {
               fields.append({
-                key: "",
-                value: 0,
+                index: "",
+                size: 0,
+                type: "",
+                xlsxName: "",
               });
             }}
           >
@@ -88,32 +95,80 @@ export const Component = () => {
       />
       <CardContent>
         <form id={formId} onSubmit={handleSubmit} onReset={() => form.reset()}>
-          {fields.fields.map((i, idx) => (
-            <React.Fragment key={i.id}>
-              <Controller
-                control={form.control}
-                name={`list.${idx}.key`}
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+          <Grid container spacing={1.5}>
+            {fields.fields.map((i, idx) => (
+              <React.Fragment key={i.id}>
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="h5" color="primary">
+                    #{idx + 1}
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Controller
+                    control={form.control}
+                    name={`list.${idx}.index`}
+                    render={({ field, fieldState }) => (
+                      <TextField
+                        {...field}
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                        fullWidth
+                        label="行列号"
+                      />
+                    )}
                   />
-                )}
-              />
-              <Controller
-                control={form.control}
-                name={`list.${idx}.value`}
-                render={({ field, fieldState }) => (
-                  <NumberField
-                    field={field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Controller
+                    control={form.control}
+                    name={`list.${idx}.size`}
+                    render={({ field, fieldState }) => (
+                      <NumberField
+                        field={field}
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                        fullWidth
+                        label="长度"
+                      />
+                    )}
                   />
-                )}
-              />
-            </React.Fragment>
-          ))}
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Controller
+                    control={form.control}
+                    name={`list.${idx}.type`}
+                    render={({ field, fieldState }) => (
+                      <TextField
+                        {...field}
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                        fullWidth
+                        label="行/列"
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Controller
+                    control={form.control}
+                    name={`list.${idx}.xlsxName`}
+                    render={({ field, fieldState }) => (
+                      <TextField
+                        {...field}
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                        fullWidth
+                        label="xlsx文件"
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid size={12}>
+                  <Divider />
+                </Grid>
+              </React.Fragment>
+            ))}
+          </Grid>
         </form>
       </CardContent>
       <CardActions>
