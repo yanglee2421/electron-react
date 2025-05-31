@@ -1,79 +1,122 @@
-import { Controller, useFieldArray, useForm } from "react-hook-form";
-import {} from "@hookform/resolvers";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
 import {
+  Box,
   Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
+  CircularProgress,
   Divider,
+  FormHelperText,
   Grid,
   IconButton,
+  MenuItem,
   TextField,
   Typography,
 } from "@mui/material";
 import React from "react";
 import { NumberField } from "@/components/number";
-import { PlusOneOutlined } from "@mui/icons-material";
-import { devLog } from "#/lib/utils";
+import {
+  DeleteOutlined,
+  PlusOneOutlined,
+  RestoreOutlined,
+  SaveOutlined,
+} from "@mui/icons-material";
 
-const schema = z.object({
-  list: z
-    .object({
-      index: z.string().min(1),
-      size: z
-        .number()
-        .gt(0)
-        .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
-          message: "最多只能有两位小数",
-        }),
-      xlsxName: z.string().min(1),
-      type: z.string().min(1),
-    })
-    .array()
-    .superRefine((arr, ctx) => {
-      const keyMap = new Map<string, number[]>();
-      arr.forEach((item, idx) => {
-        if (!keyMap.has(item.index)) {
-          keyMap.set(item.index, []);
-        }
-        keyMap.get(item.index)!.push(idx);
-      });
-      keyMap.forEach((indices, key) => {
-        if (key && indices.length > 1) {
-          // 只给后面重复的 key 报错
-          indices.slice(1).forEach((idx) => {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "key 不能重复",
-              path: [idx, "key"],
-            });
-          });
-        }
-      });
+const rowIndexFieldSchema = z
+  .string()
+  .min(1, "不得为空")
+  .refine((value) => /^\d+$/.test(value), {
+    message: "行的索引必须全为全为数字",
+  });
+const columnIndexFieldSchema = z
+  .string()
+  .min(1, "不得为空")
+  .refine((value) => /^[A-Z]+$/.test(value), {
+    message: "列的索引必须全为大写字母",
+  });
+const xlsxNameSchema = z.string().min(1, "不得为空");
+const rowTypeSchema = z.literal("row");
+const columnTypeFieldSchema = z.literal("column");
+const sizeFieldSchema = z
+  .number()
+  .gt(0, "必须大于0")
+  .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
+    message: "最多只能有两位小数",
+  });
+
+const listItemFieldSchema = z
+  .object({
+    index: rowIndexFieldSchema,
+    size: sizeFieldSchema,
+    type: rowTypeSchema,
+    xlsxName: xlsxNameSchema,
+  })
+  .or(
+    z.object({
+      index: columnIndexFieldSchema,
+      size: sizeFieldSchema,
+      type: columnTypeFieldSchema,
+      xlsxName: xlsxNameSchema,
     }),
-});
+  );
+
+const listFieldSchema = listItemFieldSchema
+  .array()
+  .min(1)
+  .superRefine((value, ctx) => {
+    const errorSet = new Map<string, number>();
+    value.forEach((item, index) => {
+      const setKey = `${item.xlsxName}:${item.type}:${item.index}`;
+      if (errorSet.has(setKey)) {
+        const prevIndex = errorSet.get(setKey);
+        ctx.addIssue({
+          code: "custom",
+          message: `与#${index}重复`,
+          path: [prevIndex || 0, "index"],
+        });
+        ctx.addIssue({
+          code: "custom",
+          message: `与#${prevIndex}重复`,
+          path: [index, "index"],
+        });
+      } else {
+        errorSet.set(setKey, index);
+      }
+    });
+  });
+
+const schema = z.object({ list: listFieldSchema });
 
 type FormValues = z.infer<typeof schema>;
 
-const useXlsxForm = (defaultValues: FormValues) => {
-  return useForm({
-    defaultValues,
-    resolver: zodResolver(schema),
-  });
+const defaultValues: FormValues = {
+  list: [
+    {
+      index: "",
+      size: 15,
+      type: "row",
+      xlsxName: "",
+    },
+  ],
 };
 
 export const Component = () => {
   const formId = React.useId();
 
-  const form = useXlsxForm({ list: [] });
-  const fields = useFieldArray({ control: form.control, name: "list" });
+  const form = useForm({
+    defaultValues,
+    onSubmit({ value }) {
+      console.log(value);
+    },
+    validators: {
+      onChange: schema,
+    },
+  });
 
-  const handleSubmit = form.handleSubmit((data) => {
-    devLog(data);
-  }, console.warn);
+  console.log(form.getAllErrors());
 
   return (
     <Card>
@@ -81,10 +124,10 @@ export const Component = () => {
         action={
           <IconButton
             onClick={() => {
-              fields.append({
+              form.insertFieldValue("list", form.state.values.list.length, {
                 index: "",
-                size: 0,
-                type: "",
+                size: 15,
+                type: "row",
                 xlsxName: "",
               });
             }}
@@ -92,91 +135,179 @@ export const Component = () => {
             <PlusOneOutlined />
           </IconButton>
         }
+        title="新增"
+        subheader="新增行列尺寸"
       />
       <CardContent>
-        <form id={formId} onSubmit={handleSubmit} onReset={() => form.reset()}>
+        <form
+          id={formId}
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          onReset={() => form.reset()}
+          noValidate
+        >
           <Grid container spacing={1.5}>
-            {fields.fields.map((i, idx) => (
-              <React.Fragment key={i.id}>
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="h5" color="primary">
-                    #{idx + 1}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Controller
-                    control={form.control}
-                    name={`list.${idx}.index`}
-                    render={({ field, fieldState }) => (
-                      <TextField
-                        {...field}
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
-                        fullWidth
-                        label="行列号"
-                      />
-                    )}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Controller
-                    control={form.control}
-                    name={`list.${idx}.size`}
-                    render={({ field, fieldState }) => (
-                      <NumberField
-                        field={field}
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
-                        fullWidth
-                        label="长度"
-                      />
-                    )}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Controller
-                    control={form.control}
-                    name={`list.${idx}.type`}
-                    render={({ field, fieldState }) => (
-                      <TextField
-                        {...field}
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
-                        fullWidth
-                        label="行/列"
-                      />
-                    )}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Controller
-                    control={form.control}
-                    name={`list.${idx}.xlsxName`}
-                    render={({ field, fieldState }) => (
-                      <TextField
-                        {...field}
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
-                        fullWidth
-                        label="xlsx文件"
-                      />
-                    )}
-                  />
-                </Grid>
-                <Grid size={12}>
-                  <Divider />
-                </Grid>
-              </React.Fragment>
-            ))}
+            <form.Field name="list" mode="array">
+              {(listField) => (
+                <>
+                  {listField.state.value.map((_, listIndex, array) => (
+                    <React.Fragment key={listIndex}>
+                      <Grid size={{ xs: 12 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Typography variant="h5" color="primary">
+                            #{listIndex + 1}
+                          </Typography>
+                          <IconButton
+                            onClick={() => {
+                              listField.removeValue(listIndex);
+                            }}
+                            color="error"
+                          >
+                            <DeleteOutlined />
+                          </IconButton>
+                        </Box>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                        <form.Field name={`list[${listIndex}].xlsxName`}>
+                          {(xlsxNameField) => (
+                            <TextField
+                              value={xlsxNameField.state.value}
+                              onChange={(e) => {
+                                xlsxNameField.handleChange(e.target.value);
+                              }}
+                              onBlur={xlsxNameField.handleBlur}
+                              error={!!xlsxNameField.state.meta.errors.length}
+                              helperText={
+                                xlsxNameField.state.meta.errors[0]?.message
+                              }
+                              fullWidth
+                              label="xlsx文件"
+                              select
+                            >
+                              <MenuItem value="chr501">chr501</MenuItem>
+                              <MenuItem value="chr502">chr502</MenuItem>
+                              <MenuItem value="chr53a">chr53a</MenuItem>
+                            </TextField>
+                          )}
+                        </form.Field>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                        <form.Field name={`list[${listIndex}].type`}>
+                          {(typeField) => (
+                            <TextField
+                              value={typeField.state.value}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                switch (value) {
+                                  case "row":
+                                  case "column":
+                                    typeField.handleChange(value);
+                                }
+                              }}
+                              onBlur={typeField.handleBlur}
+                              error={!!typeField.state.meta.errors.length}
+                              helperText={
+                                typeField.state.meta.errors[0]?.message
+                              }
+                              fullWidth
+                              select
+                              label="行/列"
+                            >
+                              <MenuItem value="row">行</MenuItem>
+                              <MenuItem value="column">列</MenuItem>
+                            </TextField>
+                          )}
+                        </form.Field>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                        <form.Field name={`list[${listIndex}].index`}>
+                          {(indexField) => (
+                            <TextField
+                              value={indexField.state.value}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                indexField.handleChange(value);
+                              }}
+                              error={!!indexField.state.meta.errors.length}
+                              helperText={
+                                indexField.state.meta.errors[0]?.message
+                              }
+                              fullWidth
+                              label="索引"
+                            />
+                          )}
+                        </form.Field>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                        <form.Field name={`list[${listIndex}].size`}>
+                          {(sizeField) => (
+                            <NumberField
+                              field={{
+                                value: sizeField.state.value,
+                                onChange(value) {
+                                  sizeField.handleChange(value);
+                                },
+                                onBlur: sizeField.handleBlur,
+                              }}
+                              error={!!sizeField.state.meta.errors.length}
+                              helperText={
+                                sizeField.state.meta.errors[0]?.message
+                              }
+                              fullWidth
+                              label="长度"
+                            />
+                          )}
+                        </form.Field>
+                      </Grid>
+
+                      {!Object.is(listIndex + 1, array.length) && (
+                        <Grid size={12}>
+                          <Divider />
+                        </Grid>
+                      )}
+                    </React.Fragment>
+                  ))}
+                  {!!listField.state.meta.errors.length && (
+                    <FormHelperText error>
+                      {listField.state.meta.errors[0]?.message}
+                    </FormHelperText>
+                  )}
+                </>
+              )}
+            </form.Field>
           </Grid>
         </form>
       </CardContent>
       <CardActions>
-        <Button type="submit" form={formId}>
-          Submit
-        </Button>
-        <Button type="reset" form={formId}>
-          Reset
+        <form.Subscribe>
+          {(props) => (
+            <Button
+              type="submit"
+              form={formId}
+              startIcon={
+                props.isSubmitting ? (
+                  <CircularProgress color="inherit" size={16} />
+                ) : (
+                  <SaveOutlined />
+                )
+              }
+              disabled={!props.canSubmit}
+            >
+              保存
+            </Button>
+          )}
+        </form.Subscribe>
+        <Button type="reset" form={formId} startIcon={<RestoreOutlined />}>
+          重置
         </Button>
       </CardActions>
     </Card>

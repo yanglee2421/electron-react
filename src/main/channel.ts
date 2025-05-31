@@ -52,3 +52,9 @@ export const settingsOpenInEditor = "settingsOpenInEditor";
 export const xlsx_chr_501 = "excel:verify";
 export const xlsx_chr_502 = "excel:quartor";
 export const xlsx_chr_53a = "excel:detection";
+
+// CURD
+export const sqlite_xlsx_size_c = "sqlite:xlsxSize:create";
+export const sqlite_xlsx_size_u = "sqlite:xlsxSize:update";
+export const sqlite_xlsx_size_r = "sqlite:xlsxSize:read";
+export const sqlite_xlsx_size_d = "sqlite:xlsxSize:delete";

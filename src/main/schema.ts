@@ -62,7 +62,11 @@ export const xlsxSizeTable = sqliteTable(
     xlsxName: text("xlsxName"),
   },
   (table) => [
-    unique("xlsxName_position_unique").on(table.index, table.xlsxName),
+    unique("xlsxName_position_unique").on(
+      table.xlsxName,
+      table.type,
+      table.index,
+    ),
   ],
 );
 

@@ -5,7 +5,11 @@ import {
   Card,
   CardContent,
   CardHeader,
+  Divider,
+  Grid,
+  IconButton,
   LinearProgress,
+  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -14,6 +18,7 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  TextField,
 } from "@mui/material";
 import * as consts from "@/lib/constants";
 import type { XlsxSize } from "#/schema";
@@ -26,6 +31,8 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Loading } from "@/components/Loading";
 import { Link } from "react-router";
+import { AddOutlined, RefreshOutlined } from "@mui/icons-material";
+import React from "react";
 
 const cellPaddingMap = consts.cellPaddingMap;
 const columnHelper = createColumnHelper<XlsxSize>();
@@ -38,6 +45,11 @@ const columns = [
 ];
 
 export const Component = () => {
+  const [xlsxName, setXlsxName] = React.useState("");
+  const [type, setType] = React.useState("");
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(10);
+
   const table = useReactTable({
     columns,
     data: [],
@@ -102,9 +114,57 @@ export const Component = () => {
 
   return (
     <Card>
-      <CardHeader />
+      <CardHeader
+        title="xlsx尺寸"
+        subheader="xlsx尺寸设置"
+        action={
+          <IconButton>
+            <RefreshOutlined />
+          </IconButton>
+        }
+      />
       <CardContent>
-        <Button component={Link} to={"/xlsx/new"}>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <TextField
+              value={xlsxName}
+              onChange={(e) => {
+                setXlsxName(e.target.value);
+              }}
+              select
+              fullWidth
+              label="xlsx名称"
+            >
+              <MenuItem value="">无</MenuItem>
+              <MenuItem value="row">行</MenuItem>
+              <MenuItem value="column">列</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <TextField
+              value={type}
+              onChange={(e) => {
+                setType(e.target.value);
+              }}
+              select
+              fullWidth
+              label="行/列"
+            >
+              <MenuItem value="">无</MenuItem>
+              <MenuItem value="row">行</MenuItem>
+              <MenuItem value="column">列</MenuItem>
+            </TextField>
+          </Grid>
+        </Grid>
+      </CardContent>
+      <Divider />
+      <CardContent>
+        <Button
+          component={Link}
+          to={"/xlsx/new"}
+          variant="contained"
+          startIcon={<AddOutlined />}
+        >
           Add
         </Button>
       </CardContent>
@@ -151,10 +211,15 @@ export const Component = () => {
       <TablePagination
         component={"div"}
         count={100}
-        page={0}
-        rowsPerPage={20}
-        onPageChange={Boolean}
-        onRowsPerPageChange={Boolean}
+        page={pageIndex}
+        rowsPerPage={pageSize}
+        onPageChange={(e, page) => {
+          void e;
+          setPageIndex(page);
+        }}
+        onRowsPerPageChange={(e) => {
+          setPageSize(Number.parseInt(e.target.value));
+        }}
         rowsPerPageOptions={consts.rowsPerPageOptions}
       />
     </Card>
