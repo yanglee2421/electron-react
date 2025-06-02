@@ -2,7 +2,7 @@ import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
   out: "./drizzle",
-  schema: "./electron/schema.ts",
+  schema: "./src/main/schema.ts",
   dialect: "sqlite",
   // Dynamic database path for Electron
   // dbCredentials: {
