@@ -65,7 +65,7 @@ const listItemFieldSchema = z
 
 const listFieldSchema = listItemFieldSchema
   .array()
-  .min(1)
+  .min(1, { message: "至少需要一项才能继续" })
   .superRefine((value, ctx) => {
     const errorSet = new Map<string, number>();
     value.forEach((item, index) => {
@@ -95,7 +95,7 @@ type FormValues = z.infer<typeof schema>;
 const defaultValues: FormValues = {
   list: [
     {
-      index: "",
+      index: "chr501",
       size: 15,
       type: "row",
       xlsxName: "",
@@ -115,8 +115,6 @@ export const Component = () => {
       onChange: schema,
     },
   });
-
-  console.log(form.getAllErrors());
 
   return (
     <Card>
