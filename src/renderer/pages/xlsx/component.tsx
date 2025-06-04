@@ -167,6 +167,14 @@ export const Component = () => {
         >
           Add
         </Button>
+        <Button
+          component={Link}
+          to={"/xlsx/1/edit"}
+          variant="contained"
+          startIcon={<AddOutlined />}
+        >
+          Add
+        </Button>
       </CardContent>
       {query.isFetching && <LinearProgress />}
       <TableContainer>
