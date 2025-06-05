@@ -19,9 +19,10 @@ import {
   RestoreOutlined,
   CloseOutlined,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Loading } from "@/components/Loading";
+import { fetchSqliteXlsxSize, useXlsxSizeUpdate } from "@/api/fetch_preload";
 
 const rowIndexFieldSchema = z
   .string()
@@ -64,23 +65,25 @@ const listItemFieldSchema = z
 export const Component = () => {
   const formId = React.useId();
 
+  const update = useXlsxSizeUpdate();
   const navigate = useNavigate();
-
+  const params = useParams();
+  const currentId = Number(params.id);
   const query = useQuery({
-    queryKey: ["test"],
-    queryFn: () => {
-      return {};
-    },
+    ...fetchSqliteXlsxSize({ id: currentId }),
   });
 
   const form = useForm({
     defaultValues: {
-      xlsxName: "",
-      type: "row",
-      index: "",
-      size: 14,
+      xlsxName: query.data?.rows.at(0)?.xlsxName || "",
+      type: query.data?.rows.at(0)?.type || "row",
+      index: query.data?.rows.at(0)?.index || "",
+      size: query.data?.rows.at(0)?.size || 14,
     },
-    onSubmit() {},
+    async onSubmit({ value }) {
+      await update.mutateAsync({ ...value, id: currentId });
+      await navigate("/xlsx");
+    },
     validators: {
       onChange: listItemFieldSchema,
     },

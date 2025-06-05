@@ -74,7 +74,7 @@ const routes: RouteObject[] = [
               {
                 id: "xlsx_list",
                 index: true,
-                lazy: () => import("@/pages/xlsx/component"),
+                lazy: () => import("@/pages/xlsx"),
               },
               {
                 id: "xlsx/new",

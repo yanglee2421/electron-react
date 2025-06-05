@@ -4,7 +4,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import React from "react";
 import "dayjs/locale/zh";
-import "dayjs/locale/en";
+// import "dayjs/locale/en";
 import { Loading } from "@/components/Loading";
 import { useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
 import { QueryProvider } from "./components/query";

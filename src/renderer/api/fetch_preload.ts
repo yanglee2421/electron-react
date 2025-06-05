@@ -13,6 +13,9 @@ import type {
   KhHmisSettingParams,
   KhBarcodeGetParams,
   SetSettingParams,
+  SqliteXlsxSizeRParams,
+  SqliteXlsxSizeCParams,
+  SqliteXlsxSizeUParams,
 } from "~/main";
 import type { AutoInputToVCParams } from "#/cmd";
 
@@ -485,6 +488,42 @@ export const useSettingsOpenInEditor = () => {
     mutationFn: async () => {
       await window.electronAPI.settingsOpenInEditor();
       return true;
+    },
+  });
+};
+
+export const fetchSqliteXlsxSize = (params?: SqliteXlsxSizeRParams) =>
+  queryOptions({
+    queryKey: ["window.electronAPI.sqliteXlsxSizeR", params],
+    queryFn() {
+      return window.electronAPI.sqliteXlsxSizeR(params);
+    },
+  });
+
+export const useXlsxSizeCreate = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn(params: SqliteXlsxSizeCParams) {
+      return window.electronAPI.sqliteXlsxSizeC(params);
+    },
+    async onSuccess() {
+      await queryClient.invalidateQueries({
+        queryKey: fetchSqliteXlsxSize().queryKey.slice(0, 1),
+      });
+    },
+  });
+};
+
+export const useXlsxSizeUpdate = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn(params: SqliteXlsxSizeUParams) {
+      return window.electronAPI.sqliteXlsxSizeU(params);
+    },
+    async onSuccess() {
+      await queryClient.invalidateQueries({
+        queryKey: fetchSqliteXlsxSize().queryKey.slice(0, 1),
+      });
     },
   });
 };

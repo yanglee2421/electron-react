@@ -1,8 +1,16 @@
 import { QueryProvider } from "@/components/query";
-import { LoaderFunction } from "react-router";
+import { LoaderFunction, redirect } from "react-router";
+import { fetchSqliteXlsxSize } from "@/api/fetch_preload";
 
 export const loader: LoaderFunction = async (ctx) => {
   const id = ctx.params.id;
   const queryClient = QueryProvider.queryClient;
-  await queryClient.ensureQueryData();
+  if (!id) {
+    return redirect("/404");
+  }
+  await queryClient.ensureQueryData(
+    fetchSqliteXlsxSize({
+      id: +id,
+    }),
+  );
 };

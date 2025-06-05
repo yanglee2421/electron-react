@@ -246,6 +246,41 @@ const excelQuartor = () => invoke(channel.xlsx_chr_502);
 const xlsxCHR53A = () => invoke(channel.xlsx_chr_53a);
 const xlsxCHR501 = () => invoke(channel.xlsx_chr_501);
 
+export type SqliteXlsxSizeRParams = {
+  id?: number;
+  xlsxName?: string;
+  type?: string;
+  pageIndex?: number;
+  pageSize?: number;
+};
+
+const sqliteXlsxSizeR = (params: SqliteXlsxSizeRParams = {}) =>
+  invoke<{ count: number; rows: SCHEMA.XlsxSize[] }>(
+    channel.sqlite_xlsx_size_r,
+    params,
+  );
+
+export type SqliteXlsxSizeCParams = {
+  xlsxName: string;
+  type: string;
+  index: string;
+  size: number;
+}[];
+
+const sqliteXlsxSizeC = (params: SqliteXlsxSizeCParams) =>
+  invoke<SCHEMA.XlsxSize[]>(channel.sqlite_xlsx_size_c, params);
+
+export type SqliteXlsxSizeUParams = {
+  id: number;
+  xlsxName?: string;
+  type: string;
+  index: string;
+  size: number;
+};
+
+const sqliteXlsxSizeU = (params: SqliteXlsxSizeUParams) =>
+  invoke<SCHEMA.XlsxSize[]>(channel.sqlite_xlsx_size_u, params);
+
 const electronAPI = {
   // Windows 10
   verifyActivation,
@@ -309,6 +344,11 @@ const electronAPI = {
   subscribeJtvHmisXuzhoubeiAPISet,
   subscribeJtvHmisAPISet,
   subscribeKhHmisAPISet,
+
+  // SQLite
+  sqliteXlsxSizeC,
+  sqliteXlsxSizeU,
+  sqliteXlsxSizeR,
 };
 
 // --------- Expose some API to the Renderer process ---------

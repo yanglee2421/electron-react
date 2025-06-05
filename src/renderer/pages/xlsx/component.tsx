@@ -19,6 +19,7 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  Link as MuiLink,
 } from "@mui/material";
 import * as consts from "@/lib/constants";
 import type { XlsxSize } from "#/schema";
@@ -31,34 +32,78 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Loading } from "@/components/Loading";
 import { Link } from "react-router";
-import { AddOutlined, RefreshOutlined } from "@mui/icons-material";
+import {
+  AddOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  RefreshOutlined,
+} from "@mui/icons-material";
 import React from "react";
+import { fetchSqliteXlsxSize } from "@/api/fetch_preload";
 
 const cellPaddingMap = consts.cellPaddingMap;
 const columnHelper = createColumnHelper<XlsxSize>();
 const columns = [
-  columnHelper.accessor("id", {}),
+  columnHelper.accessor("id", {
+    cell({ getValue }) {
+      const id = getValue();
+      return (
+        <MuiLink component={Link} to={`/xlsx/${id}`}>
+          #{id}
+        </MuiLink>
+      );
+    },
+    header: "ID",
+    footer: "ID",
+  }),
+  columnHelper.accessor("xlsxName", {}),
+  columnHelper.accessor("type", {}),
   columnHelper.accessor("index", {}),
   columnHelper.accessor("size", {}),
-  columnHelper.accessor("type", {}),
-  columnHelper.accessor("xlsxName", {}),
+  columnHelper.display({
+    id: "actions",
+    header: "操作",
+    cell({ row }) {
+      return (
+        <>
+          <IconButton component={Link} to={`/xlsx/${row.getValue("id")}/edit`}>
+            <EditOutlined />
+          </IconButton>
+          <IconButton color="error">
+            <DeleteOutlined />
+          </IconButton>
+        </>
+      );
+    },
+  }),
 ];
 
 export const Component = () => {
+  "use no memo";
   const [xlsxName, setXlsxName] = React.useState("");
   const [type, setType] = React.useState("");
   const [pageIndex, setPageIndex] = React.useState(0);
   const [pageSize, setPageSize] = React.useState(10);
 
-  const table = useReactTable({
-    columns,
-    data: [],
-    getCoreRowModel: getCoreRowModel(),
+  const query = useQuery({
+    ...fetchSqliteXlsxSize({
+      pageIndex,
+      pageSize,
+      xlsxName,
+      type,
+    }),
   });
 
-  const query = useQuery({
-    queryKey: ["test"],
-    queryFn: () => [],
+  const data = React.useMemo(() => query.data?.rows || [], [query.data]);
+
+  const table = useReactTable({
+    columns,
+    data,
+    getCoreRowModel: getCoreRowModel(),
+    getRowId(row) {
+      return row.id.toString();
+    },
+    rowCount: query.data?.count,
   });
 
   const renderRow = () => {
@@ -167,14 +212,6 @@ export const Component = () => {
         >
           Add
         </Button>
-        <Button
-          component={Link}
-          to={"/xlsx/1/edit"}
-          variant="contained"
-          startIcon={<AddOutlined />}
-        >
-          Add
-        </Button>
       </CardContent>
       {query.isFetching && <LinearProgress />}
       <TableContainer>
@@ -218,7 +255,7 @@ export const Component = () => {
       </TableContainer>
       <TablePagination
         component={"div"}
-        count={100}
+        count={table.getRowCount()}
         page={pageIndex}
         rowsPerPage={pageSize}
         onPageChange={(e, page) => {

@@ -7,23 +7,7 @@ import { chr_501 } from "./chr_501";
 import { db } from "#/db";
 import * as sql from "drizzle-orm";
 import * as schema from "#/schema";
-
-type CreateParams = {
-  xlsxName: string;
-  type: string;
-  index: string;
-  size: number;
-};
-
-type UpdateParams = Partial<CreateParams> & {
-  id: number;
-};
-
-type ReadParams = {
-  id?: number;
-  xlsxName?: string;
-  type?: string;
-};
+import type * as PRELOAD from "~/main";
 
 type DeleteParams = {
   id: number;
@@ -41,17 +25,10 @@ export const initIpc = () => {
   ipcMain.handle(channel.xlsx_chr_53a, withLog(chr_53a));
   ipcMain.handle(
     channel.sqlite_xlsx_size_c,
-    withLog(async (_, { xlsxName, type, index, size }: CreateParams) => {
+    withLog(async (_, params: PRELOAD.SqliteXlsxSizeCParams) => {
       const data = await db
         .insert(schema.xlsxSizeTable)
-        .values([
-          {
-            xlsxName,
-            type,
-            index,
-            size,
-          },
-        ])
+        .values(params)
         .returning();
 
       return data;
@@ -59,32 +36,55 @@ export const initIpc = () => {
   );
   ipcMain.handle(
     channel.sqlite_xlsx_size_u,
-    withLog(async (_, { id, xlsxName, type, index, size }: UpdateParams) => {
-      const data = await db
-        .update(schema.xlsxSizeTable)
-        .set({ xlsxName, type, index, size })
-        .where(sql.eq(schema.xlsxSizeTable.id, id))
-        .returning();
-      return data;
-    }),
+    withLog(
+      async (
+        _,
+        { id, xlsxName, type, index, size }: PRELOAD.SqliteXlsxSizeUParams,
+      ) => {
+        const data = await db
+          .update(schema.xlsxSizeTable)
+          .set({ xlsxName, type, index, size })
+          .where(sql.eq(schema.xlsxSizeTable.id, id))
+          .returning();
+        return data;
+      },
+    ),
   );
   ipcMain.handle(
     channel.sqlite_xlsx_size_r,
-    withLog(async (_, { id, xlsxName, type }: ReadParams) => {
-      const wheres = [
-        id && sql.eq(schema.xlsxSizeTable.id, id),
-        xlsxName && sql.like(schema.xlsxSizeTable.xlsxName, `%${xlsxName}%`),
-        type && sql.like(schema.xlsxSizeTable.type, `%${type}%`),
-      ].filter((i) => typeof i === "object");
+    withLog(
+      async (
+        _,
+        {
+          id,
+          xlsxName,
+          type,
+          pageIndex = 0,
+          pageSize = 10,
+        }: PRELOAD.SqliteXlsxSizeRParams = {},
+      ) => {
+        const wheres = [
+          id && sql.eq(schema.xlsxSizeTable.id, id),
+          xlsxName && sql.like(schema.xlsxSizeTable.xlsxName, `%${xlsxName}%`),
+          type && sql.like(schema.xlsxSizeTable.type, `%${type}%`),
+        ].filter((i) => typeof i === "object");
 
-      const data = await db.query.xlsxSizeTable.findFirst({
-        where: sql.and(...wheres),
-      });
+        const whereSearcher = sql.and(...wheres);
 
-      if (!data) throw new Error("404, 未发现");
+        const rows = await db.query.xlsxSizeTable.findMany({
+          where: whereSearcher,
+          offset: pageIndex * pageSize,
+          limit: pageSize,
+        });
+        const [{ count }] = await db
+          .select({ count: sql.count() })
+          .from(schema.xlsxSizeTable)
+          .where(whereSearcher)
+          .limit(1);
 
-      return data;
-    }),
+        return { count, rows };
+      },
+    ),
   );
   ipcMain.handle(
     channel.sqlite_xlsx_size_d,

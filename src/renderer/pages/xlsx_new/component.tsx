@@ -24,6 +24,9 @@ import {
   RestoreOutlined,
   SaveOutlined,
 } from "@mui/icons-material";
+import { useXlsxSizeCreate } from "@/api/fetch_preload";
+import { useNavigate } from "react-router";
+import { useNotifications } from "@toolpad/core";
 
 const rowIndexFieldSchema = z
   .string()
@@ -95,10 +98,10 @@ type FormValues = z.infer<typeof schema>;
 const defaultValues: FormValues = {
   list: [
     {
-      index: "chr501",
-      size: 15,
+      xlsxName: "chr501",
       type: "row",
-      xlsxName: "",
+      index: "1",
+      size: 15,
     },
   ],
 };
@@ -106,10 +109,18 @@ const defaultValues: FormValues = {
 export const Component = () => {
   const formId = React.useId();
 
+  const toast = useNotifications();
+  const create = useXlsxSizeCreate();
+  const navigate = useNavigate();
   const form = useForm({
     defaultValues,
-    onSubmit({ value }) {
-      console.log(value);
+    async onSubmit({ value }) {
+      await create.mutateAsync(value.list, {
+        onError(error) {
+          toast.show(error.message, { severity: "error" });
+        },
+      });
+      await navigate("/xlsx");
     },
     validators: {
       onChange: schema,
@@ -123,10 +134,10 @@ export const Component = () => {
           <IconButton
             onClick={() => {
               form.insertFieldValue("list", form.state.values.list.length, {
+                xlsxName: "chr501",
+                type: "row",
                 index: "",
                 size: 15,
-                type: "row",
-                xlsxName: "",
               });
             }}
           >

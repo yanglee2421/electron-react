@@ -403,7 +403,7 @@ export const RootRoute = () => {
       <NotificationsProvider
         slotProps={{
           snackbar: {
-            anchorOrigin: { vertical: "top", horizontal: "center" },
+            anchorOrigin: { vertical: "top", horizontal: "right" },
             autoHideDuration: 1000 * 3,
           },
         }}
