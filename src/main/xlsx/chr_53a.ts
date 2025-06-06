@@ -2,76 +2,75 @@ import Excel from "@yanglee2421/exceljs";
 import { shell } from "electron/common";
 import { app } from "electron/main";
 import { join } from "node:path";
-
-const calcColumnWidth = (width: number) => width;
-const calcRowHeight = (height: number) => height;
+import { db } from "#/db";
+import * as schema from "#/schema";
+import * as sql from "drizzle-orm";
 
 const columnWidths = new Map([
-  ["A", 1.5],
-  ["B", 3.25],
-  ["C", 6.5],
-  ["D", 7],
-  ["E", 7],
-  ["F", 10],
-  ["G", 10],
-  ["H", 3.5],
-  ["I", 3.5],
-  ["J", 3.5],
-  ["K", 3.5],
-  ["L", 3.5],
-  ["M", 3.5],
-  ["N", 8],
-  ["O", 8.25],
+  ["A", 4],
+  ["B", 8],
+  ["C", 8],
+  ["D", 8],
+  ["E", 8],
+  ["F", 8],
+  ["G", 4],
+  ["H", 4],
+  ["I", 4],
+  ["J", 4],
+  ["K", 4],
+  ["L", 4],
+  ["M", 8],
+  ["N", 10],
 ]);
 
-const rowHeights = [
-  18, // 1
-  24, // 2
-  15.6, // 3
-  15.6, // 4
-  7.5, // 5
-  15.6, // 6
-  15.6, // 7
-  15.6, // 8
-  15.6, // 9
-  15.6, // 10
-  15.6, // 11
-  15.6, // 12
-  15.6, // 13
-  15.6, // 14
-  15.6, // 15
-  15.6, // 16
-  15.6, // 17
-  15.6, // 18
-  15.6, // 19
-  15.6, // 20
-  15.6, // 21
-  15.6, // 22
-  15.6, // 23
-  15.6, // 24
-  15.6, // 25
-  15.6, // 26
-  15.6, // 27
-  15.6, // 28
-  15.6, // 29
-  15.6, // 30
-  15.6, // 31
-  15.6, // 32
-  15.6, // 33
-  15.6, // 34
-  15.6, // 35
-  15.6, // 36
-  15.6, // 37
-  16.35, // 38
-  15, // 39
-  15, // 40
-  15, // 41
-  15, // 42
-  15, // 43
-  15, // 44
-  15, // 45
-  15, // 46
-];
+const rowHeights = new Map([
+  [1, 24],
+  [2, 12],
+  [3, 18],
+  [4, 12],
+  [5, 18],
+  [6, 18],
+  [7, 18],
+  [8, 16],
+  [9, 16],
+  [10, 16],
+  [11, 16],
+  [12, 16],
+  [13, 16],
+  [14, 16],
+  [15, 16],
+  [16, 16],
+  [17, 16],
+  [18, 16],
+  [19, 16],
+  [20, 16],
+  [21, 16],
+  [22, 16],
+  [23, 16],
+  [24, 16],
+  [25, 16],
+  [26, 16],
+  [27, 16],
+  [28, 16],
+  [29, 16],
+  [30, 16],
+  [31, 16],
+  [32, 16],
+  [33, 16],
+  [34, 16],
+  [35, 16],
+  [36, 16],
+  [37, 16],
+  [38, 16],
+  [39, 16],
+  [40, 16],
+  [41, 16],
+  [42, 16],
+  [43, 16],
+  [44, 16],
+  [45, 16],
+  [46, 16],
+]);
 
 const border4 = {
   top: { style: "thin" },
@@ -99,6 +98,7 @@ const inspectionItems = [
 ];
 
 const cols = [
+  "A",
   "B",
   "C",
   "D",
@@ -112,207 +112,247 @@ const cols = [
   "L",
   "M",
   "N",
-  "O",
 ];
 
-const cols6 = ["H", "I", "J", "K", "L", "M"];
+const cols6 = ["G", "H", "I", "J", "K", "L"];
 
 export const chr_53a = async () => {
   const workbook = new Excel.Workbook();
   const sheet = workbook.addWorksheet("Sheet1");
-  sheet.properties.defaultColWidth = 8.38;
-  sheet.properties.defaultRowHeight = 14.25;
+  sheet.properties.defaultColWidth = 10;
+  sheet.properties.defaultRowHeight = 16;
 
-  sheet.mergeCells("B1:O1");
-  const cellB1 = sheet.getCell("B1");
-  cellB1.value = "车统-53A";
-  cellB1.font = { name: "宋体", size: 11, bold: false };
-  cellB1.alignment = {
-    vertical: "middle",
-    horizontal: "right",
-    wrapText: false,
-  };
+  // A4
+  sheet.pageSetup.paperSize = 9;
+  sheet.pageSetup.orientation = "portrait";
+  sheet.pageSetup.horizontalCentered = true;
+  sheet.pageSetup.verticalCentered = false;
+  sheet.pageSetup.fitToPage = true;
+  sheet.pageSetup.printArea = "A1:AA27";
 
-  sheet.mergeCells("B2:O2");
-  const cellB2 = sheet.getCell("B2");
-  cellB2.value = "铁路货车轮轴（轮对、车轴、车轮）超声波（磁粉）探伤记录";
-  cellB2.font = { name: "宋体", size: 14, bold: true };
-  cellB2.alignment = alignCenter;
+  sheet.headerFooter.oddHeader = "&R车统-53A";
+  sheet.headerFooter.evenHeader = "&R车统-53A";
+  sheet.headerFooter.oddFooter = "第 &P 页，共 &N 页";
+  sheet.headerFooter.evenFooter = "第 &P 页，共 &N 页";
 
-  sheet.mergeCells("B4:E4");
-  const cellB4 = sheet.getCell("B4");
-  cellB4.value = "单位名称: ";
-  cellB4.font = { name: "宋体", size: 12 };
+  sheet.mergeCells("A1:N1");
+  const cellA1 = sheet.getCell("A1");
+  cellA1.value = "铁路货车轮轴（轮对、车轴、车轮）超声波（磁粉）探伤记录";
+  cellA1.font = { name: "宋体", size: 14, bold: true };
+  cellA1.alignment = alignCenter;
 
-  sheet.mergeCells("F4:G4");
-  const cellF4 = sheet.getCell("F4");
-  cellF4.value = "探伤方法: 微控超探";
-  cellF4.font = { underline: true, name: "宋体", size: 12 };
+  sheet.mergeCells("A3:D3");
+  const cellA3 = sheet.getCell("A3");
+  cellA3.value = "单位名称: ";
+  cellA3.font = { name: "宋体", size: 12 };
 
-  sheet.mergeCells("H4:J4");
-  const cellH4 = sheet.getCell("H4");
-  cellH4.value = "探伤性质: 初探";
-  cellH4.font = { name: "宋体", size: 12 };
+  sheet.mergeCells("E3:F3");
+  const cellE3 = sheet.getCell("E3");
+  cellE3.value = "探伤方法: 微控超探";
+  cellE3.font = { underline: true, name: "宋体", size: 12 };
 
-  sheet.mergeCells("K4:M4");
-  const cellK4 = sheet.getCell("K4");
-  cellK4.value = "探伤者: ";
-  cellK4.font = { name: "宋体", size: 12 };
+  sheet.mergeCells("G3:I3");
+  const cellG3 = sheet.getCell("G3");
+  cellG3.value = "探伤性质: 初探";
+  cellG3.font = { name: "宋体", size: 12 };
 
-  const cellO4 = sheet.getCell("O4");
-  cellO4.value = new Date().toLocaleDateString();
+  sheet.mergeCells("J3:L3");
+  const cellJ3 = sheet.getCell("J3");
+  cellJ3.value = "探伤者: ";
+  cellJ3.font = { name: "宋体", size: 12 };
 
-  sheet.mergeCells("B6:B8");
-  const cellB6 = sheet.getCell("B6");
-  cellB6.value = "顺\n号";
-  cellB6.font = { name: "宋体", size: 12 };
-  cellB6.alignment = {
+  const cellN3 = sheet.getCell("N3");
+  cellN3.value = new Date().toLocaleDateString();
+
+  sheet.mergeCells("A5:A7");
+  const cellA5 = sheet.getCell("A5");
+  cellA5.value = "序\n号";
+  cellA5.font = { name: "宋体", size: 12 };
+  cellA5.alignment = {
     vertical: "middle",
     horizontal: "center",
     wrapText: true,
   };
-  cellB6.border = border4;
+  cellA5.border = border4;
 
-  sheet.mergeCells("C6:C8");
-  const cellC6 = sheet.getCell("C6");
-  cellC6.value = "轴型";
-  cellC6.font = { name: "宋体", size: 12 };
-  cellC6.alignment = alignCenter;
-  cellC6.border = border4;
+  sheet.mergeCells("B5:B7");
+  const cellB5 = sheet.getCell("B5");
+  cellB5.value = "轴型";
+  cellB5.font = { name: "宋体", size: 12 };
+  cellB5.alignment = alignCenter;
+  cellB5.border = border4;
 
-  sheet.mergeCells("D6:D8");
-  const cellD6 = sheet.getCell("D6");
-  cellD6.value = "轴号";
-  cellD6.font = { name: "宋体", size: 12 };
-  cellD6.alignment = alignCenter;
-  cellD6.border = {
-    top: { style: "thin" },
-    bottom: { style: "thin" },
-    left: { style: "thin" },
-  };
+  sheet.mergeCells("C5:C7");
+  const cellC5 = sheet.getCell("C5");
+  cellC5.value = "轴号";
+  cellC5.font = { name: "宋体", size: 12 };
+  cellC5.alignment = alignCenter;
+  cellC5.border = border4;
 
-  sheet.mergeCells("E6:E8");
-  const cellE6 = sheet.getCell("E6");
-  cellE6.value = "轮型";
-  cellE6.font = { name: "宋体", size: 12 };
-  cellE6.alignment = alignCenter;
-  cellE6.border = {
-    top: { style: "thin" },
-    bottom: { style: "thin" },
-    right: { style: "thin" },
-  };
+  sheet.mergeCells("D5:D7");
+  const cellD5 = sheet.getCell("D5");
+  cellD5.value = "轮型";
+  cellD5.font = { name: "宋体", size: 12 };
+  cellD5.alignment = alignCenter;
+  cellD5.border = border4;
 
-  sheet.mergeCells("F6:G7");
-  const cellF6 = sheet.getCell("F6");
-  cellF6.value = "轮对首次组装";
-  cellF6.alignment = alignCenter;
-  cellF6.font = { name: "宋体", size: 12 };
-  cellF6.border = border4;
+  sheet.mergeCells("E5:F6");
+  const cellE5 = sheet.getCell("E5");
+  cellE5.value = "轮对首次组装";
+  cellE5.alignment = alignCenter;
+  cellE5.font = { name: "宋体", size: 12 };
+  cellE5.border = border4;
 
-  sheet.mergeCells("H6:M6");
-  const cellH6 = sheet.getCell("H6");
-  cellH6.value = "探测部位";
-  cellH6.alignment = alignCenter;
-  cellH6.font = { name: "宋体", size: 12 };
-  cellH6.border = border4;
+  sheet.mergeCells("G5:L5");
+  const cellG5 = sheet.getCell("G5");
+  cellG5.value = "探测部位";
+  cellG5.alignment = alignCenter;
+  cellG5.font = { name: "宋体", size: 12 };
+  cellG5.border = border4;
 
-  sheet.mergeCells("N6:N8");
-  const cellN6 = sheet.getCell("N6");
-  cellN6.value = "探测\n部位";
-  cellN6.alignment = { ...alignCenter, wrapText: true };
-  cellN6.font = { name: "宋体", size: 12 };
-  cellN6.border = border4;
+  sheet.mergeCells("M5:M7");
+  const cellM5 = sheet.getCell("M5");
+  cellM5.value = "探测\n部位";
+  cellM5.alignment = { ...alignCenter, wrapText: true };
+  cellM5.font = { name: "宋体", size: 12 };
+  cellM5.border = border4;
 
-  sheet.mergeCells("O6:O8");
-  const cellO6 = sheet.getCell("O6");
-  cellO6.value = "备注";
-  cellO6.alignment = alignCenter;
-  cellO6.font = { name: "宋体", size: 12 };
-  cellO6.border = border4;
+  sheet.mergeCells("N5:N7");
+  const cellN5 = sheet.getCell("N5");
+  cellN5.value = "备注";
+  cellN5.alignment = alignCenter;
+  cellN5.font = { name: "宋体", size: 12 };
+  cellN5.border = border4;
 
-  sheet.mergeCells("H7:I7");
-  const cellH7 = sheet.getCell("H7");
-  cellH7.value = "①";
-  cellH7.alignment = alignCenter;
-  cellH7.font = { name: "宋体", size: 12 };
-  cellH7.border = border4;
+  sheet.mergeCells("G6:H6");
+  const cellG6 = sheet.getCell("G6");
+  cellG6.value = "①";
+  cellG6.alignment = alignCenter;
+  cellG6.font = { name: "宋体", size: 12 };
+  cellG6.border = border4;
 
-  sheet.mergeCells("J7:K7");
-  const cellJ7 = sheet.getCell("J7");
-  cellJ7.value = "②";
-  cellJ7.alignment = alignCenter;
-  cellJ7.font = { name: "宋体", size: 12 };
-  cellJ7.border = border4;
+  sheet.mergeCells("I6:J6");
+  const cellI6 = sheet.getCell("I6");
+  cellI6.value = "②";
+  cellI6.alignment = alignCenter;
+  cellI6.font = { name: "宋体", size: 12 };
+  cellI6.border = border4;
 
-  sheet.mergeCells("L7:M7");
-  const cellL7 = sheet.getCell("L7");
-  cellL7.value = "③";
-  cellL7.alignment = alignCenter;
-  cellL7.font = { name: "宋体", size: 12 };
-  cellL7.border = border4;
+  sheet.mergeCells("K6:L6");
+  const cellK6 = sheet.getCell("K6");
+  cellK6.value = "③";
+  cellK6.alignment = alignCenter;
+  cellK6.font = { name: "宋体", size: 12 };
+  cellK6.border = border4;
 
-  const cellF8 = sheet.getCell("F8");
-  cellF8.value = "时间";
-  cellF8.alignment = alignCenter;
-  cellF8.font = { name: "宋体", size: 12 };
-  cellF8.border = border4;
+  const cellE7 = sheet.getCell("E7");
+  cellE7.value = "时间";
+  cellE7.alignment = alignCenter;
+  cellE7.font = { name: "宋体", size: 12 };
+  cellE7.border = border4;
 
-  const cellG8 = sheet.getCell("G8");
-  cellG8.value = "单位";
-  cellG8.alignment = alignCenter;
-  cellG8.font = { name: "宋体", size: 12 };
-  cellG8.border = border4;
+  const cellF7 = sheet.getCell("F7");
+  cellF7.value = "单位";
+  cellF7.alignment = alignCenter;
+  cellF7.font = { name: "宋体", size: 12 };
+  cellF7.border = border4;
 
   cols6.forEach((col, idx) => {
-    const cell = sheet.getCell(`${col}8`);
+    const cell = sheet.getCell(`${col}7`);
     cell.value = idx % 2 === 0 ? "左" : "右";
     cell.alignment = alignCenter;
     cell.font = { name: "宋体", size: 12 };
     cell.border = border4;
   });
 
-  for (let i = 9; i < 39; i++) {
+  for (let i = 8; i < 38; i++) {
     cols.forEach((col) => {
       const cell = sheet.getCell(`${col + i}`);
       cell.border = border4;
     });
   }
 
-  for (let i = 39; i < 48; i++) {
-    const idx = i - 38;
-    const cell = sheet.getCell(`B${i}`);
+  for (let i = 38; i < 47; i++) {
+    const idx = i - 37;
+    const cell = sheet.getCell(`A${i}`);
     cell.alignment = alignCenter;
 
     switch (i) {
+      case 38:
       case 39:
-      case 40:
         cell.value = `${idx}.`;
         break;
-      case 41:
+      case 40:
         break;
-      case 42:
+      case 41:
         cell.value = `${idx - 1}.`;
         break;
-      case 43:
+      case 42:
         break;
       default:
         cell.value = `${idx - 2}.`;
     }
 
-    sheet.mergeCells(`C${i}:O${i}`);
-    const cell2 = sheet.getCell(`C${i}`);
+    sheet.mergeCells(`B${i}:N${i}`);
+    const cell2 = sheet.getCell(`B${i}`);
     cell2.value = inspectionItems[idx - 1];
     cell2.font = { name: "宋体", size: 10 };
     cell2.alignment = { vertical: "middle", horizontal: "left" };
   }
 
   columnWidths.forEach((width, col) => {
-    sheet.getColumn(col).width = calcColumnWidth(width);
+    sheet.getColumn(col).width = width;
   });
 
-  rowHeights.forEach((height, idx) => {
-    sheet.getRow(idx + 1).height = calcRowHeight(height);
+  rowHeights.forEach((height, rowId) => {
+    sheet.getRow(rowId).height = height;
   });
+
+  const rowHeightList = await db
+    .select({
+      index: schema.xlsxSizeTable.index,
+      size: schema.xlsxSizeTable.size,
+    })
+    .from(schema.xlsxSizeTable)
+    .where(
+      sql.and(
+        sql.eq(schema.xlsxSizeTable.xlsxName, "chr53a"),
+        sql.eq(schema.xlsxSizeTable.type, "row"),
+      ),
+    );
+  const columnWidthList = await db
+    .select({
+      index: schema.xlsxSizeTable.index,
+      size: schema.xlsxSizeTable.size,
+    })
+    .from(schema.xlsxSizeTable)
+    .where(
+      sql.and(
+        sql.eq(schema.xlsxSizeTable.xlsxName, "chr53a"),
+        sql.eq(schema.xlsxSizeTable.type, "column"),
+      ),
+    );
+
+  rowHeightList.forEach(({ index, size }) => {
+    if (!size) return;
+    if (!index) return;
+    sheet.getRow(Number.parseInt(index)).height = size;
+  });
+  columnWidthList.forEach(({ index, size }) => {
+    if (!size) return;
+    if (!index) return;
+    sheet.getColumn(index).width = size;
+  });
+
+  // const imageId = workbook.addImage({
+  //   filename: "C:\\Users\\yangl\\Pictures\\1748273315214.png",
+  //   extension: "png",
+  // });
+  // sheet.addImage(
+  //   imageId,
+
+  //   "A48:O48",
+  // );
 
   if (import.meta.env.PROD) {
     await sheet.protect("123456", { formatColumns: true, formatRows: true });

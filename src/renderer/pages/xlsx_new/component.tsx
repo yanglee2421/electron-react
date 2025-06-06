@@ -43,9 +43,18 @@ const columnIndexFieldSchema = z
 const xlsxNameSchema = z.string().min(1, "不得为空");
 const rowTypeSchema = z.literal("row");
 const columnTypeFieldSchema = z.literal("column");
-const sizeFieldSchema = z
+const rowHeightFieldSchema = z
   .number()
   .gt(0, "必须大于0")
+  .max(409)
+  .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
+    message: "最多只能有两位小数",
+  });
+
+const columnWidthFieldSchema = z
+  .number()
+  .gt(0, "必须大于0")
+  .max(255)
   .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
     message: "最多只能有两位小数",
   });
@@ -53,14 +62,14 @@ const sizeFieldSchema = z
 const listItemFieldSchema = z
   .object({
     index: rowIndexFieldSchema,
-    size: sizeFieldSchema,
+    size: rowHeightFieldSchema,
     type: rowTypeSchema,
     xlsxName: xlsxNameSchema,
   })
   .or(
     z.object({
       index: columnIndexFieldSchema,
-      size: sizeFieldSchema,
+      size: columnWidthFieldSchema,
       type: columnTypeFieldSchema,
       xlsxName: xlsxNameSchema,
     }),
