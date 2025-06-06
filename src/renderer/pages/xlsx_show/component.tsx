@@ -1,15 +1,19 @@
 import { fetchSqliteXlsxSize } from "@/api/fetch_preload";
 import { Loading } from "@/components/Loading";
-import { WestOutlined } from "@mui/icons-material";
+import { EditOutlined, WestOutlined } from "@mui/icons-material";
 import {
   Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 
 export const Component = () => {
   const navigate = useNavigate();
@@ -28,12 +32,42 @@ export const Component = () => {
       return <></>;
     }
 
-    return <CardContent>{JSON.stringify(query.data)}</CardContent>;
+    const row = query.data.rows.at(0);
+
+    if (!row) {
+      return <CardContent>无可用数据</CardContent>;
+    }
+
+    return (
+      <CardContent>
+        <List disablePadding>
+          <ListItem>
+            <ListItemText primary={row.xlsxName} secondary={"xlsx文件"} />
+          </ListItem>
+          <ListItem>
+            <ListItemText primary={row.type} secondary={"行/列"} />
+          </ListItem>
+          <ListItem>
+            <ListItemText primary={row.index} secondary={"索引"} />
+          </ListItem>
+          <ListItem>
+            <ListItemText primary={row.size} secondary={"列宽/行高"} />
+          </ListItem>
+        </List>
+      </CardContent>
+    );
   };
 
   return (
     <Card>
-      <CardHeader title={`#${currentId}`} />
+      <CardHeader
+        title={`#${currentId}`}
+        action={
+          <IconButton component={Link} to={`/xlsx/${currentId}/edit`}>
+            <EditOutlined />
+          </IconButton>
+        }
+      />
       {renderBody()}
       <CardActions>
         <Button

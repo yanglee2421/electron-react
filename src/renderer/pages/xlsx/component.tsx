@@ -39,7 +39,31 @@ import {
   RefreshOutlined,
 } from "@mui/icons-material";
 import React from "react";
-import { fetchSqliteXlsxSize } from "@/api/fetch_preload";
+import { fetchSqliteXlsxSize, useXlsxSizeDelete } from "@/api/fetch_preload";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
+import { WritableDraft } from "immer";
+
+type DeleteActionProps = {
+  id: number;
+};
+
+const DeleteAction = (props: DeleteActionProps) => {
+  const remove = useXlsxSizeDelete();
+
+  return (
+    <IconButton
+      color="error"
+      onClick={() => {
+        remove.mutate({ id: props.id });
+      }}
+      disabled={remove.isPending}
+    >
+      <DeleteOutlined />
+    </IconButton>
+  );
+};
 
 const cellPaddingMap = consts.cellPaddingMap;
 const columnHelper = createColumnHelper<XlsxSize>();
@@ -56,34 +80,91 @@ const columns = [
     header: "ID",
     footer: "ID",
   }),
-  columnHelper.accessor("xlsxName", {}),
-  columnHelper.accessor("type", {}),
-  columnHelper.accessor("index", {}),
-  columnHelper.accessor("size", {}),
+  columnHelper.accessor("xlsxName", {
+    header: "xlsx文件",
+    footer: "xlsx文件",
+  }),
+  columnHelper.accessor("type", {
+    cell({ getValue }) {
+      const value = getValue();
+      switch (value) {
+        case "row":
+          return "行";
+        case "column":
+          return "列";
+        default:
+          return value;
+      }
+    },
+    header: "行/列",
+    footer: "行/列",
+  }),
+  columnHelper.accessor("index", {
+    header: "索引",
+    footer: "索引",
+  }),
+  columnHelper.accessor("size", {
+    header: "列宽/行高",
+    footer: "列宽/行高",
+  }),
   columnHelper.display({
     id: "actions",
     header: "操作",
     cell({ row }) {
+      const rowId = row.original.id;
       return (
         <>
-          <IconButton component={Link} to={`/xlsx/${row.getValue("id")}/edit`}>
+          <IconButton component={Link} to={`/xlsx/${rowId}/edit`}>
             <EditOutlined />
           </IconButton>
-          <IconButton color="error">
-            <DeleteOutlined />
-          </IconButton>
+          <DeleteAction id={rowId} />
         </>
       );
     },
   }),
 ];
 
+type State = {
+  pageIndex: number;
+  pageSize: number;
+  xlsxName: string;
+  type: string;
+};
+
+type Actions = {
+  set(
+    nextStateOrUpdater:
+      | State
+      | Partial<State>
+      | ((state: WritableDraft<State>) => void),
+  ): void;
+};
+
+type Store = State & Actions;
+
+const useSessionStore = create<Store>()(
+  persist(
+    immer((set) => ({
+      pageIndex: 0,
+      pageSize: 10,
+      xlsxName: "",
+      type: "",
+      set,
+    })),
+    {
+      storage: createJSONStorage(() => sessionStorage),
+      name: "useSessionStore:xlsx",
+    },
+  ),
+);
+
 export const Component = () => {
   "use no memo";
-  const [xlsxName, setXlsxName] = React.useState("");
-  const [type, setType] = React.useState("");
-  const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(10);
+  const pageIndex = useSessionStore((s) => s.pageIndex);
+  const pageSize = useSessionStore((s) => s.pageSize);
+  const xlsxName = useSessionStore((s) => s.xlsxName);
+  const type = useSessionStore((s) => s.type);
+  const set = useSessionStore((s) => s.set);
 
   const query = useQuery({
     ...fetchSqliteXlsxSize({
@@ -105,6 +186,27 @@ export const Component = () => {
     },
     rowCount: query.data?.count,
   });
+
+  const setPageIndex = (page: number) => {
+    set((d) => {
+      d.pageIndex = page;
+    });
+  };
+
+  const setPageSize = (size: number) =>
+    set((d) => {
+      d.pageSize = size;
+    });
+
+  const setXlsxName = (xlsx: string) =>
+    set((d) => {
+      d.xlsxName = xlsx;
+    });
+
+  const setType = (type: string) =>
+    set((d) => {
+      d.type = type;
+    });
 
   const renderRow = () => {
     if (query.isPending) {
@@ -181,8 +283,9 @@ export const Component = () => {
               label="xlsx名称"
             >
               <MenuItem value="">无</MenuItem>
-              <MenuItem value="row">行</MenuItem>
-              <MenuItem value="column">列</MenuItem>
+              <MenuItem value="chr501">chr501</MenuItem>
+              <MenuItem value="chr502">chr502</MenuItem>
+              <MenuItem value="chr53a">chr53a</MenuItem>
             </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>

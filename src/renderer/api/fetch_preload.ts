@@ -18,6 +18,7 @@ import type {
   SqliteXlsxSizeUParams,
 } from "~/main";
 import type { AutoInputToVCParams } from "#/cmd";
+import type * as PRELOAD from "~/main";
 
 // Windows 激活验证
 export const fetchVerifyActivation = () =>
@@ -519,6 +520,20 @@ export const useXlsxSizeUpdate = () => {
   return useMutation({
     mutationFn(params: SqliteXlsxSizeUParams) {
       return window.electronAPI.sqliteXlsxSizeU(params);
+    },
+    async onSuccess() {
+      await queryClient.invalidateQueries({
+        queryKey: fetchSqliteXlsxSize().queryKey.slice(0, 1),
+      });
+    },
+  });
+};
+
+export const useXlsxSizeDelete = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn(params: PRELOAD.SqliteXlsxSizeDParams) {
+      return window.electronAPI.sqliteXlsxSizeD(params);
     },
     async onSuccess() {
       await queryClient.invalidateQueries({

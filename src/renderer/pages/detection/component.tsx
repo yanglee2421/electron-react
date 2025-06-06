@@ -44,8 +44,11 @@ import type { Detection } from "#/cmd";
 import { Loading } from "@/components/Loading";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 import { Link as RouterLink } from "react-router";
+import { create } from "zustand";
+import { WritableDraft } from "immer";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
 
-const initDate = () => dayjs();
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Detection>();
 
@@ -115,9 +118,40 @@ const columns = [
   columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
 ];
 
+type State = {
+  date: string;
+};
+
+type Actions = {
+  set(
+    nextStateOrUpdater:
+      | State
+      | Partial<State>
+      | ((state: WritableDraft<State>) => void),
+  ): void;
+};
+
+type Store = State & Actions;
+
+const useSessionStore = create<Store>()(
+  persist(
+    immer((set) => ({
+      date: new Date().toISOString(),
+      set,
+    })),
+    {
+      storage: createJSONStorage(() => sessionStorage),
+      name: "useSessionStore:detection",
+    },
+  ),
+);
+
 export const Component = () => {
   "use no memo";
-  const [date, setDate] = React.useState(initDate);
+  const selectDate = useSessionStore((s) => s.date);
+  const set = useSessionStore((s) => s.set);
+
+  const date = dayjs(selectDate);
 
   const [isPending, startTransition] = React.useTransition();
 
@@ -138,6 +172,11 @@ export const Component = () => {
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
+
+  const setDate = (day: dayjs.Dayjs) =>
+    set((d) => {
+      d.date = day.toISOString();
+    });
 
   const renderRow = () => {
     if (query.isPending) {

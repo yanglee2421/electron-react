@@ -281,6 +281,13 @@ export type SqliteXlsxSizeUParams = {
 const sqliteXlsxSizeU = (params: SqliteXlsxSizeUParams) =>
   invoke<SCHEMA.XlsxSize[]>(channel.sqlite_xlsx_size_u, params);
 
+export type SqliteXlsxSizeDParams = {
+  id: number;
+};
+
+const sqliteXlsxSizeD = (params: SqliteXlsxSizeDParams) =>
+  invoke<SCHEMA.XlsxSize[]>(channel.sqlite_xlsx_size_d, params);
+
 const electronAPI = {
   // Windows 10
   verifyActivation,
@@ -349,6 +356,7 @@ const electronAPI = {
   sqliteXlsxSizeC,
   sqliteXlsxSizeU,
   sqliteXlsxSizeR,
+  sqliteXlsxSizeD,
 };
 
 // --------- Expose some API to the Renderer process ---------
