@@ -1,6 +1,8 @@
-import { ipcMain } from "electron/main";
+import { ipcMain, app } from "electron/main";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { dirname, join, resolve } from "node:path";
+import { cp, access, constants, mkdir, rm } from "node:fs/promises";
 import dayjs from "dayjs";
 import { withLog } from "./lib";
 import * as store from "./store";
@@ -9,11 +11,47 @@ import * as channel from "./channel";
 const execFileAsync = promisify(execFile);
 export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 
+/**
+ * When users use antivirus software like 360
+ * The driver path may be locked by the antivirus software and cannot be accessed
+ * In this case, we need to copy the driver to a new path and call it again
+ */
+const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
+  try {
+    const data = await execFileAsync(driverPath, args);
+    return data;
+  } catch {
+    const driverDir = dirname(driverPath);
+    const newDriverDir = join(
+      app.getPath("temp"),
+      "wtxy_tookit_cmd",
+      `${Math.random()}`,
+    );
+
+    try {
+      await access(newDriverDir, constants.R_OK);
+    } catch {
+      await rm(resolve(newDriverDir, "../"), { recursive: true, force: true });
+      await mkdir(newDriverDir, { recursive: true });
+    }
+
+    await cp(driverDir, newDriverDir, {
+      recursive: true,
+      force: true,
+      preserveTimestamps: true,
+      dereference: false,
+      errorOnExist: false,
+    });
+    const data = await execFileAsync(newDriverDir, args);
+    return data;
+  }
+};
+
 export const getDataFromAccessDatabase = async <TRecord = unknown>(
   sql: string,
 ) => {
   const config = store.settings.store;
-  const data = await execFileAsync(config.driverPath, [
+  const data = await execFileAsyncWithRetry(config.driverPath, [
     "GetDataFromAccessDatabase",
     config.databasePath,
     sql,
@@ -85,7 +123,7 @@ export const getDetectionByZH = async (params: {
   );
 
   if (!detection) {
-    throw `未找到轴号[${params.zh}]的detections记录`;
+    throw new Error(`未找到轴号[${params.zh}]的detections记录`);
   }
 
   return detection;
@@ -109,7 +147,7 @@ export const getCorporation = async () => {
   );
 
   if (!corporation) {
-    throw "未找到公司信息";
+    throw new Error("未找到公司信息");
   }
 
   return corporation;
@@ -215,7 +253,7 @@ export type AutoInputToVCParams = {
 
 const autoInputToVC = async (data: AutoInputToVCParams) => {
   const driverPath = store.settings.get("driverPath");
-  const cp = await execFileAsync(driverPath, [
+  const cp = await execFileAsyncWithRetry(driverPath, [
     "autoInputToVC",
     data.zx,
     data.zh,
@@ -239,16 +277,14 @@ const autoInputToVC = async (data: AutoInputToVCParams) => {
 export const initIpc = () => {
   ipcMain.handle(
     channel.getDataFromAccessDatabase,
-    withLog(async (e, sql: string) => {
-      void e;
+    withLog(async (_, sql: string) => {
       return await getDataFromAccessDatabase(sql);
     }),
   );
 
   ipcMain.handle(
     channel.autoInputToVC,
-    withLog(async (e, data: AutoInputToVCParams) => {
-      void e;
+    withLog(async (_, data: AutoInputToVCParams) => {
       return await autoInputToVC(data);
     }),
   );
