@@ -19,6 +19,11 @@ export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
   try {
     const data = await execFileAsync(driverPath, args);
+
+    if (data.stderr) {
+      throw new Error(data.stderr);
+    }
+
     return data;
   } catch {
     const driverDir = dirname(driverPath);
@@ -56,10 +61,6 @@ export const getDataFromAccessDatabase = async <TRecord = unknown>(
     config.databasePath,
     sql,
   ]);
-
-  if (data.stderr) {
-    throw new Error(data.stderr);
-  }
 
   return JSON.parse(data.stdout) as TRecord[];
 };
@@ -266,10 +267,6 @@ const autoInputToVC = async (data: AutoInputToVCParams) => {
     data.ztx,
     data.ytx,
   ]);
-
-  if (cp.stderr) {
-    throw cp.stderr;
-  }
 
   return cp.stdout;
 };
