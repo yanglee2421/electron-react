@@ -48,6 +48,11 @@ const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
       errorOnExist: false,
     });
     const data = await execFileAsync(newDriverDir, args);
+
+    if (data.stderr) {
+      throw new Error(data.stderr);
+    }
+
     return data;
   }
 };
