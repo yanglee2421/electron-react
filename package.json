@@ -1,10 +1,10 @@
 {
   "name": "wtzy_toolkit",
   "private": true,
-  "version": "0.0.38",
+  "version": "0.0.39",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "electron-builder install-app-deps && vite",
     "build": "tsc && vite build && electron-builder",
     "lint": "eslint .",
     "preview": "vite preview",

@@ -1,6 +1,8 @@
 # @see - https://www.electron.build/configuration
 appId: "app.yanglee2421.wtzy_toolkit"
 asar: true
+asarUnpack:
+  - "unpack"
 productName: "WTZY_Toolkit"
 directories:
   output: "release/${version}"
@@ -8,6 +10,7 @@ files:
   - "dist"
   - "dist-electron"
   - "drizzle"
+  - "unpack"
 compression: "maximum"
 mac:
   target:
