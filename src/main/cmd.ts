@@ -30,7 +30,7 @@ const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
     const newDriverDir = join(
       app.getPath("temp"),
       "wtxy_tookit_cmd",
-      `${Math.random()}`,
+      `${Date.now()}`,
     );
 
     try {
@@ -47,7 +47,10 @@ const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
       dereference: false,
       errorOnExist: false,
     });
-    const data = await execFileAsync(newDriverDir, args);
+    const data = await execFileAsync(
+      driverPath.replace(driverDir, newDriverDir),
+      args,
+    );
 
     if (data.stderr) {
       throw new Error(data.stderr);
