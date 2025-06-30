@@ -39,6 +39,7 @@ export default defineConfig((config) => ({
   main: {
     plugins: [externalizeDepsPlugin()],
     resolve: { alias },
+    build: { watch: {} },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],

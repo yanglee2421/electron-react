@@ -19,6 +19,10 @@ import type * as HXZY_HMIS from "#/hxzy_hmis";
 import type * as JTV_HMIS from "#/jtv_hmis";
 import type * as KH_HMIS from "#/kh_hmis";
 import type * as JTV_HMIS_XUZHOUBEI from "#/jtv_hmis_xuzhoubei";
+import {
+  electronAPI as electron,
+  type ElectronAPI,
+} from "@electron-toolkit/preload";
 
 type LogCallback = (data: Log) => void;
 type SubscribeLog = (handler: LogCallback) => () => void;
@@ -361,10 +365,12 @@ const electronAPI = {
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
+contextBridge.exposeInMainWorld("electron", electron);
 
 declare global {
   interface Window {
     electronAPI: typeof electronAPI;
+    electron: ElectronAPI;
   }
 
   // interface ImportMeta {
