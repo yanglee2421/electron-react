@@ -16,9 +16,9 @@ import type {
   SqliteXlsxSizeRParams,
   SqliteXlsxSizeCParams,
   SqliteXlsxSizeUParams,
-} from "~/main";
+} from "~/index";
 import type { AutoInputToVCParams } from "#/cmd";
-import type * as PRELOAD from "~/main";
+import type * as PRELOAD from "~/index";
 
 // Windows 激活验证
 export const fetchVerifyActivation = () =>

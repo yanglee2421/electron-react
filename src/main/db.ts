@@ -29,4 +29,4 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = resolve(app.getPath("userData"), "db.db");
 const sqliteDb = new Database(dbPath);
 export const db = drizzle(sqliteDb, { schema });
-migrate(db, { migrationsFolder: join(__dirname, "../drizzle") });
+migrate(db, { migrationsFolder: join(__dirname, "../../drizzle") });

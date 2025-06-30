@@ -16,7 +16,7 @@ import * as sql from "drizzle-orm";
 import * as channel from "./channel";
 import * as win from "./win";
 import type { DetectionData } from "./cmd";
-import type * as PRELOAD from "~/main";
+import type * as PRELOAD from "~/index";
 import type { JTV_HMIS } from "./store";
 
 /**

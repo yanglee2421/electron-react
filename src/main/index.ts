@@ -1,14 +1,4 @@
 /**
- * Type Declarations Import
- *
- * This import provides TypeScript type definitions for the following Electron modules:
- * 1. electron/main - APIs for the main process
- * 2. electron/renderer - APIs for the renderer process (not available in main process)
- * 3. electron/common - APIs shared between main and renderer processes
- */
-import "electron";
-
-/**
  * Main Process Entry Point
  *
  * The main process is the core process of an Electron application, responsible for:
@@ -22,10 +12,9 @@ import "electron";
  * - electron/main: Not available in the renderer process
  * - electron/common: Available in the renderer process (non-sandboxed only)
  */
-import { BrowserWindow, ipcMain, nativeTheme, app, Menu } from "electron/main";
+import { BrowserWindow, ipcMain, nativeTheme, app, Menu } from "electron";
 import { shell } from "electron/common";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import * as channel from "./channel";
 import { withLog } from "./lib";
 import * as windows from "./win";
@@ -36,38 +25,16 @@ import * as khHmis from "./kh_hmis";
 import * as store from "./store";
 import * as cmd from "./cmd";
 import * as excel from "./xlsx";
-
-// The built directory structure
-//
-// ├─┬─┬ dist
-// │ │ └── index.html
-// │ │
-// │ ├─┬ dist-electron
-// │ │ ├── main.js
-// │ │ └── preload.mjs
-// │
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
-process.env.APP_ROOT = join(__dirname, "..");
-export const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
-export const MAIN_DIST = join(process.env.APP_ROOT, "dist-electron");
-export const RENDERER_DIST = join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
-  ? join(process.env.APP_ROOT, "public")
-  : RENDERER_DIST;
-
-// let win: BrowserWindow | null;
+import { is, optimizer, electronApp } from "@electron-toolkit/utils";
 
 const createWindow = () => {
   const alwaysOnTop = store.settings.get("alwaysOnTop");
 
   const win = new BrowserWindow({
-    icon: join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: join(__dirname, "preload.mjs"),
+      preload: join(__dirname, "../preload/index.mjs"),
       nodeIntegration: false,
+      sandbox: false,
     },
 
     autoHideMenuBar: false,
@@ -107,11 +74,12 @@ const createWindow = () => {
     // win?.show();
   });
 
-  if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL);
+  // HMR for renderer base on electron-vite cli.
+  // Load the remote URL for development or the local html file for production.
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    win.loadURL(process.env["ELECTRON_RENDERER_URL"]);
   } else {
-    // win.loadFile('dist/index.html')
-    win.loadFile(join(RENDERER_DIST, "index.html"));
+    win.loadFile(join(__dirname, "../renderer/index.html"));
   }
 };
 
@@ -153,6 +121,16 @@ if (!gotTheLock) {
     // Disable hardware acceleration to avoid the black screen issue on Windows.
     // app.disableHardwareAcceleration();
   }
+
+  // Set app user model id for windows
+  electronApp.setAppUserModelId("com.electron");
+
+  // Default open or close DevTools by F12 in development
+  // and ignore CommandOrControl + R in production.
+  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
+  app.on("browser-window-created", (_, window) => {
+    optimizer.watchWindowShortcuts(window);
+  });
 
   app.whenReady().then(async () => {
     const mode = store.settings.get("mode");

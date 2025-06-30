@@ -9,7 +9,7 @@
  * - electron/main: Not available in the renderer process
  * - electron/common: Available in the renderer process (non-sandboxed only)
  */
-import { ipcRenderer, contextBridge, webUtils } from "electron/renderer";
+import { ipcRenderer, contextBridge, webUtils } from "electron";
 import * as channel from "#/channel";
 import type { Verify, VerifyData, AutoInputToVCParams } from "#/cmd";
 import type * as SCHEMA from "#/schema";

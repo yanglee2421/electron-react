@@ -7,7 +7,7 @@ import { chr_501 } from "./chr_501";
 import { db } from "#/db";
 import * as sql from "drizzle-orm";
 import * as schema from "#/schema";
-import type * as PRELOAD from "~/main";
+import type * as PRELOAD from "~/index";
 
 type DeleteParams = {
   id: number;

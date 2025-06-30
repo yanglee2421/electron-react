@@ -15,7 +15,7 @@ import * as sql from "drizzle-orm";
 import * as schema from "./schema";
 import * as channel from "./channel";
 import * as win from "./win";
-import type * as PRELOAD from "~/main";
+import type * as PRELOAD from "~/index";
 import type * as STORE from "./store";
 
 /*

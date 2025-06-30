@@ -7,8 +7,7 @@ productName: "WTZY_Toolkit"
 directories:
   output: "release/${version}"
 files:
-  - "dist"
-  - "dist-electron"
+  - "out"
   - "drizzle"
   - "unpack"
 compression: "maximum"
