@@ -1,5 +1,4 @@
-import { ipcMain } from "electron/main";
-import { shell } from "electron/common";
+import { ipcMain, shell } from "electron";
 import { promisify } from "node:util";
 import { createHash } from "node:crypto";
 import { execFile, exec } from "node:child_process";

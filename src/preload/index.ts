@@ -1,14 +1,3 @@
-/**
- * Preload Scripts Entry Point
- *
- * This script runs in the renderer process with privileged access to Node.js APIs.
- * It serves as a secure bridge between the main and renderer processes.
- *
- * Note:
- * - electron/renderer: Available in the renderer process
- * - electron/main: Not available in the renderer process
- * - electron/common: Available in the renderer process (non-sandboxed only)
- */
 import { ipcRenderer, contextBridge, webUtils } from "electron";
 import * as channel from "#/channel";
 import type { Verify, VerifyData, AutoInputToVCParams } from "#/cmd";

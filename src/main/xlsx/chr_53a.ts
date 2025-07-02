@@ -1,6 +1,5 @@
 import Excel from "@yanglee2421/exceljs";
-import { shell } from "electron/common";
-import { app } from "electron/main";
+import { shell, app } from "electron";
 import { join } from "node:path";
 import { db } from "#/db";
 import * as schema from "#/schema";

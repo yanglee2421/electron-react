@@ -1,4 +1,4 @@
-import { app } from "electron/main";
+import { app } from "electron";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { z } from "zod";

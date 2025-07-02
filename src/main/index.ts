@@ -1,17 +1,3 @@
-/**
- * Main Process Entry Point
- *
- * The main process is the core process of an Electron application, responsible for:
- * - Application lifecycle management
- * - Creating and managing renderer processes
- * - Accessing native system functionality
- * - Coordinating inter-process communication
- *
- * Note:
- * - electron/renderer: Available in the renderer process
- * - electron/main: Not available in the renderer process
- * - electron/common: Available in the renderer process (non-sandboxed only)
- */
 import {
   BrowserWindow,
   ipcMain,
@@ -19,8 +5,8 @@ import {
   app,
   Menu,
   dialog,
+  shell,
 } from "electron";
-import { shell } from "electron/common";
 import { join } from "node:path";
 import * as channel from "./channel";
 import { withLog } from "./lib";
@@ -49,7 +35,7 @@ const createWindow = async () => {
 
     width: 1024,
     height: 768,
-    minWidth: 500,
+    // minWidth: 500,
     show: false,
   });
 
@@ -72,6 +58,10 @@ const createWindow = async () => {
 
   win.webContents.on("did-finish-load", () => {
     win.webContents.send(channel.windowShow);
+  });
+  win.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url);
+    return { action: "deny" };
   });
 
   // Adding ready-to-show listener must be before loadURL or loadFile

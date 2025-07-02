@@ -1,4 +1,4 @@
-import { app } from "electron/main";
+import { app } from "electron";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
 import * as schema from "./schema";

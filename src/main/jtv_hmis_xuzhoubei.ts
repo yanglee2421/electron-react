@@ -1,6 +1,6 @@
 // 京天威 徐州北
 
-import { net, ipcMain } from "electron/main";
+import { net, ipcMain } from "electron";
 import { log, getDirection, withLog, createEmit } from "./lib";
 import {
   getCorporation,

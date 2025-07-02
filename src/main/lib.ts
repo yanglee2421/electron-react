@@ -1,5 +1,5 @@
 import { networkInterfaces } from "node:os";
-import { BrowserWindow } from "electron/main";
+import { BrowserWindow } from "electron";
 import * as channel from "./channel";
 import type { Log } from "@/lib/db";
 

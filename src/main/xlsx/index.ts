@@ -1,4 +1,4 @@
-import { ipcMain } from "electron/main";
+import { ipcMain } from "electron";
 import { withLog } from "#/lib";
 import * as channel from "#/channel";
 import { chr_502 } from "./chr_502";

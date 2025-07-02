@@ -1,6 +1,6 @@
 // 京天威 统型
 
-import { net, ipcMain } from "electron/main";
+import { net, ipcMain } from "electron";
 import { log, getIP, withLog, createEmit } from "./lib";
 import {
   getCorporation,

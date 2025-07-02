@@ -1,5 +1,4 @@
-import { app } from "electron/main";
-import { shell } from "electron/common";
+import { app, shell } from "electron";
 import { join } from "node:path";
 import Excel from "@yanglee2421/exceljs";
 import { db } from "#/db";

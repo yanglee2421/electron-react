@@ -1,4 +1,4 @@
-import { ipcMain, app } from "electron/main";
+import { ipcMain, app } from "electron";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { dirname, join, resolve } from "node:path";
