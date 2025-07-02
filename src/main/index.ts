@@ -12,7 +12,14 @@
  * - electron/main: Not available in the renderer process
  * - electron/common: Available in the renderer process (non-sandboxed only)
  */
-import { BrowserWindow, ipcMain, nativeTheme, app, Menu } from "electron";
+import {
+  BrowserWindow,
+  ipcMain,
+  nativeTheme,
+  app,
+  Menu,
+  dialog,
+} from "electron";
 import { shell } from "electron/common";
 import { join } from "node:path";
 import * as channel from "./channel";
@@ -27,7 +34,7 @@ import * as cmd from "./cmd";
 import * as excel from "./xlsx";
 import { is, optimizer, electronApp } from "@electron-toolkit/utils";
 
-const createWindow = () => {
+const createWindow = async () => {
   const alwaysOnTop = store.settings.get("alwaysOnTop");
 
   const win = new BrowserWindow({
@@ -43,68 +50,81 @@ const createWindow = () => {
     width: 1024,
     height: 768,
     minWidth: 500,
-    // show: false,
+    show: false,
   });
 
-  /**
-   * Performace optimization
-   * https://www.electronjs.org/docs/latest/tutorial/performance#8-call-menusetapplicationmenunull-when-you-do-not-need-a-default-menu
-   */
-  Menu.setApplicationMenu(null);
   win.menuBarVisible = false;
 
-  // Test active push message to Renderer-process.
-  win.webContents.on("did-finish-load", () => {});
   win.on("focus", () => {
-    win?.webContents.send(channel.windowFocus);
+    win.webContents.send(channel.windowFocus);
   });
   win.on("blur", () => {
-    win?.webContents.send(channel.windowBlur);
+    win.webContents.send(channel.windowBlur);
   });
+  // Only fire when the win.show is called on Windows
   win.on("show", () => {
-    // Only fire when the win.show is called on Windows
-    win?.webContents.send(channel.windowShow);
+    win.webContents.send(channel.windowShow);
   });
+  // Only fire when the win.hide is called on Windows
   win.on("hide", () => {
-    // Only fire when the win.hide is called on Windows
-    win?.webContents.send(channel.windowHide);
-  });
-  win.once("ready-to-show", () => {
-    // Too late to call win.show() here
-    // win?.show();
+    win.webContents.send(channel.windowHide);
   });
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-    win.loadURL(process.env["ELECTRON_RENDERER_URL"]);
-  } else {
-    win.loadFile(join(__dirname, "../renderer/index.html"));
+  win.webContents.on("did-finish-load", () => {
+    win.webContents.send(channel.windowShow);
+  });
+
+  // Adding ready-to-show listener must be before loadURL or loadFile
+  win.once("ready-to-show", () => win.show());
+
+  if (!is.dev) {
+    await win.loadFile(join(__dirname, "../renderer/index.html"));
+    return;
   }
+
+  const ELECTRON_RENDERER_URL = process.env["ELECTRON_RENDERER_URL"];
+
+  if (!ELECTRON_RENDERER_URL) {
+    await dialog.showMessageBox({
+      title: "错误",
+      message: "环境变量ELECTRON_RENDERER_URL不是一个有效的URL",
+      type: "error",
+    });
+
+    return;
+  }
+
+  await win.loadURL(ELECTRON_RENDERER_URL);
 };
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
+const bindAppHandler = () => {
+  // Quit when all windows are closed, except on macOS. There, it's common
+  // for applications and their menu bar to stay active until the user quits
+  // explicitly with Cmd + Q.
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
 
-app.on("activate", () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
 
-const gotTheLock = app.requestSingleInstanceLock();
+  // Default open or close DevTools by F12 in development
+  // and ignore CommandOrControl + R in production.
+  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
+  app.on("browser-window-created", (_, window) => {
+    optimizer.watchWindowShortcuts(window);
+  });
 
-if (!gotTheLock) {
-  app.quit();
-} else {
+  const isSingleInstance = app.requestSingleInstanceLock();
+  if (!isSingleInstance) return;
+
   app.on("second-instance", () => {
     const win = BrowserWindow.getAllWindows().at(0);
     if (!win) return;
@@ -116,102 +136,105 @@ if (!gotTheLock) {
 
     win.focus();
   });
+};
 
-  if (import.meta.env.DEV) {
-    // Disable hardware acceleration to avoid the black screen issue on Windows.
-    // app.disableHardwareAcceleration();
-  }
+const bindIpcHandler = () => {
+  ipcMain.handle(
+    channel.getVersion,
+    withLog(async (): Promise<string> => app.getVersion()),
+  );
+
+  ipcMain.handle(
+    channel.openAtLogin,
+    withLog(async (e, openAtLogin?: boolean): Promise<boolean> => {
+      void e;
+
+      if (typeof openAtLogin === "boolean") {
+        app.setLoginItemSettings({ openAtLogin });
+      }
+
+      return app.getLoginItemSettings().launchItems.some((i) => i.enabled);
+    }),
+  );
+
+  ipcMain.handle(
+    channel.openDevTools,
+    withLog(async (): Promise<void> => {
+      const win = BrowserWindow.getAllWindows().at(0);
+      if (!win) return;
+      win.webContents.openDevTools();
+    }),
+  );
+
+  ipcMain.handle(
+    channel.openPath,
+    withLog(async (e, path: string): Promise<string> => {
+      // Prevent unused variable error
+      void e;
+      const data = await shell.openPath(path);
+      return data;
+    }),
+  );
+
+  ipcMain.handle(
+    channel.mem,
+    withLog(async (): Promise<{ totalmem: number; freemem: number }> => {
+      const processMemoryInfo = await process.getProcessMemoryInfo();
+      const freemem = processMemoryInfo.residentSet;
+
+      return {
+        totalmem: process.getSystemMemoryInfo().total,
+        freemem,
+      };
+    }),
+  );
+
+  ipcMain.handle(
+    channel.mobileMode,
+    withLog(async (e, mobile: boolean): Promise<boolean> => {
+      void e;
+
+      BrowserWindow.getAllWindows().forEach((win) => {
+        if (mobile) {
+          win.setSize(500, 800);
+        } else {
+          win.setSize(1024, 768);
+        }
+        win.center();
+      });
+
+      return mobile;
+    }),
+  );
+};
+
+const runApp = async () => {
+  /**
+   * Performace optimization
+   * https://www.electronjs.org/docs/latest/tutorial/performance#8-call-menusetapplicationmenunull-when-you-do-not-need-a-default-menu
+   */
+  Menu.setApplicationMenu(null);
 
   // Set app user model id for windows
   electronApp.setAppUserModelId("com.electron");
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on("browser-window-created", (_, window) => {
-    optimizer.watchWindowShortcuts(window);
-  });
+  // Set app theme mode
+  const mode = store.settings.get("mode");
+  nativeTheme.themeSource = mode;
 
-  app.whenReady().then(async () => {
-    const mode = store.settings.get("mode");
-    nativeTheme.themeSource = mode;
-    hxzyHmis.init();
-    jtvHmisXuzhoubei.init();
-    jtvHmis.init();
-    khHmis.init();
-    cmd.initIpc();
-    store.init();
-    windows.initIpc();
-    excel.initIpc();
+  bindAppHandler();
+  bindIpcHandler();
+  hxzyHmis.init();
+  jtvHmisXuzhoubei.init();
+  jtvHmis.init();
+  khHmis.init();
+  cmd.initIpc();
+  store.init();
+  windows.initIpc();
+  excel.initIpc();
 
-    createWindow();
-  });
-}
+  await app.whenReady();
+  await createWindow();
+};
 
-ipcMain.handle(
-  channel.getVersion,
-  withLog(async (): Promise<string> => app.getVersion()),
-);
-
-ipcMain.handle(
-  channel.openAtLogin,
-  withLog(async (e, openAtLogin?: boolean): Promise<boolean> => {
-    void e;
-
-    if (typeof openAtLogin === "boolean") {
-      app.setLoginItemSettings({ openAtLogin });
-    }
-
-    return app.getLoginItemSettings().launchItems.some((i) => i.enabled);
-  }),
-);
-
-ipcMain.handle(
-  channel.openDevTools,
-  withLog(async (): Promise<void> => {
-    const win = BrowserWindow.getAllWindows().at(0);
-    if (!win) return;
-    win.webContents.openDevTools();
-  }),
-);
-
-ipcMain.handle(
-  channel.openPath,
-  withLog(async (e, path: string): Promise<string> => {
-    // Prevent unused variable error
-    void e;
-    const data = await shell.openPath(path);
-    return data;
-  }),
-);
-
-ipcMain.handle(
-  channel.mem,
-  withLog(async (): Promise<{ totalmem: number; freemem: number }> => {
-    const processMemoryInfo = await process.getProcessMemoryInfo();
-    const freemem = processMemoryInfo.residentSet;
-
-    return {
-      totalmem: process.getSystemMemoryInfo().total,
-      freemem,
-    };
-  }),
-);
-
-ipcMain.handle(
-  channel.mobileMode,
-  withLog(async (e, mobile: boolean): Promise<boolean> => {
-    void e;
-
-    BrowserWindow.getAllWindows().forEach((win) => {
-      if (mobile) {
-        win.setSize(500, 800);
-      } else {
-        win.setSize(1024, 768);
-      }
-      win.center();
-    });
-
-    return mobile;
-  }),
-);
+runApp();
