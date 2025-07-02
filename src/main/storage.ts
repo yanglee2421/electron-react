@@ -39,10 +39,12 @@ class StorageRef<TData extends NonNullable<unknown>> {
   private timer: NodeJS.Timeout | undefined;
   private data: TData;
   private filePath: string;
-  constructor(
-    private parse: (data: unknown) => TData,
-    private filename: string,
-  ) {
+  private parse: (data: unknown) => TData;
+  private filename: string;
+
+  constructor(parse: (data: unknown) => TData, filename: string) {
+    this.parse = parse;
+    this.filename = filename;
     this.data = this.parse({});
     this.filePath = path.join(app.getPath("userData"), this.filename);
   }

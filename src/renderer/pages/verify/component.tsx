@@ -40,7 +40,7 @@ import { Loading } from "@/components/Loading";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
-import { WritableDraft } from "immer";
+import type { WritableDraft } from "immer";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Verify>();

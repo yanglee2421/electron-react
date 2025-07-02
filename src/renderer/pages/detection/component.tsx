@@ -45,7 +45,7 @@ import { Loading } from "@/components/Loading";
 import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 import { Link as RouterLink } from "react-router";
 import { create } from "zustand";
-import { WritableDraft } from "immer";
+import type { WritableDraft } from "immer";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 

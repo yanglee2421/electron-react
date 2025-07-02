@@ -1,4 +1,8 @@
-import { createHashRouter, RouteObject, RouterProvider } from "react-router";
+import {
+  createHashRouter,
+  type RouteObject,
+  RouterProvider,
+} from "react-router";
 import { QueryProvider } from "@/components/query";
 import {
   fetchHxzyHmisSetting,

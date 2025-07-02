@@ -40,7 +40,7 @@ import type { Quartor } from "#/cmd";
 import { Loading } from "@/components/Loading";
 import { Link as RouterLink } from "react-router";
 import { create } from "zustand";
-import { WritableDraft } from "immer";
+import type { WritableDraft } from "immer";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 

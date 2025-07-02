@@ -1,4 +1,4 @@
-import { TextFieldProps, TextField } from "@mui/material";
+import { type TextFieldProps, TextField } from "@mui/material";
 import React from "react";
 
 const renderNumberValue = (

@@ -43,7 +43,7 @@ import { fetchSqliteXlsxSize, useXlsxSizeDelete } from "@/api/fetch_preload";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
-import { WritableDraft } from "immer";
+import type { WritableDraft } from "immer";
 
 type DeleteActionProps = {
   id: number;

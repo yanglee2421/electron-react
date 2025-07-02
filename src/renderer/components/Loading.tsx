@@ -1,8 +1,8 @@
 import {
   Box,
-  BoxProps,
+  type BoxProps,
   CircularProgress,
-  CircularProgressProps,
+  type CircularProgressProps,
 } from "@mui/material";
 
 type LoadingProps = {

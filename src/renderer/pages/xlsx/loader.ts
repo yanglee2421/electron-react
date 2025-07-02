@@ -1,4 +1,4 @@
-import { LoaderFunction } from "react-router";
+import type { LoaderFunction } from "react-router";
 import { QueryProvider } from "@/components/query";
 import { fetchSqliteXlsxSize } from "@/api/fetch_preload";
 

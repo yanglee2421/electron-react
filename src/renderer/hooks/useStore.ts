@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { WritableDraft } from "immer";
+import type { WritableDraft } from "immer";
 
 type StoreState = {
   msg: string;
@@ -18,10 +18,8 @@ type StoreActions = {
 type Store = StoreState & StoreActions;
 
 export const useStore = create<Store>()(
-  immer(
-    (set) => ({
-      set,
-      msg: "",
-    }),
-  ),
+  immer((set) => ({
+    set,
+    msg: "",
+  })),
 );
