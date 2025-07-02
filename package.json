@@ -4,12 +4,13 @@
   "version": "0.0.43",
   "type": "module",
   "scripts": {
-    "dev": "electron-builder install-app-deps && electron-vite dev",
-    "build": "electron-vite build && electron-builder --win",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build && electron-builder",
     "build:unpack": "electron-vite build && electron-builder --dir",
     "lint": "eslint .",
     "preview": "electron-vite preview",
-    "generate": "drizzle-kit generate"
+    "generate": "drizzle-kit generate",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
