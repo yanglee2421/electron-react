@@ -123,7 +123,10 @@ const bindAppHandler = () => {
   });
 
   const isSingleInstance = app.requestSingleInstanceLock();
-  if (!isSingleInstance) return;
+  if (!isSingleInstance) {
+    app.quit();
+    return;
+  }
 
   app.on("second-instance", () => {
     const win = BrowserWindow.getAllWindows().at(0);
