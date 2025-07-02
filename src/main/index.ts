@@ -122,8 +122,12 @@ const bindAppHandler = () => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  const isSingleInstance = app.requestSingleInstanceLock();
-  if (!isSingleInstance) {
+  /**
+   * @description true: No other instances exist
+   * @description false: Other instances exist
+   */
+  const gotTheLock = app.requestSingleInstanceLock();
+  if (!gotTheLock) {
     app.quit();
     return;
   }
