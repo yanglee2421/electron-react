@@ -277,6 +277,16 @@ export const Component = () => {
         >
           Excel
         </Button>
+        <button
+          onClick={async () => {
+            console.time("mdb");
+            const data = await window.electron.ipcRenderer.invoke("mdb:reader");
+            console.timeEnd("mdb");
+            console.log(data);
+          }}
+        >
+          mdb reader
+        </button>
       </CardContent>
       {query.isFetching && <LinearProgress />}
       <TableContainer>

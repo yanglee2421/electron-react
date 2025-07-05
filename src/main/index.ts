@@ -19,6 +19,7 @@ import * as store from "./store";
 import * as cmd from "./cmd";
 import * as excel from "./xlsx";
 import { is, optimizer, electronApp } from "@electron-toolkit/utils";
+import * as mdb from "./mdb";
 
 const createWindow = async () => {
   const alwaysOnTop = store.settings.get("alwaysOnTop");
@@ -229,6 +230,7 @@ const runApp = async () => {
   store.init();
   windows.initIpc();
   excel.initIpc();
+  mdb.init();
 
   await app.whenReady();
   await createWindow();

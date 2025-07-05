@@ -1,23 +1,26 @@
-import MDBReader from "mdb-reader";
+import { ipcMain } from "electron";
 import { settings } from "./store";
-import fs from "node:fs/promises";
+import { Worker } from "node:worker_threads";
+import { withLog } from "./lib";
+import workerPath from "./mdb.worker?modulePath";
 
-type GetDataFromMDBParams = {
-  table: string;
-  pageIndex: number;
-  pageSize: number;
-};
+export const init = () => {
+  ipcMain.handle(
+    "mdb:reader",
+    withLog(async () => {
+      const databasePath = settings.get("databasePath");
+      if (!databasePath) return;
 
-export const init = async (params: GetDataFromMDBParams) => {
-  const databasePath = settings.get("databasePath");
-  if (!databasePath) return;
-  const buf = await fs.readFile(databasePath);
-  const mdbReader = new MDBReader(buf, {
-    password: "Joney",
-  });
-  const table = mdbReader.getTable(params.table);
-  return table.getData({
-    rowOffset: params.pageIndex * params.pageSize,
-    rowLimit: params.pageSize,
-  });
+      const rows = await new Promise((resolve) => {
+        const worker = new Worker(workerPath);
+        worker.once("message", (data) => {
+          resolve(data);
+          worker.terminate();
+        });
+        worker.postMessage({ databasePath, tableName: "detections" });
+      });
+
+      return rows;
+    }),
+  );
 };

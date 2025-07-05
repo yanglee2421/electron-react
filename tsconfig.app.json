@@ -29,7 +29,7 @@
       "#/*": ["src/main/*"],
       "~/*": ["src/preload/*"]
     },
-    "types": ["vite/client"]
+    "types": ["vite/client", "electron-vite/node"]
   },
   "include": ["src"]
 }
