@@ -12,12 +12,13 @@ export const init = () => {
       if (!databasePath) return;
 
       const rows = await new Promise((resolve) => {
-        const worker = new Worker(workerPath);
+        const worker = new Worker(workerPath, {
+          workerData: { databasePath, tableName: "detections" },
+        });
         worker.once("message", (data) => {
           resolve(data);
           worker.terminate();
         });
-        worker.postMessage({ databasePath, tableName: "detections" });
       });
 
       return rows;
