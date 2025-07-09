@@ -20,6 +20,7 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -39,15 +40,14 @@ import {
   PrintOutlined,
   RefreshOutlined,
 } from "@mui/icons-material";
-import { DATE_FORMAT_DATABASE } from "@/lib/constants";
 import type { Detection } from "#/cmd";
 import { Loading } from "@/components/Loading";
-import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
 import { Link as RouterLink } from "react-router";
 import { create } from "zustand";
 import type { WritableDraft } from "immer";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+import { fetchDataFromAccessDatabase } from "./fetcher";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Detection>();
@@ -118,6 +118,125 @@ const columns = [
   columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
 ];
 
+type DataGridProps = {
+  data: Detection[];
+  total?: number;
+  isPending?: boolean;
+  isError?: boolean;
+  error?: Error | null;
+};
+
+const DataGrid = ({
+  data,
+  total,
+  isPending,
+  isError,
+  error,
+}: DataGridProps) => {
+  "use no memo";
+
+  const table = useReactTable({
+    columns,
+    data,
+    getRowId: (row) => row.szIDs,
+    rowCount: total,
+
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  const renderRow = () => {
+    if (isPending) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
+            <Loading
+              slotProps={{
+                box: { padding: 0 },
+              }}
+            />
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (isError) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length}>
+            <Alert severity="error" variant="filled">
+              <AlertTitle>错误</AlertTitle>
+              {error?.message}
+            </Alert>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (!table.getRowCount()) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
+            暂无数据
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return table.getRowModel().rows.map((row) => (
+      <TableRow key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    ));
+  };
+
+  return (
+    <TableContainer>
+      <Table sx={{ minWidth: 1024 }}>
+        <TableHead>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableCell
+                  key={header.id}
+                  padding={cellPaddingMap.get(header.column.id)}
+                >
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext(),
+                  )}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableHead>
+        <TableBody>{renderRow()}</TableBody>
+        <TableFooter>
+          {table.getFooterGroups().map((footerGroup) => (
+            <TableRow key={footerGroup.id}>
+              {footerGroup.headers.map((header) => (
+                <TableCell
+                  key={header.id}
+                  padding={cellPaddingMap.get(header.column.id)}
+                >
+                  {flexRender(
+                    header.column.columnDef.footer,
+                    header.getContext(),
+                  )}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableFooter>
+      </Table>
+    </TableContainer>
+  );
+};
+
 type State = {
   date: string;
 };
@@ -147,7 +266,15 @@ const useSessionStore = create<Store>()(
 );
 
 export const Component = () => {
-  "use no memo";
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(20);
+  const [username, setUsername] = React.useState("");
+  const [whModel, setWHModel] = React.useState("");
+  const [idsWheel, setIdsWheel] = React.useState("");
+  const [result, setResult] = React.useState("");
+
+  const deferredIdsWheel = React.useDeferredValue(idsWheel);
+
   const selectDate = useSessionStore((s) => s.date);
   const set = useSessionStore((s) => s.set);
 
@@ -155,77 +282,49 @@ export const Component = () => {
 
   const [isPending, startTransition] = React.useTransition();
 
-  const sql = `SELECT * FROM detections WHERE tmnow BETWEEN #${date
-    .startOf("day")
-    .format(DATE_FORMAT_DATABASE)}# AND #${date
-    .endOf("day")
-    .format(DATE_FORMAT_DATABASE)}#`;
+  const query = useQuery(
+    fetchDataFromAccessDatabase<Detection>({
+      tableName: "detections",
+      pageIndex,
+      pageSize,
+      filters: [
+        // {
+        //   type: "date",
+        //   field: "tmnow",
+        //   value: date.toISOString(),
+        //   startAt: date.startOf("day").toISOString(),
+        //   endAt: date.endOf("day").toISOString(),
+        // },
+        {
+          type: "like",
+          field: "szUsername",
+          value: username,
+        },
+        {
+          type: "like",
+          field: "szWHModel",
+          value: whModel,
+        },
+        {
+          type: "like",
+          field: "szIDsWheel",
+          value: deferredIdsWheel,
+        },
+        {
+          type: "like",
+          field: "szResult",
+          value: result,
+        },
+      ],
+    }),
+  );
 
-  const query = useQuery(fetchDataFromAccessDatabase<Detection>(sql));
-  const data = React.useMemo(() => query.data || [], [query.data]);
-
-  const table = useReactTable({
-    columns,
-    data,
-    getRowId: (row) => row.szIDs,
-
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-  });
+  const data = React.useMemo(() => query.data?.rows || [], [query.data]);
 
   const setDate = (day: dayjs.Dayjs) =>
     set((d) => {
       d.date = day.toISOString();
     });
-
-  const renderRow = () => {
-    if (query.isPending) {
-      return (
-        <TableRow>
-          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            <Loading
-              slotProps={{
-                box: { padding: 0 },
-              }}
-            />
-          </TableCell>
-        </TableRow>
-      );
-    }
-
-    if (query.isError) {
-      return (
-        <TableRow>
-          <TableCell colSpan={table.getAllLeafColumns().length}>
-            <Alert severity="error" variant="filled">
-              <AlertTitle>错误</AlertTitle>
-              {query.error.message}
-            </Alert>
-          </TableCell>
-        </TableRow>
-      );
-    }
-
-    if (!table.getRowCount()) {
-      return (
-        <TableRow>
-          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            暂无数据
-          </TableCell>
-        </TableRow>
-      );
-    }
-
-    return table.getRowModel().rows.map((row) => (
-      <TableRow key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </TableCell>
-        ))}
-      </TableRow>
-    ));
-  };
 
   return (
     <Card>
@@ -255,6 +354,38 @@ export const Component = () => {
                   fullWidth: true,
                 },
               }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="检测员"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              fullWidth
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="轴型"
+              value={whModel}
+              onChange={(e) => setWHModel(e.target.value)}
+              fullWidth
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="轴号"
+              value={idsWheel}
+              onChange={(e) => setIdsWheel(e.target.value)}
+              fullWidth
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="检测结果"
+              value={result}
+              onChange={(e) => setResult(e.target.value)}
+              fullWidth
             />
           </Grid>
         </Grid>
@@ -289,58 +420,25 @@ export const Component = () => {
         </button>
       </CardContent>
       {query.isFetching && <LinearProgress />}
-      <TableContainer>
-        <Table sx={{ minWidth: 1024 }}>
-          <TableHead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>{renderRow()}</TableBody>
-          <TableFooter>
-            {table.getFooterGroups().map((footerGroup) => (
-              <TableRow key={footerGroup.id}>
-                {footerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.footer,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableFooter>
-        </Table>
-      </TableContainer>
+      <DataGrid
+        data={data}
+        total={query.data?.total}
+        isPending={query.isPending}
+        isError={query.isError}
+        error={query.error}
+      />
       <Divider />
       <TablePagination
         component={"div"}
-        page={table.getState().pagination.pageIndex}
-        count={table.getRowCount()}
-        rowsPerPage={table.getState().pagination.pageSize}
+        page={pageIndex}
+        count={query.data?.total || 0}
+        rowsPerPage={pageSize}
         rowsPerPageOptions={rowsPerPageOptions}
-        onPageChange={(e, page) => {
-          void e;
-          table.setPageIndex(page);
+        onPageChange={(_, page) => {
+          setPageIndex(page);
         }}
         onRowsPerPageChange={(e) => {
-          table.setPageSize(Number.parseInt(e.target.value, 10));
+          setPageSize(Number.parseInt(e.target.value, 10));
         }}
         labelRowsPerPage="每页行数"
       />
