@@ -31,7 +31,6 @@ import {
   getCoreRowModel,
   useReactTable,
   flexRender,
-  getPaginationRowModel,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import {
@@ -142,7 +141,7 @@ const DataGrid = ({
     rowCount: total,
 
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
   });
 
   const renderRow = () => {
