@@ -36,6 +36,7 @@ export type MDBWorkerData = {
   pageIndex?: number;
   pageSize?: number;
   filters?: Filter[];
+  with?: boolean;
 };
 
 const likeFn = (row: NonNullable<unknown>, filter: LikeFilter) => {
@@ -114,7 +115,30 @@ const main = async () => {
   const rowOffset = pageIndex * pageSize;
   const rows = allRows.reverse().slice(rowOffset, rowOffset + pageSize);
 
-  parentPort?.postMessage({ total, rows });
+  if (!workerData.with) {
+    parentPort?.postMessage({ total, rows });
+    return;
+  }
+
+  const rowIds = rows
+    .map((row) => Reflect.get(row, "szIDs"))
+    .filter((id) => typeof id === "string");
+
+  const withData = getDataFromTable(mdbReader, `${tableName}_data`, [
+    {
+      type: "in",
+      field: "opid",
+      value: rowIds,
+    },
+  ]);
+
+  parentPort?.postMessage({
+    total,
+    rows: rows.map((row) => ({
+      ...row,
+      with: withData.filter((data) => data.opid === Reflect.get(row, "opid")),
+    })),
+  });
 };
 
 main();
