@@ -114,7 +114,7 @@ const main = async () => {
   const total = allRows.length;
 
   if (!pageSize) {
-    parentPort?.postMessage({ total, rows: allRows });
+    parentPort?.postMessage({ total, rows: allRows.reverse() });
     return;
   }
 

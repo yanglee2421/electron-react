@@ -28,7 +28,7 @@ const columnWidths = new Map([
 
 const rowHeights = new Map([
   [1, 20.25],
-  [48, 24],
+  // [48, 24],
 ]);
 
 const inspectionItems = [
@@ -79,7 +79,6 @@ export const chr_53a = async (rowIds: string[]) => {
   sheet.pageSetup.horizontalCentered = true;
   sheet.pageSetup.verticalCentered = false;
   sheet.pageSetup.fitToPage = true;
-  sheet.pageSetup.printArea = "A1:M52";
 
   sheet.headerFooter.oddHeader = "&R车统-53A";
   sheet.headerFooter.evenHeader = "&R车统-53A";
@@ -318,14 +317,23 @@ export const chr_53a = async (rowIds: string[]) => {
     });
   };
 
-  if (rows.length < 39) {
+  const needEmptyRows = rows.length < 39;
+
+  if (needEmptyRows) {
     for (let i = 7 + rows.length; i < 46; i++) {
       renderEmptyRows(i);
     }
   }
 
+  const rowCount = needEmptyRows ? 39 : rows.length;
+  sheet.pageSetup.printArea = `A1:M${6 + rowCount + inspectionItems.length}`;
+
   inspectionItems.forEach((value, idx) => {
-    row(idx + 46, (id) => {
+    row(6 + rowCount + idx + 1, (id, row) => {
+      if (idx === 2) {
+        row.height = 24;
+      }
+
       cell(`A${id}:M${id}`, (cell) => {
         cell.font = { size: 10, name: "宋体" };
         cell.alignment = { horizontal: "left", wrapText: Object.is(idx, 2) };
@@ -335,6 +343,7 @@ export const chr_53a = async (rowIds: string[]) => {
     });
   });
 
+  // Default column widths and row heights
   columnWidths.forEach((width, col) => {
     sheet.getColumn(col).width = width;
   });
@@ -343,6 +352,7 @@ export const chr_53a = async (rowIds: string[]) => {
     sheet.getRow(rowId).height = height;
   });
 
+  // Mannually set row heights and column widths
   const rowHeightList = await db
     .select({
       index: schema.xlsxSizeTable.index,
@@ -382,6 +392,7 @@ export const chr_53a = async (rowIds: string[]) => {
   if (import.meta.env.PROD) {
     await sheet.protect("123456", { formatColumns: true, formatRows: true });
   }
+
   const outputPath = join(app.getPath("temp"), "output.xlsx");
   await workbook.xlsx.writeFile(outputPath);
   await shell.openPath(outputPath);
