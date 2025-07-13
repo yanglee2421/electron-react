@@ -5,6 +5,10 @@ import { db } from "#/db";
 import * as schema from "#/schema";
 import * as sql from "drizzle-orm";
 import dayjs from "dayjs";
+import { Worker } from "node:worker_threads";
+import workerPath from "#/mdb.worker?modulePath";
+import type { Detection } from "#/cmd";
+import { settings } from "#/store";
 
 const columnWidths = new Map([
   ["A", 7],
@@ -63,7 +67,7 @@ const createCellHelper =
     return cell;
   };
 
-export const chr_53a = async () => {
+export const chr_53a = async (rowIds: string[]) => {
   const workbook = new Excel.Workbook();
   const sheet = workbook.addWorksheet("Sheet1");
   sheet.properties.defaultColWidth = 10;
@@ -232,19 +236,41 @@ export const chr_53a = async () => {
     });
   });
 
-  for (let i = 7; i < 46; i++) {
+  const rows = await new Promise<Detection[]>((resolve) => {
+    const databasePath = settings.get("databasePath");
+    const worker = new Worker(workerPath, {
+      workerData: {
+        tableName: "detections",
+        databasePath,
+        filters: [
+          {
+            type: "in",
+            field: "szIDs",
+            value: rowIds,
+          },
+        ],
+      },
+    });
+    worker.once("message", (data) => {
+      resolve(data.rows);
+      worker.terminate();
+    });
+  });
+
+  rows.forEach((rowData, index) => {
+    const i = index + 7;
     row(i, (row) => {
       cell(`A${row}`, (cell) => {
         cell.value = i - 6;
       });
       cell(`B${row}`, (cell) => {
-        cell.value = "RE2B";
+        cell.value = rowData.szWHModel;
       });
       cell(`C${row}`, (cell) => {
-        cell.value = "10100";
+        cell.value = rowData.szIDsWheel;
       });
       cell(`D${row}`, (cell) => {
-        cell.value = dayjs().format("YYYYMMDD");
+        cell.value = dayjs(rowData.tmnow).format("YYYYMMDD");
       });
       cell(`E${row}`, (cell) => {
         cell.value = 131;
@@ -262,16 +288,40 @@ export const chr_53a = async () => {
         cell.value = "√";
       });
       cell(`J${row}`, (cell) => {
-        cell.value = "√";
+        cell.value = rowData.bWheelLS ? "√" : null;
       });
       cell(`K${row}`, (cell) => {
-        cell.value = "√";
+        cell.value = rowData.bWheelRS ? "√" : null;
       });
       cell(`L${row}`, (cell) => {
         cell.value = "合格";
       });
       cell(`M${row}`);
     });
+  });
+
+  const renderEmptyRows = (i: number) => {
+    row(i, (row) => {
+      cell(`A${row}`);
+      cell(`B${row}`);
+      cell(`C${row}`);
+      cell(`D${row}`);
+      cell(`E${row}`);
+      cell(`F${row}`);
+      cell(`G${row}`);
+      cell(`H${row}`);
+      cell(`I${row}`);
+      cell(`J${row}`);
+      cell(`K${row}`);
+      cell(`L${row}`);
+      cell(`M${row}`);
+    });
+  };
+
+  if (rows.length < 39) {
+    for (let i = 7 + rows.length; i < 46; i++) {
+      renderEmptyRows(i);
+    }
   }
 
   inspectionItems.forEach((value, idx) => {

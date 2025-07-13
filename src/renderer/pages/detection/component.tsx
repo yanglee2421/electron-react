@@ -122,6 +122,7 @@ type DataGridProps = {
   total?: number;
   isPending?: boolean;
   isError?: boolean;
+  isFetching?: boolean;
   error?: Error | null;
 };
 
@@ -130,9 +131,12 @@ const DataGrid = ({
   total,
   isPending,
   isError,
+  isFetching,
   error,
 }: DataGridProps) => {
   "use no memo";
+
+  const [, startTransition] = React.useTransition();
 
   const table = useReactTable({
     columns,
@@ -194,45 +198,65 @@ const DataGrid = ({
   };
 
   return (
-    <TableContainer>
-      <Table sx={{ minWidth: 1024 }}>
-        <TableHead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableCell
-                  key={header.id}
-                  padding={cellPaddingMap.get(header.column.id)}
-                >
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext(),
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableHead>
-        <TableBody>{renderRow()}</TableBody>
-        <TableFooter>
-          {table.getFooterGroups().map((footerGroup) => (
-            <TableRow key={footerGroup.id}>
-              {footerGroup.headers.map((header) => (
-                <TableCell
-                  key={header.id}
-                  padding={cellPaddingMap.get(header.column.id)}
-                >
-                  {flexRender(
-                    header.column.columnDef.footer,
-                    header.getContext(),
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableFooter>
-      </Table>
-    </TableContainer>
+    <>
+      <CardContent>
+        <Button
+          onClick={() => {
+            startTransition(async () => {
+              const rowIds = table
+                .getSelectedRowModel()
+                .rows.map((row) => row.original.szIDs);
+              window.electron.ipcRenderer.invoke("excel:detection", rowIds);
+            });
+          }}
+          disabled={isPending}
+          startIcon={<PrintOutlined />}
+          variant="outlined"
+        >
+          Excel
+        </Button>
+      </CardContent>
+      {isFetching && <LinearProgress />}
+      <TableContainer>
+        <Table sx={{ minWidth: 1024 }}>
+          <TableHead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableHead>
+          <TableBody>{renderRow()}</TableBody>
+          <TableFooter>
+            {table.getFooterGroups().map((footerGroup) => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.footer,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableFooter>
+        </Table>
+      </TableContainer>
+    </>
   );
 };
 
@@ -278,8 +302,6 @@ export const Component = () => {
   const set = useSessionStore((s) => s.set);
 
   const date = dayjs(selectDate);
-
-  const [isPending, startTransition] = React.useTransition();
 
   const query = useQuery(
     fetchDataFromAccessDatabase<Detection>({
@@ -390,35 +412,6 @@ export const Component = () => {
         </Grid>
       </CardContent>
       <Divider />
-      <CardContent>
-        <Button
-          onClick={() => {
-            startTransition(window.electronAPI.xlsxCHR53A);
-          }}
-          disabled={isPending}
-          startIcon={
-            isPending ? (
-              <CircularProgress color="inherit" size={16} />
-            ) : (
-              <PrintOutlined />
-            )
-          }
-          variant="outlined"
-        >
-          Excel
-        </Button>
-        <button
-          onClick={async () => {
-            console.time("mdb");
-            const data = await window.electron.ipcRenderer.invoke("mdb:reader");
-            console.timeEnd("mdb");
-            console.log(data);
-          }}
-        >
-          mdb reader
-        </button>
-      </CardContent>
-      {query.isFetching && <LinearProgress />}
       <DataGrid
         data={data}
         total={query.data?.total}

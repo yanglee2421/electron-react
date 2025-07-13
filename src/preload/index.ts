@@ -236,7 +236,6 @@ const settings = (param?: SetSettingParams) =>
 
 const settingsOpenInEditor = () => invoke(channel.settingsOpenInEditor);
 const excelQuartor = () => invoke(channel.xlsx_chr_502);
-const xlsxCHR53A = () => invoke(channel.xlsx_chr_53a);
 const xlsxCHR501 = () => invoke(channel.xlsx_chr_501);
 
 export type SqliteXlsxSizeRParams = {
@@ -331,7 +330,6 @@ const electronAPI = {
   settings,
   settingsOpenInEditor,
   excelQuartor,
-  xlsxCHR53A,
   xlsxCHR501,
 
   // Subscribe

@@ -22,7 +22,10 @@ type DeleteParams = {
 export const initIpc = () => {
   ipcMain.handle(channel.xlsx_chr_501, withLog(chr_501));
   ipcMain.handle(channel.xlsx_chr_502, withLog(chr_502));
-  ipcMain.handle(channel.xlsx_chr_53a, withLog(chr_53a));
+  ipcMain.handle(
+    channel.xlsx_chr_53a,
+    withLog((_, data) => chr_53a(data)),
+  );
   ipcMain.handle(
     channel.sqlite_xlsx_size_c,
     withLog(async (_, params: PRELOAD.SqliteXlsxSizeCParams) => {

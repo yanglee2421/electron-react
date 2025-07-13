@@ -107,11 +107,17 @@ const main = async () => {
   const tableName = workerData.tableName;
   const databasePath = workerData.databasePath;
   const pageIndex = workerData.pageIndex || 0;
-  const pageSize = workerData.pageSize || 20;
+  const pageSize = workerData.pageSize;
   const buf = await fs.readFile(databasePath);
   const mdbReader = new MDBReader(buf, { password: "Joney" });
   const allRows = getDataFromTable(mdbReader, tableName, workerData.filters);
   const total = allRows.length;
+
+  if (!pageSize) {
+    parentPort?.postMessage({ total, rows: allRows });
+    return;
+  }
+
   const rowOffset = pageIndex * pageSize;
   const rows = allRows.reverse().slice(rowOffset, rowOffset + pageSize);
 
