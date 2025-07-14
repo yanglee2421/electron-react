@@ -6,7 +6,7 @@ import { access, constants } from "node:fs/promises";
 import { settings } from "./store";
 import { DATE_FORMAT_DATABASE } from "./cmd";
 import { withLog } from "./lib";
-import * as channel from "./channel";
+import { channel } from "./channel";
 
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);

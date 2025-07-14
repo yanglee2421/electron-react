@@ -6,6 +6,7 @@ import {
   CardContent,
   CardHeader,
   Checkbox,
+  CircularProgress,
   Divider,
   Grid,
   IconButton,
@@ -47,6 +48,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { fetchDataFromAccessDatabase } from "./fetcher";
 import type { Filter } from "#/mdb.worker";
+import { useChr53aExport } from "@/api/fetch_preload";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Detection>();
@@ -136,7 +138,7 @@ const DataGrid = ({
 }: DataGridProps) => {
   "use no memo";
 
-  const [, startTransition] = React.useTransition();
+  const chr53a = useChr53aExport();
 
   const table = useReactTable({
     columns,
@@ -202,15 +204,19 @@ const DataGrid = ({
       <CardContent>
         <Button
           onClick={() => {
-            startTransition(async () => {
-              const rowIds = table
-                .getSelectedRowModel()
-                .rows.map((row) => row.original.szIDs);
-              window.electron.ipcRenderer.invoke("excel:detection", rowIds);
-            });
+            const rowIds = table
+              .getSelectedRowModel()
+              .rows.map((row) => row.original.szIDs);
+            chr53a.mutate(rowIds);
           }}
-          disabled={isPending}
-          startIcon={<PrintOutlined />}
+          disabled={chr53a.isPending}
+          startIcon={
+            chr53a.isPending ? (
+              <CircularProgress size={20} />
+            ) : (
+              <PrintOutlined />
+            )
+          }
           variant="outlined"
         >
           Excel

@@ -1,7 +1,7 @@
 import Store from "electron-store";
 import { BrowserWindow, nativeTheme, ipcMain } from "electron";
 import { withLog } from "./lib";
-import * as channel from "./channel";
+import { channel } from "./channel";
 import type * as PRELOAD from "~/index";
 
 export type Settings = {

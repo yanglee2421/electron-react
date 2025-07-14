@@ -19,6 +19,7 @@ import type {
 } from "~/index";
 import type { AutoInputToVCParams } from "#/cmd";
 import type * as PRELOAD from "~/index";
+import { channel } from "#/channel";
 
 // Windows 激活验证
 export const fetchVerifyActivation = () =>
@@ -547,7 +548,7 @@ export const useChr53aExport = () => {
   return useMutation({
     mutationFn: async (params: string[]) => {
       const data = await window.electron.ipcRenderer.invoke(
-        "chr53aExport",
+        channel.xlsx_chr_53a,
         params,
       );
       return data;

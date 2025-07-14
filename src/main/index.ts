@@ -8,7 +8,7 @@ import {
   shell,
 } from "electron";
 import { join } from "node:path";
-import * as channel from "./channel";
+import { channel } from "./channel";
 import { withLog } from "./lib";
 import * as windows from "./win";
 import * as hxzyHmis from "./hxzy_hmis";

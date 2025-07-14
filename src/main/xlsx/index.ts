@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
 import { withLog } from "#/lib";
-import * as channel from "#/channel";
+import { channel } from "#/channel";
 import { chr_502 } from "./chr_502";
 import { chr_53a } from "./chr_53a";
 import { chr_501 } from "./chr_501";

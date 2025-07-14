@@ -14,7 +14,7 @@ import { hxzy_hmis } from "./store";
 import { db } from "./db";
 import * as sql from "drizzle-orm";
 import * as schema from "./schema";
-import * as channel from "./channel";
+import { channel } from "./channel";
 import * as win from "./win";
 import type { DetectionData, Verify, VerifyData } from "./cmd";
 import type * as PRELOAD from "~/index";

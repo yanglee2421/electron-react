@@ -268,7 +268,9 @@ export const chr_53a = async (rowIds: string[]) => {
       cell(`L${row}`, (cell) => {
         cell.value = rowData.szResult;
       });
-      cell(`M${row}`);
+      cell(`M${row}`, (cell) => {
+        cell.value = rowData.szResult === "有故障" ? "待复验" : null;
+      });
     });
   });
 

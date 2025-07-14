@@ -13,7 +13,7 @@ import { jtv_hmis } from "./store";
 import { db } from "./db";
 import * as schema from "./schema";
 import * as sql from "drizzle-orm";
-import * as channel from "./channel";
+import { channel } from "./channel";
 import * as win from "./win";
 import type { DetectionData } from "./cmd";
 import type * as PRELOAD from "~/index";

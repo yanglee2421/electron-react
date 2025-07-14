@@ -1,6 +1,6 @@
 import { networkInterfaces } from "node:os";
 import { app, BrowserWindow } from "electron";
-import * as channel from "./channel";
+import { channel } from "./channel";
 import type { Log } from "@/lib/db";
 import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
