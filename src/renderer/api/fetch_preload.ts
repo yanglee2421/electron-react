@@ -542,3 +542,15 @@ export const useXlsxSizeDelete = () => {
     },
   });
 };
+
+export const useChr53aExport = () => {
+  return useMutation({
+    mutationFn: async (params: string[]) => {
+      const data = await window.electron.ipcRenderer.invoke(
+        "chr53aExport",
+        params,
+      );
+      return data;
+    },
+  });
+};

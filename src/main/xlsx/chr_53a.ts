@@ -10,6 +10,7 @@ import workerPath from "#/mdb.worker?modulePath";
 import type { Detection } from "#/cmd";
 import { settings } from "#/store";
 import { createCellHelper, createRowHelper, pageSetup } from "./utils";
+import { mkdir } from "node:fs/promises";
 
 const columnWidths = new Map([
   ["A", 7],
@@ -366,7 +367,9 @@ export const chr_53a = async (rowIds: string[]) => {
     await sheet.protect("123456", { formatColumns: true, formatRows: true });
   }
 
-  const outputPath = join(app.getPath("temp"), "output.xlsx");
-  await workbook.xlsx.writeFile(outputPath);
-  await shell.openPath(outputPath);
+  const outputPath = join(app.getPath("temp"), "wtxy_tookit_cmd");
+  const filePath = join(outputPath, `output${Date.now()}.xlsx`);
+  await mkdir(outputPath, { recursive: true });
+  await workbook.xlsx.writeFile(filePath);
+  await shell.openPath(filePath);
 };

@@ -1,7 +1,9 @@
 import { networkInterfaces } from "node:os";
-import { BrowserWindow } from "electron";
+import { app, BrowserWindow } from "electron";
 import * as channel from "./channel";
 import type { Log } from "@/lib/db";
+import { mkdir, rm } from "node:fs/promises";
+import { join } from "node:path";
 
 export const log = (message: string, type = "info") => {
   const data: Log = {
@@ -110,4 +112,17 @@ export const createEmit = <TData = void>(channel: string) => {
       win.webContents.send(channel, data);
     });
   };
+};
+
+export const getTempDir = () => join(app.getPath("temp"), "wtxy_tookit_cmd");
+
+export const removeTempDir = async () => {
+  const tempDir = getTempDir();
+  await rm(tempDir, { recursive: true, force: true });
+};
+
+export const makeTempDir = async () => {
+  const tempDir = getTempDir();
+  const result = await mkdir(tempDir, { recursive: true });
+  return result;
 };
