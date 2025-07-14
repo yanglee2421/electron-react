@@ -9,4 +9,4 @@ export const cellPaddingMap = new Map<string, "checkbox" | "none" | "normal">([
   ["expand", "checkbox"],
 ]);
 
-export const rowsPerPageOptions = [10, 20, 50];
+export const rowsPerPageOptions = [100, 200];

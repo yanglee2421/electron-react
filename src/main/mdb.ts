@@ -20,12 +20,16 @@ export const init = () => {
         throw new Error("Database path is not a string");
       }
 
-      const result = await new Promise((resolve) => {
+      const result = await new Promise((resolve, reject) => {
         const worker = new Worker(workerPath, {
           workerData: { ...data, databasePath },
         });
         worker.once("message", (data) => {
           resolve(data);
+          worker.terminate();
+        });
+        worker.once("error", (error) => {
+          reject(error);
           worker.terminate();
         });
       });

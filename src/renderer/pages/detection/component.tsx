@@ -6,7 +6,6 @@ import {
   CardContent,
   CardHeader,
   Checkbox,
-  CircularProgress,
   Divider,
   Grid,
   IconButton,
@@ -47,6 +46,7 @@ import type { WritableDraft } from "immer";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { fetchDataFromAccessDatabase } from "./fetcher";
+import type { Filter } from "#/mdb.worker";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Detection>();
@@ -261,7 +261,13 @@ const DataGrid = ({
 };
 
 type State = {
-  date: string;
+  date: string | null;
+  pageIndex: number;
+  pageSize: number;
+  username: string;
+  whModel: string;
+  idsWheel: string;
+  result: string;
 };
 
 type Actions = {
@@ -278,8 +284,14 @@ type Store = State & Actions;
 const useSessionStore = create<Store>()(
   persist(
     immer((set) => ({
-      date: new Date().toISOString(),
       set,
+      date: new Date().toISOString(),
+      pageIndex: 0,
+      pageSize: 100,
+      username: "",
+      whModel: "",
+      idsWheel: "",
+      result: "",
     })),
     {
       storage: createJSONStorage(() => sessionStorage),
@@ -289,62 +301,91 @@ const useSessionStore = create<Store>()(
 );
 
 export const Component = () => {
-  const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(20);
-  const [username, setUsername] = React.useState("");
-  const [whModel, setWHModel] = React.useState("");
-  const [idsWheel, setIdsWheel] = React.useState("");
-  const [result, setResult] = React.useState("");
-
-  const deferredIdsWheel = React.useDeferredValue(idsWheel);
-
-  const selectDate = useSessionStore((s) => s.date);
   const set = useSessionStore((s) => s.set);
+  const selectDate = useSessionStore((s) => s.date);
+  const pageIndex = useSessionStore((s) => s.pageIndex);
+  const pageSize = useSessionStore((s) => s.pageSize);
+  const username = useSessionStore((s) => s.username);
+  const whModel = useSessionStore((s) => s.whModel);
+  const idsWheel = useSessionStore((s) => s.idsWheel);
+  const result = useSessionStore((s) => s.result);
 
-  const date = dayjs(selectDate);
+  const date = selectDate ? dayjs(selectDate) : null;
+  const filters: Filter[] = [
+    date
+      ? {
+          type: "date" as const,
+          field: "tmnow",
+          startAt: date.startOf("day").toISOString(),
+          endAt: date.endOf("day").toISOString(),
+        }
+      : false,
+    {
+      type: "like" as const,
+      field: "szUsername",
+      value: username,
+    },
+    {
+      type: "like" as const,
+      field: "szWHModel",
+      value: whModel,
+    },
+    {
+      type: "like" as const,
+      field: "szIDsWheel",
+      value: idsWheel,
+    },
+    {
+      type: "like" as const,
+      field: "szResult",
+      value: result,
+    },
+  ].filter((i) => typeof i === "object");
 
   const query = useQuery(
     fetchDataFromAccessDatabase<Detection>({
       tableName: "detections",
       pageIndex,
       pageSize,
-      filters: [
-        // {
-        //   type: "date",
-        //   field: "tmnow",
-        //   value: date.toISOString(),
-        //   startAt: date.startOf("day").toISOString(),
-        //   endAt: date.endOf("day").toISOString(),
-        // },
-        {
-          type: "like",
-          field: "szUsername",
-          value: username,
-        },
-        {
-          type: "like",
-          field: "szWHModel",
-          value: whModel,
-        },
-        {
-          type: "like",
-          field: "szIDsWheel",
-          value: deferredIdsWheel,
-        },
-        {
-          type: "like",
-          field: "szResult",
-          value: result,
-        },
-      ],
+      filters,
     }),
   );
 
   const data = React.useMemo(() => query.data?.rows || [], [query.data]);
 
-  const setDate = (day: dayjs.Dayjs) =>
+  const setDate = (day: null | dayjs.Dayjs) =>
     set((d) => {
-      d.date = day.toISOString();
+      d.date = day ? day.toISOString() : null;
+    });
+
+  const setPageIndex = (page: number) =>
+    set((d) => {
+      d.pageIndex = page;
+    });
+
+  const setPageSize = (size: number) =>
+    set((d) => {
+      d.pageSize = size;
+    });
+
+  const setUsername = (username: string) =>
+    set((d) => {
+      d.username = username;
+    });
+
+  const setWHModel = (whModel: string) =>
+    set((d) => {
+      d.whModel = whModel;
+    });
+
+  const setIdsWheel = (idsWheel: string) =>
+    set((d) => {
+      d.idsWheel = idsWheel;
+    });
+
+  const setResult = (result: string) =>
+    set((d) => {
+      d.result = result;
     });
 
   return (
@@ -366,13 +407,15 @@ export const Component = () => {
             <DatePicker
               value={date}
               onChange={(day) => {
-                if (!day) return;
                 setDate(day);
               }}
               slotProps={{
                 textField: {
                   label: "日期",
                   fullWidth: true,
+                },
+                field: {
+                  clearable: true,
                 },
               }}
             />

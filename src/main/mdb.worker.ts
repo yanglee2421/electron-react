@@ -2,7 +2,7 @@ import MDBReader from "mdb-reader";
 import { parentPort, workerData as _workerData } from "node:worker_threads";
 import fs from "node:fs/promises";
 
-type Filter = LikeFilter | DateFilter | InFilter | EqualFilter;
+export type Filter = LikeFilter | DateFilter | InFilter | EqualFilter;
 
 type LikeFilter = {
   type: "like";
@@ -13,7 +13,6 @@ type LikeFilter = {
 type DateFilter = {
   type: "date";
   field: string;
-  value: string;
   startAt: string;
   endAt: string;
 };
@@ -51,12 +50,16 @@ const likeFn = (row: NonNullable<unknown>, filter: LikeFilter) => {
 
 const dateFn = (row: NonNullable<unknown>, filter: DateFilter) => {
   const fieldValue = Reflect.get(row, filter.field);
-  if (typeof fieldValue !== "string") {
+  const isDate = fieldValue instanceof Date;
+
+  if (!isDate) {
     return false;
   }
-  const dateValue = new Date(fieldValue).getTime();
-  const startAt = new Date(filter.startAt).getTime();
-  const endAt = new Date(filter.endAt).getTime();
+
+  const dateValue = fieldValue.getTime();
+  const startAt = Date.parse(filter.startAt);
+  const endAt = Date.parse(filter.endAt);
+
   return Object.is(Math.max(Math.min(dateValue, endAt), startAt), dateValue);
 };
 

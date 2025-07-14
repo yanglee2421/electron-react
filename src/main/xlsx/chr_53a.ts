@@ -9,6 +9,7 @@ import { Worker } from "node:worker_threads";
 import workerPath from "#/mdb.worker?modulePath";
 import type { Detection } from "#/cmd";
 import { settings } from "#/store";
+import { createCellHelper, createRowHelper, pageSetup } from "./utils";
 
 const columnWidths = new Map([
   ["A", 7],
@@ -41,44 +42,11 @@ const inspectionItems = [
   "新制车轴探伤时，在轮对首次组装栏填写车轴制造时间及单位",
 ];
 
-const createRowHelper =
-  (sheet: Excel.Worksheet) =>
-  (rowId: number, callback?: (rowId: number, row: Excel.Row) => void) => {
-    const row = sheet.getRow(rowId);
-    row.height = 14.25;
-    callback?.(rowId, row);
-  };
-
-const createCellHelper =
-  (sheet: Excel.Worksheet) =>
-  (cellName: string, callback?: (cell: Excel.Cell) => void) => {
-    if (cellName.includes(":")) {
-      sheet.mergeCells(cellName);
-    }
-    const cell = sheet.getCell(cellName);
-    cell.alignment = { vertical: "middle", horizontal: "center" };
-    cell.border = {
-      left: { style: "thin" },
-      right: { style: "thin" },
-      top: { style: "thin" },
-      bottom: { style: "thin" },
-    };
-    callback?.(cell);
-    return cell;
-  };
-
 export const chr_53a = async (rowIds: string[]) => {
   const workbook = new Excel.Workbook();
   const sheet = workbook.addWorksheet("Sheet1");
   sheet.properties.defaultColWidth = 10;
   sheet.properties.defaultRowHeight = 14.25;
-
-  // A4
-  sheet.pageSetup.paperSize = 9;
-  sheet.pageSetup.orientation = "portrait";
-  sheet.pageSetup.horizontalCentered = true;
-  sheet.pageSetup.verticalCentered = false;
-  sheet.pageSetup.fitToPage = true;
 
   sheet.headerFooter.oddHeader = "&R车统-53A";
   sheet.headerFooter.evenHeader = "&R车统-53A";
@@ -235,7 +203,7 @@ export const chr_53a = async (rowIds: string[]) => {
     });
   });
 
-  const rows = await new Promise<Detection[]>((resolve) => {
+  const rows = await new Promise<Detection[]>((resolve, reject) => {
     const databasePath = settings.get("databasePath");
     const worker = new Worker(workerPath, {
       workerData: {
@@ -252,6 +220,10 @@ export const chr_53a = async (rowIds: string[]) => {
     });
     worker.once("message", (data) => {
       resolve(data.rows);
+      worker.terminate();
+    });
+    worker.once("error", (error) => {
+      reject(error);
       worker.terminate();
     });
   });
@@ -293,7 +265,7 @@ export const chr_53a = async (rowIds: string[]) => {
         cell.value = rowData.bWheelRS ? "√" : null;
       });
       cell(`L${row}`, (cell) => {
-        cell.value = "合格";
+        cell.value = rowData.szResult;
       });
       cell(`M${row}`);
     });
@@ -327,6 +299,7 @@ export const chr_53a = async (rowIds: string[]) => {
 
   const rowCount = needEmptyRows ? 39 : rows.length;
   sheet.pageSetup.printArea = `A1:M${6 + rowCount + inspectionItems.length}`;
+  pageSetup(sheet);
 
   inspectionItems.forEach((value, idx) => {
     row(6 + rowCount + idx + 1, (id, row) => {
