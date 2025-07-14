@@ -66,3 +66,19 @@ export const sqlite_xlsx_size_c = id.get();
 export const sqlite_xlsx_size_u = id.get();
 export const sqlite_xlsx_size_r = id.get();
 export const sqlite_xlsx_size_d = id.get();
+
+const createProxy = <TTarget extends NonNullable<unknown>>(target: TTarget) => {
+  return new Proxy<TTarget>(target, {
+    get(_, prop) {
+      if (typeof prop === "symbol") {
+        return prop.description;
+      }
+
+      return prop;
+    },
+  });
+};
+
+export const channel = createProxy({
+  sqlite_xlsx_size_c: ++i,
+});
