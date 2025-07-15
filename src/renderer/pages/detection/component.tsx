@@ -42,13 +42,9 @@ import {
 import type { Detection } from "#/cmd";
 import { Loading } from "@/components/Loading";
 import { Link as RouterLink } from "react-router";
-import { create } from "zustand";
-import type { WritableDraft } from "immer";
-import { persist, createJSONStorage } from "zustand/middleware";
-import { immer } from "zustand/middleware/immer";
-import { fetchDataFromAccessDatabase } from "./fetcher";
+import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
-import { useChr53aExport } from "@/api/fetch_preload";
+import { useChr53aExport, fetchDataFromMDB } from "@/api/fetch_preload";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Detection>();
@@ -266,46 +262,6 @@ const DataGrid = ({
   );
 };
 
-type State = {
-  date: string | null;
-  pageIndex: number;
-  pageSize: number;
-  username: string;
-  whModel: string;
-  idsWheel: string;
-  result: string;
-};
-
-type Actions = {
-  set(
-    nextStateOrUpdater:
-      | State
-      | Partial<State>
-      | ((state: WritableDraft<State>) => void),
-  ): void;
-};
-
-type Store = State & Actions;
-
-const useSessionStore = create<Store>()(
-  persist(
-    immer((set) => ({
-      set,
-      date: new Date().toISOString(),
-      pageIndex: 0,
-      pageSize: 100,
-      username: "",
-      whModel: "",
-      idsWheel: "",
-      result: "",
-    })),
-    {
-      storage: createJSONStorage(() => sessionStorage),
-      name: "useSessionStore:detection",
-    },
-  ),
-);
-
 export const Component = () => {
   const set = useSessionStore((s) => s.set);
   const selectDate = useSessionStore((s) => s.date);
@@ -349,7 +305,7 @@ export const Component = () => {
   ].filter((i) => typeof i === "object");
 
   const query = useQuery(
-    fetchDataFromAccessDatabase<Detection>({
+    fetchDataFromMDB<Detection>({
       tableName: "detections",
       pageIndex,
       pageSize,
@@ -466,6 +422,7 @@ export const Component = () => {
         total={query.data?.total}
         isPending={query.isPending}
         isError={query.isError}
+        isFetching={query.isFetching}
         error={query.error}
       />
       <Divider />

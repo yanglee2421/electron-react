@@ -138,8 +138,14 @@ const bindAppHandler = () => {
 
 const bindIpcHandler = () => {
   ipcMain.handle(
-    channel.getVersion,
-    withLog(async (): Promise<string> => app.getVersion()),
+    channel.VERSION,
+    withLog(async () => ({
+      version: app.getVersion(),
+      electronVersion: process.versions.electron,
+      chromeVersion: process.versions.chrome,
+      nodeVersion: process.versions.node,
+      v8Version: process.versions.v8,
+    })),
   );
 
   ipcMain.handle(

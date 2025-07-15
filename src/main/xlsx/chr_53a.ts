@@ -5,12 +5,10 @@ import { db } from "#/db";
 import * as schema from "#/schema";
 import * as sql from "drizzle-orm";
 import dayjs from "dayjs";
-import { Worker } from "node:worker_threads";
-import workerPath from "#/mdb.worker?modulePath";
 import type { Detection } from "#/cmd";
-import { settings } from "#/store";
 import { createCellHelper, createRowHelper, pageSetup } from "./utils";
 import { mkdir } from "node:fs/promises";
+import { getDataFromMDB } from "#/mdb";
 
 const columnWidths = new Map([
   ["A", 7],
@@ -204,30 +202,18 @@ export const chr_53a = async (rowIds: string[]) => {
     });
   });
 
-  const rows = await new Promise<Detection[]>((resolve, reject) => {
-    const databasePath = settings.get("databasePath");
-    const worker = new Worker(workerPath, {
-      workerData: {
-        tableName: "detections",
-        databasePath,
-        filters: [
-          {
-            type: "in",
-            field: "szIDs",
-            value: rowIds,
-          },
-        ],
+  const data = await getDataFromMDB<Detection>({
+    tableName: "detections",
+    filters: [
+      {
+        type: "in",
+        field: "szIDs",
+        value: rowIds,
       },
-    });
-    worker.once("message", (data) => {
-      resolve(data.rows);
-      worker.terminate();
-    });
-    worker.once("error", (error) => {
-      reject(error);
-      worker.terminate();
-    });
+    ],
   });
+
+  const rows = data.rows;
 
   rows.forEach((rowData, index) => {
     const i = index + 7;

@@ -20,6 +20,7 @@ import type {
 import type { AutoInputToVCParams } from "#/cmd";
 import type * as PRELOAD from "~/index";
 import { channel } from "#/channel";
+import type { Payload } from "#/mdb";
 
 // Windows 激活验证
 export const fetchVerifyActivation = () =>
@@ -447,11 +448,22 @@ export const fetchMem = () =>
     },
   });
 
+type GetVersionResponse = {
+  version: string;
+  electronVersion: string;
+  chromeVersion: string;
+  nodeVersion: string;
+  v8Version: string;
+};
+
 export const fetchVersion = () =>
   queryOptions({
-    queryKey: ["window.electronAPI.getVersion"],
+    queryKey: [channel.VERSION],
     queryFn: async () => {
-      return await window.electronAPI.getVersion();
+      const data: GetVersionResponse = await window.electron.ipcRenderer.invoke(
+        channel.VERSION,
+      );
+      return data;
     },
   });
 
@@ -555,3 +567,23 @@ export const useChr53aExport = () => {
     },
   });
 };
+
+type Result<TRow> = {
+  total: number;
+  rows: TRow[];
+};
+
+export const fetchDataFromMDB = <TRow extends NonNullable<unknown>>(
+  data: Payload,
+) =>
+  queryOptions({
+    queryKey: [channel.MDB_READER, data],
+    queryFn: async () => {
+      const result: Result<TRow> = await window.electron.ipcRenderer.invoke(
+        channel.MDB_READER,
+        data,
+      );
+
+      return result;
+    },
+  });

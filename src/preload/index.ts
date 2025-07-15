@@ -224,8 +224,6 @@ const subscribeJtvHmisXuzhoubeiAPISet = createSubscribe(
   channel.jtv_hmis_xuzhoubei_api_set,
 );
 
-const getVersion = () => invoke<string>(channel.getVersion);
-
 const mobileMode = (mobile: boolean) =>
   invoke<boolean>(channel.mobileMode, mobile);
 
@@ -323,7 +321,6 @@ const electronAPI = {
   openDevTools,
   getPathForFile: webUtils.getPathForFile,
   getMem,
-  getVersion,
   mobileMode,
 
   // Common

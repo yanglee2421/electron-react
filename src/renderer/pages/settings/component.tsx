@@ -79,7 +79,7 @@ export const Component = () => {
   const settingsOpenInEditor = useSettingsOpenInEditor();
 
   return (
-    <Stack spacing={6}>
+    <Stack spacing={3}>
       <Card>
         <CardHeader
           title="设置"
@@ -267,8 +267,20 @@ export const Component = () => {
           >
             <ListItemText primary="开机自启" />
           </ListItem>
-          <ListItem secondaryAction={version.data}>
+          <ListItem secondaryAction={version.data?.version}>
             <ListItemText primary="版本" />
+          </ListItem>
+          <ListItem secondaryAction={version.data?.electronVersion}>
+            <ListItemText primary="Electron" />
+          </ListItem>
+          <ListItem secondaryAction={version.data?.chromeVersion}>
+            <ListItemText primary="Chrome" />
+          </ListItem>
+          <ListItem secondaryAction={version.data?.nodeVersion}>
+            <ListItemText primary="Node" />
+          </ListItem>
+          <ListItem secondaryAction={version.data?.v8Version}>
+            <ListItemText primary="V8" />
           </ListItem>
         </List>
       </Paper>

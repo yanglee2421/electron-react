@@ -55,7 +55,7 @@ export const channel = createEnum({
   windowBlur: "",
   windowShow: "",
   windowHide: "",
-  getVersion: "",
+  VERSION: "",
   mobileMode: "",
 
   // Common
@@ -70,4 +70,6 @@ export const channel = createEnum({
   sqlite_xlsx_size_u: "",
   sqlite_xlsx_size_r: "",
   sqlite_xlsx_size_d: "",
+
+  MDB_READER: "",
 });
