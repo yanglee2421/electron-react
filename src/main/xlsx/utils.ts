@@ -4,8 +4,12 @@ export const pageSetup = (sheet: Excel.Worksheet) => {
   // A4
   sheet.pageSetup.paperSize = 9;
   sheet.pageSetup.orientation = "portrait";
+  // sheet.pageSetup.verticalDpi = 300;
+  // sheet.pageSetup.horizontalDpi = 300;
   sheet.pageSetup.horizontalCentered = true;
   sheet.pageSetup.verticalCentered = false;
+  sheet.pageSetup.fitToPage = true;
+  // sheet.pageSetup.scale = 125;
   sheet.pageSetup.fitToWidth = 1;
   sheet.pageSetup.fitToHeight = 0;
   sheet.pageSetup.margins = {

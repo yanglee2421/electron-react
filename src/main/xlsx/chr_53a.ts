@@ -228,7 +228,7 @@ export const chr_53a = async (rowIds: string[]) => {
         cell.value = rowData.szIDsWheel;
       });
       cell(`D${row}`, (cell) => {
-        cell.value = dayjs(rowData.tmnow).format("YYYYMMDD");
+        cell.value = rowData.szTMFirst;
       });
       cell(`E${row}`, (cell) => {
         cell.value = 131;
