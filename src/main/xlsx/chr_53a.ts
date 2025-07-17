@@ -231,7 +231,7 @@ export const chr_53a = async (rowIds: string[]) => {
         cell.value = rowData.szTMFirst;
       });
       cell(`E${row}`, (cell) => {
-        cell.value = 131;
+        cell.value = rowData.szIDsFirst;
       });
       cell(`F${row}`, (cell) => {
         cell.value = "√";

@@ -5,9 +5,9 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Checkbox,
   CircularProgress,
   Divider,
+  Fab,
   Grid,
   IconButton,
   LinearProgress,
@@ -21,6 +21,7 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  Zoom,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -34,8 +35,9 @@ import {
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import {
-  CheckOutlined,
-  ClearOutlined,
+  ArrowUpwardOutlined,
+  CheckBoxOutlineBlankOutlined,
+  CheckBoxOutlined,
   PrintOutlined,
   RefreshOutlined,
 } from "@mui/icons-material";
@@ -46,33 +48,14 @@ import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
 import { useChr53aExport, fetchDataFromMDB } from "@/api/fetch_preload";
 
+const renderCheckBoxIcon = (value: boolean | null) => {
+  return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
+};
+
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Detection>();
 
 const columns = [
-  columnHelper.display({
-    id: "checkbox",
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onChange={row.getToggleSelectedHandler()}
-      />
-    ),
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-        indeterminate={table.getIsSomeRowsSelected()}
-      />
-    ),
-    footer: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-        indeterminate={table.getIsSomeRowsSelected()}
-      />
-    ),
-  }),
   columnHelper.accessor("szIDs", {
     cell: ({ getValue }) => {
       const szID = getValue();
@@ -87,18 +70,22 @@ const columns = [
   }),
   columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
+  columnHelper.accessor("szIDsFirst", {
+    header: "首装单位",
+    footer: "首装单位",
+  }),
+  columnHelper.accessor("szTMFirst", {
+    header: "首装时间",
+    footer: "首装时间",
+  }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
-  // columnHelper.accessor("bSickLD", {}),
-  // columnHelper.accessor("bSickRD", {}),
   columnHelper.accessor("bWheelLS", {
-    cell: ({ getValue }) =>
-      getValue() ? <CheckOutlined /> : <ClearOutlined />,
+    cell: ({ getValue }) => renderCheckBoxIcon(getValue()),
     header: "左轴承",
     footer: "左轴承",
   }),
   columnHelper.accessor("bWheelRS", {
-    cell: ({ getValue }) =>
-      getValue() ? <CheckOutlined /> : <ClearOutlined />,
+    cell: ({ getValue }) => renderCheckBoxIcon(getValue()),
     header: "右轴承",
     footer: "右轴承",
   }),
@@ -199,12 +186,7 @@ const DataGrid = ({
     <>
       <CardContent>
         <Button
-          onClick={() => {
-            const rowIds = table
-              .getSelectedRowModel()
-              .rows.map((row) => row.original.szIDs);
-            chr53a.mutate(rowIds);
-          }}
+          onClick={() => {}}
           disabled={chr53a.isPending}
           startIcon={
             chr53a.isPending ? (
@@ -263,6 +245,10 @@ const DataGrid = ({
 };
 
 export const Component = () => {
+  const [showScrollToTop, setShowScrollToTop] = React.useState(false);
+
+  const anchorEl = React.useRef<HTMLDivElement | null>(null);
+
   const set = useSessionStore((s) => s.set);
   const selectDate = useSessionStore((s) => s.date);
   const pageIndex = useSessionStore((s) => s.pageIndex);
@@ -315,6 +301,24 @@ export const Component = () => {
 
   const data = React.useMemo(() => query.data?.rows || [], [query.data]);
 
+  React.useEffect(() => {
+    const el = anchorEl.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setShowScrollToTop(false);
+      } else {
+        setShowScrollToTop(true);
+      }
+    });
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   const setDate = (day: null | dayjs.Dayjs) =>
     set((d) => {
       d.date = day ? day.toISOString() : null;
@@ -352,6 +356,7 @@ export const Component = () => {
 
   return (
     <Card>
+      <div ref={anchorEl}></div>
       <CardHeader
         title="现车作业"
         action={
@@ -440,6 +445,21 @@ export const Component = () => {
         }}
         labelRowsPerPage="每页行数"
       />
+      <Zoom in={showScrollToTop} unmountOnExit>
+        <Fab
+          sx={{ position: "fixed", bottom: 36, right: 36 }}
+          size="small"
+          color="primary"
+          onClick={() => {
+            anchorEl.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "end",
+            });
+          }}
+        >
+          <ArrowUpwardOutlined />
+        </Fab>
+      </Zoom>
     </Card>
   );
 };
