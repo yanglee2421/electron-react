@@ -5,7 +5,6 @@ import { log, getIP, withLog, createEmit } from "./lib";
 import {
   getDetectionByZH,
   getDetectionDatasByOPID,
-  getDataFromAccessDatabase,
   getCorporation,
 } from "./cmd";
 import dayjs from "dayjs";
@@ -18,6 +17,7 @@ import { channel } from "./channel";
 import * as win from "./win";
 import type { DetectionData, Verify, VerifyData } from "./cmd";
 import type * as PRELOAD from "~/index";
+import { getDataFromMDB } from "./mdb";
 
 /**
  * Sqlite barcode
@@ -288,21 +288,37 @@ const api_set = async (id: number) => {
 };
 
 const idToUploadVerifiesData = async (id: string) => {
-  const [verifies] = await getDataFromAccessDatabase<Verify>(
-    `SELECT * FROM verifies WHERE szIDs ='${id}'`,
-  );
+  const {
+    rows: [verifies],
+  } = await getDataFromMDB<Verify>({
+    tableName: "verifies",
+    filters: [
+      {
+        type: "equal",
+        field: "szIDs",
+        value: id,
+      },
+    ],
+  });
 
   if (!verifies) {
     throw new Error(`未找到ID[${id}]的verifies记录`);
   }
 
-  const verifiesData = await getDataFromAccessDatabase<VerifyData>(
-    `SELECT * FROM verifies_data WHERE opid ='${verifies.szIDs}'`,
-  );
+  const verifiesData = await getDataFromMDB<VerifyData>({
+    tableName: "verifies_data",
+    filters: [
+      {
+        type: "equal",
+        field: "opid",
+        value: verifies.szIDs || "",
+      },
+    ],
+  });
 
   return {
     verifies,
-    verifiesData,
+    verifiesData: verifiesData.rows,
   };
 };
 

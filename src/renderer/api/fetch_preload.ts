@@ -31,15 +31,6 @@ export const fetchVerifyActivation = () =>
     },
   });
 
-// C# Driver相关
-export const fetchDataFromAccessDatabase = <TRecord = unknown>(sql: string) =>
-  queryOptions({
-    queryKey: ["window.electronAPI.getDataFromAccessDatabase", sql],
-    queryFn: async () => {
-      return await window.electronAPI.getDataFromAccessDatabase<TRecord>(sql);
-    },
-  });
-
 // 自动录入功能
 export const useAutoInputToVC = () => {
   return useMutation({

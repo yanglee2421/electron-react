@@ -1,16 +1,4 @@
-import { queryOptions, useMutation } from "@tanstack/react-query";
-import type { Verify } from "#/cmd";
-
-export const fetchVerifies = (sql: string) =>
-  queryOptions({
-    queryKey: ["window.electronAPI.getDataFromAccessDatabase", sql],
-    queryFn: async () => {
-      const data =
-        await window.electronAPI.getDataFromAccessDatabase<Verify>(sql);
-
-      return data;
-    },
-  });
+import { useMutation } from "@tanstack/react-query";
 
 export const useUploadVerifies = () => {
   return useMutation({

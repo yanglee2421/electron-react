@@ -4,7 +4,6 @@ import { createHash } from "node:crypto";
 import { execFile, exec } from "node:child_process";
 import { access, constants } from "node:fs/promises";
 import { settings } from "./store";
-import { DATE_FORMAT_DATABASE } from "./cmd";
 import { withLog } from "./lib";
 import { channel } from "./channel";
 
@@ -69,7 +68,7 @@ export const verifyActivation = async () => {
   const serial = getSerialFromStdout(cpuSerial);
   const activateCode = settings.get("activateCode");
   const exceptedCode = createHash("md5")
-    .update([serial, DATE_FORMAT_DATABASE].join(""))
+    .update([serial, "YYYY/MM/DD HH:mm:ss"].join(""))
     .digest("hex")
     .toUpperCase();
 

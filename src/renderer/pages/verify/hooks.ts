@@ -38,7 +38,7 @@ export const useSessionStore = create<Store>()(
     })),
     {
       storage: createJSONStorage(() => sessionStorage),
-      name: "useSessionStore:detections",
+      name: "useSessionStore:verifies",
     },
   ),
 );

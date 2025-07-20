@@ -1,6 +1,5 @@
 export const redirect_key = "redirect_path";
 export const login_path = "/login";
-export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 export const HOME_PATH = "/";
 export const LOGIN_PATH = "/login";
 

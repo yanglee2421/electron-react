@@ -7,9 +7,9 @@ import dayjs from "dayjs";
 import { withLog } from "./lib";
 import * as store from "./store";
 import { channel } from "./channel";
+import { getDataFromMDB } from "./mdb";
 
 const execFileAsync = promisify(execFile);
-export const DATE_FORMAT_DATABASE = "YYYY/MM/DD HH:mm:ss";
 
 /**
  * When users use antivirus software like 360
@@ -58,19 +58,6 @@ const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
 
     return data;
   }
-};
-
-export const getDataFromAccessDatabase = async <TRecord = unknown>(
-  sql: string,
-) => {
-  const config = store.settings.store;
-  const data = await execFileAsyncWithRetry(config.driverPath, [
-    "GetDataFromAccessDatabase",
-    config.databasePath,
-    sql,
-  ]);
-
-  return JSON.parse(data.stdout) as TRecord[];
 };
 
 export type Detection = {
@@ -124,12 +111,27 @@ export const getDetectionByZH = async (params: {
   startDate: string;
   endDate: string;
 }) => {
-  const startDate = dayjs(params.startDate).format(DATE_FORMAT_DATABASE);
-  const endDate = dayjs(params.endDate).format(DATE_FORMAT_DATABASE);
+  const startDate = dayjs(params.startDate).toISOString();
+  const endDate = dayjs(params.endDate).toISOString();
 
-  const [detection] = await getDataFromAccessDatabase<Detection>(
-    `SELECT TOP 1 * FROM detections WHERE szIDsWheel ='${params.zh}' AND tmnow BETWEEN #${startDate}# AND #${endDate}# ORDER BY tmnow DESC`,
-  );
+  const {
+    rows: [detection],
+  } = await getDataFromMDB<Detection>({
+    tableName: "detections",
+    filters: [
+      {
+        type: "equal",
+        field: "szIDsWheel",
+        value: params.zh,
+      },
+      {
+        type: "date",
+        field: "tmnow",
+        startAt: startDate,
+        endAt: endDate,
+      },
+    ],
+  });
 
   if (!detection) {
     throw new Error(`未找到轴号[${params.zh}]的detections记录`);
@@ -139,11 +141,18 @@ export const getDetectionByZH = async (params: {
 };
 
 export const getDetectionDatasByOPID = async (opid: string) => {
-  const detectionDatas = await getDataFromAccessDatabase<DetectionData>(
-    `SELECT * FROM detections_data WHERE opid ='${opid}'`,
-  );
+  const detectionDatas = await getDataFromMDB<DetectionData>({
+    tableName: "detections_data",
+    filters: [
+      {
+        type: "equal",
+        field: "opid",
+        value: opid,
+      },
+    ],
+  });
 
-  return detectionDatas;
+  return detectionDatas.rows;
 };
 
 export type Corporation = {
@@ -151,9 +160,11 @@ export type Corporation = {
 };
 
 export const getCorporation = async () => {
-  const [corporation] = await getDataFromAccessDatabase<Corporation>(
-    "SELECT TOP 1 * FROM corporation",
-  );
+  const {
+    rows: [corporation],
+  } = await getDataFromMDB<Corporation>({
+    tableName: "corporation",
+  });
 
   if (!corporation) {
     throw new Error("未找到公司信息");
@@ -280,13 +291,6 @@ const autoInputToVC = async (data: AutoInputToVCParams) => {
 };
 
 export const initIpc = () => {
-  ipcMain.handle(
-    channel.getDataFromAccessDatabase,
-    withLog(async (_, sql: string) => {
-      return await getDataFromAccessDatabase(sql);
-    }),
-  );
-
   ipcMain.handle(
     channel.autoInputToVC,
     withLog(async (_, data: AutoInputToVCParams) => {

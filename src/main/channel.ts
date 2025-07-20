@@ -16,7 +16,6 @@ export const channel = createEnum({
   verifyActivation: "",
 
   // C# Driver
-  getDataFromAccessDatabase: "",
   autoInputToVC: "",
 
   // HMIS

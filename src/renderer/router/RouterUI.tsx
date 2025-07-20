@@ -135,7 +135,7 @@ const routes: RouteObject[] = [
                   {
                     id: "verify/list",
                     index: true,
-                    lazy: () => import("@/pages/verify/component"),
+                    lazy: () => import("@/pages/verify"),
                   },
                   {
                     id: "verify/show",
@@ -151,7 +151,7 @@ const routes: RouteObject[] = [
                   {
                     id: "quartors/list",
                     index: true,
-                    lazy: () => import("@/pages/quartors/component"),
+                    lazy: () => import("@/pages/quartors"),
                   },
                   {
                     id: "quartors/show",

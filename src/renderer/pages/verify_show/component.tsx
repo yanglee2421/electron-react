@@ -1,5 +1,5 @@
 import type { VerifyData } from "#/cmd";
-import { fetchDataFromAccessDatabase } from "@/api/fetch_preload";
+import { fetchDataFromMDB } from "@/api/fetch_preload";
 import { Loading } from "@/components/Loading";
 import {
   Alert,
@@ -105,13 +105,20 @@ export const Component = () => {
 
   const params = useParams();
   const query = useQuery(
-    fetchDataFromAccessDatabase<VerifyData>(
-      `SELECT * FROM verifies_data WHERE opid ='${params.id}'`,
-    ),
+    fetchDataFromMDB<VerifyData>({
+      tableName: "verifies_data",
+      filters: [
+        {
+          type: "equal",
+          field: "opid",
+          value: params.id || "",
+        },
+      ],
+    }),
   );
 
   const data = React.useMemo(() => {
-    const rows = query.data || [];
+    const rows = query.data?.rows || [];
     return rows.filter(
       (row) =>
         check(getDirection(row.nBoard), direction) &&
@@ -127,7 +134,7 @@ export const Component = () => {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const map = (query.data || []).reduce((result, row) => {
+  const map = (query.data?.rows || []).reduce((result, row) => {
     const direction = getDirection(row.nBoard);
     const place = getPlace(row.nChannel);
     const key = direction + place;

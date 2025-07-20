@@ -21,18 +21,17 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
-import { fetchVerifies } from "./fetchers";
 import {
   createColumnHelper,
   getCoreRowModel,
   useReactTable,
   flexRender,
-  getPaginationRowModel,
 } from "@tanstack/react-table";
-import { DATE_FORMAT_DATABASE } from "@/lib/constants";
+
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import type { Verify } from "#/cmd";
 import { Loading } from "@/components/Loading";
+import { fetchDataFromMDB } from "@/api/fetch_preload";
 
 const initDate = () => dayjs();
 
@@ -66,15 +65,21 @@ export const Component = () => {
   "use no memo";
   const [date, setDate] = React.useState(initDate);
 
-  const sql = `SELECT * FROM verifies WHERE tmnow BETWEEN #${date
-    .startOf("day")
-    .format(DATE_FORMAT_DATABASE)}# AND #${date
-    .endOf("day")
-    .format(DATE_FORMAT_DATABASE)}#`;
+  const query = useQuery(
+    fetchDataFromMDB<Verify>({
+      tableName: "verifies",
+      filters: [
+        {
+          type: "date",
+          field: "tmNow",
+          startAt: dayjs(date).startOf("day").toISOString(),
+          endAt: dayjs(date).endOf("day").toISOString(),
+        },
+      ],
+    }),
+  );
 
-  const query = useQuery(fetchVerifies(sql));
-
-  const data = React.useMemo(() => query.data || [], [query.data]);
+  const data = React.useMemo(() => query.data?.rows || [], [query.data]);
 
   const table = useReactTable({
     columns,
@@ -82,7 +87,7 @@ export const Component = () => {
     getRowId: (row) => row.szIDs,
 
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
   });
 
   const renderRow = () => {

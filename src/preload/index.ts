@@ -34,9 +34,6 @@ const verifyActivation = () =>
   invoke<VerifyActivationResult>(channel.verifyActivation);
 
 // C# Driver 相关
-const getDataFromAccessDatabase = <TRecord = unknown>(sql: string) =>
-  invoke<TRecord[]>(channel.getDataFromAccessDatabase, sql);
-
 const autoInputToVC = (params: AutoInputToVCParams) =>
   invoke<string>(channel.autoInputToVC, params);
 
@@ -283,7 +280,6 @@ const electronAPI = {
   verifyActivation,
 
   // C# Driver
-  getDataFromAccessDatabase,
   autoInputToVC,
 
   // 华兴致远HMIS (成都北)
