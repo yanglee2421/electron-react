@@ -4,6 +4,9 @@ import Excel from "@yanglee2421/exceljs";
 import { db } from "#/db";
 import * as schema from "#/schema";
 import * as sql from "drizzle-orm";
+import { createCellHelper, createRowHelper, pageSetup } from "./utils";
+import { getDataFromMDB } from "#/mdb";
+import type { Verify } from "#/cmd";
 
 const columnWidths = new Map([
   ["A", 4.1],
@@ -47,65 +50,35 @@ const rowHeights = new Map([
   [5, 18],
   [6, 18],
   [7, 18],
-  [8, 16],
-  [9, 16],
-  [10, 16],
-  [11, 16],
-  [12, 16],
-  [13, 16],
-  [14, 16],
-  [15, 16],
-  [16, 16],
-  [17, 16],
-  [18, 16],
-  [19, 16],
-  [20, 16],
-  [21, 16],
-  [22, 16],
-  [23, 16],
-  [24, 16],
-  [25, 16],
-  [26, 16],
-  [27, 16],
-  [28, 16],
-  [29, 16],
-  [30, 16],
-  [31, 16],
-  [32, 16],
-  [33, 16],
-  [34, 16],
-  [35, 16],
-  [36, 16],
-  [37, 16],
-  [38, 16],
-  [39, 16],
-  [40, 16],
-  [41, 16],
-  [42, 16],
-  [43, 16],
-  [44, 16],
-  [45, 16],
-  [46, 16],
 ]);
 
-export const chr_501 = async () => {
+export const chr_501 = async (id: string) => {
   const workbook = new Excel.Workbook();
   const sheet = workbook.addWorksheet("Sheet1");
   sheet.properties.defaultColWidth = 10;
   sheet.properties.defaultRowHeight = 16;
 
-  // A4
-  sheet.pageSetup.paperSize = 9;
-  sheet.pageSetup.orientation = "portrait";
-  sheet.pageSetup.horizontalCentered = true;
-  sheet.pageSetup.verticalCentered = false;
-  sheet.pageSetup.fitToPage = true;
+  pageSetup(sheet);
   sheet.pageSetup.printArea = "A1:N47";
 
   sheet.headerFooter.oddHeader = "&R车统-501";
   sheet.headerFooter.evenHeader = "&R车统-501";
   sheet.headerFooter.oddFooter = "第 &P 页，共 &N 页";
   sheet.headerFooter.evenFooter = "第 &P 页，共 &N 页";
+
+  const tr = createRowHelper(sheet, { height: 16 });
+  const td = createCellHelper(sheet);
+
+  tr(1, (index) => {
+    td(`A${index}:N${index}`);
+  });
+
+  const data = await getDataFromMDB<Verify>({
+    tableName: "verifies",
+    filters: [{ type: "equal", field: "szIDs", value: id }],
+  });
+
+  console.log(data);
 
   columnWidths.forEach((width, col) => {
     sheet.getColumn(col).width = width;

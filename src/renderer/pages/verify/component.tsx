@@ -20,6 +20,7 @@ import {
   LinearProgress,
   TextField,
   InputAdornment,
+  CircularProgress,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -38,11 +39,12 @@ import {
   PrintOutlined,
   RefreshOutlined,
 } from "@mui/icons-material";
-import { fetchDataFromMDB } from "@/api/fetch_preload";
+import { fetchDataFromMDB, useChr501Export } from "@/api/fetch_preload";
 import type { Verify } from "#/cmd";
 import { Loading } from "@/components/Loading";
 import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
+import { useNotifications } from "@toolpad/core";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Verify>();
@@ -95,7 +97,10 @@ type DataGridProps = {
 
 const DataGrid = (props: DataGridProps) => {
   "use no memo";
+  const [selected, setSelected] = React.useState("");
 
+  const toast = useNotifications();
+  const exportXlsx = useChr501Export();
   const data = React.useMemo(() => props.data || [], [props.data]);
 
   const table = useReactTable({
@@ -148,7 +153,13 @@ const DataGrid = (props: DataGridProps) => {
     }
 
     return table.getRowModel().rows.map((row) => (
-      <TableRow key={row.id}>
+      <TableRow
+        key={row.id}
+        selected={Object.is(selected, row.id)}
+        hover
+        sx={{ cursor: "pointer" }}
+        onClick={() => setSelected(row.id)}
+      >
         {row.getVisibleCells().map((cell) => (
           <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -158,13 +169,39 @@ const DataGrid = (props: DataGridProps) => {
     ));
   };
 
+  const getSelectedId = () => {
+    if (!selected) return;
+    return table
+      .getRowModel()
+      .flatRows.find((row) => Object.is(row.id, selected))?.id;
+  };
+
+  const selectedId = getSelectedId();
+
   return (
     <>
       <CardContent>
         <Button
-          startIcon={<PrintOutlined />}
-          onClick={() => window.electronAPI.xlsxCHR501()}
+          startIcon={
+            exportXlsx.isPending ? (
+              <CircularProgress color="inherit" size={20} />
+            ) : (
+              <PrintOutlined />
+            )
+          }
+          onClick={() => {
+            if (!selectedId) {
+              toast.show("请选中一行数据再继续！", { severity: "error" });
+              return;
+            }
+            exportXlsx.mutate(selectedId, {
+              onError(error) {
+                toast.show(error.message, { severity: "error" });
+              },
+            });
+          }}
           variant="outlined"
+          disabled={!selectedId}
         >
           Excel
         </Button>

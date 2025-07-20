@@ -23,10 +23,10 @@ export const pageSetup = (sheet: Excel.Worksheet) => {
 };
 
 export const createRowHelper =
-  (sheet: Excel.Worksheet) =>
+  (sheet: Excel.Worksheet, options?: Partial<Excel.Row>) =>
   (rowId: number, callback?: (rowId: number, row: Excel.Row) => void) => {
     const row = sheet.getRow(rowId);
-    row.height = 14.25;
+    row.height = options?.height || 14.25;
     callback?.(rowId, row);
   };
 

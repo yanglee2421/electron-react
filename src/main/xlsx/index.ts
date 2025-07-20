@@ -20,7 +20,13 @@ type DeleteParams = {
  * CHR503 Yearly Validate
  */
 export const initIpc = () => {
-  ipcMain.handle(channel.xlsx_chr_501, withLog(chr_501));
+  ipcMain.handle(
+    channel.XLSX_CHR501,
+    withLog(async (_, id: string) => {
+      const result = await chr_501(id);
+      return result;
+    }),
+  );
   ipcMain.handle(channel.xlsx_chr_502, withLog(chr_502));
   ipcMain.handle(
     channel.xlsx_chr_53a,

@@ -578,3 +578,15 @@ export const fetchDataFromMDB = <TRow extends NonNullable<unknown>>(
       return result;
     },
   });
+
+export const useChr501Export = () => {
+  return useMutation({
+    async mutationFn(id: string) {
+      const result = await window.electron.ipcRenderer.invoke(
+        channel.XLSX_CHR501,
+        id,
+      );
+      return result;
+    },
+  });
+};

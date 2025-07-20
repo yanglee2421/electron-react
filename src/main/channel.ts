@@ -60,7 +60,6 @@ export const channel = createEnum({
   // Common
   settings: "",
   settingsOpenInEditor: "",
-  xlsx_chr_501: "",
   xlsx_chr_502: "",
   xlsx_chr_53a: "",
 
@@ -71,4 +70,5 @@ export const channel = createEnum({
   sqlite_xlsx_size_d: "",
 
   MDB_READER: "",
+  XLSX_CHR501: "",
 });
