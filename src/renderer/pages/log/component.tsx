@@ -35,6 +35,7 @@ import {
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import { ScrollToTop } from "@/components/scroll";
 
 const columnHelper = createColumnHelper<Log>();
 
@@ -82,46 +83,13 @@ const columns = [
   }),
 ];
 
-const initDayjs = () => dayjs();
+type DataGridProps = {
+  count: number;
+  data: Log[];
+};
 
-export const Component = () => {
+const DataGrid = ({ count, data }: DataGridProps) => {
   "use no memo";
-  const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(20);
-  const [startDate, setStartDate] = React.useState(initDayjs);
-  const [endDate, setEndDate] = React.useState(initDayjs);
-
-  const logs = useLiveQuery(
-    () =>
-      db.log
-        .where("date")
-        .between(
-          startDate.startOf("day").toISOString(),
-          endDate.endOf("day").toISOString(),
-          true,
-          true,
-        )
-        .reverse()
-        .offset(pageIndex * pageSize)
-        .limit(pageSize)
-        .toArray(),
-    [pageIndex, pageSize, startDate, endDate],
-  );
-
-  const count = useLiveQuery(
-    () =>
-      db.log
-        .where("date")
-        .between(
-          startDate.startOf("day").toISOString(),
-          endDate.endOf("day").toISOString(),
-          true,
-          true,
-        )
-        .count(),
-    [],
-  );
-  const data = React.useMemo(() => logs || [], [logs]);
 
   const table = useReactTable({
     data,
@@ -168,7 +136,94 @@ export const Component = () => {
   };
 
   return (
+    <>
+      <TableContainer>
+        <Table sx={{ minWidth: 720 }}>
+          <TableHead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableHead>
+          <TableBody>{renderRow()}</TableBody>
+          <TableFooter>
+            {table.getFooterGroups().map((footerGroup) => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.footer,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableFooter>
+        </Table>
+      </TableContainer>
+    </>
+  );
+};
+
+const initDayjs = () => dayjs();
+
+export const Component = () => {
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(20);
+  const [startDate, setStartDate] = React.useState(initDayjs);
+  const [endDate, setEndDate] = React.useState(initDayjs);
+
+  const logs = useLiveQuery(
+    () =>
+      db.log
+        .where("date")
+        .between(
+          startDate.startOf("day").toISOString(),
+          endDate.endOf("day").toISOString(),
+          true,
+          true,
+        )
+        .reverse()
+        .offset(pageIndex * pageSize)
+        .limit(pageSize)
+        .toArray(),
+    [pageIndex, pageSize, startDate, endDate],
+  );
+
+  const count = useLiveQuery(
+    () =>
+      db.log
+        .where("date")
+        .between(
+          startDate.startOf("day").toISOString(),
+          endDate.endOf("day").toISOString(),
+          true,
+          true,
+        )
+        .count(),
+    [],
+  );
+  const data = React.useMemo(() => logs || [], [logs]);
+  const [anchorEl, showScrollToTop] = ScrollToTop.useScrollToTop();
+
+  return (
     <Card>
+      <div ref={anchorEl}></div>
       <CardHeader
         title="日志"
         action={
@@ -217,49 +272,11 @@ export const Component = () => {
           </Grid>
         </Grid>
       </CardContent>
-      <TableContainer>
-        <Table sx={{ minWidth: 720 }}>
-          <TableHead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>{renderRow()}</TableBody>
-          <TableFooter>
-            {table.getFooterGroups().map((footerGroup) => (
-              <TableRow key={footerGroup.id}>
-                {footerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.footer,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableFooter>
-        </Table>
-      </TableContainer>
+      <DataGrid count={count || 0} data={data} />
       <TablePagination
         component={"div"}
         page={pageIndex}
-        count={table.getRowCount()}
+        count={count || 0}
         rowsPerPage={pageSize}
         rowsPerPageOptions={rowsPerPageOptions}
         onPageChange={(e, page) => {
@@ -271,6 +288,7 @@ export const Component = () => {
         }}
         labelRowsPerPage="每页行数"
       />
+      <ScrollToTop ref={anchorEl} show={showScrollToTop} />
     </Card>
   );
 };

@@ -1,7 +1,39 @@
-import { app } from "electron";
+import { app, BrowserWindow } from "electron";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { z } from "zod";
+import { produce } from "immer";
+import { channel } from "./channel";
+
+const profileSchema = z.object({});
+
+type Profile = z.infer<typeof profileSchema>;
+
+export const getProfile = async () => {
+  const filePath = path.resolve(app.getPath("appData"), "./profile.json");
+  const text = await fs.readFile(filePath, "utf-8");
+  const raw = JSON.parse(text);
+  const parsed = profileSchema.safeParse(raw);
+  if (parsed.success) return parsed.data;
+  return profileSchema.parse({});
+};
+
+type ProfileCallback = (profile: Profile) => void;
+
+export const setProfile = async (callback: ProfileCallback) => {
+  const filePath = path.resolve(app.getPath("appData"), "./profile.json");
+  const previous = await getProfile();
+  const data = produce(previous, (draft) => {
+    callback(draft);
+  });
+  await fs.writeFile(filePath, JSON.stringify(data), {
+    encoding: "utf-8",
+    flag: fs.constants.O_WRONLY,
+  });
+  BrowserWindow.getAllWindows().forEach((win) => {
+    win.webContents.send(channel.PROFILE_SET, data);
+  });
+};
 
 type CreateProxy = <TData extends NonNullable<unknown>>(
   data: TData,

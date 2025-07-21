@@ -45,6 +45,7 @@ import { Loading } from "@/components/Loading";
 import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
 import { useNotifications } from "@toolpad/core";
+import { ScrollToTop } from "@/components/scroll";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Verify>();
@@ -275,6 +276,7 @@ export const Component = () => {
   const whModel = useSessionStore((s) => s.whModel);
   const idsWheel = useSessionStore((s) => s.idsWheel);
   const result = useSessionStore((s) => s.result);
+  const [anchorEl, showScrollToTop] = ScrollToTop.useScrollToTop();
 
   const date = selectDate ? dayjs(selectDate) : null;
   const filters: Filter[] = [
@@ -349,6 +351,7 @@ export const Component = () => {
 
   return (
     <Card>
+      <div ref={anchorEl}></div>
       <CardHeader
         title="日常校验"
         action={
@@ -453,6 +456,7 @@ export const Component = () => {
         }}
         labelRowsPerPage="每页行数"
       />
+      <ScrollToTop ref={anchorEl} show={showScrollToTop} />
     </Card>
   );
 };

@@ -7,7 +7,6 @@ import {
   CardHeader,
   CircularProgress,
   Divider,
-  Fab,
   Grid,
   IconButton,
   LinearProgress,
@@ -21,7 +20,6 @@ import {
   TablePagination,
   TableRow,
   TextField,
-  Zoom,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -35,7 +33,6 @@ import {
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import {
-  ArrowUpwardOutlined,
   CheckBoxOutlineBlankOutlined,
   CheckBoxOutlined,
   PrintOutlined,
@@ -47,6 +44,7 @@ import { Link as RouterLink } from "react-router";
 import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
 import { useChr53aExport, fetchDataFromMDB } from "@/api/fetch_preload";
+import { ScrollToTop } from "@/components/scroll";
 
 const renderCheckBoxIcon = (value: boolean | null) => {
   return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
@@ -245,10 +243,6 @@ const DataGrid = ({
 };
 
 export const Component = () => {
-  const [showScrollToTop, setShowScrollToTop] = React.useState(false);
-
-  const anchorEl = React.useRef<HTMLDivElement | null>(null);
-
   const set = useSessionStore((s) => s.set);
   const selectDate = useSessionStore((s) => s.date);
   const pageIndex = useSessionStore((s) => s.pageIndex);
@@ -257,6 +251,7 @@ export const Component = () => {
   const whModel = useSessionStore((s) => s.whModel);
   const idsWheel = useSessionStore((s) => s.idsWheel);
   const result = useSessionStore((s) => s.result);
+  const [anchorEl, showScrollToTop] = ScrollToTop.useScrollToTop();
 
   const date = selectDate ? dayjs(selectDate) : null;
   const filters: Filter[] = [
@@ -300,24 +295,6 @@ export const Component = () => {
   );
 
   const data = React.useMemo(() => query.data?.rows || [], [query.data]);
-
-  React.useEffect(() => {
-    const el = anchorEl.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setShowScrollToTop(false);
-      } else {
-        setShowScrollToTop(true);
-      }
-    });
-    observer.observe(el);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   const setDate = (day: null | dayjs.Dayjs) =>
     set((d) => {
@@ -445,21 +422,7 @@ export const Component = () => {
         }}
         labelRowsPerPage="每页行数"
       />
-      <Zoom in={showScrollToTop} unmountOnExit>
-        <Fab
-          sx={{ position: "fixed", bottom: 36, right: 36 }}
-          size="small"
-          color="primary"
-          onClick={() => {
-            anchorEl.current?.scrollIntoView({
-              behavior: "smooth",
-              block: "end",
-            });
-          }}
-        >
-          <ArrowUpwardOutlined />
-        </Fab>
-      </Zoom>
+      <ScrollToTop ref={anchorEl} show={showScrollToTop} />
     </Card>
   );
 };

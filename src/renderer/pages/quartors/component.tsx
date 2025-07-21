@@ -40,6 +40,7 @@ import { Loading } from "@/components/Loading";
 import { Link as RouterLink } from "react-router";
 import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
+import { ScrollToTop } from "@/components/scroll";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Quartor>();
@@ -242,6 +243,7 @@ export const Component = () => {
   const whModel = useSessionStore((s) => s.whModel);
   const idsWheel = useSessionStore((s) => s.idsWheel);
   const result = useSessionStore((s) => s.result);
+  const [anchorEl, showScrollToTop] = ScrollToTop.useScrollToTop();
 
   const date = selectDate ? dayjs(selectDate) : null;
   const filters: Filter[] = [
@@ -316,6 +318,7 @@ export const Component = () => {
 
   return (
     <Card>
+      <div ref={anchorEl}></div>
       <CardHeader
         title="季度校验"
         action={
@@ -420,6 +423,7 @@ export const Component = () => {
         }}
         labelRowsPerPage="每页行数"
       />
+      <ScrollToTop ref={anchorEl} show={showScrollToTop} />
     </Card>
   );
 };

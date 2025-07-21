@@ -71,4 +71,6 @@ export const channel = createEnum({
 
   MDB_READER: "",
   XLSX_CHR501: "",
+  PROFILE_SET: "",
+  PROFILE_GET: "",
 });
