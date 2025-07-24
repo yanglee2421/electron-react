@@ -66,14 +66,14 @@ const columns = [
   }),
   columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
-  columnHelper.accessor("szIDsFirst", {
-    header: "首装单位",
-    footer: "首装单位",
-  }),
-  columnHelper.accessor("szTMFirst", {
-    header: "首装时间",
-    footer: "首装时间",
-  }),
+  // columnHelper.accessor("szIDsFirst", {
+  //   header: "首装单位",
+  //   footer: "首装单位",
+  // }),
+  // columnHelper.accessor("szTMFirst", {
+  //   header: "首装时间",
+  //   footer: "首装时间",
+  // }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
   columnHelper.accessor("tmNow", {
     header: "时间",

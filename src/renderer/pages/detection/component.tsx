@@ -6,6 +6,10 @@ import {
   CardContent,
   CardHeader,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
   IconButton,
@@ -20,6 +24,7 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  type DialogProps,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -45,6 +50,9 @@ import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
 import { useChr53aExport, fetchDataFromMDB } from "@/api/fetch_preload";
 import { ScrollToTop } from "@/components/scroll";
+import { useDialogs } from "@toolpad/core";
+import { useForm } from "@tanstack/react-form";
+import { z } from "zod";
 
 const renderCheckBoxIcon = (value: boolean | null) => {
   return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
@@ -120,6 +128,7 @@ const DataGrid = ({
   "use no memo";
 
   const chr53a = useChr53aExport();
+  const dialogs = useDialogs();
 
   const table = useReactTable({
     columns,
@@ -184,7 +193,9 @@ const DataGrid = ({
     <>
       <CardContent>
         <Button
-          onClick={() => {}}
+          onClick={() => {
+            dialogs.open(ExportToXlsx);
+          }}
           disabled={chr53a.isPending}
           startIcon={
             chr53a.isPending ? (
@@ -424,5 +435,98 @@ export const Component = () => {
       />
       <ScrollToTop ref={anchorEl} show={showScrollToTop} />
     </Card>
+  );
+};
+
+const exportToXlsxSchema = z.object({
+  username: z.string().min(1),
+  date: z.string().datetime(),
+});
+
+const ExportToXlsx = (props: DialogProps) => {
+  const formId = React.useId();
+
+  const date = useSessionStore((s) => s.date);
+  const username = useSessionStore((s) => s.username);
+  const form = useForm({
+    defaultValues: {
+      username,
+      date,
+    },
+    validators: {
+      onChange: exportToXlsxSchema,
+    },
+    onSubmit() {},
+  });
+
+  return (
+    <Dialog open={props.open} onClose={props.onClose} fullWidth>
+      <DialogTitle>探伤作业表</DialogTitle>
+      <DialogContent>
+        <form
+          id={formId}
+          onSubmit={(e) => {
+            console.log("submit");
+
+            e.stopPropagation();
+            e.preventDefault();
+            form.handleSubmit();
+          }}
+          onReset={(e) => {
+            form.reset();
+            props.onClose?.(e, "backdropClick");
+          }}
+        >
+          <Grid container spacing={3}>
+            <Grid size={12}>
+              <form.Field name="date">
+                {(dateField) => (
+                  <DatePicker
+                    value={dayjs(dateField.state.value)}
+                    onChange={(value) => {
+                      const nextValue = value?.toISOString();
+                      if (nextValue) {
+                        dateField.handleChange(nextValue);
+                      }
+                    }}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !!dateField.state.meta.errors.length,
+                        helperText: dateField.state.meta.errors.at(0)?.message,
+                      },
+                    }}
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={12}>
+              <form.Field name="username">
+                {(userNameField) => (
+                  <TextField
+                    value={userNameField.state.value}
+                    onChange={(e) => {
+                      userNameField.handleChange(e.target.value);
+                    }}
+                    onBlur={userNameField.handleBlur}
+                    fullWidth
+                    error={!!userNameField.state.meta.errors.length}
+                    helperText={userNameField.state.meta.errors.at(0)?.message}
+                  />
+                )}
+              </form.Field>
+            </Grid>
+          </Grid>
+        </form>
+      </DialogContent>
+      <DialogActions>
+        <Button form={formId} type="reset">
+          Cancel
+        </Button>
+        <Button form={formId} type="submit">
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
