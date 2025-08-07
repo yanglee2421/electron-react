@@ -118,7 +118,6 @@ export type JTV_HMIS = {
   autoUpload: boolean;
   autoUploadInterval: number;
   unitCode: string;
-  localAddress: string;
 };
 
 export const jtv_hmis = new Store<JTV_HMIS>({
@@ -141,10 +140,6 @@ export const jtv_hmis = new Store<JTV_HMIS>({
       default: 30,
     },
     unitCode: {
-      type: "string",
-      default: "",
-    },
-    localAddress: {
       type: "string",
       default: "",
     },

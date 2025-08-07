@@ -18,7 +18,6 @@ import * as win from "./win";
 import type { DetectionData } from "./cmd";
 import type * as PRELOAD from "~/index";
 import type { JTV_HMIS } from "./store";
-import http from "node:http";
 
 /**
  * Sqlite barcode
@@ -83,50 +82,22 @@ export type GetResponse = {
 const fetch_get = async (barcode: string) => {
   const host = jtv_hmis.get("host");
   const unitCode = jtv_hmis.get("unitCode");
-  const localAddress = jtv_hmis.get("localAddress");
   const url = new URL(`http://${host}/api/getData`);
   url.searchParams.set("type", "csbts");
   url.searchParams.set("param", [barcode, unitCode].join(","));
   log(`请求数据:${url.href}`);
-  const data: GetResponse = await new Promise((resolve, reject) => {
-    const req = http.request(
-      url,
-      {
-        method: "GET",
-        /**
-         * When the computer has multiple network interfaces,
-         * the localAddress can be set to specify which interface to use.
-         * This is useful for ensuring the request goes out through the correct network interface.
-         * If not set, it will use the default interface.
-         */
-        localAddress: localAddress || void 0,
-      },
-      (res) => {
-        let data = "";
-        res.setEncoding("utf8");
-        res.on("data", (chunk) => {
-          data += chunk;
-        });
-        res.on("end", () => {
-          try {
-            const json = JSON.parse(data);
-            resolve(json);
-          } catch (error) {
-            reject(error);
-          }
-        });
-      },
-    );
-
-    req.on("error", (error) => {
-      reject(error);
-    });
-
-    req.end();
+  const res = await net.fetch(url.href, {
+    method: "GET",
   });
 
+  if (!res.ok) {
+    throw `接口异常[${res.status}]:${res.statusText}`;
+  }
+
+  const data = await res.json();
+
   log(`返回数据:${JSON.stringify(data)}`);
-  return data;
+  return data as GetResponse;
 };
 
 type PostRequestItem = {

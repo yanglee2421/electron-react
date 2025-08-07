@@ -41,7 +41,6 @@ const schema = z.object({
     .int({ message: "自动上传间隔必须是整数" })
     .min(10, { message: "自动上传间隔不能小于10秒" }),
   unitCode: z.string(),
-  localAddress: z.string().ip({ message: "无效的IP地址" }).or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -61,7 +60,6 @@ const useSettingForm = () => {
       autoUpload: hmis.autoUpload,
       autoUploadInterval: hmis.autoUploadInterval,
       unitCode: hmis.unitCode,
-      localAddress: hmis.localAddress,
     },
 
     resolver: zodResolver(schema),
@@ -91,7 +89,6 @@ export const Component = () => {
                 autoUpload: data.autoUpload,
                 autoUploadInterval: data.autoUploadInterval,
                 unitCode: data.unitCode,
-                localAddress: data.localAddress,
               },
               {
                 onError: (error) => {
@@ -105,7 +102,6 @@ export const Component = () => {
                     autoUpload: data.autoUpload,
                     autoUploadInterval: data.autoUploadInterval,
                     unitCode: data.unitCode,
-                    localAddress: data.localAddress,
                   });
                   snackbar.show("保存成功", { severity: "success" });
                 },
@@ -203,21 +199,6 @@ export const Component = () => {
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                     label="自动上传间隔"
-                    fullWidth
-                  />
-                )}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="localAddress"
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    label="localAddress"
                     fullWidth
                   />
                 )}
