@@ -105,7 +105,7 @@ const getDataFromTable = (
   });
 };
 
-const main = async () => {
+const bootstrap = async () => {
   const workerData: MDBWorkerData = _workerData;
   const tableName = workerData.tableName;
   const databasePath = workerData.databasePath;
@@ -150,4 +150,4 @@ const main = async () => {
   });
 };
 
-main();
+bootstrap();
