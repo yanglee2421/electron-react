@@ -58,4 +58,6 @@ export const loader = async () => {
       filters,
     }),
   );
+
+  return state;
 };

@@ -45,7 +45,7 @@ import {
 } from "@mui/icons-material";
 import type { Detection } from "#/cmd";
 import { Loading } from "@/components/Loading";
-import { Link as RouterLink } from "react-router";
+import { Link as RouterLink, useLoaderData } from "react-router";
 import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
 import { useChr53aExport, fetchDataFromMDB } from "@/api/fetch_preload";
@@ -53,6 +53,7 @@ import { ScrollToTop } from "@/components/scroll";
 import { useDialogs } from "@toolpad/core";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
+import type { loader } from "./loader";
 
 const renderCheckBoxIcon = (value: boolean | null) => {
   return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
@@ -254,15 +255,16 @@ const DataGrid = ({
 };
 
 export const Component = () => {
-  const set = useSessionStore((s) => s.set);
-  const selectDate = useSessionStore((s) => s.date);
-  const pageIndex = useSessionStore((s) => s.pageIndex);
-  const pageSize = useSessionStore((s) => s.pageSize);
-  const username = useSessionStore((s) => s.username);
-  const whModel = useSessionStore((s) => s.whModel);
-  const idsWheel = useSessionStore((s) => s.idsWheel);
-  const result = useSessionStore((s) => s.result);
   const [anchorEl, showScrollToTop] = ScrollToTop.useScrollToTop();
+  const {
+    date: selectDate,
+    pageIndex,
+    pageSize,
+    username,
+    whModel,
+    idsWheel,
+    result,
+  } = useLoaderData<typeof loader>();
 
   const date = selectDate ? dayjs(selectDate) : null;
   const filters: Filter[] = [
@@ -307,6 +309,7 @@ export const Component = () => {
 
   const data = React.useMemo(() => query.data?.rows || [], [query.data]);
 
+  const set = useSessionStore.setState;
   const setDate = (day: null | dayjs.Dayjs) =>
     set((d) => {
       d.date = day ? day.toISOString() : null;
@@ -360,7 +363,7 @@ export const Component = () => {
         <Grid container spacing={1.5}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <DatePicker
-              value={date}
+              value={null}
               onChange={(day) => {
                 setDate(day);
               }}

@@ -2,24 +2,12 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import React from "react";
-import type { WritableDraft } from "immer";
 
 type State = { name: "" };
 
-type Actions = {
-  set(
-    nextStateOrUpdater:
-      | State
-      | Partial<State>
-      | ((state: WritableDraft<State>) => void),
-  ): void;
-};
-
-type Store = State & Actions;
-
-export const useLocalStore = create<Store>()(
+export const useLocalStore = create<State>()(
   persist(
-    immer((set) => ({ set, name: "" })),
+    immer(() => ({ name: "" })),
     {
       name: "useLocalStore",
       version: 1,

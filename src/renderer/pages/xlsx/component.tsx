@@ -43,7 +43,6 @@ import { fetchSqliteXlsxSize, useXlsxSizeDelete } from "@/api/fetch_preload";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
-import type { WritableDraft } from "immer";
 
 type DeleteActionProps = {
   id: number;
@@ -131,31 +130,18 @@ type State = {
   type: string;
 };
 
-type Actions = {
-  set(
-    nextStateOrUpdater:
-      | State
-      | Partial<State>
-      | ((state: WritableDraft<State>) => void),
-  ): void;
-};
+const initialState = (): State => ({
+  pageIndex: 0,
+  pageSize: 10,
+  xlsxName: "",
+  type: "",
+});
 
-type Store = State & Actions;
-
-const useSessionStore = create<Store>()(
-  persist(
-    immer((set) => ({
-      pageIndex: 0,
-      pageSize: 10,
-      xlsxName: "",
-      type: "",
-      set,
-    })),
-    {
-      storage: createJSONStorage(() => sessionStorage),
-      name: "useSessionStore:xlsx",
-    },
-  ),
+const useSessionStore = create<State>()(
+  persist(immer(initialState), {
+    storage: createJSONStorage(() => sessionStorage),
+    name: "useSessionStore:xlsx",
+  }),
 );
 
 export const Component = () => {
@@ -164,7 +150,7 @@ export const Component = () => {
   const pageSize = useSessionStore((s) => s.pageSize);
   const xlsxName = useSessionStore((s) => s.xlsxName);
   const type = useSessionStore((s) => s.type);
-  const set = useSessionStore((s) => s.set);
+  const set = useSessionStore.setState;
 
   const query = useQuery({
     ...fetchSqliteXlsxSize({

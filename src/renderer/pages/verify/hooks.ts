@@ -1,4 +1,3 @@
-import type { WritableDraft } from "immer";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -13,32 +12,19 @@ type State = {
   result: string;
 };
 
-type Actions = {
-  set(
-    nextStateOrUpdater:
-      | State
-      | Partial<State>
-      | ((state: WritableDraft<State>) => void),
-  ): void;
-};
+const initialState = (): State => ({
+  date: new Date().toISOString(),
+  pageIndex: 0,
+  pageSize: 100,
+  username: "",
+  whModel: "",
+  idsWheel: "",
+  result: "",
+});
 
-type Store = State & Actions;
-
-export const useSessionStore = create<Store>()(
-  persist(
-    immer((set) => ({
-      set,
-      date: new Date().toISOString(),
-      pageIndex: 0,
-      pageSize: 100,
-      username: "",
-      whModel: "",
-      idsWheel: "",
-      result: "",
-    })),
-    {
-      storage: createJSONStorage(() => sessionStorage),
-      name: "useSessionStore:verifies",
-    },
-  ),
+export const useSessionStore = create<State>()(
+  persist(immer(initialState), {
+    storage: createJSONStorage(() => sessionStorage),
+    name: "useSessionStore:verifies",
+  }),
 );

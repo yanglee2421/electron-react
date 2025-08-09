@@ -235,7 +235,6 @@ const ClearInputButton = (props: ClearInputButtonProps) => {
 };
 
 export const Component = () => {
-  const set = useSessionStore((s) => s.set);
   const selectDate = useSessionStore((s) => s.date);
   const pageIndex = useSessionStore((s) => s.pageIndex);
   const pageSize = useSessionStore((s) => s.pageSize);
@@ -286,6 +285,7 @@ export const Component = () => {
     }),
   );
 
+  const set = useSessionStore.setState;
   const setDate = (day: dayjs.Dayjs | null) =>
     set((d) => {
       d.date = day ? day.toISOString() : null;
