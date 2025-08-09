@@ -14,6 +14,7 @@ import {
 import { ActivationForm, ActivationGuard } from "./activation";
 import { DashLayout, RootRoute } from "./layout";
 import { RootErrorBoundary } from "./error";
+import { Box, CircularProgress } from "@mui/material";
 
 const authLayoutLoader = async () => {
   const queryClient = QueryProvider.queryClient;
@@ -40,11 +41,28 @@ const khLoader = async () => {
   return await queryClient.ensureQueryData(fetchKhHmisSetting());
 };
 
+const RootHydrateFallback = () => {
+  return (
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <CircularProgress size={64} />
+    </Box>
+  );
+};
+
 const routes: RouteObject[] = [
   {
     id: "root",
     Component: RootRoute,
     ErrorBoundary: RootErrorBoundary,
+    HydrateFallback: RootHydrateFallback,
     children: [
       {
         id: "404",

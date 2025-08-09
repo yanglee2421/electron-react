@@ -34,8 +34,8 @@ const createWindow = async () => {
     autoHideMenuBar: false,
     alwaysOnTop,
 
-    width: 1024,
-    height: 768,
+    // width: 1024,
+    // height: 768,
     // minWidth: 500,
     show: false,
   });
@@ -212,10 +212,10 @@ const bindIpcHandler = () => {
   );
 };
 
-const runApp = async () => {
+const bootstrap = async () => {
   /**
    * Performace optimization
-   * https://www.electronjs.org/docs/latest/tutorial/performance#8-call-menusetapplicationmenunull-when-you-do-not-need-a-default-menu
+   * @link https://www.electronjs.org/docs/latest/tutorial/performance#8-call-menusetapplicationmenunull-when-you-do-not-need-a-default-menu
    */
   Menu.setApplicationMenu(null);
 
@@ -242,4 +242,4 @@ const runApp = async () => {
   await createWindow();
 };
 
-runApp();
+bootstrap();
