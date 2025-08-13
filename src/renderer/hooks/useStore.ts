@@ -1,14 +1,12 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-type StoreState = {
+type State = {
   msg: string;
 };
 
-type Store = StoreState;
+const initialState = (): State => ({
+  msg: "",
+});
 
-export const useStore = create<Store>()(
-  immer(() => ({
-    msg: "",
-  })),
-);
+export const useStore = create<State>()(immer(initialState));

@@ -5,15 +5,16 @@ import React from "react";
 
 type State = { name: "" };
 
+const initialState = (): State => ({
+  name: "",
+});
+
 export const useLocalStore = create<State>()(
-  persist(
-    immer(() => ({ name: "" })),
-    {
-      name: "useLocalStore",
-      version: 1,
-      storage: createJSONStorage(() => localStorage),
-    },
-  ),
+  persist(immer(initialState), {
+    name: "useLocalStore",
+    version: 1,
+    storage: createJSONStorage(() => localStorage),
+  }),
 );
 
 export const useLocalStoreHasHydrated = () =>
