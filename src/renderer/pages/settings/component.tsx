@@ -22,6 +22,9 @@ import {
   ListItemText,
   CircularProgress,
   MenuItem,
+  Alert,
+  AlertTitle,
+  Box,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import z from "zod";
@@ -39,6 +42,7 @@ import {
   useSettingsOpenInEditor,
   useProfileUpdate,
   useSelectDirectory,
+  fetchProfile,
 } from "@/api/fetch_preload";
 import { flatRoutes } from "@/router/flatRoutes";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
@@ -81,8 +85,113 @@ export const Component = () => {
   const openAtLogin = useQuery(fetchOpenAtLogin());
   const openDevTools = useOpenDevTools();
   const settingsOpenInEditor = useSettingsOpenInEditor();
-  const [profileForm] = useProfileForm();
   const selectDirectory = useSelectDirectory();
+  const [profileForm, profileQuery] = useProfileForm();
+
+  const handleDirectoryChange = () => {
+    selectDirectory.mutate(void 0, {
+      onSuccess(paths) {
+        const path = paths?.[0];
+        if (!path) return;
+        profileForm.setFieldValue("appPath", path);
+      },
+    });
+  };
+
+  const renderForm = () => {
+    if (profileQuery.isPending) {
+      return (
+        <Box display="flex" justifyContent="center" padding={2}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    if (profileQuery.isError) {
+      return (
+        <Alert security="error">
+          <AlertTitle>错误</AlertTitle>
+          无法加载配置文件: {profileQuery.error?.message}
+        </Alert>
+      );
+    }
+
+    return (
+      <>
+        <CardContent>
+          <form
+            id={profileFormId}
+            noValidate
+            autoComplete="off"
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              profileForm.handleSubmit();
+            }}
+            onReset={() => profileForm.reset()}
+          >
+            <Grid spacing={3} container>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <profileForm.AppField name="appPath">
+                  {(appPathField) => (
+                    <appPathField.TextField
+                      value={appPathField.state.value}
+                      onChange={(e) =>
+                        appPathField.handleChange(e.target.value)
+                      }
+                      onBlur={appPathField.handleBlur}
+                      disabled={selectDirectory.isPending}
+                      fullWidth
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={handleDirectoryChange}
+                                disabled={selectDirectory.isPending}
+                              >
+                                <PendingIcon
+                                  isPending={selectDirectory.isPending}
+                                >
+                                  <FindInPageOutlined />
+                                </PendingIcon>
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      label="应用路径"
+                      placeholder="请选择探伤软件路径"
+                    />
+                  )}
+                </profileForm.AppField>
+              </Grid>
+            </Grid>
+          </form>
+        </CardContent>
+        <CardActions>
+          <profileForm.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <profileForm.Button
+                disabled={!canSubmit}
+                startIcon={
+                  <PendingIcon isPending={isSubmitting}>
+                    <SaveOutlined />
+                  </PendingIcon>
+                }
+                type="submit"
+                form={profileFormId}
+              >
+                保存
+              </profileForm.Button>
+            )}
+          </profileForm.Subscribe>
+        </CardActions>
+      </>
+    );
+  };
 
   return (
     <Stack spacing={3}>
@@ -226,13 +335,10 @@ export const Component = () => {
             type="submit"
             form={formId}
             startIcon={
-              mutate.isPending ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
+              <PendingIcon isPending={mutate.isPending} color="inherit">
                 <SaveOutlined />
-              )
+              </PendingIcon>
             }
-            disabled={mutate.isPending}
           >
             保存
           </Button>
@@ -243,11 +349,12 @@ export const Component = () => {
             }}
             disabled={settingsOpenInEditor.isPending}
             startIcon={
-              settingsOpenInEditor.isPending ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
+              <PendingIcon
+                isPending={settingsOpenInEditor.isPending}
+                color="inherit"
+              >
                 <OpenInNewOutlined />
-              )
+              </PendingIcon>
             }
           >
             在编辑器中打开
@@ -255,82 +362,8 @@ export const Component = () => {
         </CardActions>
       </Card>
       <Card>
-        <CardHeader title="启动和退出" />
-        <CardContent>
-          <form
-            id={profileFormId}
-            noValidate
-            autoComplete="off"
-            onSubmit={(e) => {
-              console.log("submit");
-
-              e.preventDefault();
-              e.stopPropagation();
-              profileForm.handleSubmit();
-            }}
-            onReset={() => profileForm.reset()}
-          >
-            <Grid spacing={3} container>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <profileForm.AppField name="appPath">
-                  {(appPathField) => (
-                    <appPathField.TextField
-                      value={appPathField.state.value}
-                      onChange={(e) =>
-                        appPathField.handleChange(e.target.value)
-                      }
-                      onBlur={appPathField.handleBlur}
-                      fullWidth
-                      slotProps={{
-                        input: {
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                onClick={() => {
-                                  selectDirectory.mutate(void 0, {
-                                    onSuccess(paths) {
-                                      const path = paths?.[0];
-                                      if (!path) return;
-                                      appPathField.handleChange(path);
-                                    },
-                                  });
-                                }}
-                              >
-                                <FindInPageOutlined />
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                    />
-                  )}
-                </profileForm.AppField>
-              </Grid>
-            </Grid>
-          </form>
-        </CardContent>
-        <CardActions>
-          <profileForm.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-          >
-            {([canSubmit, isSubmitting]) => (
-              <profileForm.Button
-                disabled={!canSubmit}
-                startIcon={
-                  isSubmitting ? (
-                    <CircularProgress size={12} />
-                  ) : (
-                    <SaveOutlined />
-                  )
-                }
-                type="submit"
-                form={profileFormId}
-              >
-                保存
-              </profileForm.Button>
-            )}
-          </profileForm.Subscribe>
-        </CardActions>
+        <CardHeader title="设置（实验性）" />
+        {renderForm()}
       </Card>
       <Paper>
         <List>
@@ -396,15 +429,16 @@ const profileSchema = z.object({
 });
 
 const useProfileForm = () => {
-  const update = useProfileUpdate();
+  const profileUpdate = useProfileUpdate();
   const notifications = useNotifications();
+  const profileQuery = useQuery(fetchProfile());
 
   const form = useAppForm({
     defaultValues: {
-      appPath: "",
+      appPath: profileQuery.data?.appPath || "",
     },
     async onSubmit(props) {
-      await update.mutateAsync(
+      await profileUpdate.mutateAsync(
         {
           appPath: props.value.appPath,
         },
@@ -423,5 +457,21 @@ const useProfileForm = () => {
     },
   });
 
-  return [form, update] as const;
+  return [form, profileQuery, profileUpdate] as const;
+};
+
+type PendingIconProps = React.PropsWithChildren<{
+  isPending?: boolean;
+  size?: number;
+  color?: React.ComponentProps<typeof CircularProgress>["color"];
+}>;
+
+const PendingIcon = (props: PendingIconProps) => {
+  const { size = 16, color } = props;
+
+  if (props.isPending) {
+    return <CircularProgress size={size} color={color} />;
+  }
+
+  return props.children;
 };
