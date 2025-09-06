@@ -20,6 +20,7 @@ import * as cmd from "./cmd";
 import * as excel from "./xlsx";
 import { is, optimizer, electronApp } from "@electron-toolkit/utils";
 import * as mdb from "./mdb";
+import * as profile from "./profile";
 
 const createWindow = async () => {
   const alwaysOnTop = store.settings.get("alwaysOnTop");
@@ -210,6 +211,18 @@ const bindIpcHandler = () => {
       return mobile;
     }),
   );
+
+  ipcMain.handle(
+    channel.SELECT_DIRECTORY,
+    withLog(async () => {
+      const win = BrowserWindow.getAllWindows().at(0);
+      if (!win) throw new Error("No active window");
+      const result = await dialog.showOpenDialog(win, {
+        properties: ["openDirectory"],
+      });
+      return result.filePaths;
+    }),
+  );
 };
 
 const bootstrap = async () => {
@@ -237,6 +250,7 @@ const bootstrap = async () => {
   windows.initIpc();
   excel.initIpc();
   mdb.init();
+  profile.bindIpcHandler();
 
   await app.whenReady();
   await createWindow();

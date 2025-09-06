@@ -56,6 +56,8 @@ export const channel = createEnum({
   windowHide: "",
   VERSION: "",
   mobileMode: "",
+  SELECT_DIRECTORY: "",
+  SELECT_FILE: "",
 
   // Common
   settings: "",

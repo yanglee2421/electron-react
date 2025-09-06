@@ -21,6 +21,7 @@ import type { AutoInputToVCParams } from "#/cmd";
 import type * as PRELOAD from "~/index";
 import { channel } from "#/channel";
 import type { Payload } from "#/mdb";
+import type { Profile } from "#/profile";
 
 // Windows 激活验证
 export const fetchVerifyActivation = () =>
@@ -587,6 +588,58 @@ export const useChr501Export = () => {
         id,
       );
       return result;
+    },
+  });
+};
+
+export const fetchProfile = () =>
+  queryOptions({
+    queryKey: [channel.PROFILE_GET],
+    queryFn: async () => {
+      const profile: Profile = await window.electron.ipcRenderer.invoke(
+        channel.PROFILE_GET,
+      );
+
+      return profile;
+    },
+  });
+
+export const useProfileUpdate = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Partial<Profile>) => {
+      const updated: Profile = await window.electron.ipcRenderer.invoke(
+        channel.PROFILE_SET,
+        payload,
+      );
+      return updated;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: fetchProfile().queryKey,
+      });
+    },
+  });
+};
+
+export const useSelectDirectory = () => {
+  return useMutation({
+    mutationFn: async () => {
+      const filePaths: string[] = await window.electron.ipcRenderer.invoke(
+        channel.SELECT_DIRECTORY,
+      );
+      return filePaths;
+    },
+  });
+};
+
+export const useSelectFile = () => {
+  return useMutation({
+    mutationFn: async () => {
+      const filePaths: string[] = await window.electron.ipcRenderer.invoke(
+        channel.SELECT_FILE,
+      );
+      return filePaths;
     },
   });
 };

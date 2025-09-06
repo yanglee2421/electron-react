@@ -37,8 +37,11 @@ import {
   useOpenAtLogin,
   useOpenDevTools,
   useSettingsOpenInEditor,
+  useProfileUpdate,
+  useSelectDirectory,
 } from "@/api/fetch_preload";
 import { flatRoutes } from "@/router/flatRoutes";
+import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 
 const schema = z.object({
   databasePath: z.string().min(1, { message: "数据库路径不能为空" }),
@@ -67,6 +70,7 @@ const useSettingForm = () => {
 
 export const Component = () => {
   const formId = React.useId();
+  const profileFormId = React.useId();
 
   const form = useSettingForm();
   const mutate = useUpdateSettings();
@@ -77,6 +81,8 @@ export const Component = () => {
   const openAtLogin = useQuery(fetchOpenAtLogin());
   const openDevTools = useOpenDevTools();
   const settingsOpenInEditor = useSettingsOpenInEditor();
+  const [profileForm] = useProfileForm();
+  const selectDirectory = useSelectDirectory();
 
   return (
     <Stack spacing={3}>
@@ -248,6 +254,84 @@ export const Component = () => {
           </Button>
         </CardActions>
       </Card>
+      <Card>
+        <CardHeader title="启动和退出" />
+        <CardContent>
+          <form
+            id={profileFormId}
+            noValidate
+            autoComplete="off"
+            onSubmit={(e) => {
+              console.log("submit");
+
+              e.preventDefault();
+              e.stopPropagation();
+              profileForm.handleSubmit();
+            }}
+            onReset={() => profileForm.reset()}
+          >
+            <Grid spacing={3} container>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <profileForm.AppField name="appPath">
+                  {(appPathField) => (
+                    <appPathField.TextField
+                      value={appPathField.state.value}
+                      onChange={(e) =>
+                        appPathField.handleChange(e.target.value)
+                      }
+                      onBlur={appPathField.handleBlur}
+                      fullWidth
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() => {
+                                  selectDirectory.mutate(void 0, {
+                                    onSuccess(paths) {
+                                      const path = paths?.[0];
+                                      if (!path) return;
+                                      appPathField.handleChange(path);
+                                    },
+                                  });
+                                }}
+                              >
+                                <FindInPageOutlined />
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                    />
+                  )}
+                </profileForm.AppField>
+              </Grid>
+            </Grid>
+          </form>
+        </CardContent>
+        <CardActions>
+          <profileForm.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <profileForm.Button
+                disabled={!canSubmit}
+                startIcon={
+                  isSubmitting ? (
+                    <CircularProgress size={12} />
+                  ) : (
+                    <SaveOutlined />
+                  )
+                }
+                type="submit"
+                form={profileFormId}
+              >
+                保存
+              </profileForm.Button>
+            )}
+          </profileForm.Subscribe>
+        </CardActions>
+      </Card>
       <Paper>
         <List>
           <ListItem
@@ -267,23 +351,77 @@ export const Component = () => {
           >
             <ListItemText primary="开机自启" />
           </ListItem>
-          <ListItem secondaryAction={version.data?.version}>
-            <ListItemText primary="版本" />
-          </ListItem>
-          <ListItem secondaryAction={version.data?.electronVersion}>
-            <ListItemText primary="Electron" />
-          </ListItem>
-          <ListItem secondaryAction={version.data?.chromeVersion}>
-            <ListItemText primary="Chrome" />
-          </ListItem>
-          <ListItem secondaryAction={version.data?.nodeVersion}>
-            <ListItemText primary="Node" />
-          </ListItem>
-          <ListItem secondaryAction={version.data?.v8Version}>
-            <ListItemText primary="V8" />
-          </ListItem>
         </List>
       </Paper>
+      <Card>
+        <CardHeader title="关于" />
+        <CardContent>
+          <List>
+            <ListItem secondaryAction={version.data?.version}>
+              <ListItemText primary="版本" />
+            </ListItem>
+            <ListItem secondaryAction={version.data?.electronVersion}>
+              <ListItemText primary="Electron" />
+            </ListItem>
+            <ListItem secondaryAction={version.data?.chromeVersion}>
+              <ListItemText primary="Chrome" />
+            </ListItem>
+            <ListItem secondaryAction={version.data?.nodeVersion}>
+              <ListItemText primary="Node" />
+            </ListItem>
+            <ListItem secondaryAction={version.data?.v8Version}>
+              <ListItemText primary="V8" />
+            </ListItem>
+          </List>
+        </CardContent>
+      </Card>
     </Stack>
   );
+};
+
+const { fieldContext, formContext } = createFormHookContexts();
+const { useAppForm } = createFormHook({
+  fieldContext,
+  formContext,
+  fieldComponents: {
+    TextField,
+  },
+  formComponents: {
+    Button,
+  },
+});
+
+const profileSchema = z.object({
+  appPath: z.string().min(1, { message: "应用路径不能为空" }),
+});
+
+const useProfileForm = () => {
+  const update = useProfileUpdate();
+  const notifications = useNotifications();
+
+  const form = useAppForm({
+    defaultValues: {
+      appPath: "",
+    },
+    async onSubmit(props) {
+      await update.mutateAsync(
+        {
+          appPath: props.value.appPath,
+        },
+        {
+          onError: (error) => {
+            notifications.show(error.message, { severity: "error" });
+          },
+          onSuccess: () => {
+            notifications.show("保存成功", { severity: "success" });
+          },
+        },
+      );
+    },
+    validators: {
+      onChange: profileSchema,
+    },
+  });
+
+  return [form, update] as const;
 };
