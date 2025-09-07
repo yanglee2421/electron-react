@@ -11,7 +11,7 @@ import iconv from "iconv-lite";
 
 const profileSchema = z.object({
   appPath: z.string().default(""),
-  encoding: z.string().default("utf-8"),
+  encoding: z.string().default("gbk"),
 });
 
 // Shared Logic

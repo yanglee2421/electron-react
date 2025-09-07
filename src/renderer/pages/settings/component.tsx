@@ -94,6 +94,7 @@ export const Component = () => {
         const path = paths?.[0];
         if (!path) return;
         profileForm.setFieldValue("appPath", path);
+        profileForm.validateField("appPath", "change");
       },
     });
   };
@@ -161,7 +162,12 @@ export const Component = () => {
                         },
                       }}
                       label="应用路径"
-                      helperText="探伤软件的所在路径"
+                      helperText={
+                        appPathField.getMeta().errors.length
+                          ? appPathField.getMeta().errors.at(0)?.message
+                          : "探伤软件的所在路径"
+                      }
+                      error={appPathField.getMeta().errors.length > 0}
                     />
                   )}
                 </profileForm.AppField>
@@ -177,7 +183,12 @@ export const Component = () => {
                       onBlur={encodingField.handleBlur}
                       fullWidth
                       label="编码"
-                      helperText="使用哪种编码集解析usprofile.ini"
+                      helperText={
+                        encodingField.getMeta().errors.length
+                          ? encodingField.getMeta().errors.at(0)?.message
+                          : "使用哪种编码集解析usprofile.ini"
+                      }
+                      error={encodingField.getMeta().errors.length > 0}
                       select
                     >
                       <MenuItem value="utf-8">utf-8</MenuItem>
