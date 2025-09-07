@@ -6,7 +6,26 @@ import workerPath from "./mdb.worker?modulePath";
 import type { MDBWorkerData } from "./mdb.worker";
 import { channel } from "./channel";
 
-export const getDataFromMDB = async <TRows extends NonNullable<unknown>>(
+export const getDataByWorker = <TRow>(payload: MDBWorkerData) => {
+  return new Promise<{
+    total: number;
+    rows: TRow[];
+  }>((resolve, reject) => {
+    const worker = new Worker(workerPath, {
+      workerData: payload,
+    });
+    worker.once("message", (data) => {
+      resolve(data);
+      worker.terminate();
+    });
+    worker.once("error", (error) => {
+      reject(error);
+      worker.terminate();
+    });
+  });
+};
+
+export const getDataFromMDB = <TRows extends NonNullable<unknown>>(
   data: Payload,
 ) => {
   const databasePath = settings.get("databasePath");
@@ -18,24 +37,10 @@ export const getDataFromMDB = async <TRows extends NonNullable<unknown>>(
     throw new Error("Database path is not a string");
   }
 
-  const result = await new Promise<{
-    total: number;
-    rows: TRows[];
-  }>((resolve, reject) => {
-    const worker = new Worker(workerPath, {
-      workerData: { ...data, databasePath },
-    });
-    worker.once("message", (data) => {
-      resolve(data);
-      worker.terminate();
-    });
-    worker.once("error", (error) => {
-      reject(error);
-      worker.terminate();
-    });
+  return getDataByWorker<TRows>({
+    ...data,
+    databasePath,
   });
-
-  return result;
 };
 
 export type Payload = Omit<MDBWorkerData, "databasePath">;
