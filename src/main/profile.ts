@@ -6,13 +6,37 @@ import { produce } from "immer";
 import { channel } from "./channel";
 import type { WritableDraft } from "immer";
 import { withLog } from "./lib";
+import ini from "ini";
+import iconv from "iconv-lite";
 
 const profileSchema = z.object({
   appPath: z.string().default(""),
+  encoding: z.string().default("utf-8"),
 });
 
 // Shared Logic
 const getFilePath = () => path.resolve(app.getPath("userData"), "profile.json");
+
+const getAppPath = async () => {
+  const profile = await getProfile();
+  return [profile.appPath, profile] as const;
+};
+
+export const getAppDBPath = async () => {
+  const [appPath] = await getAppPath();
+  return path.resolve(appPath, "Data", "local.mdb");
+};
+
+export const getRootDBPath = async () => {
+  const [appPath, profile] = await getAppPath();
+  const iniPath = path.resolve(appPath, "usprofile.ini");
+  const iniBuffer = await fs.readFile(iniPath);
+  const iniText = iconv.decode(iniBuffer, profile.encoding);
+  const userProfile = ini.parse(iniText);
+  const rootPath = userProfile.FileSystem.Root as string;
+
+  return path.resolve(rootPath, "local.mdb");
+};
 
 export type Profile = z.infer<typeof profileSchema>;
 
@@ -55,4 +79,5 @@ export const bindIpcHandler = () => {
       return updated;
     }),
   );
+  ipcMain.handle("ini", withLog(getRootDBPath));
 };

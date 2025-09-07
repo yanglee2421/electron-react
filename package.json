@@ -19,6 +19,8 @@
     "better-sqlite3": "^12.2.0",
     "drizzle-orm": "^0.42.0",
     "electron-store": "^10.0.1",
+    "iconv-lite": "^0.7.0",
+    "ini": "^5.0.0",
     "mdb-reader": "^3.1.0"
   },
   "devDependencies": {
@@ -35,6 +37,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@toolpad/core": "^0.15.0",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/ini": "^4.1.1",
     "@types/node": "^22.14.1",
     "@types/nprogress": "^0.2.3",
     "@types/react": "^19.1.2",

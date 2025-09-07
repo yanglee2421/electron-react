@@ -161,8 +161,28 @@ export const Component = () => {
                         },
                       }}
                       label="应用路径"
-                      placeholder="请选择探伤软件路径"
+                      helperText="探伤软件的所在路径"
                     />
+                  )}
+                </profileForm.AppField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <profileForm.AppField name="encoding">
+                  {(encodingField) => (
+                    <encodingField.TextField
+                      value={encodingField.state.value}
+                      onChange={(e) =>
+                        encodingField.handleChange(e.target.value)
+                      }
+                      onBlur={encodingField.handleBlur}
+                      fullWidth
+                      label="编码"
+                      helperText="使用哪种编码集解析usprofile.ini"
+                      select
+                    >
+                      <MenuItem value="utf-8">utf-8</MenuItem>
+                      <MenuItem value="gbk">gbk</MenuItem>
+                    </encodingField.TextField>
                   )}
                 </profileForm.AppField>
               </Grid>
@@ -362,7 +382,19 @@ export const Component = () => {
         </CardActions>
       </Card>
       <Card>
-        <CardHeader title="设置（实验性）" />
+        <CardHeader
+          title="设置（实验性）"
+          action={
+            <IconButton
+              onClick={async () => {
+                const ini = await window.electron.ipcRenderer.invoke("ini");
+                console.log(ini);
+              }}
+            >
+              <BugReportOutlined />
+            </IconButton>
+          }
+        />
         {renderForm()}
       </Card>
       <Paper>
@@ -426,6 +458,7 @@ const { useAppForm } = createFormHook({
 
 const profileSchema = z.object({
   appPath: z.string().min(1, { message: "应用路径不能为空" }),
+  encoding: z.string().min(1, { message: "编码不能为空" }),
 });
 
 const useProfileForm = () => {
@@ -436,11 +469,13 @@ const useProfileForm = () => {
   const form = useAppForm({
     defaultValues: {
       appPath: profileQuery.data?.appPath || "",
+      encoding: profileQuery.data?.encoding || "",
     },
     async onSubmit(props) {
       await profileUpdate.mutateAsync(
         {
           appPath: props.value.appPath,
+          encoding: props.value.encoding,
         },
         {
           onError: (error) => {
