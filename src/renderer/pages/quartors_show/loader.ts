@@ -1,11 +1,11 @@
 import type { QuartorData } from "#/cmd";
-import { fetchDataFromMDB } from "@/api/fetch_preload";
+import { fetchDataFromRootDB } from "@/api/fetch_preload";
 import { QueryProvider } from "@/components/query";
 import type { LoaderFunction } from "react-router";
 
 export const loader: LoaderFunction = async (ctx) => {
   await QueryProvider.queryClient.ensureQueryData(
-    fetchDataFromMDB<QuartorData>({
+    fetchDataFromRootDB<QuartorData>({
       tableName: "quartors_data",
       filters: [
         {

@@ -565,21 +565,6 @@ type Result<TRow> = {
   rows: TRow[];
 };
 
-export const fetchDataFromMDB = <TRow extends NonNullable<unknown>>(
-  data: Payload,
-) =>
-  queryOptions({
-    queryKey: [channel.MDB_READER, data],
-    queryFn: async () => {
-      const result: Result<TRow> = await window.electron.ipcRenderer.invoke(
-        channel.MDB_READER,
-        data,
-      );
-
-      return result;
-    },
-  });
-
 export const useChr501Export = () => {
   return useMutation({
     async mutationFn(id: string) {
@@ -643,3 +628,29 @@ export const useSelectFile = () => {
     },
   });
 };
+
+export const fetchDataFromRootDB = <TRow>(data: Payload) =>
+  queryOptions({
+    queryKey: [channel.MDB_ROOT_GET, data],
+    queryFn: async () => {
+      const result: Result<TRow> = await window.electron.ipcRenderer.invoke(
+        channel.MDB_ROOT_GET,
+        data,
+      );
+
+      return result;
+    },
+  });
+
+export const fetchDataFromAppDB = <TRow>(data: Payload) =>
+  queryOptions({
+    queryKey: [channel.MDB_APP_GET, data],
+    queryFn: async () => {
+      const result: Result<TRow> = await window.electron.ipcRenderer.invoke(
+        channel.MDB_APP_GET,
+        data,
+      );
+
+      return result;
+    },
+  });

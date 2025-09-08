@@ -48,7 +48,7 @@ import { Loading } from "@/components/Loading";
 import { Link as RouterLink, useLoaderData } from "react-router";
 import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
-import { useChr53aExport, fetchDataFromMDB } from "@/api/fetch_preload";
+import { useChr53aExport, fetchDataFromRootDB } from "@/api/fetch_preload";
 import { ScrollToTop } from "@/components/scroll";
 import { useDialogs } from "@toolpad/core";
 import { useForm } from "@tanstack/react-form";
@@ -299,7 +299,7 @@ export const Component = () => {
   ].filter((i) => typeof i === "object");
 
   const query = useQuery(
-    fetchDataFromMDB<Detection>({
+    fetchDataFromRootDB<Detection>({
       tableName: "detections",
       pageIndex,
       pageSize,

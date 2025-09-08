@@ -1,10 +1,10 @@
 import { ipcMain } from "electron";
-import { settings } from "./store";
 import { Worker } from "node:worker_threads";
 import { withLog } from "./lib";
 import workerPath from "./mdb.worker?modulePath";
 import type { MDBWorkerData } from "./mdb.worker";
 import { channel } from "./channel";
+import { getRootDBPath, getAppDBPath } from "./profile";
 
 export const getDataByWorker = <TRow>(payload: MDBWorkerData) => {
   return new Promise<{
@@ -25,21 +25,19 @@ export const getDataByWorker = <TRow>(payload: MDBWorkerData) => {
   });
 };
 
-export const getDataFromMDB = <TRows extends NonNullable<unknown>>(
-  data: Payload,
-) => {
-  const databasePath = settings.get("databasePath");
-  if (!databasePath) {
-    throw new Error("Database path is not set");
-  }
-
-  if (typeof databasePath !== "string") {
-    throw new Error("Database path is not a string");
-  }
-
-  return getDataByWorker<TRows>({
+export const getDataFromAppDB = async <TRow>(data: Payload) => {
+  const appDBPath = await getAppDBPath();
+  return getDataByWorker<TRow>({
     ...data,
-    databasePath,
+    databasePath: appDBPath,
+  });
+};
+
+export const getDataFromRootDB = async <TRow>(data: Payload) => {
+  const rootDBPath = await getRootDBPath();
+  return getDataByWorker<TRow>({
+    ...data,
+    databasePath: rootDBPath,
   });
 };
 
@@ -47,9 +45,16 @@ export type Payload = Omit<MDBWorkerData, "databasePath">;
 
 export const init = () => {
   ipcMain.handle(
-    channel.MDB_READER,
+    channel.MDB_ROOT_GET,
     withLog(async (_, data: Payload) => {
-      const result = await getDataFromMDB(data);
+      const result = await getDataFromRootDB(data);
+      return result;
+    }),
+  );
+  ipcMain.handle(
+    channel.MDB_APP_GET,
+    withLog(async (_, data: Payload) => {
+      const result = await getDataFromAppDB(data);
       return result;
     }),
   );

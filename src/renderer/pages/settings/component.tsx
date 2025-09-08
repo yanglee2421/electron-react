@@ -48,7 +48,6 @@ import { flatRoutes } from "@/router/flatRoutes";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 
 const schema = z.object({
-  databasePath: z.string().min(1, { message: "数据库路径不能为空" }),
   driverPath: z.string().min(1, { message: "驱动路径不能为空" }),
   home_path: z.string().min(1, { message: "主页路径不能为空" }),
 });
@@ -65,7 +64,6 @@ const useSettingForm = () => {
   return useForm<FormValues>({
     defaultValues: {
       home_path: settings.homePath,
-      databasePath: settings.databasePath,
       driverPath: settings.driverPath,
     },
     resolver: zodResolver(schema),
@@ -245,7 +243,6 @@ export const Component = () => {
             id={formId}
             onSubmit={form.handleSubmit(async (data) => {
               mutate.mutate({
-                databasePath: data.databasePath,
                 driverPath: data.driverPath,
                 homePath: data.home_path,
               });
@@ -256,46 +253,6 @@ export const Component = () => {
             autoComplete="off"
           >
             <Grid container spacing={1.5}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
-                  control={form.control}
-                  name="databasePath"
-                  render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                      fullWidth
-                      label="数据库路径"
-                      slotProps={{
-                        input: {
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton component="label">
-                                <input
-                                  type="file"
-                                  accept="application/msaccess,application/vnd.ms-access,.mdb,.accdb"
-                                  hidden
-                                  value={""}
-                                  onChange={(e) => {
-                                    const file = e.target.files?.item(0);
-                                    if (!file) return;
-
-                                    field.onChange(
-                                      window.electronAPI.getPathForFile(file),
-                                    );
-                                  }}
-                                />
-                                <FindInPageOutlined />
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                    />
-                  )}
-                />
-              </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   control={form.control}

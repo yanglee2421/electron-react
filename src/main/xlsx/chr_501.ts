@@ -5,7 +5,7 @@ import { db } from "#/db";
 import * as schema from "#/schema";
 import * as sql from "drizzle-orm";
 import { createCellHelper, createRowHelper, pageSetup } from "./utils";
-import { getDataFromMDB } from "#/mdb";
+import { getDataFromRootDB as getDataFromMDB } from "#/mdb";
 import type { Verify } from "#/cmd";
 
 const columnWidths = new Map([

@@ -1,5 +1,5 @@
 import { QueryProvider } from "@/components/query";
-import { fetchDataFromMDB } from "@/api/fetch_preload";
+import { fetchDataFromRootDB } from "@/api/fetch_preload";
 import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
 import dayjs from "dayjs";
@@ -51,7 +51,7 @@ export const loader = async () => {
   ].filter((i) => typeof i === "object");
 
   await queryClient.ensureQueryData(
-    fetchDataFromMDB({
+    fetchDataFromRootDB({
       tableName: "detections",
       pageIndex,
       pageSize,

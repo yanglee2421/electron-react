@@ -31,7 +31,7 @@ import {
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import type { Verify } from "#/cmd";
 import { Loading } from "@/components/Loading";
-import { fetchDataFromMDB } from "@/api/fetch_preload";
+import { fetchDataFromRootDB } from "@/api/fetch_preload";
 
 const initDate = () => dayjs();
 
@@ -66,7 +66,7 @@ export const Component = () => {
   const [date, setDate] = React.useState(initDate);
 
   const query = useQuery(
-    fetchDataFromMDB<Verify>({
+    fetchDataFromRootDB<Verify>({
       tableName: "verifies",
       filters: [
         {

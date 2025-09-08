@@ -1,5 +1,5 @@
 import type { VerifyData } from "#/cmd";
-import { fetchDataFromMDB } from "@/api/fetch_preload";
+import { fetchDataFromRootDB } from "@/api/fetch_preload";
 import { Loading } from "@/components/Loading";
 import {
   Alert,
@@ -105,7 +105,7 @@ export const Component = () => {
 
   const params = useParams();
   const query = useQuery(
-    fetchDataFromMDB<VerifyData>({
+    fetchDataFromRootDB<VerifyData>({
       tableName: "verifies_data",
       filters: [
         {

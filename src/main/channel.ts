@@ -71,8 +71,9 @@ export const channel = createEnum({
   sqlite_xlsx_size_r: "",
   sqlite_xlsx_size_d: "",
 
-  MDB_READER: "",
   XLSX_CHR501: "",
   PROFILE_SET: "",
   PROFILE_GET: "",
+  MDB_ROOT_GET: "",
+  MDB_APP_GET: "",
 });

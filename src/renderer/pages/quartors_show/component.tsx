@@ -1,5 +1,5 @@
 import type { QuartorData } from "#/cmd";
-import { fetchDataFromMDB } from "@/api/fetch_preload";
+import { fetchDataFromRootDB } from "@/api/fetch_preload";
 import { Loading } from "@/components/Loading";
 import {
   Alert,
@@ -102,7 +102,7 @@ export const Component = () => {
 
   const params = useParams();
   const query = useQuery(
-    fetchDataFromMDB<QuartorData>({
+    fetchDataFromRootDB<QuartorData>({
       tableName: "quartors_data",
       filters: [
         {

@@ -34,7 +34,7 @@ import {
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
 import { ClearOutlined, RefreshOutlined } from "@mui/icons-material";
-import { fetchDataFromMDB } from "@/api/fetch_preload";
+import { fetchDataFromRootDB } from "@/api/fetch_preload";
 import type { Quartor } from "#/cmd";
 import { Loading } from "@/components/Loading";
 import { Link as RouterLink } from "react-router";
@@ -277,7 +277,7 @@ export const Component = () => {
   ].filter((i) => typeof i === "object");
 
   const query = useQuery(
-    fetchDataFromMDB<Quartor>({
+    fetchDataFromRootDB<Quartor>({
       tableName: "quartors",
       pageIndex,
       pageSize,

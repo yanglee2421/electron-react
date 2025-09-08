@@ -39,7 +39,7 @@ import {
   PrintOutlined,
   RefreshOutlined,
 } from "@mui/icons-material";
-import { fetchDataFromMDB, useChr501Export } from "@/api/fetch_preload";
+import { fetchDataFromRootDB, useChr501Export } from "@/api/fetch_preload";
 import type { Verify } from "#/cmd";
 import { Loading } from "@/components/Loading";
 import { useSessionStore } from "./hooks";
@@ -310,7 +310,7 @@ export const Component = () => {
   ].filter((i) => typeof i === "object");
 
   const query = useQuery(
-    fetchDataFromMDB<Verify>({
+    fetchDataFromRootDB<Verify>({
       tableName: "verifies",
       pageIndex,
       pageSize,

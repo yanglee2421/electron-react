@@ -8,7 +8,7 @@ import dayjs from "dayjs";
 import type { Detection } from "#/cmd";
 import { createCellHelper, createRowHelper, pageSetup } from "./utils";
 import { mkdir } from "node:fs/promises";
-import { getDataFromMDB } from "#/mdb";
+import { getDataFromRootDB as getDataFromMDB } from "#/mdb";
 
 const columnWidths = new Map([
   ["A", 7],

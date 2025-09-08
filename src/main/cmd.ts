@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 import { withLog } from "./lib";
 import * as store from "./store";
 import { channel } from "./channel";
-import { getDataFromMDB } from "./mdb";
+import { getDataFromRootDB as getDataFromMDB } from "./mdb";
 
 const execFileAsync = promisify(execFile);
 

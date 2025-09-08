@@ -17,7 +17,7 @@ import { channel } from "./channel";
 import * as win from "./win";
 import type { DetectionData, Verify, VerifyData } from "./cmd";
 import type * as PRELOAD from "~/index";
-import { getDataFromMDB } from "./mdb";
+import { getDataFromRootDB as getDataFromMDB } from "./mdb";
 
 /**
  * Sqlite barcode

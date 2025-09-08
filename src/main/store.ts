@@ -5,7 +5,6 @@ import { channel } from "./channel";
 import type * as PRELOAD from "~/index";
 
 export type Settings = {
-  databasePath: string;
   driverPath: string;
   activateCode: string;
   alwaysOnTop: boolean;
@@ -16,10 +15,6 @@ export type Settings = {
 export const settings = new Store<Settings>({
   name: "settings",
   schema: {
-    databasePath: {
-      type: "string",
-      default: "",
-    },
     driverPath: {
       type: "string",
       default: "",
