@@ -1,6 +1,5 @@
-import { ipcMain } from "electron";
 import { Worker } from "node:worker_threads";
-import { withLog } from "./lib";
+import { ipcHandle } from "./lib";
 import workerPath from "./mdb.worker?modulePath";
 import type { MDBWorkerData } from "./mdb.worker";
 import { channel } from "./channel";
@@ -44,18 +43,12 @@ export const getDataFromRootDB = async <TRow>(data: Payload) => {
 export type Payload = Omit<MDBWorkerData, "databasePath">;
 
 export const init = () => {
-  ipcMain.handle(
-    channel.MDB_ROOT_GET,
-    withLog(async (_, data: Payload) => {
-      const result = await getDataFromRootDB(data);
-      return result;
-    }),
-  );
-  ipcMain.handle(
-    channel.MDB_APP_GET,
-    withLog(async (_, data: Payload) => {
-      const result = await getDataFromAppDB(data);
-      return result;
-    }),
-  );
+  ipcHandle(channel.MDB_ROOT_GET, async (_, data: Payload) => {
+    const result = await getDataFromRootDB(data);
+    return result;
+  });
+  ipcHandle(channel.MDB_APP_GET, async (_, data: Payload) => {
+    const result = await getDataFromAppDB(data);
+    return result;
+  });
 };

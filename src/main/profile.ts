@@ -1,11 +1,11 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow } from "electron";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { z } from "zod";
 import { produce } from "immer";
 import { channel } from "./channel";
 import type { WritableDraft } from "immer";
-import { withLog } from "./lib";
+import { ipcHandle } from "./lib";
 import ini from "ini";
 import iconv from "iconv-lite";
 
@@ -68,16 +68,13 @@ export const setProfile = async (callback: ProfileCallback) => {
 };
 
 export const bindIpcHandler = () => {
-  ipcMain.handle(channel.PROFILE_GET, withLog(getProfile));
-  ipcMain.handle(
-    channel.PROFILE_SET,
-    withLog(async (_, payload: Partial<Profile>) => {
-      await setProfile((profile) => {
-        Object.assign(profile, payload);
-      });
-      const updated = await getProfile();
-      return updated;
-    }),
-  );
-  ipcMain.handle("ini", withLog(getRootDBPath));
+  ipcHandle(channel.PROFILE_GET, getProfile);
+  ipcHandle(channel.PROFILE_SET, async (_, payload: Partial<Profile>) => {
+    await setProfile((profile) => {
+      Object.assign(profile, payload);
+    });
+    const updated = await getProfile();
+    return updated;
+  });
+  ipcHandle("ini", getRootDBPath);
 };

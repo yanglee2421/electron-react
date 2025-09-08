@@ -1,6 +1,6 @@
 import Store from "electron-store";
-import { BrowserWindow, nativeTheme, ipcMain } from "electron";
-import { withLog } from "./lib";
+import { BrowserWindow, nativeTheme } from "electron";
+import { ipcHandle } from "./lib";
 import { channel } from "./channel";
 import type * as PRELOAD from "~/index";
 
@@ -189,23 +189,17 @@ const initDidChange = () => {
 };
 
 const initIpc = () => {
-  ipcMain.handle(
+  ipcHandle(
     channel.settings,
-    withLog(async (e, data?: PRELOAD.SetSettingParams): Promise<Settings> => {
-      void e;
+    async (_, data?: PRELOAD.SetSettingParams): Promise<Settings> => {
       if (data) {
         settings.set(data);
       }
       return settings.store;
-    }),
+    },
   );
 
-  ipcMain.handle(
-    channel.settingsOpenInEditor,
-    withLog(async () => {
-      await settings.openInEditor();
-    }),
-  );
+  ipcHandle(channel.settingsOpenInEditor, () => settings.openInEditor());
 };
 
 export const init = () => {

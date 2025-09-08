@@ -1,7 +1,7 @@
 // 京天威 统型
 
-import { net, ipcMain } from "electron";
-import { log, getIP, withLog, createEmit } from "./lib";
+import { net } from "electron";
+import { log, getIP, withLog, createEmit, ipcHandle } from "./lib";
 import {
   getCorporation,
   getDetectionByZH,
@@ -16,7 +16,6 @@ import * as sql from "drizzle-orm";
 import { channel } from "./channel";
 import type { DetectionData } from "./cmd";
 import type * as PRELOAD from "~/index";
-import type { JTV_HMIS } from "./store";
 
 /**
  * Sqlite barcode
@@ -325,56 +324,26 @@ const initAutoUpload = () => {
  * Initialize
  */
 const initIpc = () => {
-  ipcMain.handle(
+  ipcHandle(
     channel.jtv_hmis_sqlite_get,
-    withLog(
-      async (
-        e,
-        params: PRELOAD.JtvBarcodeGetParams,
-      ): Promise<PRELOAD.JtvBarcodeGetResult> => {
-        void e;
-        const data = await sqlite_get(params);
-        return data;
-      },
-    ),
+    (_, params: PRELOAD.JtvBarcodeGetParams) => sqlite_get(params),
   );
 
-  ipcMain.handle(
-    channel.jtv_hmis_sqlite_delete,
-    withLog(async (e, id: number): Promise<schema.JTVBarcode> => {
-      void e;
-      return await sqlite_delete(id);
-    }),
+  ipcHandle(channel.jtv_hmis_sqlite_delete, (_, id: number) =>
+    sqlite_delete(id),
   );
 
-  ipcMain.handle(
-    channel.jtv_hmis_api_get,
-    withLog(async (e, barcode: string): Promise<GetResponse> => {
-      void e;
-      return await api_get(barcode);
-    }),
-  );
+  ipcHandle(channel.jtv_hmis_api_get, (_, barcode: string) => api_get(barcode));
+  ipcHandle(channel.jtv_hmis_api_set, (_, id: number) => api_set(id));
 
-  ipcMain.handle(
-    channel.jtv_hmis_api_set,
-    withLog(async (e, id: number): Promise<schema.JTVBarcode> => {
-      void e;
-      const data = await api_set(id);
-      return data;
-    }),
-  );
-
-  ipcMain.handle(
+  ipcHandle(
     channel.jtv_hmis_setting,
-    withLog(
-      async (e, data?: PRELOAD.JtvHmisSettingParams): Promise<JTV_HMIS> => {
-        void e;
-        if (data) {
-          jtv_hmis.set(data);
-        }
-        return jtv_hmis.store;
-      },
-    ),
+    (_, data?: PRELOAD.JtvHmisSettingParams) => {
+      if (data) {
+        jtv_hmis.set(data);
+      }
+      return jtv_hmis.store;
+    },
   );
 };
 

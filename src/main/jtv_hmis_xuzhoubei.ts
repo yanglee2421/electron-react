@@ -1,7 +1,7 @@
 // 京天威 徐州北
 
-import { net, ipcMain } from "electron";
-import { log, getDirection, withLog, createEmit } from "./lib";
+import { net } from "electron";
+import { log, getDirection, withLog, createEmit, ipcHandle } from "./lib";
 import {
   getCorporation,
   getDetectionByZH,
@@ -15,7 +15,6 @@ import * as sql from "drizzle-orm";
 import * as schema from "./schema";
 import { channel } from "./channel";
 import type * as PRELOAD from "~/index";
-import type * as STORE from "./store";
 
 /*
  * SQLite barcode
@@ -362,58 +361,29 @@ const initAutoUpload = () => {
  * Initialize
  */
 const initIpc = () => {
-  ipcMain.handle(
+  ipcHandle(
     channel.jtv_hmis_xuzhoubei_sqlite_get,
-    withLog(
-      async (
-        e,
-        params: PRELOAD.JtvXuzhoubeiBarcodeGetParams,
-      ): Promise<PRELOAD.JtvXuzhoubeiBarcodeGetResult> => {
-        void e;
-        const data = await sqlite_get(params);
-        return data;
-      },
-    ),
+    (_, params: PRELOAD.JtvXuzhoubeiBarcodeGetParams) => sqlite_get(params),
   );
 
-  ipcMain.handle(
-    channel.jtv_hmis_xuzhoubei_sqlite_delete,
-    withLog(async (e, id: number): Promise<schema.JtvXuzhoubeiBarcode> => {
-      void e;
-      return await sqlite_delete(id);
-    }),
+  ipcHandle(channel.jtv_hmis_xuzhoubei_sqlite_delete, (_, id: number) =>
+    sqlite_delete(id),
   );
 
-  ipcMain.handle(
-    channel.jtv_hmis_xuzhoubei_api_get,
-    withLog(async (e, barcode: string): Promise<GetResponse> => {
-      void e;
-      return await api_get(barcode);
-    }),
+  ipcHandle(channel.jtv_hmis_xuzhoubei_api_get, (_, barcode: string) =>
+    api_get(barcode),
   );
 
-  ipcMain.handle(
-    channel.jtv_hmis_xuzhoubei_api_set,
-    withLog(async (e, id: number): Promise<schema.JtvXuzhoubeiBarcode> => {
-      void e;
-      return await api_set(id);
-    }),
-  );
+  ipcHandle(channel.jtv_hmis_xuzhoubei_api_set, (_, id: number) => api_set(id));
 
-  ipcMain.handle(
+  ipcHandle(
     channel.jtv_hmis_xuzhoubei_setting,
-    withLog(
-      async (
-        e,
-        data?: PRELOAD.JtvHmisXuzhoubeiSettingParams,
-      ): Promise<STORE.JTV_HMIS_XUZHOUBEI> => {
-        void e;
-        if (data) {
-          jtv_hmis_xuzhoubei.set(data);
-        }
-        return jtv_hmis_xuzhoubei.store;
-      },
-    ),
+    (_, data?: PRELOAD.JtvHmisXuzhoubeiSettingParams) => {
+      if (data) {
+        jtv_hmis_xuzhoubei.set(data);
+      }
+      return jtv_hmis_xuzhoubei.store;
+    },
   );
 };
 

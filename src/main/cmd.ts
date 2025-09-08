@@ -1,10 +1,10 @@
-import { ipcMain, app } from "electron";
+import { app } from "electron";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { dirname, join, resolve } from "node:path";
 import { cp, access, constants, mkdir, rm } from "node:fs/promises";
 import dayjs from "dayjs";
-import { withLog } from "./lib";
+import { ipcHandle } from "./lib";
 import * as store from "./store";
 import { channel } from "./channel";
 import { getDataFromAppDB, getDataFromRootDB as getDataFromMDB } from "./mdb";
@@ -291,10 +291,7 @@ const autoInputToVC = async (data: AutoInputToVCParams) => {
 };
 
 export const initIpc = () => {
-  ipcMain.handle(
-    channel.autoInputToVC,
-    withLog(async (_, data: AutoInputToVCParams) => {
-      return await autoInputToVC(data);
-    }),
-  );
+  ipcHandle(channel.autoInputToVC, async (_, data: AutoInputToVCParams) => {
+    return await autoInputToVC(data);
+  });
 };

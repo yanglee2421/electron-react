@@ -1,7 +1,7 @@
 // 康华 安康
 
-import { net, ipcMain } from "electron";
-import { createEmit, log, withLog } from "./lib";
+import { net } from "electron";
+import { createEmit, log, withLog, ipcHandle } from "./lib";
 import { getCorporation, getDetectionByZH } from "./cmd";
 import dayjs from "dayjs";
 import { URL } from "node:url";
@@ -11,7 +11,6 @@ import * as sql from "drizzle-orm";
 import * as schema from "./schema";
 import { channel } from "./channel";
 import type * as PRELOAD from "~/index";
-import type * as STORE from "./store";
 
 /**
  * Sqlite barcode
@@ -365,55 +364,26 @@ const initAutoUpload = () => {
  * Initialize
  */
 const initIpc = () => {
-  ipcMain.handle(
+  ipcHandle(
     channel.kh_hmis_sqlite_get,
-    withLog(
-      async (
-        e,
-        params: PRELOAD.KhBarcodeGetParams,
-      ): Promise<PRELOAD.KhBarcodeGetResult> => {
-        void e;
-        const data = await sqlite_get(params);
-        return data;
-      },
-    ),
+    (_, params: PRELOAD.KhBarcodeGetParams) => sqlite_get(params),
   );
 
-  ipcMain.handle(
-    channel.kh_hmis_sqlite_delete,
-    withLog(async (e, id: number): Promise<schema.KhBarcode> => {
-      void e;
-      return await sqlite_delete(id);
-    }),
+  ipcHandle(channel.kh_hmis_sqlite_delete, (_, id: number) =>
+    sqlite_delete(id),
   );
 
-  ipcMain.handle(
-    channel.kh_hmis_api_get,
-    withLog(async (e, barcode: string): Promise<GetResponse> => {
-      void e;
-      return await api_get(barcode);
-    }),
-  );
+  ipcHandle(channel.kh_hmis_api_get, (_, barcode: string) => api_get(barcode));
+  ipcHandle(channel.kh_hmis_api_set, (_, id: number) => api_set(id));
 
-  ipcMain.handle(
-    channel.kh_hmis_api_set,
-    withLog(async (e, id: number): Promise<schema.KhBarcode> => {
-      void e;
-      return await api_set(id);
-    }),
-  );
-
-  ipcMain.handle(
+  ipcHandle(
     channel.kh_hmis_setting,
-    withLog(
-      async (e, data?: PRELOAD.KhHmisSettingParams): Promise<STORE.KH_HMIS> => {
-        void e;
-        if (data) {
-          kh_hmis.set(data);
-        }
-        return kh_hmis.store;
-      },
-    ),
+    (_, data?: PRELOAD.KhHmisSettingParams) => {
+      if (data) {
+        kh_hmis.set(data);
+      }
+      return kh_hmis.store;
+    },
   );
 };
 

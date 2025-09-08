@@ -1,4 +1,6 @@
-const createEnum = <TTarget extends NonNullable<unknown>>(target: TTarget) => {
+const createEnum = <TTarget extends Record<string, string>>(
+  target: TTarget,
+) => {
   return new Proxy<TTarget>(target, {
     get(_, prop) {
       if (typeof prop === "symbol") {
@@ -11,9 +13,6 @@ const createEnum = <TTarget extends NonNullable<unknown>>(target: TTarget) => {
 };
 
 export const channel = createEnum({
-  // Windows 10
-  printer: "",
-
   // C# Driver
   autoInputToVC: "",
 

@@ -1,7 +1,7 @@
 // 成都北 华兴致远
 
-import { net, ipcMain } from "electron";
-import { log, getIP, withLog, createEmit } from "./lib";
+import { net } from "electron";
+import { log, getIP, withLog, createEmit, ipcHandle } from "./lib";
 import {
   getDetectionByZH,
   getDetectionDatasByOPID,
@@ -367,66 +367,33 @@ const initAutoUpload = () => {
  * Initialize
  */
 const initIpc = () => {
-  ipcMain.handle(
+  ipcHandle(
     channel.hxzy_hmis_sqlite_get,
-    withLog(
-      async (
-        e,
-        params: PRELOAD.HxzyBarcodeGetParams,
-      ): Promise<PRELOAD.HxzyBarcodeGetResult> => {
-        void e;
-        const data = await sqlite_get(params);
-        return data;
-      },
-    ),
+    (_, params: PRELOAD.HxzyBarcodeGetParams) => sqlite_get(params),
   );
 
-  ipcMain.handle(
-    channel.hxzy_hmis_sqlite_delete,
-    withLog(async (e, id: number): Promise<schema.HxzyBarcode> => {
-      void e;
-      return await sqlite_delete(id);
-    }),
+  ipcHandle(channel.hxzy_hmis_sqlite_delete, (_, id: number) =>
+    sqlite_delete(id),
   );
 
-  ipcMain.handle(
-    channel.hxzy_hmis_api_get,
-    withLog(async (e, barcode: string): Promise<GetResponse> => {
-      void e;
-      return await api_get(barcode);
-    }),
+  ipcHandle(channel.hxzy_hmis_api_get, (_, barcode: string) =>
+    api_get(barcode),
   );
 
-  ipcMain.handle(
-    channel.hxzy_hmis_api_set,
-    withLog(async (e, id: number): Promise<schema.HxzyBarcode> => {
-      void e;
-      return await api_set(id);
-    }),
+  ipcHandle(channel.hxzy_hmis_api_set, (_, id: number) => api_set(id));
+
+  ipcHandle(channel.hxzy_hmis_api_verifies, (_, id: string) =>
+    idToUploadVerifiesData(id),
   );
 
-  ipcMain.handle(
-    channel.hxzy_hmis_api_verifies,
-    withLog(
-      async (
-        e,
-        id: string,
-      ): Promise<{ verifies: Verify; verifiesData: VerifyData[] }> => {
-        void e;
-        return await idToUploadVerifiesData(id);
-      },
-    ),
-  );
-
-  ipcMain.handle(
+  ipcHandle(
     channel.hxzy_hmis_setting,
-    withLog(async (e, data?: PRELOAD.HxzyHmisSettingParams) => {
-      void e;
+    (_, data?: PRELOAD.HxzyHmisSettingParams) => {
       if (data) {
         hxzy_hmis.set(data);
       }
       return hxzy_hmis.store;
-    }),
+    },
   );
 };
 
