@@ -1,16 +1,7 @@
-import {
-  BrowserWindow,
-  ipcMain,
-  nativeTheme,
-  app,
-  Menu,
-  dialog,
-  shell,
-} from "electron";
+import { BrowserWindow, nativeTheme, app, Menu, dialog, shell } from "electron";
 import { join } from "node:path";
 import { channel } from "./channel";
-import { withLog } from "./lib";
-import * as windows from "./win";
+import { ipcHandle } from "./lib";
 import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
@@ -138,67 +129,47 @@ const bindAppHandler = () => {
 };
 
 const bindIpcHandler = () => {
-  ipcMain.handle(
-    channel.VERSION,
-    withLog(async () => ({
-      version: app.getVersion(),
-      electronVersion: process.versions.electron,
-      chromeVersion: process.versions.chrome,
-      nodeVersion: process.versions.node,
-      v8Version: process.versions.v8,
-    })),
-  );
+  ipcHandle(channel.VERSION, async () => ({
+    version: app.getVersion(),
+    electronVersion: process.versions.electron,
+    chromeVersion: process.versions.chrome,
+    nodeVersion: process.versions.node,
+    v8Version: process.versions.v8,
+  }));
 
-  ipcMain.handle(
+  ipcHandle(
     channel.openAtLogin,
-    withLog(async (e, openAtLogin?: boolean): Promise<boolean> => {
-      void e;
-
+    async (_, openAtLogin?: boolean): Promise<boolean> => {
       if (typeof openAtLogin === "boolean") {
         app.setLoginItemSettings({ openAtLogin });
       }
-
       return app.getLoginItemSettings().launchItems.some((i) => i.enabled);
-    }),
+    },
   );
 
-  ipcMain.handle(
-    channel.openDevTools,
-    withLog(async (): Promise<void> => {
-      const win = BrowserWindow.getAllWindows().at(0);
-      if (!win) return;
-      win.webContents.openDevTools();
-    }),
-  );
+  ipcHandle(channel.openDevTools, async (): Promise<void> => {
+    const win = BrowserWindow.getAllWindows().at(0);
+    if (!win) return;
+    win.webContents.openDevTools();
+  });
 
-  ipcMain.handle(
-    channel.openPath,
-    withLog(async (e, path: string): Promise<string> => {
-      // Prevent unused variable error
-      void e;
-      const data = await shell.openPath(path);
-      return data;
-    }),
-  );
+  ipcHandle(channel.openPath, async (_, path: string): Promise<string> => {
+    const data = await shell.openPath(path);
+    return data;
+  });
 
-  ipcMain.handle(
-    channel.mem,
-    withLog(async (): Promise<{ totalmem: number; freemem: number }> => {
-      const processMemoryInfo = await process.getProcessMemoryInfo();
-      const freemem = processMemoryInfo.residentSet;
+  ipcHandle(channel.mem, async () => {
+    const processMemoryInfo = await process.getProcessMemoryInfo();
+    const freemem = processMemoryInfo.residentSet;
+    return {
+      totalmem: process.getSystemMemoryInfo().total,
+      freemem,
+    };
+  });
 
-      return {
-        totalmem: process.getSystemMemoryInfo().total,
-        freemem,
-      };
-    }),
-  );
-
-  ipcMain.handle(
+  ipcHandle(
     channel.mobileMode,
-    withLog(async (e, mobile: boolean): Promise<boolean> => {
-      void e;
-
+    async (_, mobile: boolean): Promise<boolean> => {
       BrowserWindow.getAllWindows().forEach((win) => {
         if (mobile) {
           win.setSize(500, 800);
@@ -207,22 +178,18 @@ const bindIpcHandler = () => {
         }
         win.center();
       });
-
       return mobile;
-    }),
+    },
   );
 
-  ipcMain.handle(
-    channel.SELECT_DIRECTORY,
-    withLog(async () => {
-      const win = BrowserWindow.getAllWindows().at(0);
-      if (!win) throw new Error("No active window");
-      const result = await dialog.showOpenDialog(win, {
-        properties: ["openDirectory"],
-      });
-      return result.filePaths;
-    }),
-  );
+  ipcHandle(channel.SELECT_DIRECTORY, async () => {
+    const win = BrowserWindow.getAllWindows().at(0);
+    if (!win) throw new Error("No active window");
+    const result = await dialog.showOpenDialog(win, {
+      properties: ["openDirectory"],
+    });
+    return result.filePaths;
+  });
 };
 
 const bootstrap = async () => {
@@ -247,7 +214,6 @@ const bootstrap = async () => {
   khHmis.init();
   cmd.initIpc();
   store.init();
-  windows.initIpc();
   excel.initIpc();
   mdb.init();
   profile.bindIpcHandler();

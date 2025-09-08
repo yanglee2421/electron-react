@@ -27,11 +27,7 @@ import {
   MenuItem,
   useTheme,
 } from "@mui/material";
-import {
-  useQuery,
-  useQueryClient,
-  usePrefetchQuery,
-} from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useNotifications,
   DashboardLayout,
@@ -42,7 +38,6 @@ import {
 import { ReactRouterAppProvider } from "@toolpad/core/react-router";
 import React from "react";
 import { Outlet, ScrollRestoration, useLocation } from "react-router";
-import { ActivationForm } from "./activation";
 import { NprogressBar } from "./nprogress";
 import type { Navigation } from "@toolpad/core";
 
@@ -388,7 +383,6 @@ const NAVIGATION: Navigation = [
 ];
 
 export const RootRoute = () => {
-  usePrefetchQuery(ActivationForm.fetchActivation());
   const theme = useTheme();
 
   return (

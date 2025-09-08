@@ -4,6 +4,7 @@ import { channel } from "./channel";
 import type { Log } from "@/lib/db";
 import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { ipcMain } from "electron";
 
 export const log = (message: string, type = "info") => {
   const data: Log = {
@@ -42,7 +43,7 @@ export const withLog = <TArgs extends unknown[], TReturn = void>(
       // Ensure an error is thrown when the promise is rejected
       return await fn(...args);
     } catch (error) {
-      console.error(error);
+      devError(error);
       // Log the error message
       const message = errorToMessage(error);
       log(message, "error");
@@ -125,4 +126,33 @@ export const makeTempDir = async () => {
   const tempDir = getTempDir();
   const result = await mkdir(tempDir, { recursive: true });
   return result;
+};
+
+export const devError = (...args: Parameters<typeof console.error>) => {
+  if (import.meta.env.DEV) {
+    console.error(...args);
+  }
+};
+
+const promiseTry = <TValue>(callback: () => TValue) => {
+  return new Promise<TValue>((resolve) => resolve(callback()));
+};
+
+export const ipcHandle = (...args: Parameters<typeof ipcMain.handle>) => {
+  const [channel, listener] = args;
+  return ipcMain.handle(channel, async (_, payload) => {
+    try {
+      const result = await promiseTry(() => listener(_, payload));
+      return result;
+    } catch (error) {
+      devError(error);
+
+      // Log the error message
+      const message = errorToMessage(error);
+      log(message, "error");
+
+      // Throw message instead of error to avoid electron issue #24427
+      throw message;
+    }
+  });
 };

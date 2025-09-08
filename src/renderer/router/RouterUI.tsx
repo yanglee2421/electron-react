@@ -11,7 +11,6 @@ import {
   fetchKhHmisSetting,
   fetchSettings,
 } from "@/api/fetch_preload";
-import { ActivationForm, ActivationGuard } from "./activation";
 import { DashLayout, RootRoute } from "./layout";
 import { RootErrorBoundary } from "./error";
 import { Box, CircularProgress } from "@mui/material";
@@ -122,13 +121,6 @@ const routes: RouteObject[] = [
             ],
           },
           {
-            id: "activation_guard",
-            Component: ActivationGuard,
-            loader: async () => {
-              await QueryProvider.queryClient.ensureQueryData(
-                ActivationForm.fetchActivation(),
-              );
-            },
             children: [
               {
                 id: "detection",

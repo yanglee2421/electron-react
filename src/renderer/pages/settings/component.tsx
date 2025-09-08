@@ -44,7 +44,6 @@ import {
   useSelectDirectory,
   fetchProfile,
 } from "@/api/fetch_preload";
-import { flatRoutes } from "@/router/flatRoutes";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 
 const schema = z.object({
@@ -63,7 +62,6 @@ const useSettingForm = () => {
 
   return useForm<FormValues>({
     defaultValues: {
-      home_path: settings.homePath,
       driverPath: settings.driverPath,
     },
     resolver: zodResolver(schema),
@@ -244,7 +242,6 @@ export const Component = () => {
             onSubmit={form.handleSubmit(async (data) => {
               mutate.mutate({
                 driverPath: data.driverPath,
-                homePath: data.home_path,
               });
               snackbar.show("保存成功", { severity: "success" });
             }, console.warn)}
@@ -290,28 +287,6 @@ export const Component = () => {
                         },
                       }}
                     />
-                  )}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
-                  control={form.control}
-                  name="home_path"
-                  render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                      fullWidth
-                      label="主页路径"
-                      select
-                    >
-                      {flatRoutes.map((i) => (
-                        <MenuItem key={i.path} value={i.path}>
-                          {i.title}
-                        </MenuItem>
-                      ))}
-                    </TextField>
                   )}
                 />
               </Grid>

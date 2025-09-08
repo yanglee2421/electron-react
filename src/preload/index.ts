@@ -30,9 +30,6 @@ export type VerifyActivationResult = {
   serial: string;
 };
 
-const verifyActivation = () =>
-  invoke<VerifyActivationResult>(channel.verifyActivation);
-
 // C# Driver 相关
 const autoInputToVC = (params: AutoInputToVCParams) =>
   invoke<string>(channel.autoInputToVC, params);
@@ -274,9 +271,6 @@ const sqliteXlsxSizeD = (params: SqliteXlsxSizeDParams) =>
   invoke<SCHEMA.XlsxSize[]>(channel.sqlite_xlsx_size_d, params);
 
 const electronAPI = {
-  // Windows 10
-  verifyActivation,
-
   // C# Driver
   autoInputToVC,
 

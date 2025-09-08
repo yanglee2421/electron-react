@@ -13,7 +13,6 @@ const createEnum = <TTarget extends NonNullable<unknown>>(target: TTarget) => {
 export const channel = createEnum({
   // Windows 10
   printer: "",
-  verifyActivation: "",
 
   // C# Driver
   autoInputToVC: "",

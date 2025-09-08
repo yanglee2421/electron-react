@@ -6,20 +6,14 @@ import type * as PRELOAD from "~/index";
 
 export type Settings = {
   driverPath: string;
-  activateCode: string;
   alwaysOnTop: boolean;
   mode: "system" | "light" | "dark";
-  homePath: string;
 };
 
 export const settings = new Store<Settings>({
   name: "settings",
   schema: {
     driverPath: {
-      type: "string",
-      default: "",
-    },
-    activateCode: {
       type: "string",
       default: "",
     },
@@ -31,10 +25,6 @@ export const settings = new Store<Settings>({
       type: "string",
       default: "system",
       enum: ["system", "light", "dark"],
-    },
-    homePath: {
-      type: "string",
-      default: "/settings",
     },
   },
 });
