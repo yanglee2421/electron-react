@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 import { withLog } from "./lib";
 import * as store from "./store";
 import { channel } from "./channel";
-import { getDataFromRootDB as getDataFromMDB } from "./mdb";
+import { getDataFromAppDB, getDataFromRootDB as getDataFromMDB } from "./mdb";
 
 const execFileAsync = promisify(execFile);
 
@@ -162,7 +162,7 @@ export type Corporation = {
 export const getCorporation = async () => {
   const {
     rows: [corporation],
-  } = await getDataFromMDB<Corporation>({
+  } = await getDataFromAppDB<Corporation>({
     tableName: "corporation",
   });
 
