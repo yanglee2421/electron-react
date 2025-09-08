@@ -1,10 +1,9 @@
 import { networkInterfaces } from "node:os";
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { channel } from "./channel";
 import type { Log } from "@/lib/db";
-import { mkdir, rm } from "node:fs/promises";
-import { join } from "node:path";
-import { ipcMain } from "electron";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 
 export const log = (message: string, type = "info") => {
   const data: Log = {
@@ -31,17 +30,21 @@ export const errorToMessage = (error: unknown) => {
   return String(error);
 };
 
-type WithLogFn<TArgs extends unknown[], TReturn = void> = (
+type Callback<TArgs extends unknown[], TReturn> = (...args: TArgs) => TReturn;
+
+const promiseTry = <TArgs extends unknown[], TReturn>(
+  callback: Callback<TArgs, TReturn>,
   ...args: TArgs
-) => Promise<TReturn>;
+) => new Promise<TReturn>((resolve) => resolve(callback(...args)));
 
 export const withLog = <TArgs extends unknown[], TReturn = void>(
-  fn: WithLogFn<TArgs, TReturn>,
-): WithLogFn<TArgs, TReturn> => {
-  const fnWithLog = async (...args: TArgs) => {
+  callback: Callback<TArgs, TReturn>,
+) => {
+  const resultFn = async (...args: TArgs) => {
     try {
       // Ensure an error is thrown when the promise is rejected
-      return await fn(...args);
+      const result = await promiseTry(callback, ...args);
+      return result;
     } catch (error) {
       devError(error);
       // Log the error message
@@ -52,7 +55,7 @@ export const withLog = <TArgs extends unknown[], TReturn = void>(
     }
   };
 
-  return fnWithLog;
+  return resultFn;
 };
 
 export const getIP = () => {
@@ -115,16 +118,17 @@ export const createEmit = <TData = void>(channel: string) => {
   };
 };
 
-export const getTempDir = () => join(app.getPath("temp"), "wtxy_tookit_cmd");
+export const getTempDir = () =>
+  path.join(app.getPath("temp"), "wtxy_tookit_cmd");
 
 export const removeTempDir = async () => {
   const tempDir = getTempDir();
-  await rm(tempDir, { recursive: true, force: true });
+  await fs.rm(tempDir, { recursive: true, force: true });
 };
 
 export const makeTempDir = async () => {
   const tempDir = getTempDir();
-  const result = await mkdir(tempDir, { recursive: true });
+  const result = await fs.mkdir(tempDir, { recursive: true });
   return result;
 };
 
@@ -134,25 +138,7 @@ export const devError = (...args: Parameters<typeof console.error>) => {
   }
 };
 
-const promiseTry = <TValue>(callback: () => TValue) => {
-  return new Promise<TValue>((resolve) => resolve(callback()));
-};
-
 export const ipcHandle = (...args: Parameters<typeof ipcMain.handle>) => {
   const [channel, listener] = args;
-  return ipcMain.handle(channel, async (_, payload) => {
-    try {
-      const result = await promiseTry(() => listener(_, payload));
-      return result;
-    } catch (error) {
-      devError(error);
-
-      // Log the error message
-      const message = errorToMessage(error);
-      log(message, "error");
-
-      // Throw message instead of error to avoid electron issue #24427
-      throw message;
-    }
-  });
+  return ipcMain.handle(channel, withLog(listener));
 };
