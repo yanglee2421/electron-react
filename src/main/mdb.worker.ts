@@ -86,7 +86,6 @@ const getDataFromTable = (
   const table = reader.getTable(tableName);
   return table.getData().filter((row) => {
     if (!Array.isArray(filters)) return true;
-    if (!filters.length) return true;
 
     return filters.every((filter) => {
       switch (filter.type) {
