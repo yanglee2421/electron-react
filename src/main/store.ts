@@ -198,8 +198,6 @@ const initIpc = () => {
       return settings.store;
     },
   );
-
-  ipcHandle(channel.settingsOpenInEditor, () => settings.openInEditor());
 };
 
 export const init = () => {

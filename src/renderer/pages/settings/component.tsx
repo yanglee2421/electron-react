@@ -2,7 +2,6 @@ import {
   BugReportOutlined,
   FindInPageOutlined,
   SaveOutlined,
-  OpenInNewOutlined,
 } from "@mui/icons-material";
 import {
   Card,
@@ -39,7 +38,6 @@ import {
   fetchOpenAtLogin,
   useOpenAtLogin,
   useOpenDevTools,
-  useSettingsOpenInEditor,
   useProfileUpdate,
   useSelectDirectory,
   fetchProfile,
@@ -80,7 +78,6 @@ export const Component = () => {
   const version = useQuery(fetchVersion());
   const openAtLogin = useQuery(fetchOpenAtLogin());
   const openDevTools = useOpenDevTools();
-  const settingsOpenInEditor = useSettingsOpenInEditor();
   const selectDirectory = useSelectDirectory();
   const [profileForm, profileQuery] = useProfileForm();
 
@@ -304,23 +301,6 @@ export const Component = () => {
             }
           >
             保存
-          </Button>
-          <Button
-            type="button"
-            onClick={() => {
-              settingsOpenInEditor.mutate();
-            }}
-            disabled={settingsOpenInEditor.isPending}
-            startIcon={
-              <PendingIcon
-                isPending={settingsOpenInEditor.isPending}
-                color="inherit"
-              >
-                <OpenInNewOutlined />
-              </PendingIcon>
-            }
-          >
-            在编辑器中打开
           </Button>
         </CardActions>
       </Card>

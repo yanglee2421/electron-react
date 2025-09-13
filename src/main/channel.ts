@@ -59,7 +59,6 @@ export const channel = createEnum({
 
   // Common
   settings: "",
-  settingsOpenInEditor: "",
   xlsx_chr_502: "",
   xlsx_chr_53a: "",
 

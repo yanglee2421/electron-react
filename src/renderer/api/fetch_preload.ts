@@ -23,15 +23,6 @@ import { channel } from "#/channel";
 import type { Payload } from "#/mdb";
 import type { Profile } from "#/profile";
 
-// Windows 激活验证
-export const fetchVerifyActivation = () =>
-  queryOptions({
-    queryKey: ["window.electronAPI.verifyActivation"],
-    queryFn: async () => {
-      return await window.electronAPI.verifyActivation();
-    },
-  });
-
 // 自动录入功能
 export const useAutoInputToVC = () => {
   return useMutation({
@@ -485,15 +476,6 @@ export const useUpdateSettings = () => {
       await queryClient.invalidateQueries({
         queryKey: fetchSettings().queryKey,
       });
-    },
-  });
-};
-
-export const useSettingsOpenInEditor = () => {
-  return useMutation({
-    mutationFn: async () => {
-      await window.electronAPI.settingsOpenInEditor();
-      return true;
     },
   });
 };

@@ -226,8 +226,6 @@ export type SetSettingParams = Partial<STORE.Settings>;
 const settings = (param?: SetSettingParams) =>
   invoke<STORE.Settings>(channel.settings, param);
 
-const settingsOpenInEditor = () => invoke(channel.settingsOpenInEditor);
-
 export type SqliteXlsxSizeRParams = {
   id?: number;
   xlsxName?: string;
@@ -313,7 +311,6 @@ const electronAPI = {
 
   // Common
   settings,
-  settingsOpenInEditor,
 
   // Subscribe
   subscribeLog,
