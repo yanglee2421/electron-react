@@ -158,15 +158,6 @@ const bindIpcHandler = () => {
     return data;
   });
 
-  ipcHandle(channel.mem, async () => {
-    const processMemoryInfo = await process.getProcessMemoryInfo();
-    const freemem = processMemoryInfo.residentSet;
-    return {
-      totalmem: process.getSystemMemoryInfo().total,
-      freemem,
-    };
-  });
-
   ipcHandle(
     channel.mobileMode,
     async (_, mobile: boolean): Promise<boolean> => {

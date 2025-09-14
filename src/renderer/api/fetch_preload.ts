@@ -423,14 +423,6 @@ export const useOpenDevTools = () => {
   });
 };
 
-export const fetchMem = () =>
-  queryOptions({
-    queryKey: ["window.electronAPI.getMem"],
-    queryFn: async () => {
-      return await window.electronAPI.getMem();
-    },
-  });
-
 type GetVersionResponse = {
   version: string;
   electronVersion: string;
@@ -636,3 +628,12 @@ export const fetchDataFromAppDB = <TRow>(data: Payload) =>
       return result;
     },
   });
+
+export type MDBUser = {
+  szUid: string;
+  szPasswd: string | null;
+  bAdmin: boolean;
+  lastLogin: string;
+  szMemo: string | null;
+  userCode: string | null;
+};

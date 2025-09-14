@@ -15,7 +15,6 @@ import {
 
 type LogCallback = (data: Log) => void;
 type SubscribeLog = (handler: LogCallback) => () => void;
-type GetMem = () => Promise<{ totalmem: number; freemem: number }>;
 
 type Invoke = <TReturn = void>(
   channel: string,
@@ -193,9 +192,6 @@ const subscribeLog: SubscribeLog = (handler) => {
   };
 };
 
-const getMem: GetMem = () =>
-  invoke<{ totalmem: number; freemem: number }>(channel.mem);
-
 const createSubscribe = (channel: string) => {
   return (handler: () => void) => {
     // Create a new listener function to ensure reference equality for the off method
@@ -306,7 +302,6 @@ const electronAPI = {
   openPath,
   openDevTools,
   getPathForFile: webUtils.getPathForFile,
-  getMem,
   mobileMode,
 
   // Common

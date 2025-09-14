@@ -1,5 +1,9 @@
 import { QueryProvider } from "@/components/query";
-import { fetchDataFromRootDB } from "@/api/fetch_preload";
+import {
+  fetchDataFromAppDB,
+  fetchDataFromRootDB,
+  type MDBUser,
+} from "@/api/fetch_preload";
 import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
 import dayjs from "dayjs";
@@ -7,6 +11,14 @@ import dayjs from "dayjs";
 export const loader = async () => {
   const queryClient = QueryProvider.queryClient;
   const state = useSessionStore.getState();
+
+  await queryClient.ensureQueryData(
+    fetchDataFromAppDB<MDBUser>({
+      tableName: "users",
+      pageIndex: 0,
+      pageSize: 100,
+    }),
+  );
 
   const {
     pageIndex,
@@ -50,14 +62,14 @@ export const loader = async () => {
     },
   ].filter((i) => typeof i === "object");
 
-  await queryClient.ensureQueryData(
-    fetchDataFromRootDB({
-      tableName: "detections",
-      pageIndex,
-      pageSize,
-      filters,
-    }),
-  );
-
-  return state;
+  await queryClient
+    .ensureQueryData(
+      fetchDataFromRootDB({
+        tableName: "detections",
+        pageIndex,
+        pageSize,
+        filters,
+      }),
+    )
+    .catch(Boolean);
 };

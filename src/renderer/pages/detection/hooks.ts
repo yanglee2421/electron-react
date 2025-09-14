@@ -16,7 +16,7 @@ const initialState = (): State => ({
   date: new Date().toISOString(),
   pageIndex: 0,
   pageSize: 100,
-  username: "",
+  username: "admin",
   whModel: "",
   idsWheel: "",
   result: "",

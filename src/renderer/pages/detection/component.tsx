@@ -15,6 +15,7 @@ import {
   IconButton,
   LinearProgress,
   Link,
+  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -45,15 +46,19 @@ import {
 } from "@mui/icons-material";
 import type { Detection } from "#/cmd";
 import { Loading } from "@/components/Loading";
-import { Link as RouterLink, useLoaderData } from "react-router";
+import { Link as RouterLink } from "react-router";
 import { useSessionStore } from "./hooks";
 import type { Filter } from "#/mdb.worker";
-import { useChr53aExport, fetchDataFromRootDB } from "@/api/fetch_preload";
+import {
+  useChr53aExport,
+  fetchDataFromRootDB,
+  fetchDataFromAppDB,
+  type MDBUser,
+} from "@/api/fetch_preload";
 import { ScrollToTop } from "@/components/scroll";
 import { useDialogs } from "@toolpad/core";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
-import type { loader } from "./loader";
 
 const renderCheckBoxIcon = (value: boolean | null) => {
   return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
@@ -256,15 +261,13 @@ const DataGrid = ({
 
 export const Component = () => {
   const [anchorEl, showScrollToTop] = ScrollToTop.useScrollToTop();
-  const {
-    date: selectDate,
-    pageIndex,
-    pageSize,
-    username,
-    whModel,
-    idsWheel,
-    result,
-  } = useLoaderData<typeof loader>();
+  const selectDate = useSessionStore((s) => s.date);
+  const pageIndex = useSessionStore((s) => s.pageIndex);
+  const pageSize = useSessionStore((s) => s.pageSize);
+  const username = useSessionStore((s) => s.username);
+  const whModel = useSessionStore((s) => s.whModel);
+  const idsWheel = useSessionStore((s) => s.idsWheel);
+  const result = useSessionStore((s) => s.result);
 
   const date = selectDate ? dayjs(selectDate) : null;
   const filters: Filter[] = [
@@ -304,6 +307,14 @@ export const Component = () => {
       pageIndex,
       pageSize,
       filters,
+    }),
+  );
+
+  const usersQuery = useQuery(
+    fetchDataFromAppDB<MDBUser>({
+      tableName: "users",
+      pageIndex: 0,
+      pageSize: 100,
     }),
   );
 
@@ -384,7 +395,14 @@ export const Component = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               fullWidth
-            />
+              select
+            >
+              {usersQuery.data?.rows.map((user) => (
+                <MenuItem key={user.szUid} value={user.szUid}>
+                  {user.szUid}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField

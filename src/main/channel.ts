@@ -44,7 +44,6 @@ export const channel = createEnum({
 
   // Electron
   log: "",
-  mem: "",
   openAtLogin: "",
   openDevTools: "",
   openPath: "",

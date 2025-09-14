@@ -20,7 +20,7 @@ import {
   Link,
   Checkbox,
   TextField,
-  InputAdornment,
+  MenuItem,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -33,8 +33,12 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import { ClearOutlined, RefreshOutlined } from "@mui/icons-material";
-import { fetchDataFromRootDB } from "@/api/fetch_preload";
+import { RefreshOutlined } from "@mui/icons-material";
+import {
+  fetchDataFromAppDB,
+  fetchDataFromRootDB,
+  type MDBUser,
+} from "@/api/fetch_preload";
 import type { Quartor } from "#/cmd";
 import { Loading } from "@/components/Loading";
 import { Link as RouterLink } from "react-router";
@@ -218,22 +222,6 @@ const DataGrid = (props: DataGridProps) => {
   );
 };
 
-type ClearInputButtonProps = {
-  value: string;
-  onClear?: () => void;
-};
-
-const ClearInputButton = (props: ClearInputButtonProps) => {
-  if (!props.value) return null;
-  return (
-    <InputAdornment position="end">
-      <IconButton onClick={props.onClear}>
-        <ClearOutlined />
-      </IconButton>
-    </InputAdornment>
-  );
-};
-
 export const Component = () => {
   const selectDate = useSessionStore((s) => s.date);
   const pageIndex = useSessionStore((s) => s.pageIndex);
@@ -285,6 +273,14 @@ export const Component = () => {
     }),
   );
 
+  const usersQuery = useQuery(
+    fetchDataFromAppDB<MDBUser>({
+      tableName: "users",
+      pageIndex: 0,
+      pageSize: 100,
+    }),
+  );
+
   const set = useSessionStore.setState;
   const setDate = (day: dayjs.Dayjs | null) =>
     set((d) => {
@@ -315,6 +311,32 @@ export const Component = () => {
     set((d) => {
       d.result = result;
     });
+
+  const renderUserSelect = () => {
+    if (!usersQuery.isSuccess) return null;
+
+    return (
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <TextField
+          fullWidth
+          value={username}
+          onChange={(e) => {
+            set((d) => {
+              d.username = e.target.value;
+            });
+          }}
+          label="检测员"
+          select
+        >
+          {usersQuery.data.rows.map((user) => (
+            <MenuItem key={user.szUid} value={user.szUid}>
+              {user.szUid}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Grid>
+    );
+  };
 
   return (
     <Card>
@@ -349,32 +371,7 @@ export const Component = () => {
               }}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              fullWidth
-              value={username}
-              onChange={(e) => {
-                set((d) => {
-                  d.username = e.target.value;
-                });
-              }}
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <ClearInputButton
-                      value={username}
-                      onClear={() =>
-                        set((d) => {
-                          d.username = "";
-                        })
-                      }
-                    />
-                  ),
-                },
-              }}
-              label="检测员"
-            />
-          </Grid>
+          {renderUserSelect()}
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               label="轴型"
