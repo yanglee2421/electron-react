@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, nativeTheme } from "electron";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { z } from "zod";
@@ -9,9 +9,16 @@ import { ipcHandle } from "./lib";
 import ini from "ini";
 import iconv from "iconv-lite";
 
+const modeSchema = z.enum(["system", "light", "dark"]).default("system");
+
+type Mode = z.infer<typeof modeSchema>;
+
 const profileSchema = z.object({
   appPath: z.string().default(""),
   encoding: z.string().default("gbk"),
+  driverPath: z.string().default(""),
+  alwaysOnTop: z.boolean().default(false),
+  mode: modeSchema,
 });
 
 // Shared Logic
@@ -53,15 +60,34 @@ export const getProfile = async () => {
   }
 };
 
+const diffMode = (prev: Mode, next: Mode) => {
+  if (Object.is(prev, next)) return;
+
+  nativeTheme.themeSource = next;
+};
+
+const diffAlwaysOnTop = (prev: boolean, next: boolean) => {
+  if (Object.is(prev, next)) return;
+
+  BrowserWindow.getAllWindows().forEach((win) => {
+    win.setAlwaysOnTop(next);
+  });
+};
+
 type ProfileCallback = (profile: WritableDraft<Profile>) => void;
 
 export const setProfile = async (callback: ProfileCallback) => {
   const filePath = getFilePath();
   const previous = await getProfile();
   const data = produce(previous, callback);
+
   await fs.writeFile(filePath, JSON.stringify(data), {
     encoding: "utf-8",
   });
+
+  diffMode(previous.mode, data.mode);
+  diffAlwaysOnTop(previous.alwaysOnTop, data.alwaysOnTop);
+
   BrowserWindow.getAllWindows().forEach((win) => {
     win.webContents.send(channel.PROFILE_SET, data);
   });

@@ -1,7 +1,7 @@
 import {
-  fetchSettings,
-  useUpdateSettings,
   useMobileMode,
+  fetchProfile,
+  useProfileUpdate,
 } from "@/api/fetch_preload";
 import {
   LightModeOutlined,
@@ -56,22 +56,12 @@ const renderModeIcon = (mode: string) => {
 const ModeToggle = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
-  const fetcher = fetchSettings();
-  const { data: settings } = useQuery(fetcher);
-  const updateSettings = useUpdateSettings();
+  const fetcher = fetchProfile();
+  const profile = useQuery(fetcher);
   const queryClient = useQueryClient();
   const snackbar = useNotifications();
+  const updateSettings = useProfileUpdate();
 
-  /**
-   * Already ensured query data in the loader
-   * @see authLayoutLoader
-   * But we need to check if the data is valid
-   */
-  if (!settings) {
-    throw new Error("请先加载设置");
-  }
-
-  const mode = settings.mode;
   const setMode = (newMode: "system" | "light" | "dark") => {
     document.startViewTransition(async () => {
       queryClient.setQueryData(fetcher.queryKey, (old) => {
@@ -94,52 +84,60 @@ const ModeToggle = () => {
     });
   };
 
-  return (
-    <>
-      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-        {renderModeIcon(mode)}
-      </IconButton>
-      <Menu
-        open={!!anchorEl}
-        anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
-      >
-        <MenuItem
-          onClick={() => {
-            setAnchorEl(null);
-            setMode("light");
-          }}
+  const render = () => {
+    if (!profile.isSuccess) return null;
+
+    const mode = profile.data.mode;
+
+    return (
+      <>
+        <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+          {renderModeIcon(mode)}
+        </IconButton>
+        <Menu
+          open={!!anchorEl}
+          anchorEl={anchorEl}
+          onClose={() => setAnchorEl(null)}
         >
-          <ListItemIcon>
-            <LightModeOutlined />
-          </ListItemIcon>
-          <ListItemText primary="明亮" />
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setAnchorEl(null);
-            setMode("dark");
-          }}
-        >
-          <ListItemIcon>
-            <DarkModeOutlined />
-          </ListItemIcon>
-          <ListItemText primary="黑暗" />
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setAnchorEl(null);
-            setMode("system");
-          }}
-        >
-          <ListItemIcon>
-            <DesktopWindowsOutlined />
-          </ListItemIcon>
-          <ListItemText primary="系统" />
-        </MenuItem>
-      </Menu>
-    </>
-  );
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              setMode("light");
+            }}
+          >
+            <ListItemIcon>
+              <LightModeOutlined />
+            </ListItemIcon>
+            <ListItemText primary="明亮" />
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              setMode("dark");
+            }}
+          >
+            <ListItemIcon>
+              <DarkModeOutlined />
+            </ListItemIcon>
+            <ListItemText primary="黑暗" />
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              setMode("system");
+            }}
+          >
+            <ListItemIcon>
+              <DesktopWindowsOutlined />
+            </ListItemIcon>
+            <ListItemText primary="系统" />
+          </MenuItem>
+        </Menu>
+      </>
+    );
+  };
+
+  return render();
 };
 
 const MobileModeButton = () => {
@@ -159,42 +157,48 @@ const MobileModeButton = () => {
 };
 
 const AlwaysOnTop = () => {
-  const fetcher = fetchSettings();
-  const { data: settings } = useQuery(fetcher);
-  const updateSettings = useUpdateSettings();
+  const fetcher = fetchProfile();
+  const profile = useQuery(fetcher);
   const queryClient = useQueryClient();
   const snackbar = useNotifications();
+  const updateSettings = useProfileUpdate();
 
-  const alwaysOnTop = settings?.alwaysOnTop;
+  const render = () => {
+    if (!profile.isSuccess) return null;
 
-  return (
-    <IconButton
-      onClick={() => {
-        queryClient.setQueryData(fetcher.queryKey, (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            alwaysOnTop: !old.alwaysOnTop,
-          };
-        });
+    const alwaysOnTop = profile.data.alwaysOnTop;
 
-        updateSettings.mutate(
-          {
-            alwaysOnTop: !alwaysOnTop,
-          },
-          {
-            onError: () => {
-              snackbar.show("设置失败", {
-                severity: "error",
-              });
+    return (
+      <IconButton
+        onClick={() => {
+          queryClient.setQueryData(fetcher.queryKey, (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              alwaysOnTop: !old.alwaysOnTop,
+            };
+          });
+
+          updateSettings.mutate(
+            {
+              alwaysOnTop: !alwaysOnTop,
             },
-          },
-        );
-      }}
-    >
-      {alwaysOnTop ? <PushPin /> : <PushPinOutlined />}
-    </IconButton>
-  );
+            {
+              onError: () => {
+                snackbar.show("设置失败", {
+                  severity: "error",
+                });
+              },
+            },
+          );
+        }}
+      >
+        {alwaysOnTop ? <PushPin /> : <PushPinOutlined />}
+      </IconButton>
+    );
+  };
+
+  return render();
 };
 
 const segmentAlias = new Map([

@@ -12,7 +12,6 @@ import type {
   JtvXuzhoubeiBarcodeGetParams,
   KhHmisSettingParams,
   KhBarcodeGetParams,
-  SetSettingParams,
   SqliteXlsxSizeRParams,
   SqliteXlsxSizeCParams,
   SqliteXlsxSizeUParams,
@@ -450,28 +449,6 @@ export const useMobileMode = () => {
   });
 };
 
-export const fetchSettings = () =>
-  queryOptions({
-    queryKey: ["window.electronAPI.settings"],
-    queryFn: async () => {
-      return await window.electronAPI.settings();
-    },
-  });
-
-export const useUpdateSettings = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (setting: SetSettingParams) => {
-      return await window.electronAPI.settings(setting);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchSettings().queryKey,
-      });
-    },
-  });
-};
-
 export const fetchSqliteXlsxSize = (params?: SqliteXlsxSizeRParams) =>
   queryOptions({
     queryKey: ["window.electronAPI.sqliteXlsxSizeR", params],
@@ -594,9 +571,10 @@ export const useSelectDirectory = () => {
 
 export const useSelectFile = () => {
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (filters: Electron.FileFilter[]) => {
       const filePaths: string[] = await window.electron.ipcRenderer.invoke(
         channel.SELECT_FILE,
+        filters,
       );
       return filePaths;
     },

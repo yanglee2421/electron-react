@@ -5,9 +5,9 @@ import { dirname, join, resolve } from "node:path";
 import { cp, access, constants, mkdir, rm } from "node:fs/promises";
 import dayjs from "dayjs";
 import { ipcHandle } from "./lib";
-import * as store from "./store";
 import { channel } from "./channel";
 import { getDataFromAppDB, getDataFromRootDB as getDataFromMDB } from "./mdb";
+import { getProfile } from "./profile";
 
 const execFileAsync = promisify(execFile);
 
@@ -272,7 +272,8 @@ export type AutoInputToVCParams = {
 };
 
 const autoInputToVC = async (data: AutoInputToVCParams) => {
-  const driverPath = store.settings.get("driverPath");
+  const profile = await getProfile();
+  const driverPath = profile.driverPath;
   const cp = await execFileAsyncWithRetry(driverPath, [
     "autoInputToVC",
     data.zx,

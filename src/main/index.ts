@@ -6,16 +6,13 @@ import * as hxzyHmis from "./hxzy_hmis";
 import * as jtvHmis from "./jtv_hmis";
 import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
 import * as khHmis from "./kh_hmis";
-import * as store from "./store";
 import * as cmd from "./cmd";
 import * as excel from "./xlsx";
 import { is, optimizer, electronApp } from "@electron-toolkit/utils";
 import * as mdb from "./mdb";
 import * as profile from "./profile";
 
-const createWindow = async () => {
-  const alwaysOnTop = store.settings.get("alwaysOnTop");
-
+const createWindow = async (alwaysOnTop: boolean) => {
   const win = new BrowserWindow({
     webPreferences: {
       preload: join(__dirname, "../preload/index.mjs"),
@@ -92,9 +89,10 @@ const bindAppHandler = () => {
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  app.on("activate", () => {
+  app.on("activate", async () => {
+    const profileInfo = await profile.getProfile();
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      createWindow(profileInfo.alwaysOnTop);
     }
   });
 
@@ -181,6 +179,16 @@ const bindIpcHandler = () => {
     });
     return result.filePaths;
   });
+
+  ipcHandle(channel.SELECT_FILE, async (_, filters: Electron.FileFilter[]) => {
+    const win = BrowserWindow.getAllWindows().at(0);
+    if (!win) throw new Error("No active window");
+    const result = await dialog.showOpenDialog(win, {
+      properties: ["openFile"],
+      filters,
+    });
+    return result.filePaths;
+  });
 };
 
 const bootstrap = async () => {
@@ -194,8 +202,8 @@ const bootstrap = async () => {
   electronApp.setAppUserModelId("com.electron");
 
   // Set app theme mode
-  const mode = store.settings.get("mode");
-  nativeTheme.themeSource = mode;
+  const profileInfo = await profile.getProfile();
+  nativeTheme.themeSource = profileInfo.mode;
 
   bindAppHandler();
   bindIpcHandler();
@@ -204,13 +212,12 @@ const bootstrap = async () => {
   jtvHmis.init();
   khHmis.init();
   cmd.initIpc();
-  store.init();
   excel.initIpc();
   mdb.init();
   profile.bindIpcHandler();
 
   await app.whenReady();
-  await createWindow();
+  await createWindow(profileInfo.alwaysOnTop);
 };
 
 bootstrap();

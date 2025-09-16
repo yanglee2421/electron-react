@@ -9,16 +9,11 @@ import {
   fetchJtvHmisSetting,
   fetchJtvHmisXuzhoubeiSetting,
   fetchKhHmisSetting,
-  fetchSettings,
+  fetchProfile,
 } from "@/api/fetch_preload";
 import { DashLayout, RootRoute } from "./layout";
 import { RootErrorBoundary } from "./error";
 import { Box, CircularProgress } from "@mui/material";
-
-const authLayoutLoader = async () => {
-  const queryClient = QueryProvider.queryClient;
-  return await queryClient.ensureQueryData(fetchSettings());
-};
 
 const hxzyLoader = async () => {
   const queryClient = QueryProvider.queryClient;
@@ -71,7 +66,10 @@ const routes: RouteObject[] = [
       {
         id: "auth_layout",
         Component: DashLayout,
-        loader: authLayoutLoader,
+        loader: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 1000 * 1.5));
+          await QueryProvider.queryClient.ensureQueryData(fetchProfile());
+        },
         children: [
           {
             id: "home",

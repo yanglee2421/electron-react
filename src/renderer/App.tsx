@@ -5,8 +5,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import React from "react";
 import "dayjs/locale/zh";
 // import "dayjs/locale/en";
-import { Loading } from "@/components/Loading";
-import { useLocalStoreHasHydrated } from "@/hooks/useLocalStore";
 import { QueryProvider } from "./components/query";
 import { db } from "./lib/db";
 import type { Log } from "./lib/db";
@@ -79,13 +77,7 @@ const useLog = () => {
 export const App = () => {
   useLog();
 
-  const localHasHydrated = useLocalStoreHasHydrated();
-
   const renderRouter = () => {
-    if (!localHasHydrated) {
-      return <Loading />;
-    }
-
     return <RouterUI />;
   };
 

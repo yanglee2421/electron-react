@@ -217,11 +217,6 @@ const subscribeJtvHmisXuzhoubeiAPISet = createSubscribe(
 const mobileMode = (mobile: boolean) =>
   invoke<boolean>(channel.mobileMode, mobile);
 
-export type SetSettingParams = Partial<STORE.Settings>;
-
-const settings = (param?: SetSettingParams) =>
-  invoke<STORE.Settings>(channel.settings, param);
-
 export type SqliteXlsxSizeRParams = {
   id?: number;
   xlsxName?: string;
@@ -303,9 +298,6 @@ const electronAPI = {
   openDevTools,
   getPathForFile: webUtils.getPathForFile,
   mobileMode,
-
-  // Common
-  settings,
 
   // Subscribe
   subscribeLog,

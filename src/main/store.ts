@@ -1,33 +1,4 @@
 import Store from "electron-store";
-import { BrowserWindow, nativeTheme } from "electron";
-import { ipcHandle } from "./lib";
-import { channel } from "./channel";
-import type * as PRELOAD from "~/index";
-
-export type Settings = {
-  driverPath: string;
-  alwaysOnTop: boolean;
-  mode: "system" | "light" | "dark";
-};
-
-export const settings = new Store<Settings>({
-  name: "settings",
-  schema: {
-    driverPath: {
-      type: "string",
-      default: "",
-    },
-    alwaysOnTop: {
-      type: "boolean",
-      default: false,
-    },
-    mode: {
-      type: "string",
-      default: "system",
-      enum: ["system", "light", "dark"],
-    },
-  },
-});
 
 export type HXZY_HMIS = {
   host: string;
@@ -174,33 +145,3 @@ export const kh_hmis = new Store<KH_HMIS>({
     },
   },
 });
-
-const initDidChange = () => {
-  settings.onDidChange("alwaysOnTop", (value) => {
-    BrowserWindow.getAllWindows().forEach((win) => {
-      win.setAlwaysOnTop(!!value);
-    });
-  });
-
-  settings.onDidChange("mode", (value) => {
-    if (!value) return;
-    nativeTheme.themeSource = value;
-  });
-};
-
-const initIpc = () => {
-  ipcHandle(
-    channel.settings,
-    async (_, data?: PRELOAD.SetSettingParams): Promise<Settings> => {
-      if (data) {
-        settings.set(data);
-      }
-      return settings.store;
-    },
-  );
-};
-
-export const init = () => {
-  initDidChange();
-  initIpc();
-};

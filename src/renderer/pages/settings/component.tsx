@@ -25,15 +25,11 @@ import {
   AlertTitle,
   Box,
 } from "@mui/material";
-import { useForm, Controller } from "react-hook-form";
 import z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useNotifications } from "@toolpad/core";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  fetchSettings,
-  useUpdateSettings,
   fetchVersion,
   fetchOpenAtLogin,
   useOpenAtLogin,
@@ -41,38 +37,13 @@ import {
   useProfileUpdate,
   useSelectDirectory,
   fetchProfile,
+  useSelectFile,
 } from "@/api/fetch_preload";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 
-const schema = z.object({
-  driverPath: z.string().min(1, { message: "驱动路径不能为空" }),
-  home_path: z.string().min(1, { message: "主页路径不能为空" }),
-});
-
-type FormValues = z.infer<typeof schema>;
-
-const useSettingForm = () => {
-  const { data: settings } = useQuery(fetchSettings());
-
-  if (!settings) {
-    throw new Error("Settings not found");
-  }
-
-  return useForm<FormValues>({
-    defaultValues: {
-      driverPath: settings.driverPath,
-    },
-    resolver: zodResolver(schema),
-  });
-};
-
 export const Component = () => {
-  const formId = React.useId();
   const profileFormId = React.useId();
 
-  const form = useSettingForm();
-  const mutate = useUpdateSettings();
-  const snackbar = useNotifications();
   const queryClient = useQueryClient();
   const updateOpenAtLogin = useOpenAtLogin();
   const version = useQuery(fetchVersion());
@@ -80,6 +51,7 @@ export const Component = () => {
   const openDevTools = useOpenDevTools();
   const selectDirectory = useSelectDirectory();
   const [profileForm, profileQuery] = useProfileForm();
+  const selectFile = useSelectFile();
 
   const handleDirectoryChange = () => {
     selectDirectory.mutate(void 0, {
@@ -90,6 +62,26 @@ export const Component = () => {
         profileForm.validateField("appPath", "change");
       },
     });
+  };
+
+  const handleFileChange = () => {
+    selectFile.mutate(
+      [
+        {
+          name: "可执行文件[exe]",
+          extensions: ["exe"],
+        },
+        { name: "所有文件", extensions: ["*"] },
+      ],
+      {
+        onSuccess(paths) {
+          const path = paths?.[0];
+          if (!path) return;
+          profileForm.setFieldValue("driverPath", path);
+          profileForm.validateField("driverPath", "change");
+        },
+      },
+    );
   };
 
   const renderForm = () => {
@@ -190,6 +182,43 @@ export const Component = () => {
                   )}
                 </profileForm.AppField>
               </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <profileForm.AppField name="driverPath">
+                  {(driverPathField) => (
+                    <driverPathField.TextField
+                      value={driverPathField.state.value}
+                      onChange={(e) =>
+                        driverPathField.handleChange(e.target.value)
+                      }
+                      onBlur={driverPathField.handleBlur}
+                      fullWidth
+                      label="驱动路径"
+                      helperText={
+                        driverPathField.getMeta().errors.length
+                          ? driverPathField.getMeta().errors.at(0)?.message
+                          : "与系统原生交互所需的命令行工具"
+                      }
+                      error={driverPathField.getMeta().errors.length > 0}
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={handleFileChange}
+                                disabled={selectFile.isPending}
+                              >
+                                <PendingIcon isPending={selectFile.isPending}>
+                                  <FindInPageOutlined />
+                                </PendingIcon>
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                    />
+                  )}
+                </profileForm.AppField>
+              </Grid>
             </Grid>
           </form>
         </CardContent>
@@ -224,94 +253,8 @@ export const Component = () => {
           title="设置"
           action={
             <IconButton
-              onClick={() => {
-                openDevTools.mutate();
-              }}
-              disabled={openDevTools.isPaused}
-            >
-              <BugReportOutlined />
-            </IconButton>
-          }
-        />
-        <CardContent>
-          <form
-            id={formId}
-            onSubmit={form.handleSubmit(async (data) => {
-              mutate.mutate({
-                driverPath: data.driverPath,
-              });
-              snackbar.show("保存成功", { severity: "success" });
-            }, console.warn)}
-            onReset={() => form.reset()}
-            noValidate
-            autoComplete="off"
-          >
-            <Grid container spacing={1.5}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
-                  control={form.control}
-                  name="driverPath"
-                  render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                      fullWidth
-                      label="驱动路径"
-                      slotProps={{
-                        input: {
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton component="label">
-                                <input
-                                  type="file"
-                                  accept="application/x-msdownload,.exe"
-                                  hidden
-                                  value={""}
-                                  onChange={(e) => {
-                                    const file = e.target.files?.item(0);
-                                    if (!file) return;
-
-                                    field.onChange(
-                                      window.electronAPI.getPathForFile(file),
-                                    );
-                                  }}
-                                />
-                                <FindInPageOutlined />
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                    />
-                  )}
-                />
-              </Grid>
-            </Grid>
-          </form>
-        </CardContent>
-        <CardActions>
-          <Button
-            type="submit"
-            form={formId}
-            startIcon={
-              <PendingIcon isPending={mutate.isPending} color="inherit">
-                <SaveOutlined />
-              </PendingIcon>
-            }
-          >
-            保存
-          </Button>
-        </CardActions>
-      </Card>
-      <Card>
-        <CardHeader
-          title="设置（实验性）"
-          action={
-            <IconButton
               onClick={async () => {
-                const ini = await window.electron.ipcRenderer.invoke("ini");
-                console.log(ini);
+                openDevTools.mutate();
               }}
             >
               <BugReportOutlined />
@@ -382,6 +325,7 @@ const { useAppForm } = createFormHook({
 const profileSchema = z.object({
   appPath: z.string().min(1, { message: "应用路径不能为空" }),
   encoding: z.string().min(1, { message: "编码不能为空" }),
+  driverPath: z.string().min(1, { message: "驱动路径不能为空" }),
 });
 
 const useProfileForm = () => {
@@ -393,12 +337,14 @@ const useProfileForm = () => {
     defaultValues: {
       appPath: profileQuery.data?.appPath || "",
       encoding: profileQuery.data?.encoding || "",
+      driverPath: profileQuery.data?.driverPath || "",
     },
     async onSubmit(props) {
       await profileUpdate.mutateAsync(
         {
           appPath: props.value.appPath,
           encoding: props.value.encoding,
+          driverPath: props.value.driverPath,
         },
         {
           onError: (error) => {
