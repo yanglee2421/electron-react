@@ -77,13 +77,11 @@ const useLog = () => {
 export const App = () => {
   useLog();
 
-  const renderRouter = () => {
-    return <RouterUI />;
-  };
-
   return (
     <QueryProvider>
-      <MuiProvider>{renderRouter()}</MuiProvider>
+      <MuiProvider>
+        <RouterUI />
+      </MuiProvider>
     </QueryProvider>
   );
 };

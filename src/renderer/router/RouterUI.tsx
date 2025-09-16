@@ -57,6 +57,9 @@ const routes: RouteObject[] = [
     Component: RootRoute,
     ErrorBoundary: RootErrorBoundary,
     HydrateFallback: RootHydrateFallback,
+    loader: async () => {
+      await QueryProvider.queryClient.ensureQueryData(fetchProfile());
+    },
     children: [
       {
         id: "404",
@@ -66,10 +69,6 @@ const routes: RouteObject[] = [
       {
         id: "auth_layout",
         Component: DashLayout,
-        loader: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 1000 * 1.5));
-          await QueryProvider.queryClient.ensureQueryData(fetchProfile());
-        },
         children: [
           {
             id: "home",
