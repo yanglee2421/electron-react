@@ -1,4 +1,13 @@
-import { BrowserWindow, nativeTheme, app, Menu, dialog, shell } from "electron";
+import {
+  BrowserWindow,
+  nativeTheme,
+  app,
+  Menu,
+  dialog,
+  shell,
+  protocol,
+  net,
+} from "electron";
 import { join } from "node:path";
 import { channel } from "./channel";
 import { ipcHandle } from "./lib";
@@ -191,6 +200,15 @@ const bindIpcHandler = () => {
   });
 };
 
+const bindProtocol = () => {
+  protocol.handle("atom", async (request) => {
+    const fileName = request.url.replace(/^atom:\/\//, "");
+    const profileInfo = await profile.getRootPath();
+    const fetchURL = join(profileInfo, "_data", fileName);
+    return net.fetch(`file://${fetchURL}`);
+  });
+};
+
 const bootstrap = async () => {
   /**
    * Performace optimization
@@ -215,6 +233,7 @@ const bootstrap = async () => {
   excel.initIpc();
   mdb.init();
   profile.bindIpcHandler();
+  bindProtocol();
 
   await app.whenReady();
   await createWindow(profileInfo.alwaysOnTop);

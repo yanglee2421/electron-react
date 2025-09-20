@@ -34,13 +34,19 @@ export const getAppDBPath = async () => {
   return path.resolve(appPath, "Data", "local.mdb");
 };
 
-export const getRootDBPath = async () => {
+export const getRootPath = async () => {
   const [appPath, profile] = await getAppPath();
   const iniPath = path.resolve(appPath, "usprofile.ini");
   const iniBuffer = await fs.readFile(iniPath);
   const iniText = iconv.decode(iniBuffer, profile.encoding);
   const userProfile = ini.parse(iniText);
   const rootPath = userProfile.FileSystem.Root as string;
+
+  return rootPath;
+};
+
+export const getRootDBPath = async () => {
+  const rootPath = await getRootPath();
 
   return path.resolve(rootPath, "local.mdb");
 };
