@@ -20,6 +20,7 @@ import * as excel from "./xlsx";
 import { is, optimizer, electronApp } from "@electron-toolkit/utils";
 import * as mdb from "./mdb";
 import * as profile from "./profile";
+import * as md5 from "./image";
 
 const createWindow = async (alwaysOnTop: boolean) => {
   const win = new BrowserWindow({
@@ -233,6 +234,7 @@ const bootstrap = async () => {
   excel.initIpc();
   mdb.init();
   profile.bindIpcHandler();
+  md5.bindIpcHandler();
   bindProtocol();
 
   await app.whenReady();

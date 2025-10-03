@@ -615,3 +615,22 @@ export type MDBUser = {
   szMemo: string | null;
   userCode: string | null;
 };
+
+export const useMD5BackupImage = () => {
+  return useMutation({
+    mutationFn: async (path: string) => {
+      await window.electron.ipcRenderer.invoke(channel.MD5_BACKUP_IMAGE, path);
+      return true;
+    },
+  });
+};
+
+export const useMD5Compute = () => {
+  return useMutation({
+    mutationFn: async (path: string) => {
+      const result: Record<string, string> =
+        await window.electron.ipcRenderer.invoke(channel.MD5_COMPUTE, path);
+      return result;
+    },
+  });
+};

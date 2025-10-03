@@ -86,6 +86,14 @@ const routes: RouteObject[] = [
             lazy: () => import("@/pages/log/component"),
           },
           {
+            path: "md5_compute",
+            lazy: () => import("@/pages/md5_compute/component"),
+          },
+          {
+            path: "md5_backup_image",
+            lazy: () => import("@/pages/md5_backup_image/component"),
+          },
+          {
             id: "xlsx",
             path: "xlsx",
             children: [

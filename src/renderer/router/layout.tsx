@@ -384,6 +384,16 @@ const NAVIGATION: Navigation = [
     title: "设置",
     icon: <SettingsOutlined />,
   },
+  {
+    segment: "md5_compute",
+    title: "md5_compute",
+    icon: <SettingsOutlined />,
+  },
+  {
+    segment: "md5_backup_image",
+    title: "md5_backup_image",
+    icon: <SettingsOutlined />,
+  },
 ];
 
 export const RootRoute = () => {

@@ -1,12 +1,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as utils from "node:util";
-import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
+import { ipcHandle } from "./lib";
+import { channel } from "./channel";
+import workerPath from "./image.worker?modulePath";
 
 const computeMD5 = (files: string[]) => {
-  const _dirname = path.dirname(fileURLToPath(import.meta.url));
-  const workerPath = path.resolve(_dirname, "./image.worker.ts");
   const worker = new Worker(workerPath, {
     workerData: { files },
   });
@@ -111,9 +111,9 @@ const getFilePaths = async (directory: string, pathSet: Set<string>) => {
 };
 
 const bootstrap = async (source: string) => {
-  console.time("bootstrap");
   const md5ToFilePath = createMD5ToFile();
   const pathSet = new Set<string>();
+  console.time("bootstrap");
 
   await getFilePaths(source, pathSet);
   console.timeLog("bootstrap", "All files: ", pathSet.size);
@@ -126,4 +126,12 @@ const bootstrap = async (source: string) => {
   console.timeEnd("bootstrap");
 };
 
-bootstrap("C:\\Users\\lee\\OneDrive\\Picture\\backup");
+export const bindIpcHandler = () => {
+  ipcHandle(channel.MD5_BACKUP_IMAGE, async (_, payload: string) => {
+    await bootstrap(payload);
+  });
+  ipcHandle(channel.MD5_COMPUTE, async (_, payload: string) => {
+    const record = await computeMD5([payload]);
+    return record;
+  });
+};

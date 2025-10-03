@@ -72,4 +72,7 @@ export const channel = createEnum({
   PROFILE_GET: "",
   MDB_ROOT_GET: "",
   MDB_APP_GET: "",
+
+  MD5_BACKUP_IMAGE: "",
+  MD5_COMPUTE: "",
 });
