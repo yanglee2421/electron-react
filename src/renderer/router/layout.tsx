@@ -388,17 +388,22 @@ const NAVIGATION: Navigation = [
     title: "设置",
     icon: <SettingsOutlined />,
   },
-  {
-    segment: "md5_compute",
-    title: "MD5计算",
-    icon: <VpnKeyOutlined />,
-  },
-  {
-    segment: "md5_backup_image",
-    title: "图片备份",
-    icon: <PermMediaOutlined />,
-  },
 ];
+
+if (import.meta.env.DEV) {
+  NAVIGATION.push(
+    {
+      segment: "md5_compute",
+      title: "MD5计算",
+      icon: <VpnKeyOutlined />,
+    },
+    {
+      segment: "md5_backup_image",
+      title: "图片备份",
+      icon: <PermMediaOutlined />,
+    },
+  );
+}
 
 export const RootRoute = () => {
   const theme = useTheme();
