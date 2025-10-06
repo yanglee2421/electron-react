@@ -323,9 +323,9 @@ const { useAppForm } = createFormHook({
 });
 
 const profileSchema = z.object({
-  appPath: z.string().min(1, { message: "应用路径不能为空" }),
-  encoding: z.string().min(1, { message: "编码不能为空" }),
-  driverPath: z.string().min(1, { message: "驱动路径不能为空" }),
+  appPath: z.string().min(1),
+  encoding: z.string().min(1),
+  driverPath: z.string().min(1),
 });
 
 const useProfileForm = () => {

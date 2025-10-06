@@ -109,7 +109,7 @@ const ActionCell = (props: ActionCellProps) => {
 };
 
 const schema = z.object({
-  barCode: z.string().min(1, { message: "请输入单号" }),
+  barCode: z.string().min(1),
 });
 
 const useScanerForm = () =>

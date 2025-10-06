@@ -26,31 +26,31 @@ import { fetchSqliteXlsxSize, useXlsxSizeUpdate } from "@/api/fetch_preload";
 
 const rowIndexFieldSchema = z
   .string()
-  .min(1, "不得为空")
+  .min(1)
   .refine((value) => /^\d+$/.test(value), {
     message: "行的索引必须全为全为数字",
   });
 const columnIndexFieldSchema = z
   .string()
-  .min(1, "不得为空")
+  .min(1)
   .refine((value) => /^[A-Z]+$/.test(value), {
     message: "列的索引必须全为大写字母",
   });
-const xlsxNameSchema = z.string().min(1, "不得为空");
+const xlsxNameSchema = z.string().min(1);
 const rowTypeSchema = z.literal("row");
 const columnTypeFieldSchema = z.literal("column");
 const rowHeightFieldSchema = z
   .number()
-  .gt(0, "必须大于0")
-  .max(409, { message: "行高最大为409" })
+  .gt(0)
+  .max(409)
   .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
     message: "最多只能有两位小数",
   });
 
 const columnWidthFieldSchema = z
   .number()
-  .gt(0, "必须大于0")
-  .max(255, { message: "列宽最大为255" })
+  .gt(0)
+  .max(255)
   .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
     message: "最多只能有两位小数",
   });

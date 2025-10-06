@@ -25,18 +25,11 @@ import { SaveOutlined } from "@mui/icons-material";
 import { NumberField } from "@/components/number";
 
 const schema = z.object({
-  ip: z.ipv4({ message: "无效的IP地址" }),
-  port: z
-    .number({ message: "端口号必须是数字" })
-    .int({ message: "端口号必须是整数" })
-    .min(1, { message: "端口号不能为空" })
-    .max(65535, { message: "端口号不能大于65535" }),
+  ip: z.ipv4(),
+  port: z.number().int().min(1).max(65535),
   autoInput: z.boolean(),
   autoUpload: z.boolean(),
-  autoUploadInterval: z
-    .number({ message: "自动上传间隔必须是数字" })
-    .int({ message: "自动上传间隔必须是整数" })
-    .min(10, { message: "自动上传间隔不能小于10秒" }),
+  autoUploadInterval: z.number().int().min(10),
   tsgz: z.string(),
   tszjy: z.string(),
   tsysy: z.string(),

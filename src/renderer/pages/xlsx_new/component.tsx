@@ -77,7 +77,7 @@ const listItemFieldSchema = z
 
 const listFieldSchema = listItemFieldSchema
   .array()
-  .min(1, { message: "至少需要一项才能继续" })
+  .min(1)
   .superRefine((value, ctx) => {
     const errorSet = new Map<string, number>();
     value.forEach((item, index) => {

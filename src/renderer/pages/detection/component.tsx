@@ -461,7 +461,7 @@ export const Component = () => {
 
 const exportToXlsxSchema = z.object({
   username: z.string().min(1),
-  date: z.string().datetime(),
+  date: z.iso.datetime(),
 });
 
 const ExportToXlsx = (props: DialogProps) => {
