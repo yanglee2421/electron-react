@@ -17,6 +17,8 @@ import {
   CalendarMonthOutlined,
   InfoOutlined,
   SettingsOutlined,
+  VpnKeyOutlined,
+  PermMediaOutlined,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -214,6 +216,8 @@ const segmentAlias = new Map([
   ["settings", "设置"],
   ["setting", "设置"],
   ["log", "日志"],
+  ["md5_compute", "MD5计算"],
+  ["md5_backup_image", "图片备份"],
 ]);
 
 const alias = (title: string) => segmentAlias.get(title) || title;
@@ -386,13 +390,13 @@ const NAVIGATION: Navigation = [
   },
   {
     segment: "md5_compute",
-    title: "md5_compute",
-    icon: <SettingsOutlined />,
+    title: "MD5计算",
+    icon: <VpnKeyOutlined />,
   },
   {
     segment: "md5_backup_image",
-    title: "md5_backup_image",
-    icon: <SettingsOutlined />,
+    title: "图片备份",
+    icon: <PermMediaOutlined />,
   },
 ];
 

@@ -1,13 +1,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as utils from "node:util";
-import { Worker } from "node:worker_threads";
 import { ipcHandle } from "./lib";
 import { channel } from "./channel";
-import workerPath from "./image.worker?modulePath";
+import createImageWorker from "./image.worker?nodeWorker";
 
 const computeMD5 = (files: string[]) => {
-  const worker = new Worker(workerPath, {
+  const worker = createImageWorker({
     workerData: { files },
   });
 

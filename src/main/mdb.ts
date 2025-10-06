@@ -1,6 +1,5 @@
-import { Worker } from "node:worker_threads";
 import { ipcHandle } from "./lib";
-import workerPath from "./mdb.worker?modulePath";
+import createMDBWorker from "./mdb.worker?nodeWorker";
 import type { MDBWorkerData } from "./mdb.worker";
 import { channel } from "./channel";
 import { getRootDBPath, getAppDBPath } from "./profile";
@@ -10,7 +9,7 @@ export const getDataByWorker = <TRow>(payload: MDBWorkerData) => {
     total: number;
     rows: TRow[];
   }>((resolve, reject) => {
-    const worker = new Worker(workerPath, {
+    const worker = createMDBWorker({
       workerData: payload,
     });
     worker.once("message", (data) => {

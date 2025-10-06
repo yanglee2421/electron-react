@@ -81,7 +81,7 @@ export const Component = () => {
 
   return (
     <Card>
-      <CardHeader title="图片去重备份" subheader={md5} />
+      <CardHeader title="MD5计算" subheader={md5} />
       <CardContent>
         <form
           id={formId}
