@@ -25,10 +25,7 @@ import { SaveOutlined } from "@mui/icons-material";
 import { NumberField } from "@/components/number";
 
 const schema = z.object({
-  ip: z
-    .string()
-    .ip({ message: "无效的IP地址" })
-    .min(1, { message: "IP地址不能为空" }),
+  ip: z.ipv4({ message: "无效的IP地址" }),
   port: z
     .number({ message: "端口号必须是数字" })
     .int({ message: "端口号必须是整数" })
