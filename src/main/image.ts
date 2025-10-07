@@ -81,48 +81,41 @@ const copyFile = async (
 };
 
 const getFilePaths = async (directory: string, pathSet: Set<string>) => {
-  const readdir = utils.promisify(fs.readdir);
-  const basenames = await readdir(directory);
   const stat = utils.promisify(fs.stat);
+  const readdir = utils.promisify(fs.readdir);
+  const directoryState = await stat(directory);
+  const isDirectory = directoryState.isDirectory();
+  const isFile = directoryState.isFile();
 
-  for (const basename of basenames) {
-    const fullPath = path.resolve(directory, basename);
-    const pathState = await stat(fullPath);
-    const isDirectory = pathState.isDirectory();
-    const isFile = pathState.isFile();
+  if (isFile) {
+    pathSet.add(directory);
+  }
 
-    if (isDirectory) {
-      await getFilePaths(fullPath, pathSet);
+  if (isDirectory) {
+    const basenames = await readdir(directory);
+
+    for (const basename of basenames) {
+      const subPath = path.resolve(directory, basename);
+      const extname = path.extname(subPath);
+
+      if (extname === ".json") {
+        continue;
+      }
+
+      await getFilePaths(subPath, pathSet);
     }
-
-    if (!isFile) {
-      continue;
-    }
-
-    const extname = path.extname(fullPath);
-
-    if (extname === ".json") {
-      continue;
-    }
-
-    pathSet.add(fullPath);
   }
 };
 
 const bootstrap = async (source: string) => {
   const md5ToFilePath = createMD5ToFile();
   const pathSet = new Set<string>();
-  console.time("bootstrap");
 
   await getFilePaths(source, pathSet);
-  console.timeLog("bootstrap", "All files: ", pathSet.size);
-
   await deduplicate(pathSet, md5ToFilePath);
-  console.timeLog("bootstrap", "Map size: ", md5ToFilePath.size);
 
   const outputDirectory = await getOutputDirectory(source);
   await copyFile(md5ToFilePath, outputDirectory);
-  console.timeEnd("bootstrap");
 };
 
 export const bindIpcHandler = () => {
