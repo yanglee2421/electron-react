@@ -21,6 +21,7 @@ import { is, optimizer, electronApp } from "@electron-toolkit/utils";
 import * as mdb from "./mdb";
 import * as profile from "./profile";
 import * as md5 from "./image";
+import * as xml from "./xml";
 
 const createWindow = async (alwaysOnTop: boolean) => {
   const win = new BrowserWindow({
@@ -223,7 +224,9 @@ const bootstrap = async () => {
   // Set app theme mode
   const profileInfo = await profile.getProfile();
   nativeTheme.themeSource = profileInfo.mode;
+  await app.whenReady();
 
+  bindProtocol();
   bindAppHandler();
   bindIpcHandler();
   hxzyHmis.init();
@@ -235,9 +238,8 @@ const bootstrap = async () => {
   mdb.init();
   profile.bindIpcHandler();
   md5.bindIpcHandler();
-  bindProtocol();
+  xml.bindIpcHandler();
 
-  await app.whenReady();
   await createWindow(profileInfo.alwaysOnTop);
 };
 

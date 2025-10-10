@@ -94,6 +94,10 @@ const routes: RouteObject[] = [
             lazy: () => import("@/pages/md5_backup_image/component"),
           },
           {
+            path: "xml",
+            lazy: () => import("@/pages/xml/component"),
+          },
+          {
             id: "xlsx",
             path: "xlsx",
             children: [

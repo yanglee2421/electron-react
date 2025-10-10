@@ -19,6 +19,7 @@ import {
   SettingsOutlined,
   VpnKeyOutlined,
   PermMediaOutlined,
+  TagOutlined,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -401,6 +402,11 @@ if (import.meta.env.DEV) {
       segment: "md5_backup_image",
       title: "图片备份",
       icon: <PermMediaOutlined />,
+    },
+    {
+      segment: "xml",
+      title: "XML",
+      icon: <TagOutlined />,
     },
   );
 }

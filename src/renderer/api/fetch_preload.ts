@@ -634,3 +634,12 @@ export const useMD5Compute = () => {
     },
   });
 };
+
+export const useXML = () => {
+  return useMutation({
+    mutationFn: async (xml: string) => {
+      const result = await window.electron.ipcRenderer.invoke(channel.XML, xml);
+      return result;
+    },
+  });
+};
