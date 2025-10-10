@@ -2,14 +2,14 @@
 appId: "app.yanglee2421.wtzy_toolkit"
 asar: true
 asarUnpack:
-  - "unpack"
+  - resources/**
 productName: "WTZY_Toolkit"
 directories:
   output: "release/${version}"
 files:
   - "out"
   - "drizzle"
-  - "unpack"
+  - "resources"
 compression: "maximum"
 mac:
   target:

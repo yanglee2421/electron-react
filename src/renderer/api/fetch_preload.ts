@@ -643,3 +643,15 @@ export const useXML = () => {
     },
   });
 };
+
+export const useLab = () => {
+  return useMutation({
+    mutationFn: async (paths: string[]) => {
+      const result: string[] = await window.electron.ipcRenderer.invoke(
+        channel.LAB,
+        paths,
+      );
+      return result;
+    },
+  });
+};

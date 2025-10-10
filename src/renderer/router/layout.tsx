@@ -20,6 +20,7 @@ import {
   VpnKeyOutlined,
   PermMediaOutlined,
   CodeOutlined,
+  ScienceOutlined,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -219,6 +220,7 @@ const segmentAlias = new Map([
   ["log", "日志"],
   ["md5_compute", "MD5计算"],
   ["md5_backup_image", "图片备份"],
+  ["lab", "实验室"],
 ]);
 
 const alias = (title: string) => segmentAlias.get(title) || title;
@@ -407,6 +409,11 @@ if (import.meta.env.DEV) {
       segment: "xml",
       title: "XML",
       icon: <CodeOutlined />,
+    },
+    {
+      segment: "lab",
+      title: "实验室",
+      icon: <ScienceOutlined />,
     },
   );
 }

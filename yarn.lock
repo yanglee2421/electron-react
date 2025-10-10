@@ -2104,6 +2104,11 @@ callsites@^3.0.0:
   resolved "https://registry.yarnpkg.com/callsites/-/callsites-3.1.0.tgz#b3630abd8943432f54b3f0519238e33cd7df2f73"
   integrity sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==
 
+camelcase@^6.3.0:
+  version "6.3.0"
+  resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-6.3.0.tgz#5685b95eb209ac9c0c177467778c9c84df58ba9a"
+  integrity sha512-Gmy6FhYlCY7uOElZUSbxo2UCDH8owEk996gkbrpsgGtrJLM3J7jGxl9Ic7Qwwj4ivOE5AWZWRMecDdF7hqGjFA==
+
 caniuse-lite@^1.0.30001746:
   version "1.0.30001749"
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001749.tgz#21a43b923577932097fe32bcaabb6da7f4677632"
@@ -4251,6 +4256,14 @@ node-api-version@^0.2.0:
   integrity sha512-2xP/IGGMmmSQpI1+O/k72jF/ykvZ89JeuKX3TLJAYPDVLUalrshrLHkeVcCCZqG/eEa635cr8IBYzgnDvM2O8Q==
   dependencies:
     semver "^7.3.5"
+
+node-poppler@^8.0.4:
+  version "8.0.4"
+  resolved "https://registry.yarnpkg.com/node-poppler/-/node-poppler-8.0.4.tgz#964f3a4b252c5d082fc780dc6a9b18d220b984d4"
+  integrity sha512-8bp200rELOX72mHv0cfnuDs7LWmd3jr3Y9pxgaysjeSxnUiZxhTA0Pg+SaXkTplIK+r4CfIVAfrla4omNq6UtA==
+  dependencies:
+    camelcase "^6.3.0"
+    semver "^7.7.2"
 
 node-releases@^2.0.21:
   version "2.0.23"

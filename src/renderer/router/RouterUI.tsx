@@ -98,6 +98,10 @@ const routes: RouteObject[] = [
             lazy: () => import("@/pages/xml/component"),
           },
           {
+            path: "lab",
+            lazy: () => import("@/pages/lab/component"),
+          },
+          {
             id: "xlsx",
             path: "xlsx",
             children: [

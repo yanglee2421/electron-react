@@ -76,4 +76,5 @@ export const channel = createEnum({
   MD5_BACKUP_IMAGE: "",
   MD5_COMPUTE: "",
   XML: "",
+  LAB: "",
 });
