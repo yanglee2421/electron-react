@@ -37,8 +37,8 @@ export const Component = () => {
   return (
     <Card>
       <CardContent>
-        <Grid container>
-          <Grid>
+        <Grid container spacing={3}>
+          <Grid size={12}>
             <TextField
               value={path}
               onChange={(e) => {
@@ -60,6 +60,9 @@ export const Component = () => {
                 },
               }}
             />
+          </Grid>
+          <Grid size={12}>
+            <pre>{xml.isSuccess && JSON.stringify(xml.data, null, 2)}</pre>
           </Grid>
         </Grid>
       </CardContent>

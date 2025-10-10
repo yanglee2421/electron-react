@@ -19,7 +19,7 @@ import {
   SettingsOutlined,
   VpnKeyOutlined,
   PermMediaOutlined,
-  TagOutlined,
+  CodeOutlined,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -406,7 +406,7 @@ if (import.meta.env.DEV) {
     {
       segment: "xml",
       title: "XML",
-      icon: <TagOutlined />,
+      icon: <CodeOutlined />,
     },
   );
 }
