@@ -1,5 +1,5 @@
-import { fetchOpenAtLogin, fetchVersion } from "@/api/fetch_preload";
-import { QueryProvider } from "@/components/query";
+import { fetchOpenAtLogin, fetchVersion } from "#renderer/api/fetch_preload";
+import { QueryProvider } from "#renderer/components/query";
 
 export const loader = async () => {
   const queryClient = QueryProvider.queryClient;

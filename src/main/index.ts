@@ -10,9 +10,9 @@ import {
   net,
 } from "electron";
 import { is, optimizer, electronApp } from "@electron-toolkit/utils";
-import { channel } from "#/channel";
-import { ipcHandle } from "#/lib";
-import * as profile from "#/lib/profile";
+import { channel } from "#main/channel";
+import { ipcHandle } from "#main/lib";
+import * as profile from "#main/lib/profile";
 import * as hxzyHmis from "./modules/hmis/hxzy_hmis";
 import * as jtvHmis from "./modules/hmis/jtv_hmis";
 import * as jtvHmisXuzhoubei from "./modules/hmis/jtv_hmis_xuzhoubei";

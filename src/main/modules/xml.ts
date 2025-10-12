@@ -1,6 +1,5 @@
-import { ipcHandle } from "#/lib";
-import { channel } from "#/channel";
-import { app } from "electron";
+import { getTempDir, ipcHandle } from "#main/lib";
+import { channel } from "#main/channel";
 import { Poppler } from "node-poppler";
 import { XMLParser } from "fast-xml-parser";
 import { readBarcodes, prepareZXingModule } from "zxing-wasm";
@@ -50,7 +49,7 @@ const xmlPathToJSONData = async (xmlPath: string) => {
 
 const pdfPathToJSONData = async (pdfPath: string) => {
   const poppler = new Poppler();
-  const tempPng = path.resolve(app.getPath("temp"), `${Date.now()}`);
+  const tempPng = path.resolve(getTempDir(), `${Date.now()}`);
   await poppler.pdfToCairo(pdfPath, tempPng, {
     pngFile: true,
     singleFile: true,

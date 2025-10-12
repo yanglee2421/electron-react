@@ -13,7 +13,7 @@ import {
   TextField,
 } from "@mui/material";
 import { z } from "zod";
-import { NumberField } from "@/components/number";
+import { NumberField } from "#renderer/components/number";
 import {
   SaveOutlined,
   RestoreOutlined,
@@ -21,8 +21,11 @@ import {
 } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Loading } from "@/components/Loading";
-import { fetchSqliteXlsxSize, useXlsxSizeUpdate } from "@/api/fetch_preload";
+import { Loading } from "#renderer/components/Loading";
+import {
+  fetchSqliteXlsxSize,
+  useXlsxSizeUpdate,
+} from "#renderer/api/fetch_preload";
 
 const rowIndexFieldSchema = z
   .string()

@@ -1,5 +1,5 @@
-import { fetchDataFromRootDB } from "@/api/fetch_preload";
-import { QueryProvider } from "@/components/query";
+import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
+import { QueryProvider } from "#renderer/components/query";
 import type { LoaderFunction } from "react-router";
 
 export const loader: LoaderFunction = async (ctx) => {

@@ -25,9 +25,9 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/renderer/*"],
-      "#/*": ["src/main/*"],
-      "~/*": ["src/preload/*"],
+      "#main/*": ["src/main/*"],
+      "#preload/*": ["src/preload/*"],
+      "#renderer/*": ["src/renderer/*"],
       "#resources/*": ["resources/*"]
     },
     "types": ["vite/client", "electron-vite/node"]

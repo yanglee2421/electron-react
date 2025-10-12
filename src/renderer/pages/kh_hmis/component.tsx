@@ -39,7 +39,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
   useAutoInputToVC,
   useKhHmisApiGet,
@@ -47,8 +47,8 @@ import {
   useKhHmisSqliteDelete,
   fetchKhHmisSqliteGet,
   fetchHxzyHmisSetting,
-} from "@/api/fetch_preload";
-import type { KhBarcode } from "#/schema";
+} from "#renderer/api/fetch_preload";
+import type { KhBarcode } from "#main/schema";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";

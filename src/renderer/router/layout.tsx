@@ -2,7 +2,7 @@ import {
   useMobileMode,
   fetchProfile,
   useProfileUpdate,
-} from "@/api/fetch_preload";
+} from "#renderer/api/fetch_preload";
 import {
   LightModeOutlined,
   DarkModeOutlined,

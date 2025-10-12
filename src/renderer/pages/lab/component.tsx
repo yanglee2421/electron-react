@@ -1,4 +1,4 @@
-import { useLab } from "@/api/fetch_preload";
+import { useLab } from "#renderer/api/fetch_preload";
 import {
   Button,
   Card,

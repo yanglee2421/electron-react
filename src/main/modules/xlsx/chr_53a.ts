@@ -1,14 +1,14 @@
-import Excel from "@yanglee2421/exceljs";
-import { shell, app } from "electron";
-import { join } from "node:path";
-import { db } from "#/lib";
-import * as schema from "#/schema";
-import * as sql from "drizzle-orm";
-import dayjs from "dayjs";
-import type { Detection } from "#/modules/cmd";
-import { createCellHelper, createRowHelper, pageSetup } from "#/utils";
+import * as path from "node:path";
 import { mkdir } from "node:fs/promises";
-import { getDataFromRootDB as getDataFromMDB } from "#/modules/mdb";
+import dayjs from "dayjs";
+import Excel from "@yanglee2421/exceljs";
+import { shell } from "electron";
+import * as sql from "drizzle-orm";
+import * as schema from "#main/schema";
+import { db, getTempDir } from "#main/lib";
+import { getDataFromRootDB as getDataFromMDB } from "#main/modules/mdb";
+import { createCellHelper, createRowHelper, pageSetup } from "#main/utils";
+import type { Detection } from "#main/modules/cmd";
 
 const columnWidths = new Map([
   ["A", 7],
@@ -355,8 +355,8 @@ export const chr_53a = async (rowIds: string[]) => {
     await sheet.protect("123456", { formatColumns: true, formatRows: true });
   }
 
-  const outputPath = join(app.getPath("temp"), "wtxy_tookit_cmd");
-  const filePath = join(outputPath, `output${Date.now()}.xlsx`);
+  const outputPath = getTempDir();
+  const filePath = path.join(outputPath, `output${Date.now()}.xlsx`);
   await mkdir(outputPath, { recursive: true });
   await workbook.xlsx.writeFile(filePath);
   await shell.openPath(filePath);

@@ -1,7 +1,7 @@
 // 成都北 华兴致远
 
 import { net } from "electron";
-import { log, getIP, withLog, createEmit, ipcHandle, db } from "#/lib";
+import { log, getIP, withLog, createEmit, ipcHandle, db } from "#main/lib";
 import {
   getDetectionByZH,
   getDetectionDatasByOPID,
@@ -12,9 +12,9 @@ import { URL } from "node:url";
 import { hxzy_hmis } from "../../lib/store";
 import * as sql from "drizzle-orm";
 import * as schema from "../../schema";
-import { channel } from "#/channel";
+import { channel } from "#main/channel";
 import type { DetectionData, Verify, VerifyData } from "../cmd";
-import type * as PRELOAD from "~/index";
+import type * as PRELOAD from "#preload/index";
 import { getDataFromRootDB as getDataFromMDB } from "../mdb";
 
 /**

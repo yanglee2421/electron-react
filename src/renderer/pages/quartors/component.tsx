@@ -32,19 +32,19 @@ import {
   useReactTable,
   flexRender,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { RefreshOutlined } from "@mui/icons-material";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
   type MDBUser,
-} from "@/api/fetch_preload";
-import type { Quartor } from "#/modules/cmd";
-import { Loading } from "@/components/Loading";
+} from "#renderer/api/fetch_preload";
+import type { Quartor } from "#main/modules/cmd";
+import { Loading } from "#renderer/components/Loading";
 import { Link as RouterLink } from "react-router";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#/modules/mdb.worker";
-import { ScrollToTop } from "@/components/scroll";
+import type { Filter } from "#main/modules/mdb.worker";
+import { ScrollToTop } from "#renderer/components/scroll";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Quartor>();

@@ -1,7 +1,14 @@
 // 京天威 徐州北
 
 import { net } from "electron";
-import { getDirection, createEmit, log, withLog, ipcHandle, db } from "#/lib";
+import {
+  getDirection,
+  createEmit,
+  log,
+  withLog,
+  ipcHandle,
+  db,
+} from "#main/lib";
 import {
   getCorporation,
   getDetectionByZH,
@@ -11,9 +18,9 @@ import dayjs from "dayjs";
 import { URL } from "node:url";
 import { jtv_hmis_xuzhoubei } from "../../lib/store";
 import * as sql from "drizzle-orm";
-import * as schema from "#/schema";
+import * as schema from "#main/schema";
 import { channel } from "../../channel";
-import type * as PRELOAD from "~/index";
+import type * as PRELOAD from "#preload/index";
 
 /*
  * SQLite barcode

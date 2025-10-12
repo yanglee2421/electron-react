@@ -3,9 +3,9 @@ import { fileURLToPath, URL } from "node:url";
 import react from "@vitejs/plugin-react";
 
 const alias = {
-  "@": fileURLToPath(new URL("./src/renderer", import.meta.url)),
-  "#": fileURLToPath(new URL("./src/main", import.meta.url)),
-  "~": fileURLToPath(new URL("./src/preload", import.meta.url)),
+  "#main": fileURLToPath(new URL("./src/main", import.meta.url)),
+  "#preload": fileURLToPath(new URL("./src/preload", import.meta.url)),
+  "#renderer": fileURLToPath(new URL("./src/renderer", import.meta.url)),
   "#resources": fileURLToPath(new URL("./resources", import.meta.url)),
 };
 

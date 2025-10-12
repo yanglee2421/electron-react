@@ -20,9 +20,9 @@ import { useNotifications } from "@toolpad/core";
 import {
   fetchHxzyHmisSetting,
   useUpdateHxzyHmisSetting,
-} from "@/api/fetch_preload";
+} from "#renderer/api/fetch_preload";
 import { SaveOutlined } from "@mui/icons-material";
-import { NumberField } from "@/components/number";
+import { NumberField } from "#renderer/components/number";
 
 const schema = z.object({
   ip: z.ipv4(),

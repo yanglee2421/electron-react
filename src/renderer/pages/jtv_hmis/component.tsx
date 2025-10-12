@@ -39,8 +39,8 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
-import type { JTVBarcode } from "#/schema";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import type { JTVBarcode } from "#main/schema";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchJtvHmisSetting,
@@ -49,7 +49,7 @@ import {
   useJtvHmisApiGet,
   useJtvHmisApiSet,
   useJtvHmisSqliteDelete,
-} from "@/api/fetch_preload";
+} from "#renderer/api/fetch_preload";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
 

@@ -1,6 +1,6 @@
-import { ipcHandle } from "#/lib";
-import { channel } from "#/channel";
-import { getRootDBPath, getAppDBPath } from "#/lib/profile";
+import { ipcHandle } from "#main/lib";
+import { channel } from "#main/channel";
+import { getRootDBPath, getAppDBPath } from "#main/lib/profile";
 import createMDBWorker from "./mdb.worker?nodeWorker";
 import type { MDBWorkerData } from "./mdb.worker";
 

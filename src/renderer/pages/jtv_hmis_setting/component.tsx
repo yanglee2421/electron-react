@@ -20,9 +20,9 @@ import { useQuery } from "@tanstack/react-query";
 import {
   fetchJtvHmisSetting,
   useUpdateJtvHmisSetting,
-} from "@/api/fetch_preload";
+} from "#renderer/api/fetch_preload";
 import { SaveOutlined } from "@mui/icons-material";
-import { NumberField } from "@/components/number";
+import { NumberField } from "#renderer/components/number";
 
 const schema = z.object({
   ip: z.ipv4(),

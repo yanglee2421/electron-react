@@ -1,4 +1,4 @@
-import { useMD5Compute, useSelectFile } from "@/api/fetch_preload";
+import { useMD5Compute, useSelectFile } from "#renderer/api/fetch_preload";
 import { FindInPageOutlined } from "@mui/icons-material";
 import {
   Button,

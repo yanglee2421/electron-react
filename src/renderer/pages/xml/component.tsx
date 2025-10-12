@@ -1,4 +1,4 @@
-import { useSelectFile, useXML } from "@/api/fetch_preload";
+import { useSelectFile, useXML } from "#renderer/api/fetch_preload";
 import { FindInPageOutlined } from "@mui/icons-material";
 import {
   Button,

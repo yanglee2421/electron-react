@@ -1,12 +1,12 @@
-import { ipcHandle } from "#/lib";
-import { channel } from "#/channel";
+import { ipcHandle } from "#main/lib";
+import { channel } from "#main/channel";
 import { chr_502 } from "./chr_502";
 import { chr_53a } from "./chr_53a";
 import { chr_501 } from "./chr_501";
-import { db } from "#/lib";
+import { db } from "#main/lib";
 import * as sql from "drizzle-orm";
-import * as schema from "#/schema";
-import type * as PRELOAD from "~/index";
+import * as schema from "#main/schema";
+import type * as PRELOAD from "#preload/index";
 
 type DeleteParams = {
   id: number;

@@ -23,8 +23,8 @@ import {
 } from "@mui/icons-material";
 import React from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
-import type { Log } from "@/lib/db";
+import { db } from "#renderer/lib/db";
+import type { Log } from "#renderer/lib/db";
 import {
   createColumnHelper,
   flexRender,
@@ -32,10 +32,10 @@ import {
   getExpandedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import { ScrollToTop } from "@/components/scroll";
+import { ScrollToTop } from "#renderer/components/scroll";
 
 const columnHelper = createColumnHelper<Log>();
 

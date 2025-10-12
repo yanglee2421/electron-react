@@ -15,12 +15,12 @@ import type {
   SqliteXlsxSizeRParams,
   SqliteXlsxSizeCParams,
   SqliteXlsxSizeUParams,
-} from "~/index";
-import type { AutoInputToVCParams } from "#/modules/cmd";
-import type * as PRELOAD from "~/index";
-import { channel } from "#/channel";
-import type { Payload } from "#/modules/mdb";
-import type { Profile } from "#/lib/profile";
+} from "#preload/index";
+import type { AutoInputToVCParams } from "#main/modules/cmd";
+import type * as PRELOAD from "#preload/index";
+import { channel } from "#main/channel";
+import type { Payload } from "#main/modules/mdb";
+import type { Profile } from "#main/lib/profile";
 
 // 自动录入功能
 export const useAutoInputToVC = () => {

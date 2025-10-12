@@ -38,7 +38,7 @@ import {
   useSelectDirectory,
   fetchProfile,
   useSelectFile,
-} from "@/api/fetch_preload";
+} from "#renderer/api/fetch_preload";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 
 export const Component = () => {

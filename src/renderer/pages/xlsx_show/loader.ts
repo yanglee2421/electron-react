@@ -1,6 +1,6 @@
-import { QueryProvider } from "@/components/query";
+import { QueryProvider } from "#renderer/components/query";
 import { type LoaderFunction, redirect } from "react-router";
-import { fetchSqliteXlsxSize } from "@/api/fetch_preload";
+import { fetchSqliteXlsxSize } from "#renderer/api/fetch_preload";
 
 export const loader: LoaderFunction = async (ctx) => {
   const id = ctx.params.id;

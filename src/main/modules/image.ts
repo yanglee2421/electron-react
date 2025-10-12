@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import { stat, readdir, mkdir, cp } from "node:fs/promises";
-import { ipcHandle } from "#/lib";
-import { channel } from "#/channel";
+import { ipcHandle } from "#main/lib";
+import { channel } from "#main/channel";
 import createImageWorker from "./image.worker?nodeWorker";
 
 const computeMD5 = (files: string[]) => {

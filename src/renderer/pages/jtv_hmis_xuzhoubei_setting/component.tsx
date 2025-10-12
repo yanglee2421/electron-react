@@ -19,9 +19,9 @@ import { useNotifications } from "@toolpad/core";
 import {
   fetchJtvHmisXuzhoubeiSetting,
   useUpdateJtvHmisXuzhoubeiSetting,
-} from "@/api/fetch_preload";
+} from "#renderer/api/fetch_preload";
 import { useQuery } from "@tanstack/react-query";
-import { NumberField } from "@/components/number";
+import { NumberField } from "#renderer/components/number";
 import { SaveOutlined } from "@mui/icons-material";
 
 const schema = z.object({

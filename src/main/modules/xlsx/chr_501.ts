@@ -1,12 +1,12 @@
 import { app, shell } from "electron";
 import { join } from "node:path";
 import Excel from "@yanglee2421/exceljs";
-import { db } from "#/lib";
-import * as schema from "#/schema";
+import { db } from "#main/lib";
+import * as schema from "#main/schema";
 import * as sql from "drizzle-orm";
-import { createCellHelper, createRowHelper, pageSetup } from "#/utils";
-import { getDataFromRootDB as getDataFromMDB } from "#/modules/mdb";
-import type { Verify } from "#/modules/cmd";
+import { createCellHelper, createRowHelper, pageSetup } from "#main/utils";
+import { getDataFromRootDB as getDataFromMDB } from "#main/modules/mdb";
+import type { Verify } from "#main/modules/cmd";
 
 const columnWidths = new Map([
   ["A", 4.1],

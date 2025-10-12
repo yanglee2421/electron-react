@@ -9,7 +9,7 @@ import { kh_hmis } from "../../lib/store";
 import * as sql from "drizzle-orm";
 import * as schema from "../../schema";
 import { channel } from "../../channel";
-import type * as PRELOAD from "~/index";
+import type * as PRELOAD from "#preload/index";
 
 /**
  * Sqlite barcode

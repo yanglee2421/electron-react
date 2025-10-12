@@ -1,11 +1,11 @@
-import { QueryProvider } from "@/components/query";
+import { QueryProvider } from "#renderer/components/query";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
   type MDBUser,
-} from "@/api/fetch_preload";
+} from "#renderer/api/fetch_preload";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#/modules/mdb.worker";
+import type { Filter } from "#main/modules/mdb.worker";
 import dayjs from "dayjs";
 
 export const loader = async () => {

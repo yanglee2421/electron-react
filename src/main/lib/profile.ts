@@ -5,7 +5,7 @@ import { z } from "zod";
 import { produce } from "immer";
 import { channel } from "../channel";
 import type { WritableDraft } from "immer";
-import { ipcHandle } from "#/lib";
+import { ipcHandle } from "#main/lib";
 import ini from "ini";
 import iconv from "iconv-lite";
 

@@ -1,8 +1,8 @@
 // 京天威 统型
 
 import { net } from "electron";
-import { getIP, createEmit } from "#/lib";
-import { log, withLog, ipcHandle, db } from "#/lib";
+import { getIP, createEmit } from "#main/lib";
+import { log, withLog, ipcHandle, db } from "#main/lib";
 import {
   getCorporation,
   getDetectionByZH,
@@ -15,7 +15,7 @@ import * as schema from "../../schema";
 import * as sql from "drizzle-orm";
 import { channel } from "../../channel";
 import type { DetectionData } from "../cmd";
-import type * as PRELOAD from "~/index";
+import type * as PRELOAD from "#preload/index";
 
 /**
  * Sqlite barcode

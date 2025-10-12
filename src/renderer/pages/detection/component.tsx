@@ -37,25 +37,25 @@ import {
   useReactTable,
   flexRender,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
   CheckBoxOutlineBlankOutlined,
   CheckBoxOutlined,
   PrintOutlined,
   RefreshOutlined,
 } from "@mui/icons-material";
-import type { Detection } from "#/modules/cmd";
-import { Loading } from "@/components/Loading";
+import type { Detection } from "#main/modules/cmd";
+import { Loading } from "#renderer/components/Loading";
 import { Link as RouterLink } from "react-router";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#/modules/mdb.worker";
+import type { Filter } from "#main/modules/mdb.worker";
 import {
   useChr53aExport,
   fetchDataFromRootDB,
   fetchDataFromAppDB,
   type MDBUser,
-} from "@/api/fetch_preload";
-import { ScrollToTop } from "@/components/scroll";
+} from "#renderer/api/fetch_preload";
+import { ScrollToTop } from "#renderer/components/scroll";
 import { useDialogs } from "@toolpad/core";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";

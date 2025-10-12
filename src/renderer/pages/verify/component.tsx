@@ -33,20 +33,20 @@ import {
   useReactTable,
   flexRender,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { PrintOutlined, RefreshOutlined } from "@mui/icons-material";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
   type MDBUser,
   useChr501Export,
-} from "@/api/fetch_preload";
-import type { Verify } from "#/modules/cmd";
-import { Loading } from "@/components/Loading";
+} from "#renderer/api/fetch_preload";
+import type { Verify } from "#main/modules/cmd";
+import { Loading } from "#renderer/components/Loading";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#/modules/mdb.worker";
+import type { Filter } from "#main/modules/mdb.worker";
 import { useNotifications } from "@toolpad/core";
-import { ScrollToTop } from "@/components/scroll";
+import { ScrollToTop } from "#renderer/components/scroll";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Verify>();

@@ -2,13 +2,14 @@ import * as os from "node:os";
 import * as url from "node:url";
 import * as path from "node:path";
 import { rm, mkdir } from "node:fs/promises";
-import * as schema from "#/schema";
+import Database from "better-sqlite3";
 import { app, ipcMain, BrowserWindow } from "electron";
-import { channel } from "#/channel";
-import { devError, errorToMessage, promiseTry, type Callback } from "#/utils";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import Database from "better-sqlite3";
+import * as schema from "#main/schema";
+import { channel } from "#main/channel";
+import { devError, errorToMessage, promiseTry } from "#main/utils";
+import type { Callback } from "#main/utils";
 
 export const getIP = () => {
   const interfaces = os.networkInterfaces();

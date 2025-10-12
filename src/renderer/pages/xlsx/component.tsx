@@ -21,8 +21,8 @@ import {
   TextField,
   Link as MuiLink,
 } from "@mui/material";
-import * as consts from "@/lib/constants";
-import type { XlsxSize } from "#/schema";
+import * as consts from "#renderer/lib/constants";
+import type { XlsxSize } from "#main/schema";
 import {
   createColumnHelper,
   flexRender,
@@ -30,7 +30,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useQuery } from "@tanstack/react-query";
-import { Loading } from "@/components/Loading";
+import { Loading } from "#renderer/components/Loading";
 import { Link } from "react-router";
 import {
   AddOutlined,
@@ -39,7 +39,10 @@ import {
   RefreshOutlined,
 } from "@mui/icons-material";
 import React from "react";
-import { fetchSqliteXlsxSize, useXlsxSizeDelete } from "@/api/fetch_preload";
+import {
+  fetchSqliteXlsxSize,
+  useXlsxSizeDelete,
+} from "#renderer/api/fetch_preload";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";

@@ -4,10 +4,9 @@ import * as utils from "node:util";
 import * as childProcess from "node:child_process";
 import { access, mkdir, rm, cp } from "node:fs/promises";
 import dayjs from "dayjs";
-import { app } from "electron";
-import { channel } from "#/channel";
-import { ipcHandle } from "#/lib";
-import { getProfile } from "#/lib/profile";
+import { channel } from "#main/channel";
+import { getTempDir, ipcHandle } from "#main/lib";
+import { getProfile } from "#main/lib/profile";
 import { getDataFromAppDB, getDataFromRootDB as getDataFromMDB } from "./mdb";
 
 const execFile = utils.promisify(childProcess.execFile);
@@ -28,11 +27,7 @@ const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
     return data;
   } catch {
     const driverDir = path.dirname(driverPath);
-    const newDriverDir = path.join(
-      app.getPath("temp"),
-      "wtxy_tookit_cmd",
-      `${Date.now()}`,
-    );
+    const newDriverDir = path.join(getTempDir(), `${Date.now()}`);
 
     try {
       await access(newDriverDir, fs.constants.R_OK);

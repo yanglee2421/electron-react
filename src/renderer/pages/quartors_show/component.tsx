@@ -1,6 +1,6 @@
-import type { QuartorData } from "#/modules/cmd";
-import { fetchDataFromRootDB } from "@/api/fetch_preload";
-import { Loading } from "@/components/Loading";
+import type { QuartorData } from "#main/modules/cmd";
+import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
+import { Loading } from "#renderer/components/Loading";
 import {
   Alert,
   AlertTitle,
@@ -32,7 +32,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React from "react";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 
 const getDirection = (nBoard: number) => {
   //board(板卡)：0.左 1.右

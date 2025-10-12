@@ -17,14 +17,14 @@ import {
   Typography,
 } from "@mui/material";
 import React from "react";
-import { NumberField } from "@/components/number";
+import { NumberField } from "#renderer/components/number";
 import {
   DeleteOutlined,
   PlusOneOutlined,
   RestoreOutlined,
   SaveOutlined,
 } from "@mui/icons-material";
-import { useXlsxSizeCreate } from "@/api/fetch_preload";
+import { useXlsxSizeCreate } from "#renderer/api/fetch_preload";
 import { useNavigate } from "react-router";
 import { useNotifications } from "@toolpad/core";
 

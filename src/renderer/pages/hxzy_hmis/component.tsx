@@ -39,19 +39,19 @@ import {
   useHxzyHmisApiSet,
   useHxzyHmisSqliteDelete,
   useAutoInputToVC,
-} from "@/api/fetch_preload";
+} from "#renderer/api/fetch_preload";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "@/lib/constants";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useDialogs, useNotifications } from "@toolpad/core";
-import type { HxzyBarcode } from "#/schema";
+import type { HxzyBarcode } from "#main/schema";
 
 type ActionCellProps = {
   id: number;

@@ -1,5 +1,5 @@
-import { fetchSqliteXlsxSize } from "@/api/fetch_preload";
-import { Loading } from "@/components/Loading";
+import { fetchSqliteXlsxSize } from "#renderer/api/fetch_preload";
+import { Loading } from "#renderer/components/Loading";
 import { EditOutlined, WestOutlined } from "@mui/icons-material";
 import {
   Button,
