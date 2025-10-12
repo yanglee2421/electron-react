@@ -1,8 +1,7 @@
-import * as fs from "node:fs";
 import * as path from "node:path";
-import * as utils from "node:util";
-import { ipcHandle } from "./lib";
-import { channel } from "./channel";
+import { stat, readdir, mkdir, cp } from "node:fs/promises";
+import { ipcHandle } from "#/lib";
+import { channel } from "#/channel";
 import createImageWorker from "./image.worker?nodeWorker";
 
 const computeMD5 = (files: string[]) => {
@@ -35,7 +34,6 @@ const getOutputDirectory = async (source: string) => {
     parentDirectory,
     `${basename}-${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`,
   );
-  const mkdir = utils.promisify(fs.mkdir);
   await mkdir(destination, { recursive: true });
   return destination;
 };
@@ -71,8 +69,6 @@ const copyFile = async (
   md5ToFilePath: Map<string, string>,
   outputDirectory: string,
 ) => {
-  const cp = utils.promisify(fs.cp);
-
   for (const [md5, filePath] of md5ToFilePath) {
     const extname = path.extname(filePath);
     const destination = path.resolve(outputDirectory, `${md5}${extname}`);
@@ -81,8 +77,6 @@ const copyFile = async (
 };
 
 const getFilePaths = async (directory: string, pathSet: Set<string>) => {
-  const stat = utils.promisify(fs.stat);
-  const readdir = utils.promisify(fs.readdir);
   const directoryState = await stat(directory);
   const isDirectory = directoryState.isDirectory();
   const isFile = directoryState.isFile();

@@ -44,11 +44,11 @@ import {
   PrintOutlined,
   RefreshOutlined,
 } from "@mui/icons-material";
-import type { Detection } from "#/cmd";
+import type { Detection } from "#/modules/cmd";
 import { Loading } from "@/components/Loading";
 import { Link as RouterLink } from "react-router";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#/mdb.worker";
+import type { Filter } from "#/modules/mdb.worker";
 import {
   useChr53aExport,
   fetchDataFromRootDB,

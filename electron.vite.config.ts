@@ -6,6 +6,7 @@ const alias = {
   "@": fileURLToPath(new URL("./src/renderer", import.meta.url)),
   "#": fileURLToPath(new URL("./src/main", import.meta.url)),
   "~": fileURLToPath(new URL("./src/preload", import.meta.url)),
+  "#resources": fileURLToPath(new URL("./resources", import.meta.url)),
 };
 
 const ReactCompilerConfig = {

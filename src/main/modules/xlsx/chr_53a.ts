@@ -1,14 +1,14 @@
 import Excel from "@yanglee2421/exceljs";
 import { shell, app } from "electron";
 import { join } from "node:path";
-import { db } from "#/db";
+import { db } from "#/lib";
 import * as schema from "#/schema";
 import * as sql from "drizzle-orm";
 import dayjs from "dayjs";
-import type { Detection } from "#/cmd";
-import { createCellHelper, createRowHelper, pageSetup } from "./utils";
+import type { Detection } from "#/modules/cmd";
+import { createCellHelper, createRowHelper, pageSetup } from "#/utils";
 import { mkdir } from "node:fs/promises";
-import { getDataFromRootDB as getDataFromMDB } from "#/mdb";
+import { getDataFromRootDB as getDataFromMDB } from "#/modules/mdb";
 
 const columnWidths = new Map([
   ["A", 7],

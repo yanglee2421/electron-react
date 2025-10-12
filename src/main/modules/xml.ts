@@ -1,13 +1,12 @@
-import { channel } from "./channel";
-import { ipcHandle } from "./lib";
-import { XMLParser } from "fast-xml-parser";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import * as utils from "node:util";
-import { readBarcodes, prepareZXingModule } from "zxing-wasm";
-import { Poppler } from "node-poppler";
+import { ipcHandle } from "#/lib";
+import { channel } from "#/channel";
 import { app } from "electron";
-import loaderWASM from "../../resources/zxing_full.wasm?loader";
+import { Poppler } from "node-poppler";
+import { XMLParser } from "fast-xml-parser";
+import { readBarcodes, prepareZXingModule } from "zxing-wasm";
+import loaderWASM from "#resources/zxing_full.wasm?loader";
+import * as path from "node:path";
+import { readFile, rm, stat, readdir } from "node:fs/promises";
 
 prepareZXingModule({
   overrides: {
@@ -23,8 +22,6 @@ prepareZXingModule({
 });
 
 const ls = async (basePath: string, set: Set<string>) => {
-  const stat = utils.promisify(fs.stat);
-  const readdir = utils.promisify(fs.readdir);
   const basePathStat = await stat(basePath);
   const isFile = basePathStat.isFile();
   const isDirectory = basePathStat.isDirectory();
@@ -44,7 +41,6 @@ const ls = async (basePath: string, set: Set<string>) => {
 };
 
 const xmlPathToJSONData = async (xmlPath: string) => {
-  const readFile = utils.promisify(fs.readFile);
   const xmlText = await readFile(xmlPath, "utf-8");
   const xmlParser = new XMLParser();
   const jsonObj = xmlParser.parse(xmlText);
@@ -63,8 +59,6 @@ const pdfPathToJSONData = async (pdfPath: string) => {
     resolutionXYAxis: 300,
   });
 
-  const readFile = utils.promisify(fs.readFile);
-  const rm = utils.promisify(fs.rm);
   const pngPath = `${tempPng}.png`;
   const pngBuf = await readFile(pngPath);
   const barcode = await readBarcodes(pngBuf);

@@ -1,7 +1,7 @@
 import { app, shell } from "electron";
 import { join } from "node:path";
 import Excel from "@yanglee2421/exceljs";
-import { db } from "#/db";
+import { db } from "#/lib";
 import * as schema from "#/schema";
 import * as sql from "drizzle-orm";
 

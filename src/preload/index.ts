@@ -1,13 +1,13 @@
 import { ipcRenderer, contextBridge, webUtils } from "electron";
 import { channel } from "#/channel";
-import type { Verify, VerifyData, AutoInputToVCParams } from "#/cmd";
+import type { Verify, VerifyData, AutoInputToVCParams } from "#/modules/cmd";
 import type * as SCHEMA from "#/schema";
-import type * as STORE from "#/store";
+import type * as STORE from "#/lib/store";
 import type { Log } from "@/lib/db";
-import type * as HXZY_HMIS from "#/hxzy_hmis";
-import type * as JTV_HMIS from "#/jtv_hmis";
-import type * as KH_HMIS from "#/kh_hmis";
-import type * as JTV_HMIS_XUZHOUBEI from "#/jtv_hmis_xuzhoubei";
+import type * as HXZY_HMIS from "#/modules/hmis/hxzy_hmis";
+import type * as JTV_HMIS from "#/modules/hmis/jtv_hmis";
+import type * as KH_HMIS from "#/modules/hmis/kh_hmis";
+import type * as JTV_HMIS_XUZHOUBEI from "#/modules/hmis/jtv_hmis_xuzhoubei";
 import {
   electronAPI as electron,
   type ElectronAPI,

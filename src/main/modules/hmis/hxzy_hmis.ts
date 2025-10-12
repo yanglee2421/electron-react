@@ -1,42 +1,42 @@
-// 京天威 统型
+// 成都北 华兴致远
 
 import { net } from "electron";
-import { log, getIP, withLog, createEmit, ipcHandle } from "./lib";
+import { log, getIP, withLog, createEmit, ipcHandle, db } from "#/lib";
 import {
-  getCorporation,
   getDetectionByZH,
   getDetectionDatasByOPID,
-} from "./cmd";
+  getCorporation,
+} from "../cmd";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import { jtv_hmis } from "./store";
-import { db } from "./db";
-import * as schema from "./schema";
+import { hxzy_hmis } from "../../lib/store";
 import * as sql from "drizzle-orm";
-import { channel } from "./channel";
-import type { DetectionData } from "./cmd";
+import * as schema from "../../schema";
+import { channel } from "#/channel";
+import type { DetectionData, Verify, VerifyData } from "../cmd";
 import type * as PRELOAD from "~/index";
+import { getDataFromRootDB as getDataFromMDB } from "../mdb";
 
 /**
  * Sqlite barcode
  */
 const sqlite_get = async (
-  params: PRELOAD.JtvBarcodeGetParams,
-): Promise<PRELOAD.JtvBarcodeGetResult> => {
+  params: PRELOAD.HxzyBarcodeGetParams,
+): Promise<PRELOAD.HxzyBarcodeGetResult> => {
   const [{ count }] = await db
     .select({ count: sql.count() })
-    .from(schema.jtvBarcodeTable)
+    .from(schema.hxzyBarcodeTable)
     .where(
       sql.between(
-        schema.jtvBarcodeTable.date,
+        schema.hxzyBarcodeTable.date,
         new Date(params.startDate),
         new Date(params.endDate),
       ),
     )
     .limit(1);
-  const rows = await db.query.jtvBarcodeTable.findMany({
+  const rows = await db.query.hxzyBarcodeTable.findMany({
     where: sql.between(
-      schema.jtvBarcodeTable.date,
+      schema.hxzyBarcodeTable.date,
       new Date(params.startDate),
       new Date(params.endDate),
     ),
@@ -46,10 +46,10 @@ const sqlite_get = async (
   return { rows, count };
 };
 
-const sqlite_delete = async (id: number): Promise<schema.JTVBarcode> => {
+const sqlite_delete = async (id: number): Promise<schema.HxzyBarcode> => {
   const [result] = await db
-    .delete(schema.jtvBarcodeTable)
-    .where(sql.eq(schema.jtvBarcodeTable.id, id))
+    .delete(schema.hxzyBarcodeTable)
+    .where(sql.eq(schema.hxzyBarcodeTable.id, id))
     .returning();
   return result;
 };
@@ -78,29 +78,27 @@ export type GetResponse = {
 };
 
 const fetch_get = async (barcode: string) => {
-  const host = jtv_hmis.get("host");
-  const unitCode = jtv_hmis.get("unitCode");
-  const url = new URL(`http://${host}/api/getData`);
+  const host = hxzy_hmis.get("host");
+  const url = new URL(
+    `http://${host}/lzjx/dx/csbts/device_api/csbts/api/getDate`,
+  );
   url.searchParams.set("type", "csbts");
-  url.searchParams.set("param", [barcode, unitCode].join(","));
+  url.searchParams.set("param", barcode);
   log(`请求数据:${url.href}`);
-  const res = await net.fetch(url.href, {
-    method: "GET",
-  });
-
+  const res = await net.fetch(url.href, { method: "GET" });
   if (!res.ok) {
     throw `接口异常[${res.status}]:${res.statusText}`;
   }
-
-  const data = await res.json();
-
+  const data: GetResponse = await res.json();
   log(`返回数据:${JSON.stringify(data)}`);
-  return data as GetResponse;
+
+  return data;
 };
 
 type PostRequestItem = {
-  eq_ip: string; // 设备IP
-  eq_bh: string; // 设备编号
+  EQ_IP: string; // 设备IP
+  EQ_BH: string; // 设备编号
+  GD: string; // 股道号
   dh: string; // 扫码单号
   zx: string; // RE2B
   zh: string; // 03684
@@ -126,8 +124,10 @@ type PostResponse = {
 };
 
 const fetch_set = async (request: PostRequestItem[]) => {
-  const host = jtv_hmis.get("host");
-  const url = new URL(`http://${host}/api/saveData`);
+  const host = hxzy_hmis.get("host");
+  const url = new URL(
+    `http://${host}/lzjx/dx/csbts/device_api/csbts/api/saveData`,
+  );
   url.searchParams.set("type", "csbts");
   const body = JSON.stringify(request);
   log(`请求数据:${url.href},${body}`);
@@ -155,7 +155,7 @@ const fetch_set = async (request: PostRequestItem[]) => {
 const api_get = async (barcode: string): Promise<GetResponse> => {
   const data = await fetch_get(barcode);
 
-  await db.insert(schema.jtvBarcodeTable).values({
+  await db.insert(schema.hxzyBarcodeTable).values({
     barCode: barcode,
     zh: data.data[0].ZH,
     date: new Date(),
@@ -166,7 +166,7 @@ const api_get = async (barcode: string): Promise<GetResponse> => {
 };
 
 const recordToBody = async (
-  record: schema.JTVBarcode,
+  record: schema.HxzyBarcode,
 ): Promise<PostRequestItem> => {
   const id = record.id;
 
@@ -182,11 +182,12 @@ const recordToBody = async (
     throw new Error(`记录#${id}条形码不存在`);
   }
 
+  const corporation = await getCorporation();
+  const EQ_IP = corporation.DeviceNO || "";
+  const EQ_BH = getIP();
+  const GD = hxzy_hmis.get("gd");
   const startDate = dayjs(record.date).toISOString();
   const endDate = dayjs(record.date).endOf("day").toISOString();
-  const eq_ip = getIP();
-  const corporation = await getCorporation();
-  const eq_bh = corporation.DeviceNO || "";
 
   const detection = await getDetectionByZH({
     zh: record.zh,
@@ -233,8 +234,9 @@ const recordToBody = async (
   });
 
   return {
-    eq_ip,
-    eq_bh,
+    EQ_IP,
+    EQ_BH,
+    GD,
     dh: record.barCode,
     zx: detection.szWHModel || "",
     zh: record.zh,
@@ -255,27 +257,67 @@ const recordToBody = async (
   };
 };
 
-const emit = createEmit(channel.jtv_hmis_api_set);
+const emit = createEmit(channel.hxzy_hmis_api_set);
 
-const api_set = async (id: number): Promise<schema.JTVBarcode> => {
-  const record = await db.query.jtvBarcodeTable.findFirst({
-    where: sql.eq(schema.jtvBarcodeTable.id, id),
+const api_set = async (id: number) => {
+  const record = await db.query.hxzyBarcodeTable.findFirst({
+    where: sql.eq(schema.hxzyBarcodeTable.id, id),
   });
 
   if (!record) {
     throw new Error(`记录#${id}不存在`);
   }
 
-  const body = await recordToBody(record);
-  await fetch_set([body]);
+  if (!record.zh) {
+    throw new Error(`记录#${id}轴号不存在`);
+  }
+
+  const postParams = await recordToBody(record);
+
+  await fetch_set([postParams]);
   const [result] = await db
-    .update(schema.jtvBarcodeTable)
+    .update(schema.hxzyBarcodeTable)
     .set({ isUploaded: true })
-    .where(sql.eq(schema.jtvBarcodeTable.id, record.id))
+    .where(sql.eq(schema.hxzyBarcodeTable.id, id))
     .returning();
   emit();
 
   return result;
+};
+
+const idToUploadVerifiesData = async (id: string) => {
+  const {
+    rows: [verifies],
+  } = await getDataFromMDB<Verify>({
+    tableName: "verifies",
+    filters: [
+      {
+        type: "equal",
+        field: "szIDs",
+        value: id,
+      },
+    ],
+  });
+
+  if (!verifies) {
+    throw new Error(`未找到ID[${id}]的verifies记录`);
+  }
+
+  const verifiesData = await getDataFromMDB<VerifyData>({
+    tableName: "verifies_data",
+    filters: [
+      {
+        type: "equal",
+        field: "opid",
+        value: verifies.szIDs || "",
+      },
+    ],
+  });
+
+  return {
+    verifies,
+    verifiesData: verifiesData.rows,
+  };
 };
 
 /**
@@ -285,14 +327,14 @@ const doTask = withLog(api_set);
 let timer: NodeJS.Timeout | null = null;
 
 const autoUploadHandler = async () => {
-  const delay = jtv_hmis.get("autoUploadInterval") * 1000;
+  const delay = hxzy_hmis.get("autoUploadInterval") * 1000;
   timer = setTimeout(autoUploadHandler, delay);
 
-  const barcodes = await db.query.jtvBarcodeTable.findMany({
+  const barcodes = await db.query.hxzyBarcodeTable.findMany({
     where: sql.and(
-      sql.eq(schema.jtvBarcodeTable.isUploaded, false),
+      sql.eq(schema.hxzyBarcodeTable.isUploaded, false),
       sql.between(
-        schema.jtvBarcodeTable.date,
+        schema.hxzyBarcodeTable.date,
         dayjs().startOf("day").toDate(),
         dayjs().endOf("day").toDate(),
       ),
@@ -305,11 +347,11 @@ const autoUploadHandler = async () => {
 };
 
 const initAutoUpload = () => {
-  if (jtv_hmis.get("autoUpload")) {
+  if (hxzy_hmis.get("autoUpload")) {
     autoUploadHandler();
   }
 
-  jtv_hmis.onDidChange("autoUpload", (value) => {
+  hxzy_hmis.onDidChange("autoUpload", (value) => {
     if (value) {
       autoUploadHandler();
       return;
@@ -325,24 +367,31 @@ const initAutoUpload = () => {
  */
 const initIpc = () => {
   ipcHandle(
-    channel.jtv_hmis_sqlite_get,
-    (_, params: PRELOAD.JtvBarcodeGetParams) => sqlite_get(params),
+    channel.hxzy_hmis_sqlite_get,
+    (_, params: PRELOAD.HxzyBarcodeGetParams) => sqlite_get(params),
   );
 
-  ipcHandle(channel.jtv_hmis_sqlite_delete, (_, id: number) =>
+  ipcHandle(channel.hxzy_hmis_sqlite_delete, (_, id: number) =>
     sqlite_delete(id),
   );
 
-  ipcHandle(channel.jtv_hmis_api_get, (_, barcode: string) => api_get(barcode));
-  ipcHandle(channel.jtv_hmis_api_set, (_, id: number) => api_set(id));
+  ipcHandle(channel.hxzy_hmis_api_get, (_, barcode: string) =>
+    api_get(barcode),
+  );
+
+  ipcHandle(channel.hxzy_hmis_api_set, (_, id: number) => api_set(id));
+
+  ipcHandle(channel.hxzy_hmis_api_verifies, (_, id: string) =>
+    idToUploadVerifiesData(id),
+  );
 
   ipcHandle(
-    channel.jtv_hmis_setting,
-    (_, data?: PRELOAD.JtvHmisSettingParams) => {
+    channel.hxzy_hmis_setting,
+    (_, data?: PRELOAD.HxzyHmisSettingParams) => {
       if (data) {
-        jtv_hmis.set(data);
+        hxzy_hmis.set(data);
       }
-      return jtv_hmis.store;
+      return hxzy_hmis.store;
     },
   );
 };

@@ -1,3 +1,4 @@
+import * as path from "node:path";
 import {
   BrowserWindow,
   nativeTheme,
@@ -8,25 +9,24 @@ import {
   protocol,
   net,
 } from "electron";
-import { join } from "node:path";
-import { channel } from "./channel";
-import { ipcHandle } from "./lib";
-import * as hxzyHmis from "./hxzy_hmis";
-import * as jtvHmis from "./jtv_hmis";
-import * as jtvHmisXuzhoubei from "./jtv_hmis_xuzhoubei";
-import * as khHmis from "./kh_hmis";
-import * as cmd from "./cmd";
-import * as excel from "./xlsx";
 import { is, optimizer, electronApp } from "@electron-toolkit/utils";
-import * as mdb from "./mdb";
-import * as profile from "./profile";
-import * as md5 from "./image";
-import * as xml from "./xml";
+import { channel } from "#/channel";
+import { ipcHandle } from "#/lib";
+import * as profile from "#/lib/profile";
+import * as hxzyHmis from "./modules/hmis/hxzy_hmis";
+import * as jtvHmis from "./modules/hmis/jtv_hmis";
+import * as jtvHmisXuzhoubei from "./modules/hmis/jtv_hmis_xuzhoubei";
+import * as khHmis from "./modules/hmis/kh_hmis";
+import * as cmd from "./modules/cmd";
+import * as excel from "./modules/xlsx";
+import * as mdb from "./modules/mdb";
+import * as md5 from "./modules/image";
+import * as xml from "./modules/xml";
 
 const createWindow = async (alwaysOnTop: boolean) => {
   const win = new BrowserWindow({
     webPreferences: {
-      preload: join(__dirname, "../preload/index.mjs"),
+      preload: path.join(__dirname, "../preload/index.mjs"),
       nodeIntegration: false,
       sandbox: false,
     },
@@ -69,7 +69,7 @@ const createWindow = async (alwaysOnTop: boolean) => {
   win.once("ready-to-show", () => win.show());
 
   if (!is.dev) {
-    await win.loadFile(join(__dirname, "../renderer/index.html"));
+    await win.loadFile(path.join(__dirname, "../renderer/index.html"));
     return;
   }
 
@@ -206,7 +206,7 @@ const bindProtocol = () => {
   protocol.handle("atom", async (request) => {
     const fileName = request.url.replace(/^atom:\/\//, "");
     const profileInfo = await profile.getRootPath();
-    const fetchURL = join(profileInfo, "_data", fileName);
+    const fetchURL = path.join(profileInfo, "_data", fileName);
     return net.fetch(`file://${fetchURL}`);
   });
 };

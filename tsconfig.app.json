@@ -27,7 +27,8 @@
     "paths": {
       "@/*": ["src/renderer/*"],
       "#/*": ["src/main/*"],
-      "~/*": ["src/preload/*"]
+      "~/*": ["src/preload/*"],
+      "#resources/*": ["resources/*"]
     },
     "types": ["vite/client", "electron-vite/node"]
   },

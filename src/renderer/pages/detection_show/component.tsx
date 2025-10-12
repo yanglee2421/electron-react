@@ -1,4 +1,4 @@
-import type { DetectionData } from "#/cmd";
+import type { DetectionData } from "#/modules/cmd";
 import { fetchDataFromRootDB } from "@/api/fetch_preload";
 import { Loading } from "@/components/Loading";
 import {

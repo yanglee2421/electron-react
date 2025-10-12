@@ -1,4 +1,4 @@
-import type { QuartorData } from "#/cmd";
+import type { QuartorData } from "#/modules/cmd";
 import { fetchDataFromRootDB } from "@/api/fetch_preload";
 import { Loading } from "@/components/Loading";
 import {

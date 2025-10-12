@@ -1,65 +1,17 @@
-import { networkInterfaces } from "node:os";
-import { app, BrowserWindow, ipcMain } from "electron";
-import { channel } from "./channel";
-import type { Log } from "@/lib/db";
-import * as fs from "node:fs/promises";
+import * as os from "node:os";
+import * as url from "node:url";
 import * as path from "node:path";
-
-export const log = (message: string, type = "info") => {
-  const data: Log = {
-    id: 0,
-    date: new Date().toISOString(),
-    message,
-    type,
-  };
-
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send(channel.log, data);
-  });
-};
-
-export const errorToMessage = (error: unknown) => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === "string") {
-    return error;
-  }
-
-  return String(error);
-};
-
-type Callback<TArgs extends unknown[], TReturn> = (...args: TArgs) => TReturn;
-
-const promiseTry = <TArgs extends unknown[], TReturn>(
-  callback: Callback<TArgs, TReturn>,
-  ...args: TArgs
-) => new Promise<TReturn>((resolve) => resolve(callback(...args)));
-
-export const withLog = <TArgs extends unknown[], TReturn = void>(
-  callback: Callback<TArgs, TReturn>,
-) => {
-  const resultFn = async (...args: TArgs) => {
-    try {
-      // Ensure an error is thrown when the promise is rejected
-      const result = await promiseTry(callback, ...args);
-      return result;
-    } catch (error) {
-      devError(error);
-      // Log the error message
-      const message = errorToMessage(error);
-      log(message, "error");
-      // Throw message instead of error to avoid electron issue #24427
-      throw message;
-    }
-  };
-
-  return resultFn;
-};
+import { rm, mkdir } from "node:fs/promises";
+import * as schema from "#/schema";
+import { app, ipcMain, BrowserWindow } from "electron";
+import { channel } from "#/channel";
+import { devError, errorToMessage, promiseTry, type Callback } from "#/utils";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import Database from "better-sqlite3";
 
 export const getIP = () => {
-  const interfaces = networkInterfaces();
+  const interfaces = os.networkInterfaces();
   const IP = Object.values(interfaces)
     .flat()
     .find((i) => {
@@ -123,22 +75,82 @@ export const getTempDir = () =>
 
 export const removeTempDir = async () => {
   const tempDir = getTempDir();
-  await fs.rm(tempDir, { recursive: true, force: true });
+  await rm(tempDir, { recursive: true, force: true });
 };
 
 export const makeTempDir = async () => {
   const tempDir = getTempDir();
-  const result = await fs.mkdir(tempDir, { recursive: true });
+  const result = await mkdir(tempDir, { recursive: true });
   return result;
 };
 
-export const devError = (...args: Parameters<typeof console.error>) => {
-  if (import.meta.env.DEV) {
-    console.error(...args);
-  }
+type Log = {
+  id: number;
+  type: string;
+  message: string;
+  date: string;
+};
+
+export const log = (message: string, type = "info") => {
+  const data: Log = {
+    id: 0,
+    date: new Date().toISOString(),
+    message,
+    type,
+  };
+
+  BrowserWindow.getAllWindows().forEach((win) => {
+    win.webContents.send(channel.log, data);
+  });
+};
+
+export const withLog = <TArgs extends unknown[], TReturn = void>(
+  callback: Callback<TArgs, TReturn>,
+) => {
+  const resultFn = async (...args: TArgs) => {
+    try {
+      // Ensure an error is thrown when the promise is rejected
+      const result = await promiseTry(callback, ...args);
+      return result;
+    } catch (error) {
+      devError(error);
+      // Log the error message
+      const message = errorToMessage(error);
+      log(message, "error");
+      // Throw message instead of error to avoid electron issue #24427
+      throw message;
+    }
+  };
+
+  return resultFn;
 };
 
 export const ipcHandle = (...args: Parameters<typeof ipcMain.handle>) => {
   const [channel, listener] = args;
   return ipcMain.handle(channel, withLog(listener));
 };
+
+/**
+ * In Node.js:
+ * Importing a .cjs file from within an ESM module is allowed (but only the default export is accessible).
+ * However, importing a .node file directly in ESM is not allowed.
+ * .node files must be loaded using `require`, not `import`.
+ * Therefore, if you want to use a .node file in an ESM module, there are two options:
+ * 1. Use `createRequire` to create a CommonJS-style `require` function and load the .node file;
+ * 2. Create a .cjs file that uses `require` to load the .node file, and then import that .cjs file in your ESM module.
+ *
+ * NOTE:
+ * A .node file is a compiled native addon for Node.js, typically written in C or C++.
+ * It is a dynamically-linked binary module that allows high-performance or low-level system functionality
+ * to be accessed from JavaScript.
+ * These files are loaded using `require()` and expose functions or objects that can be used like regular modules.
+ * .node files are commonly used for performance-critical tasks, such as cryptography, image processing, or hardware access.
+ */
+// import { createRequire } from "node:module";
+// const require = createRequire(import.meta.url);
+// const Database: typeof import("better-sqlite3") = require("better-sqlite3");
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+const dbPath = path.resolve(app.getPath("userData"), "db.db");
+const sqliteDb = new Database(dbPath);
+export const db = drizzle(sqliteDb, { schema });
+migrate(db, { migrationsFolder: path.join(__dirname, "../../drizzle") });

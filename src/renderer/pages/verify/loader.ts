@@ -1,7 +1,7 @@
 import { QueryProvider } from "@/components/query";
 import { fetchDataFromAppDB, fetchDataFromRootDB } from "@/api/fetch_preload";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#/mdb.worker";
+import type { Filter } from "#/modules/mdb.worker";
 import dayjs from "dayjs";
 import type { MDBUser } from "@/api/fetch_preload";
 

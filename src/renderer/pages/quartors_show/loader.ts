@@ -1,4 +1,4 @@
-import type { QuartorData } from "#/cmd";
+import type { QuartorData } from "#/modules/cmd";
 import { fetchDataFromRootDB } from "@/api/fetch_preload";
 import { QueryProvider } from "@/components/query";
 import type { LoaderFunction } from "react-router";

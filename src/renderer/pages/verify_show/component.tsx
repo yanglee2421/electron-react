@@ -1,4 +1,4 @@
-import type { VerifyData } from "#/cmd";
+import type { VerifyData } from "#/modules/cmd";
 import { fetchDataFromRootDB } from "@/api/fetch_preload";
 import { Loading } from "@/components/Loading";
 import {

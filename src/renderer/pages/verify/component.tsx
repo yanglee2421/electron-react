@@ -41,10 +41,10 @@ import {
   type MDBUser,
   useChr501Export,
 } from "@/api/fetch_preload";
-import type { Verify } from "#/cmd";
+import type { Verify } from "#/modules/cmd";
 import { Loading } from "@/components/Loading";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#/mdb.worker";
+import type { Filter } from "#/modules/mdb.worker";
 import { useNotifications } from "@toolpad/core";
 import { ScrollToTop } from "@/components/scroll";
 

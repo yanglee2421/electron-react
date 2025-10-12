@@ -3,9 +3,9 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { z } from "zod";
 import { produce } from "immer";
-import { channel } from "./channel";
+import { channel } from "../channel";
 import type { WritableDraft } from "immer";
-import { ipcHandle } from "./lib";
+import { ipcHandle } from "#/lib";
 import ini from "ini";
 import iconv from "iconv-lite";
 
@@ -108,5 +108,4 @@ export const bindIpcHandler = () => {
     const updated = await getProfile();
     return updated;
   });
-  ipcHandle("ini", getRootDBPath);
 };

@@ -1,19 +1,18 @@
 // 京天威 徐州北
 
 import { net } from "electron";
-import { log, getDirection, withLog, createEmit, ipcHandle } from "./lib";
+import { getDirection, createEmit, log, withLog, ipcHandle, db } from "#/lib";
 import {
   getCorporation,
   getDetectionByZH,
   getDetectionDatasByOPID,
-} from "./cmd";
+} from "../cmd";
 import dayjs from "dayjs";
 import { URL } from "node:url";
-import { jtv_hmis_xuzhoubei } from "./store";
-import { db } from "./db";
+import { jtv_hmis_xuzhoubei } from "../../lib/store";
 import * as sql from "drizzle-orm";
-import * as schema from "./schema";
-import { channel } from "./channel";
+import * as schema from "#/schema";
+import { channel } from "../../channel";
 import type * as PRELOAD from "~/index";
 
 /*

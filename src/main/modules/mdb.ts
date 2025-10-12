@@ -1,8 +1,8 @@
-import { ipcHandle } from "./lib";
+import { ipcHandle } from "#/lib";
+import { channel } from "#/channel";
+import { getRootDBPath, getAppDBPath } from "#/lib/profile";
 import createMDBWorker from "./mdb.worker?nodeWorker";
 import type { MDBWorkerData } from "./mdb.worker";
-import { channel } from "./channel";
-import { getRootDBPath, getAppDBPath } from "./profile";
 
 export const getDataByWorker = <TRow>(payload: MDBWorkerData) => {
   return new Promise<{

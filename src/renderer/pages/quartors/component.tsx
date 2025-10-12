@@ -39,11 +39,11 @@ import {
   fetchDataFromRootDB,
   type MDBUser,
 } from "@/api/fetch_preload";
-import type { Quartor } from "#/cmd";
+import type { Quartor } from "#/modules/cmd";
 import { Loading } from "@/components/Loading";
 import { Link as RouterLink } from "react-router";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#/mdb.worker";
+import type { Filter } from "#/modules/mdb.worker";
 import { ScrollToTop } from "@/components/scroll";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);

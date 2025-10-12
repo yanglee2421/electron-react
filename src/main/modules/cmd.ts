@@ -1,15 +1,16 @@
-import { app } from "electron";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { dirname, join, resolve } from "node:path";
-import { cp, access, constants, mkdir, rm } from "node:fs/promises";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as utils from "node:util";
+import * as childProcess from "node:child_process";
+import { access, mkdir, rm, cp } from "node:fs/promises";
 import dayjs from "dayjs";
-import { ipcHandle } from "./lib";
-import { channel } from "./channel";
+import { app } from "electron";
+import { channel } from "#/channel";
+import { ipcHandle } from "#/lib";
+import { getProfile } from "#/lib/profile";
 import { getDataFromAppDB, getDataFromRootDB as getDataFromMDB } from "./mdb";
-import { getProfile } from "./profile";
 
-const execFileAsync = promisify(execFile);
+const execFile = utils.promisify(childProcess.execFile);
 
 /**
  * When users use antivirus software like 360
@@ -18,7 +19,7 @@ const execFileAsync = promisify(execFile);
  */
 const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
   try {
-    const data = await execFileAsync(driverPath, args);
+    const data = await execFile(driverPath, args);
 
     if (data.stderr) {
       throw new Error(data.stderr);
@@ -26,17 +27,20 @@ const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
 
     return data;
   } catch {
-    const driverDir = dirname(driverPath);
-    const newDriverDir = join(
+    const driverDir = path.dirname(driverPath);
+    const newDriverDir = path.join(
       app.getPath("temp"),
       "wtxy_tookit_cmd",
       `${Date.now()}`,
     );
 
     try {
-      await access(newDriverDir, constants.R_OK);
+      await access(newDriverDir, fs.constants.R_OK);
     } catch {
-      await rm(resolve(newDriverDir, "../"), { recursive: true, force: true });
+      await rm(path.resolve(newDriverDir, "../"), {
+        recursive: true,
+        force: true,
+      });
       await mkdir(newDriverDir, { recursive: true });
     }
 
@@ -47,7 +51,7 @@ const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
       dereference: false,
       errorOnExist: false,
     });
-    const data = await execFileAsync(
+    const data = await execFile(
       driverPath.replace(driverDir, newDriverDir),
       args,
     );
