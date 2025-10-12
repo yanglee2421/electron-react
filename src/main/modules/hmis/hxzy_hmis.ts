@@ -1,21 +1,20 @@
 // 成都北 华兴致远
 
+import dayjs from "dayjs";
 import { net } from "electron";
+import * as sql from "drizzle-orm";
+import { channel } from "#main/channel";
+import * as schema from "#main/schema";
+import { hxzy_hmis } from "#main/lib/store";
 import { log, getIP, withLog, createEmit, ipcHandle, db } from "#main/lib";
+import { getDataFromRootDB as getDataFromMDB } from "#main/modules/mdb";
 import {
   getDetectionByZH,
   getDetectionDatasByOPID,
   getCorporation,
-} from "../cmd";
-import dayjs from "dayjs";
-import { URL } from "node:url";
-import { hxzy_hmis } from "../../lib/store";
-import * as sql from "drizzle-orm";
-import * as schema from "../../schema";
-import { channel } from "#main/channel";
-import type { DetectionData, Verify, VerifyData } from "../cmd";
+} from "#main/modules/cmd";
+import type { DetectionData, Verify, VerifyData } from "#main/modules/cmd";
 import type * as PRELOAD from "#preload/index";
-import { getDataFromRootDB as getDataFromMDB } from "../mdb";
 
 /**
  * Sqlite barcode

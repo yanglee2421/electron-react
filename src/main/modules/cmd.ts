@@ -2,7 +2,6 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as utils from "node:util";
 import * as childProcess from "node:child_process";
-import { access, mkdir, rm, cp } from "node:fs/promises";
 import dayjs from "dayjs";
 import { channel } from "#main/channel";
 import { getTempDir, ipcHandle } from "#main/lib";
@@ -30,16 +29,16 @@ const execFileAsyncWithRetry = async (driverPath: string, args: string[]) => {
     const newDriverDir = path.join(getTempDir(), `${Date.now()}`);
 
     try {
-      await access(newDriverDir, fs.constants.R_OK);
+      await fs.promises.access(newDriverDir, fs.constants.R_OK);
     } catch {
-      await rm(path.resolve(newDriverDir, "../"), {
+      await fs.promises.rm(path.resolve(newDriverDir, "../"), {
         recursive: true,
         force: true,
       });
-      await mkdir(newDriverDir, { recursive: true });
+      await fs.promises.mkdir(newDriverDir, { recursive: true });
     }
 
-    await cp(driverDir, newDriverDir, {
+    await fs.promises.cp(driverDir, newDriverDir, {
       recursive: true,
       force: true,
       preserveTimestamps: true,

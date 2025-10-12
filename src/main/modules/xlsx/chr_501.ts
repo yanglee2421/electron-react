@@ -1,5 +1,5 @@
 import { app, shell } from "electron";
-import { join } from "node:path";
+import * as path from "node:path";
 import Excel from "@yanglee2421/exceljs";
 import { db } from "#main/lib";
 import * as schema from "#main/schema";
@@ -127,7 +127,7 @@ export const chr_501 = async (id: string) => {
   if (import.meta.env.PROD) {
     await sheet.protect("123456", { formatColumns: true, formatRows: true });
   }
-  const outputPath = join(app.getPath("documents"), "output.xlsx");
+  const outputPath = path.join(app.getPath("documents"), "output.xlsx");
   await workbook.xlsx.writeFile(outputPath);
   await shell.openPath(outputPath);
 };

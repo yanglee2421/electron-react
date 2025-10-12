@@ -21,18 +21,6 @@ export const debounce = <TArgs extends unknown[]>(
   };
 };
 
-export const errorToMessage = (error: unknown) => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === "string") {
-    return error;
-  }
-
-  return String(error);
-};
-
 export type Callback<TArgs extends unknown[], TReturn> = (
   ...args: TArgs
 ) => TReturn;
@@ -41,6 +29,19 @@ export const promiseTry = <TArgs extends unknown[], TReturn>(
   callback: Callback<TArgs, TReturn>,
   ...args: TArgs
 ) => new Promise<TReturn>((resolve) => resolve(callback(...args)));
+
+export const chunk = <TElement>(
+  array: TElement[],
+  size: number,
+): TElement[][] => {
+  const result: TElement[][] = [];
+
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+
+  return result;
+};
 
 export const pageSetup = (sheet: Excel.Worksheet) => {
   // A4

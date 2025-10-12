@@ -1,14 +1,13 @@
 // 康华 安康
 
-import { net } from "electron";
-import { createEmit, log, withLog, ipcHandle, db } from "../../lib";
-import { getCorporation, getDetectionByZH } from "../cmd";
 import dayjs from "dayjs";
-import { URL } from "node:url";
-import { kh_hmis } from "../../lib/store";
+import { net } from "electron";
 import * as sql from "drizzle-orm";
-import * as schema from "../../schema";
-import { channel } from "../../channel";
+import * as schema from "#main/schema";
+import { channel } from "#main/channel";
+import { kh_hmis } from "#main/lib/store";
+import { createEmit, log, withLog, ipcHandle, db } from "#main/lib";
+import { getCorporation, getDetectionByZH } from "#main/modules/cmd";
 import type * as PRELOAD from "#preload/index";
 
 /**

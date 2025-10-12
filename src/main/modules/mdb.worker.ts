@@ -1,6 +1,6 @@
+import * as fs from "node:fs";
+import * as workerThreads from "node:worker_threads";
 import MDBReader from "mdb-reader";
-import { parentPort, workerData as _workerData } from "node:worker_threads";
-import fs from "node:fs/promises";
 
 export type Filter = LikeFilter | DateFilter | InFilter | EqualFilter;
 
@@ -105,18 +105,18 @@ const getDataFromTable = (
 };
 
 const bootstrap = async () => {
-  const workerData: MDBWorkerData = _workerData;
+  const workerData: MDBWorkerData = workerThreads.workerData;
   const tableName = workerData.tableName;
   const databasePath = workerData.databasePath;
   const pageIndex = workerData.pageIndex || 0;
   const pageSize = workerData.pageSize;
-  const buf = await fs.readFile(databasePath);
+  const buf = await fs.promises.readFile(databasePath);
   const mdbReader = new MDBReader(buf, { password: "Joney" });
   const allRows = getDataFromTable(mdbReader, tableName, workerData.filters);
   const total = allRows.length;
 
   if (!pageSize) {
-    parentPort?.postMessage({ total, rows: allRows.reverse() });
+    workerThreads.parentPort?.postMessage({ total, rows: allRows.reverse() });
     return;
   }
 
@@ -124,7 +124,7 @@ const bootstrap = async () => {
   const rows = allRows.reverse().slice(rowOffset, rowOffset + pageSize);
 
   if (!workerData.with) {
-    parentPort?.postMessage({ total, rows });
+    workerThreads.parentPort?.postMessage({ total, rows });
     return;
   }
 
@@ -140,7 +140,7 @@ const bootstrap = async () => {
     },
   ]);
 
-  parentPort?.postMessage({
+  workerThreads.parentPort?.postMessage({
     total,
     rows: rows.map((row) => ({
       ...row,

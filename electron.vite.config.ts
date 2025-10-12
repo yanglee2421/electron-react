@@ -1,12 +1,12 @@
+import * as url from "node:url";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
-import { fileURLToPath, URL } from "node:url";
 import react from "@vitejs/plugin-react";
 
 const alias = {
-  "#main": fileURLToPath(new URL("./src/main", import.meta.url)),
-  "#preload": fileURLToPath(new URL("./src/preload", import.meta.url)),
-  "#renderer": fileURLToPath(new URL("./src/renderer", import.meta.url)),
-  "#resources": fileURLToPath(new URL("./resources", import.meta.url)),
+  "#main": url.fileURLToPath(new URL("./src/main", import.meta.url)),
+  "#preload": url.fileURLToPath(new URL("./src/preload", import.meta.url)),
+  "#renderer": url.fileURLToPath(new URL("./src/renderer", import.meta.url)),
+  "#resources": url.fileURLToPath(new URL("./resources", import.meta.url)),
 };
 
 const ReactCompilerConfig = {

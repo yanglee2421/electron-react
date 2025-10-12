@@ -1,6 +1,8 @@
 // 京天威 徐州北
 
+import dayjs from "dayjs";
 import { net } from "electron";
+import * as sql from "drizzle-orm";
 import {
   getDirection,
   createEmit,
@@ -13,13 +15,10 @@ import {
   getCorporation,
   getDetectionByZH,
   getDetectionDatasByOPID,
-} from "../cmd";
-import dayjs from "dayjs";
-import { URL } from "node:url";
-import { jtv_hmis_xuzhoubei } from "../../lib/store";
-import * as sql from "drizzle-orm";
+} from "#main/modules/cmd";
+import { jtv_hmis_xuzhoubei } from "#main/lib/store";
 import * as schema from "#main/schema";
-import { channel } from "../../channel";
+import { channel } from "#main/channel";
 import type * as PRELOAD from "#preload/index";
 
 /*

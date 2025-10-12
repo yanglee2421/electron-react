@@ -1,14 +1,14 @@
+import * as fs from "node:fs";
 import * as os from "node:os";
 import * as url from "node:url";
 import * as path from "node:path";
-import { rm, mkdir } from "node:fs/promises";
 import Database from "better-sqlite3";
 import { app, ipcMain, BrowserWindow } from "electron";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "#main/schema";
 import { channel } from "#main/channel";
-import { devError, errorToMessage, promiseTry } from "#main/utils";
+import { devError, promiseTry } from "#main/utils";
 import type { Callback } from "#main/utils";
 
 export const getIP = () => {
@@ -76,12 +76,12 @@ export const getTempDir = () =>
 
 export const removeTempDir = async () => {
   const tempDir = getTempDir();
-  await rm(tempDir, { recursive: true, force: true });
+  await fs.promises.rm(tempDir, { recursive: true, force: true });
 };
 
 export const makeTempDir = async () => {
   const tempDir = getTempDir();
-  const result = await mkdir(tempDir, { recursive: true });
+  const result = await fs.promises.mkdir(tempDir, { recursive: true });
   return result;
 };
 
@@ -103,6 +103,18 @@ export const log = (message: string, type = "info") => {
   BrowserWindow.getAllWindows().forEach((win) => {
     win.webContents.send(channel.log, data);
   });
+};
+
+const errorToMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  return String(error);
 };
 
 export const withLog = <TArgs extends unknown[], TReturn = void>(
@@ -150,8 +162,33 @@ export const ipcHandle = (...args: Parameters<typeof ipcMain.handle>) => {
 // import { createRequire } from "node:module";
 // const require = createRequire(import.meta.url);
 // const Database: typeof import("better-sqlite3") = require("better-sqlite3");
-const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-const dbPath = path.resolve(app.getPath("userData"), "db.db");
-const sqliteDb = new Database(dbPath);
-export const db = drizzle(sqliteDb, { schema });
-migrate(db, { migrationsFolder: path.join(__dirname, "../../drizzle") });
+const createDB = () => {
+  const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+  const dbPath = path.resolve(app.getPath("userData"), "db.db");
+  const sqliteDb = new Database(dbPath);
+  const db = drizzle(sqliteDb, { schema });
+
+  migrate(db, { migrationsFolder: path.join(__dirname, "../../drizzle") });
+
+  return db;
+};
+export const db = createDB();
+
+export const ls = async (basePath: string, set: Set<string>) => {
+  const basePathStat = await fs.promises.stat(basePath);
+  const isFile = basePathStat.isFile();
+  const isDirectory = basePathStat.isDirectory();
+
+  if (isFile) {
+    set.add(basePath);
+  }
+
+  if (isDirectory) {
+    const basenames = await fs.promises.readdir(basePath);
+
+    for (const basename of basenames) {
+      const fullPath = path.resolve(basePath, basename);
+      await ls(fullPath, set);
+    }
+  }
+};

@@ -1,13 +1,13 @@
-import { app, BrowserWindow, nativeTheme } from "electron";
-import * as fs from "node:fs/promises";
+import * as fs from "node:fs";
 import * as path from "node:path";
-import { z } from "zod";
-import { produce } from "immer";
-import { channel } from "../channel";
-import type { WritableDraft } from "immer";
-import { ipcHandle } from "#main/lib";
 import ini from "ini";
+import { z } from "zod";
 import iconv from "iconv-lite";
+import { produce } from "immer";
+import { app, BrowserWindow, nativeTheme } from "electron";
+import { ipcHandle } from "#main/lib";
+import { channel } from "#main/channel";
+import type { WritableDraft } from "immer";
 
 const modeSchema = z.enum(["system", "light", "dark"]).default("system");
 
@@ -37,7 +37,7 @@ export const getAppDBPath = async () => {
 export const getRootPath = async () => {
   const [appPath, profile] = await getAppPath();
   const iniPath = path.resolve(appPath, "usprofile.ini");
-  const iniBuffer = await fs.readFile(iniPath);
+  const iniBuffer = await fs.promises.readFile(iniPath);
   const iniText = iconv.decode(iniBuffer, profile.encoding);
   const userProfile = ini.parse(iniText);
   const rootPath = userProfile.FileSystem.Root as string;
@@ -56,7 +56,7 @@ export type Profile = z.infer<typeof profileSchema>;
 export const getProfile = async () => {
   const filePath = getFilePath();
   try {
-    const text = await fs.readFile(filePath, "utf-8");
+    const text = await fs.promises.readFile(filePath, "utf-8");
     const raw = JSON.parse(text);
     const parsed = profileSchema.parse(raw);
     return parsed;
@@ -87,7 +87,7 @@ export const setProfile = async (callback: ProfileCallback) => {
   const previous = await getProfile();
   const data = produce(previous, callback);
 
-  await fs.writeFile(filePath, JSON.stringify(data), {
+  await fs.promises.writeFile(filePath, JSON.stringify(data), {
     encoding: "utf-8",
   });
 

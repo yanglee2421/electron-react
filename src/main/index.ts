@@ -226,9 +226,9 @@ const bootstrap = async () => {
   nativeTheme.themeSource = profileInfo.mode;
   await app.whenReady();
 
-  bindProtocol();
   bindAppHandler();
   bindIpcHandler();
+  bindProtocol();
   hxzyHmis.init();
   jtvHmisXuzhoubei.init();
   jtvHmis.init();

@@ -1,5 +1,5 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
-import { mkdir } from "node:fs/promises";
 import dayjs from "dayjs";
 import Excel from "@yanglee2421/exceljs";
 import { shell } from "electron";
@@ -357,7 +357,7 @@ export const chr_53a = async (rowIds: string[]) => {
 
   const outputPath = getTempDir();
   const filePath = path.join(outputPath, `output${Date.now()}.xlsx`);
-  await mkdir(outputPath, { recursive: true });
+  await fs.promises.mkdir(outputPath, { recursive: true });
   await workbook.xlsx.writeFile(filePath);
   await shell.openPath(filePath);
 };

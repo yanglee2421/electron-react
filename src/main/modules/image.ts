@@ -1,7 +1,8 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
-import { stat, readdir, mkdir, cp } from "node:fs/promises";
-import { ipcHandle } from "#main/lib";
+import { chunk } from "#main/utils";
 import { channel } from "#main/channel";
+import { ipcHandle, ls } from "#main/lib";
 import createImageWorker from "./image.worker?nodeWorker";
 
 const computeMD5 = (files: string[]) => {
@@ -34,18 +35,8 @@ const getOutputDirectory = async (source: string) => {
     parentDirectory,
     `${basename}-${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`,
   );
-  await mkdir(destination, { recursive: true });
+  await fs.promises.mkdir(destination, { recursive: true });
   return destination;
-};
-
-const chunk = <TElement>(array: TElement[], size: number): TElement[][] => {
-  const result: TElement[][] = [];
-
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size));
-  }
-
-  return result;
 };
 
 const deduplicate = async (
@@ -72,32 +63,7 @@ const copyFile = async (
   for (const [md5, filePath] of md5ToFilePath) {
     const extname = path.extname(filePath);
     const destination = path.resolve(outputDirectory, `${md5}${extname}`);
-    await cp(filePath, destination);
-  }
-};
-
-const getFilePaths = async (directory: string, pathSet: Set<string>) => {
-  const directoryState = await stat(directory);
-  const isDirectory = directoryState.isDirectory();
-  const isFile = directoryState.isFile();
-
-  if (isFile) {
-    pathSet.add(directory);
-  }
-
-  if (isDirectory) {
-    const basenames = await readdir(directory);
-
-    for (const basename of basenames) {
-      const subPath = path.resolve(directory, basename);
-      const extname = path.extname(subPath);
-
-      if (extname === ".json") {
-        continue;
-      }
-
-      await getFilePaths(subPath, pathSet);
-    }
+    await fs.promises.cp(filePath, destination);
   }
 };
 
@@ -105,7 +71,7 @@ const bootstrap = async (source: string) => {
   const md5ToFilePath = createMD5ToFile();
   const pathSet = new Set<string>();
 
-  await getFilePaths(source, pathSet);
+  await ls(source, pathSet);
   await deduplicate(pathSet, md5ToFilePath);
 
   const outputDirectory = await getOutputDirectory(source);

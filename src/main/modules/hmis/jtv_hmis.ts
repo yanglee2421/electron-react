@@ -1,20 +1,18 @@
 // 京天威 统型
 
+import dayjs from "dayjs";
 import { net } from "electron";
-import { getIP, createEmit } from "#main/lib";
-import { log, withLog, ipcHandle, db } from "#main/lib";
+import * as sql from "drizzle-orm";
+import { log, withLog, ipcHandle, db, getIP, createEmit } from "#main/lib";
+import * as schema from "#main/schema";
+import { channel } from "#main/channel";
+import { jtv_hmis } from "#main/lib/store";
 import {
   getCorporation,
   getDetectionByZH,
   getDetectionDatasByOPID,
-} from "../cmd";
-import dayjs from "dayjs";
-import { URL } from "node:url";
-import { jtv_hmis } from "../../lib/store";
-import * as schema from "../../schema";
-import * as sql from "drizzle-orm";
-import { channel } from "../../channel";
-import type { DetectionData } from "../cmd";
+} from "#main/modules/cmd";
+import type { DetectionData } from "#main/modules/cmd";
 import type * as PRELOAD from "#preload/index";
 
 /**
