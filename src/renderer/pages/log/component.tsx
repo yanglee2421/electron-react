@@ -85,11 +85,15 @@ const columns = [
 
 type DataGridProps = {
   count: number;
-  data: Log[];
+  data?: Log[];
 };
 
-const DataGrid = ({ count, data }: DataGridProps) => {
+const DataGrid = (props: DataGridProps) => {
   "use no memo";
+
+  const { count, data: logs } = props;
+
+  const data = React.useMemo(() => logs || [], [logs]);
 
   const table = useReactTable({
     data,
@@ -218,7 +222,6 @@ export const Component = () => {
         .count(),
     [],
   );
-  const data = React.useMemo(() => logs || [], [logs]);
   const [anchorEl, showScrollToTop] = ScrollToTop.useScrollToTop();
 
   return (
@@ -272,7 +275,7 @@ export const Component = () => {
           </Grid>
         </Grid>
       </CardContent>
-      <DataGrid count={count || 0} data={data} />
+      <DataGrid count={count || 0} data={logs} />
       <TablePagination
         component={"div"}
         page={pageIndex}

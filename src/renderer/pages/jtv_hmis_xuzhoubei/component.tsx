@@ -182,9 +182,9 @@ export const Component = () => {
   const { data: hmis } = useQuery(fetchJtvHmisXuzhoubeiSetting());
   const barcode = useQuery(fetchJtvHmisXuzhoubeiSqliteGet(params));
 
-  const setInputFocus = React.useCallback(() => {
+  const setInputFocus = React.useEffectEvent(() => {
     inputRef.current?.focus();
-  }, []);
+  });
 
   const data = React.useMemo(() => barcode.data?.rows ?? [], [barcode.data]);
 
@@ -204,7 +204,7 @@ export const Component = () => {
     return () => {
       unsubscribe();
     };
-  }, [setInputFocus]);
+  }, []);
 
   React.useEffect(() => {
     const unsubscribe = window.electronAPI.subscribeWindowBlur(setInputFocus);
@@ -212,8 +212,7 @@ export const Component = () => {
     return () => {
       unsubscribe();
     };
-  }, [setInputFocus]);
-
+  }, []);
   React.useEffect(() => {
     const controller = new AbortController();
     document.addEventListener(
@@ -228,9 +227,12 @@ export const Component = () => {
     return () => {
       controller.abort();
     };
-  }, [setInputFocus]);
+  }, []);
 
-  const refetchBarcode = barcode.refetch;
+  const refetchBarcode = React.useEffectEvent(() => {
+    barcode.refetch();
+  });
+
   React.useEffect(() => {
     const unsubscribe = window.electronAPI.subscribeJtvHmisXuzhoubeiAPISet(
       () => {
@@ -241,7 +243,7 @@ export const Component = () => {
     return () => {
       unsubscribe();
     };
-  }, [refetchBarcode]);
+  }, []);
 
   const renderRow = () => {
     if (!table.getRowCount()) {
