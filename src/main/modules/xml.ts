@@ -1,13 +1,16 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import * as mathjs from "mathjs";
-import { Poppler } from "node-poppler";
+// import * as mathjs from "mathjs";
+import { PDFParse } from "pdf-parse";
 import { XMLParser } from "fast-xml-parser";
+import { getWorkerPath } from "pdf-parse/worker";
+import { BrowserWindow, dialog } from "electron";
 import { readBarcodes, prepareZXingModule } from "zxing-wasm";
 import { channel } from "#main/channel";
-import { getTempDir, ipcHandle, ls } from "#main/lib";
+import { ipcHandle, ls } from "#main/lib";
 import loaderWASM from "#resources/zxing_full.wasm?loader";
-import { BrowserWindow, dialog } from "electron";
+
+PDFParse.setWorker(getWorkerPath());
 
 prepareZXingModule({
   overrides: {
@@ -25,28 +28,54 @@ prepareZXingModule({
 const xmlPathToJSONData = async (xmlPath: string) => {
   const xmlText = await fs.promises.readFile(xmlPath, "utf-8");
   const xmlParser = new XMLParser();
-  const jsonObj: XMLJSONData = xmlParser.parse(xmlText);
-
-  return jsonObj;
+  const jsonData: XMLJSONData = xmlParser.parse(xmlText);
+  return jsonData;
 };
 
-const pdfPathToJSONData = async (pdfPath: string) => {
-  const poppler = new Poppler();
-  const tempPng = path.resolve(getTempDir(), `${Date.now()}`);
-  await poppler.pdfToCairo(pdfPath, tempPng, {
-    pngFile: true,
-    singleFile: true,
+const xmlPathToInvoice = async (xmlPath: string) => {
+  const jsonData = await xmlPathToJSONData(xmlPath);
+  const IssuItemInformation =
+    jsonData.EInvoice.EInvoiceData.IssuItemInformation;
+  const result: Invoice = {
+    id: jsonData.EInvoice.Header.EIid,
+    totalTaxIncludedAmount:
+      "" +
+      jsonData.EInvoice.EInvoiceData.BasicInformation[
+        "TotalTax-includedAmount"
+      ],
+    requestTime: jsonData.EInvoice.EInvoiceData.BasicInformation.RequestTime,
+    itemName: Array.isArray(IssuItemInformation)
+      ? IssuItemInformation.at(0)?.ItemName
+      : IssuItemInformation.ItemName,
+    additionalInformation: jsonData.EInvoice.EInvoiceData.AdditionalInformation,
+  };
 
-    // Set DPI in both X and Y directions to twice the default (default is 150)
-    resolutionXYAxis: 300,
-  });
+  return result;
+};
 
-  const pngPath = `${tempPng}.png`;
-  const pngBuf = await fs.promises.readFile(pngPath);
-  const barcode = await readBarcodes(pngBuf);
-  await fs.promises.rm(pngPath);
+const pdfPathToInvoices = async (pdfPath: string) => {
+  const pdfBuffer = await fs.promises.readFile(pdfPath);
+  const pdfParse = new PDFParse({ data: pdfBuffer });
+  const imageResult = await pdfParse.getImage();
+  await pdfParse.destroy();
 
-  return barcode;
+  const rows: Invoice[] = [];
+
+  for (const pageData of imageResult.pages) {
+    for (const image of pageData.images) {
+      const results = await readBarcodes(image.data);
+      for (const result of results) {
+        const tuple = result.text.split(",");
+        rows.push({
+          id: tuple.at(3) || "",
+          totalTaxIncludedAmount: tuple.at(4) || "",
+          requestTime: tuple.at(5) || "",
+        });
+      }
+    }
+  }
+
+  return rows;
 };
 
 const collectAllFilePaths = async (paths: string[]) => {
@@ -59,14 +88,23 @@ const collectAllFilePaths = async (paths: string[]) => {
   return set;
 };
 
-const collectXMLResult = async (filePath: string, result: Set<unknown>) => {
-  const data = await xmlPathToJSONData(filePath);
-  result.add(data);
+const collectXMLResult = async (
+  filePath: string,
+  result: Map<string, Invoice>,
+) => {
+  const data = await xmlPathToInvoice(filePath);
+  result.set(data.id, data);
 };
 
-const collectPDFResult = async (filePath: string, result: Set<unknown>) => {
-  const data = await pdfPathToJSONData(filePath);
-  result.add(data);
+const collectPDFResult = async (
+  filePath: string,
+  result: Map<string, Invoice>,
+) => {
+  const datas = await pdfPathToInvoices(filePath);
+
+  for (const data of datas) {
+    result.set(data.id, data);
+  }
 };
 
 export const bindIpcHandler = () => {
@@ -75,27 +113,10 @@ export const bindIpcHandler = () => {
     const data = await xmlPathToJSONData(xmlPath);
     return data;
   });
-  ipcHandle(channel.LAB, async (_, payload: string[]) => {
-    const filePaths = await collectAllFilePaths(payload);
-    const result = new Set<unknown>();
-
-    for (const filePath of filePaths) {
-      const extname = path.extname(filePath).toLowerCase();
-
-      switch (extname) {
-        case ".xml":
-          await collectXMLResult(filePath, result);
-          break;
-        case ".pdf":
-          await collectPDFResult(filePath, result);
-          break;
-        default:
-          throw new Error(`不支持的文件类型: ${extname}`);
-      }
-    }
-
-    return Array.from(result);
-  });
+  // ipcHandle(channel.LAB, async (_, payload: string) => {
+  //   const result = await pdfPathToJSONData(payload);
+  //   return result;
+  // });
   ipcHandle(channel.SELECT_XML_PDF_FROM_FOLDER, async () => {
     const win = BrowserWindow.getAllWindows().at(0);
     if (!win) throw new Error("No BrowserWindow exist");
@@ -116,8 +137,35 @@ export const bindIpcHandler = () => {
     return fileteredFilePaths;
   });
   ipcHandle("xxxxxx", async (_, payload: Payload) => {
-    const { paths, idToDenominator } = payload;
-    const map = new Map(idToDenominator);
+    const { paths } = payload;
+    // const map = new Map(idToDenominator);
+    const resultMap = new Map<string, Invoice>();
+
+    const group = {
+      pdf: [] as string[],
+      xml: [] as string[],
+    };
+
+    paths.reduce((group, filePath) => {
+      const extname = path.extname(filePath);
+      switch (extname) {
+        case ".pdf":
+          group.pdf.push(filePath);
+          break;
+        case ".xml":
+          group.xml.push(filePath);
+          break;
+      }
+      return group;
+    }, group);
+
+    for (const pdf of group.pdf) {
+      await collectPDFResult(pdf, resultMap);
+    }
+
+    for (const xml of group.xml) {
+      await collectXMLResult(xml, resultMap);
+    }
 
     return {
       rows: [],
@@ -223,4 +271,12 @@ type XMLJSONData = {
       TaxBureauName: string;
     };
   };
+};
+
+type Invoice = {
+  id: string;
+  totalTaxIncludedAmount: string;
+  requestTime: string;
+  itemName?: string;
+  additionalInformation?: string;
 };

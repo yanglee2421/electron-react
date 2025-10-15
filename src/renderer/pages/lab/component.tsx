@@ -72,12 +72,12 @@ export const Component = () => {
   const [idToDenominator, setIdToDenominator] = useImmer(initIdToDenominator);
 
   const lab = useLab();
-  const dialogs = useDialogs();
+  useDialogs();
   const openPath = useOpenPath();
   const showOpenDialog = useShowOpenDialog();
   const selectFolder = useSelectXMLPDFFromFolder();
 
-  const query = useQuery({
+  useQuery({
     queryKey: ["xxxx", [...paths], [...idToDenominator.entries()]],
     queryFn: async () => {
       return {};
@@ -166,6 +166,38 @@ export const Component = () => {
                 startIcon={<FolderOutlined />}
               >
                 Select A Folder
+              </Button>
+            </Grid>
+            <Grid size={12}>
+              <Button
+                onClick={() => {
+                  showOpenDialog.mutate(
+                    {
+                      properties: ["openFile"],
+                      filters: [
+                        {
+                          name: "PDF",
+                          extensions: ["pdf"],
+                        },
+                      ],
+                    },
+                    {
+                      onSuccess: ([path]) => {
+                        lab.mutate(path, {
+                          onSuccess: (data) => {
+                            console.log(data);
+                          },
+                        });
+                      },
+                    },
+                  );
+                }}
+                variant="outlined"
+                fullWidth
+                size="large"
+                startIcon={<FolderOutlined />}
+              >
+                Select A PDF
               </Button>
             </Grid>
             <Grid size={12}>
