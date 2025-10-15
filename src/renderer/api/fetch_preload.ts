@@ -655,3 +655,26 @@ export const useLab = () => {
     },
   });
 };
+
+export const useShowOpenDialog = () => {
+  return useMutation({
+    mutationFn: async (options: Electron.OpenDialogOptions) => {
+      const filePaths: string[] = await window.electron.ipcRenderer.invoke(
+        channel.SHOW_OPEN_DIALOG,
+        options,
+      );
+      return filePaths;
+    },
+  });
+};
+
+export const useSelectXMLPDFFromFolder = () => {
+  return useMutation({
+    mutationFn: async () => {
+      const filePaths = await window.electron.ipcRenderer.invoke(
+        channel.SELECT_XML_PDF_FROM_FOLDER,
+      );
+      return filePaths;
+    },
+  });
+};

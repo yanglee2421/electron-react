@@ -200,6 +200,16 @@ const bindIpcHandler = () => {
     });
     return result.filePaths;
   });
+
+  ipcHandle(
+    channel.SHOW_OPEN_DIALOG,
+    async (_, options: Electron.OpenDialogOptions) => {
+      const win = BrowserWindow.getAllWindows().at(0);
+      if (!win) throw new Error("No active window");
+      const result = await dialog.showOpenDialog(win, options);
+      return result.filePaths;
+    },
+  );
 };
 
 const bindProtocol = () => {

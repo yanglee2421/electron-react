@@ -55,6 +55,7 @@ export const channel = createEnum({
   mobileMode: "",
   SELECT_DIRECTORY: "",
   SELECT_FILE: "",
+  SHOW_OPEN_DIALOG: "",
 
   // Common
   settings: "",
@@ -77,4 +78,6 @@ export const channel = createEnum({
   MD5_COMPUTE: "",
   XML: "",
   LAB: "",
+
+  SELECT_XML_PDF_FROM_FOLDER: "",
 });
