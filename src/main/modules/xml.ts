@@ -1,6 +1,5 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import * as mathjs from "mathjs";
 import { PDFParse } from "pdf-parse";
 import { XMLParser } from "fast-xml-parser";
 import { getWorkerPath } from "pdf-parse/worker";
@@ -31,6 +30,18 @@ const xmlPathToJSONData = async (xmlPath: string) => {
   return jsonData;
 };
 
+const getItemName = (
+  issuItemInformation: IssuItemInformation | IssuItemInformation[],
+) => {
+  const originItemName = Array.isArray(issuItemInformation)
+    ? issuItemInformation.at(0)?.ItemName
+    : issuItemInformation.ItemName;
+
+  const regex = /\*(?<content>.+?)\*/;
+
+  return originItemName?.match(regex)?.groups?.content || "运输服务";
+};
+
 const xmlPathToInvoice = async (xmlPath: string) => {
   const jsonData = await xmlPathToJSONData(xmlPath);
   const id = jsonData.EInvoice.Header.EIid;
@@ -46,10 +57,11 @@ const xmlPathToInvoice = async (xmlPath: string) => {
     id,
     totalTaxIncludedAmount,
     requestTime,
-    itemName: Array.isArray(IssuItemInformation)
-      ? IssuItemInformation.at(0)?.ItemName
-      : IssuItemInformation.ItemName,
-    // additionalInformation: jsonData.EInvoice.EInvoiceData.AdditionalInformation,
+    itemName: getItemName(IssuItemInformation),
+    additionalInformation:
+      typeof jsonData.EInvoice.EInvoiceData.AdditionalInformation === "string"
+        ? jsonData.EInvoice.EInvoiceData.AdditionalInformation
+        : jsonData.EInvoice.EInvoiceData.AdditionalInformation.Remark,
   };
 
   return result;
@@ -80,6 +92,8 @@ const pdfPathToInvoices = async (pdfPath: string) => {
           id,
           totalTaxIncludedAmount,
           requestTime,
+          itemName: "运输服务",
+          additionalInformation: "尚不支持从PDF中提取备注",
         });
       }
     }
@@ -167,11 +181,11 @@ export const bindIpcHandler = () => {
       return fileteredFilePaths;
     },
   );
-  ipcHandle(channel.XML_PDF_COMPUTE, async (_, payload: Payload) => {
-    const [paths, idToDenominator] = payload;
-    const denominatorMap = new Map(idToDenominator);
+  ipcHandle(channel.XML_PDF_COMPUTE, async (_, filePaths: string[]) => {
     const resultMap = new Map<string, Invoice>();
-    const fileGroup = mapGroupBy(paths, (filePath) => path.extname(filePath));
+    const fileGroup = mapGroupBy(filePaths, (filePath) =>
+      path.extname(filePath),
+    );
     const pdfGroup = fileGroup.get(".pdf") || [];
     const xmlGroup = fileGroup.get(".xml") || [];
 
@@ -183,30 +197,9 @@ export const bindIpcHandler = () => {
       await collectXMLResult(xml, resultMap);
     }
 
-    const invoices = [...resultMap.values()];
-
-    console.log(invoices);
-
-    const total = invoices.reduce((latestResult, invoice) => {
-      return mathjs
-        .add(
-          mathjs.bignumber(latestResult),
-          mathjs.divide(
-            mathjs.bignumber(invoice.totalTaxIncludedAmount),
-            mathjs.bignumber(denominatorMap.get(invoice.id) || 1),
-          ),
-        )
-        .toString();
-    }, "0");
-
-    return {
-      rows: invoices,
-      result: total,
-    };
+    return [...resultMap.values()];
   });
 };
-
-type Payload = [string[], [string, number][]];
 
 type IssuItemInformation = {
   ItemName: string;
@@ -288,7 +281,11 @@ type XMLJSONData = {
           Vehicletype: string;
         }>;
       };
-      AdditionalInformation: string;
+      AdditionalInformation:
+        | string
+        | {
+            Remark: string;
+          };
     };
     SellerAuthentication: {
       AuthenticationMethods: number | string;

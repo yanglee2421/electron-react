@@ -1,11 +1,4 @@
 import {
-  fetchXMLPDFCompute,
-  useOpenPath,
-  useSelectXMLPDFFromFolder,
-  useShowOpenDialog,
-} from "#renderer/api/fetch_preload";
-import { NumberField } from "#renderer/components/number";
-import {
   DeleteOutlined,
   FileOpenOutlined,
   FindInPageOutlined,
@@ -50,6 +43,15 @@ import {
 import { useDialogs } from "@toolpad/core";
 import React from "react";
 import { useImmer } from "use-immer";
+import * as mathjs from "mathjs";
+import { mapGroupBy } from "#renderer/lib/utils";
+import {
+  fetchXMLPDFCompute,
+  useOpenPath,
+  useSelectXMLPDFFromFolder,
+  useShowOpenDialog,
+} from "#renderer/api/fetch_preload";
+import { NumberField } from "#renderer/components/number";
 import type { Invoice } from "#main/modules/xml";
 
 const fileListToPaths = (fileList: FileList) => {
@@ -76,9 +78,10 @@ export const Component = () => {
   const openPath = useOpenPath();
   const showOpenDialog = useShowOpenDialog();
   const selectXMLPDF = useSelectXMLPDFFromFolder();
-  const query = useQuery(
-    fetchXMLPDFCompute([...files], [...idToDenominator.entries()]),
-  );
+  const query = useQuery(fetchXMLPDFCompute([...files]));
+
+  const resultMap = mapGroupBy(query.data || [], (invoice) => invoice.itemName);
+  const total = computeTotal(query.data || [], idToDenominator);
 
   const addFiles = async (files: FileList | string[]) => {
     const paths = Array.isArray(files) ? files : fileListToPaths(files);
@@ -206,19 +209,9 @@ export const Component = () => {
         </CardContent>
       </Card>
       <Card>
-        <CardHeader title="实验室" />
-        <CardContent>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6 }}></Grid>
-          </Grid>
-        </CardContent>
-        <Divider />
-        <CardContent>
-          <Button onClick={() => {}} variant="contained">
-            Go
-          </Button>
-        </CardContent>
+        <CardHeader title="发票" />
         {query.isFetching && <LinearProgress />}
+        <Divider />
         <IdToDenominatorContext
           value={[
             idToDenominator,
@@ -229,7 +222,7 @@ export const Component = () => {
             },
           ]}
         >
-          <DataGrid data={query.data?.rows || []} />
+          <DataGrid data={query.data || []} />
         </IdToDenominatorContext>
         <TablePagination
           component={"div"}
@@ -240,6 +233,24 @@ export const Component = () => {
           onPageChange={() => {}}
           onRowsPerPageChange={() => {}}
         />
+      </Card>
+      <Card>
+        <CardHeader title="结果" />
+        <CardContent>
+          <List>
+            <ListItem secondaryAction={total}>
+              <ListItemText primary={"总计"} />
+            </ListItem>
+            {Array.from(resultMap.entries(), ([itemName, invoices]) => (
+              <ListItem
+                key={itemName}
+                secondaryAction={computeTotal(invoices, idToDenominator)}
+              >
+                <ListItemText primary={itemName} />
+              </ListItem>
+            ))}
+          </List>
+        </CardContent>
       </Card>
     </Stack>
   );
@@ -262,6 +273,7 @@ const DenominatorCell = (props: DenominatorCellProps) => {
         onBlur() {},
       }}
       size="small"
+      _min={1}
     />
   );
 };
@@ -294,6 +306,7 @@ const DataGrid = (props: DataGridProps) => {
     columns,
     data: props.data,
     getCoreRowModel: getCoreRowModel(),
+    getRowId: (row) => row.id,
   });
 
   const renderRows = () => {
@@ -362,4 +375,23 @@ const DataGrid = (props: DataGridProps) => {
       </TableContainer>
     </>
   );
+};
+
+const computeTotal = (
+  invoices: Invoice[],
+  denominatorMap: Map<string, number>,
+) => {
+  const total = invoices.reduce((latestResult, invoice) => {
+    return mathjs
+      .add(
+        mathjs.bignumber(latestResult),
+        mathjs.divide(
+          mathjs.bignumber(invoice.totalTaxIncludedAmount),
+          mathjs.bignumber(denominatorMap.get(invoice.id) || 1),
+        ),
+      )
+      .toString();
+  }, "0");
+
+  return total;
 };

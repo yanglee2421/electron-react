@@ -681,24 +681,15 @@ export const useSelectXMLPDFFromFolder = () => {
   });
 };
 
-export const fetchXMLPDFCompute = (
-  filePaths: string[],
-  idToDenominator: [string, number][],
-) => {
+export const fetchXMLPDFCompute = (filePaths: string[]) => {
   return queryOptions({
-    queryKey: [channel.XML_PDF_COMPUTE, filePaths, idToDenominator],
+    queryKey: [channel.XML_PDF_COMPUTE, filePaths],
     queryFn: async () => {
-      const result: XMLPDFComputeResult =
-        await window.electron.ipcRenderer.invoke(channel.XML_PDF_COMPUTE, [
-          filePaths,
-          idToDenominator,
-        ]);
+      const result: Invoice[] = await window.electron.ipcRenderer.invoke(
+        channel.XML_PDF_COMPUTE,
+        filePaths,
+      );
       return result;
     },
   });
-};
-
-type XMLPDFComputeResult = {
-  rows: Invoice[];
-  result: string;
 };

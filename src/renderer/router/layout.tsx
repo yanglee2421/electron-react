@@ -393,7 +393,9 @@ const NAVIGATION: Navigation = [
   },
 ];
 
-if (import.meta.env.DEV) {
+const addLabRoutes = (shouldAdd: boolean) => {
+  if (!shouldAdd) return;
+
   NAVIGATION.push(
     {
       segment: "md5_compute",
@@ -416,7 +418,9 @@ if (import.meta.env.DEV) {
       icon: <ScienceOutlined />,
     },
   );
-}
+};
+
+addLabRoutes(true);
 
 export const RootRoute = () => {
   const theme = useTheme();
