@@ -80,4 +80,5 @@ export const channel = createEnum({
   LAB: "",
 
   SELECT_XML_PDF_FROM_FOLDER: "",
+  XML_PDF_COMPUTE: "",
 });

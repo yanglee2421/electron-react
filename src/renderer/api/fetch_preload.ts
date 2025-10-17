@@ -16,11 +16,12 @@ import type {
   SqliteXlsxSizeCParams,
   SqliteXlsxSizeUParams,
 } from "#preload/index";
-import type { AutoInputToVCParams } from "#main/modules/cmd";
-import type * as PRELOAD from "#preload/index";
 import { channel } from "#main/channel";
-import type { Payload } from "#main/modules/mdb";
+import type * as PRELOAD from "#preload/index";
+import type { AutoInputToVCParams } from "#main/modules/cmd";
 import type { Profile } from "#main/lib/profile";
+import type { Payload } from "#main/modules/mdb";
+import type { Invoice } from "#main/modules/xml";
 
 // 自动录入功能
 export const useAutoInputToVC = () => {
@@ -670,11 +671,34 @@ export const useShowOpenDialog = () => {
 
 export const useSelectXMLPDFFromFolder = () => {
   return useMutation({
-    mutationFn: async () => {
-      const filePaths = await window.electron.ipcRenderer.invoke(
+    mutationFn: async (paths: string[]) => {
+      const filePaths: string[] = await window.electron.ipcRenderer.invoke(
         channel.SELECT_XML_PDF_FROM_FOLDER,
+        paths,
       );
       return filePaths;
     },
   });
+};
+
+export const fetchXMLPDFCompute = (
+  filePaths: string[],
+  idToDenominator: [string, number][],
+) => {
+  return queryOptions({
+    queryKey: [channel.XML_PDF_COMPUTE, filePaths, idToDenominator],
+    queryFn: async () => {
+      const result: XMLPDFComputeResult =
+        await window.electron.ipcRenderer.invoke(channel.XML_PDF_COMPUTE, [
+          filePaths,
+          idToDenominator,
+        ]);
+      return result;
+    },
+  });
+};
+
+type XMLPDFComputeResult = {
+  rows: Invoice[];
+  result: string;
 };

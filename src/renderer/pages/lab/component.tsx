@@ -1,5 +1,5 @@
 import {
-  useLab,
+  fetchXMLPDFCompute,
   useOpenPath,
   useSelectXMLPDFFromFolder,
   useShowOpenDialog,
@@ -50,6 +50,7 @@ import {
 import { useDialogs } from "@toolpad/core";
 import React from "react";
 import { useImmer } from "use-immer";
+import type { Invoice } from "#main/modules/xml";
 
 const fileListToPaths = (fileList: FileList) => {
   return Array.from(fileList, (file) =>
@@ -57,7 +58,7 @@ const fileListToPaths = (fileList: FileList) => {
   );
 };
 
-const initPaths = () => new Set<string>();
+const initFiles = () => new Set<string>();
 const initIdToDenominator = () => new Map<string, number>();
 const IdToDenominatorContext = React.createContext([
   initIdToDenominator(),
@@ -68,33 +69,30 @@ const IdToDenominatorContext = React.createContext([
 ] as const);
 
 export const Component = () => {
-  const [paths, setPaths] = useImmer(initPaths);
+  const [files, setFiles] = useImmer(initFiles);
   const [idToDenominator, setIdToDenominator] = useImmer(initIdToDenominator);
 
-  const lab = useLab();
   useDialogs();
   const openPath = useOpenPath();
   const showOpenDialog = useShowOpenDialog();
-  const selectFolder = useSelectXMLPDFFromFolder();
+  const selectXMLPDF = useSelectXMLPDFFromFolder();
+  const query = useQuery(
+    fetchXMLPDFCompute([...files], [...idToDenominator.entries()]),
+  );
 
-  useQuery({
-    queryKey: ["xxxx", [...paths], [...idToDenominator.entries()]],
-    queryFn: async () => {
-      return {};
-    },
-  });
+  const addFiles = async (files: FileList | string[]) => {
+    const paths = Array.isArray(files) ? files : fileListToPaths(files);
+    const result = await selectXMLPDF.mutateAsync(paths);
 
-  const addPaths = (files: FileList | string[]) => {
-    setPaths((draft) => {
-      const paths = Array.isArray(files) ? files : fileListToPaths(files);
-      paths.forEach((path) => {
-        draft.add(path);
+    result.forEach((file) => {
+      setFiles((draft) => {
+        draft.add(file);
       });
     });
   };
 
   const handleDeletePath = (path: string) => {
-    setPaths((draft) => {
+    setFiles((draft) => {
       draft.delete(path);
     });
   };
@@ -109,10 +107,10 @@ export const Component = () => {
               <TextField
                 onDrop={(e) => {
                   e.preventDefault();
-                  addPaths(e.dataTransfer.files);
+                  addFiles(e.dataTransfer.files);
                 }}
                 onPaste={(e) => {
-                  addPaths(e.clipboardData.files);
+                  addFiles(e.clipboardData.files);
                 }}
                 fullWidth
                 slotProps={{
@@ -120,23 +118,18 @@ export const Component = () => {
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
-                          onClick={() => {
-                            showOpenDialog.mutate(
-                              {
-                                properties: ["openFile", "multiSelections"],
-                                filters: [
-                                  {
-                                    name: "XML and PDF",
-                                    extensions: ["xml", "pdf"],
-                                  },
-                                ],
-                              },
-                              {
-                                onSuccess: (filePaths) => {
-                                  addPaths(filePaths);
+                          onClick={async () => {
+                            const xmlPDFs = await showOpenDialog.mutateAsync({
+                              properties: ["openFile", "multiSelections"],
+                              filters: [
+                                {
+                                  name: "XML and PDF",
+                                  extensions: ["xml", "pdf"],
                                 },
-                              },
-                            );
+                              ],
+                            });
+
+                            await addFiles(xmlPDFs);
                           }}
                         >
                           <FindInPageOutlined />
@@ -153,12 +146,11 @@ export const Component = () => {
             </Grid>
             <Grid size={12}>
               <Button
-                onClick={() => {
-                  selectFolder.mutate(void 0, {
-                    onSuccess: (paths) => {
-                      addPaths(paths);
-                    },
+                onClick={async () => {
+                  const paths = await showOpenDialog.mutateAsync({
+                    properties: ["openDirectory"],
                   });
+                  await addFiles(paths);
                 }}
                 variant="outlined"
                 fullWidth
@@ -169,38 +161,6 @@ export const Component = () => {
               </Button>
             </Grid>
             <Grid size={12}>
-              <Button
-                onClick={() => {
-                  showOpenDialog.mutate(
-                    {
-                      properties: ["openFile"],
-                      filters: [
-                        {
-                          name: "PDF",
-                          extensions: ["pdf"],
-                        },
-                      ],
-                    },
-                    {
-                      onSuccess: ([path]) => {
-                        lab.mutate(path, {
-                          onSuccess: (data) => {
-                            console.log(data);
-                          },
-                        });
-                      },
-                    },
-                  );
-                }}
-                variant="outlined"
-                fullWidth
-                size="large"
-                startIcon={<FolderOutlined />}
-              >
-                Select A PDF
-              </Button>
-            </Grid>
-            <Grid size={12}>
               <List
                 subheader={
                   <ListSubheader sx={{ backgroundColor: "transparent" }}>
@@ -208,14 +168,14 @@ export const Component = () => {
                   </ListSubheader>
                 }
               >
-                {Array.from(paths, (path, index) => (
+                {Array.from(files, (filePath, index) => (
                   <ListItem
-                    key={path}
+                    key={filePath}
                     secondaryAction={
                       <IconButton
                         color="error"
                         onClick={() => {
-                          handleDeletePath(path);
+                          handleDeletePath(filePath);
                         }}
                       >
                         <DeleteOutlined />
@@ -230,11 +190,11 @@ export const Component = () => {
                       secondary={
                         <Link
                           onClick={() => {
-                            openPath.mutate(path);
+                            openPath.mutate(filePath);
                           }}
                           sx={{ cursor: "pointer" }}
                         >
-                          {path}
+                          {filePath}
                         </Link>
                       }
                     />
@@ -258,7 +218,7 @@ export const Component = () => {
             Go
           </Button>
         </CardContent>
-        <LinearProgress />
+        {query.isFetching && <LinearProgress />}
         <IdToDenominatorContext
           value={[
             idToDenominator,
@@ -269,7 +229,7 @@ export const Component = () => {
             },
           ]}
         >
-          <DataGrid />
+          <DataGrid data={query.data?.rows || []} />
         </IdToDenominatorContext>
         <TablePagination
           component={"div"}
@@ -306,16 +266,14 @@ const DenominatorCell = (props: DenominatorCellProps) => {
   );
 };
 
-type Row = {
-  id: string;
-  path: string;
-};
-
-const columnHelper = createColumnHelper<Row>();
+const columnHelper = createColumnHelper<Invoice>();
 
 const columns = [
   columnHelper.accessor("id", {}),
-  columnHelper.accessor("path", {}),
+  columnHelper.accessor("totalTaxIncludedAmount", {}),
+  columnHelper.accessor("requestTime", {}),
+  columnHelper.accessor("itemName", {}),
+  columnHelper.accessor("additionalInformation", {}),
   columnHelper.display({
     id: "denominator",
     cell: ({ row }) => {
@@ -324,12 +282,17 @@ const columns = [
   }),
 ];
 
-const DataGrid = () => {
+type DataGridProps = {
+  data: Invoice[];
+  isFetching?: boolean;
+};
+
+const DataGrid = (props: DataGridProps) => {
   "use no memo";
 
   const table = useReactTable({
     columns,
-    data: [],
+    data: props.data,
     getCoreRowModel: getCoreRowModel(),
   });
 

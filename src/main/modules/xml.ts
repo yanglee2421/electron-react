@@ -1,10 +1,9 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-// import * as mathjs from "mathjs";
+import * as mathjs from "mathjs";
 import { PDFParse } from "pdf-parse";
 import { XMLParser } from "fast-xml-parser";
 import { getWorkerPath } from "pdf-parse/worker";
-import { BrowserWindow, dialog } from "electron";
 import { readBarcodes, prepareZXingModule } from "zxing-wasm";
 import { channel } from "#main/channel";
 import { ipcHandle, ls } from "#main/lib";
@@ -34,20 +33,23 @@ const xmlPathToJSONData = async (xmlPath: string) => {
 
 const xmlPathToInvoice = async (xmlPath: string) => {
   const jsonData = await xmlPathToJSONData(xmlPath);
+  const id = jsonData.EInvoice.Header.EIid;
+  const totalTaxIncludedAmount =
+    "" +
+    jsonData.EInvoice.EInvoiceData.BasicInformation["TotalTax-includedAmount"];
+  const requestTime =
+    jsonData.EInvoice.EInvoiceData.BasicInformation.RequestTime;
   const IssuItemInformation =
     jsonData.EInvoice.EInvoiceData.IssuItemInformation;
+
   const result: Invoice = {
-    id: jsonData.EInvoice.Header.EIid,
-    totalTaxIncludedAmount:
-      "" +
-      jsonData.EInvoice.EInvoiceData.BasicInformation[
-        "TotalTax-includedAmount"
-      ],
-    requestTime: jsonData.EInvoice.EInvoiceData.BasicInformation.RequestTime,
+    id,
+    totalTaxIncludedAmount,
+    requestTime,
     itemName: Array.isArray(IssuItemInformation)
       ? IssuItemInformation.at(0)?.ItemName
       : IssuItemInformation.ItemName,
-    additionalInformation: jsonData.EInvoice.EInvoiceData.AdditionalInformation,
+    // additionalInformation: jsonData.EInvoice.EInvoiceData.AdditionalInformation,
   };
 
   return result;
@@ -66,10 +68,18 @@ const pdfPathToInvoices = async (pdfPath: string) => {
       const results = await readBarcodes(image.data);
       for (const result of results) {
         const tuple = result.text.split(",");
+        const id = tuple.at(3) || "";
+        const totalTaxIncludedAmount = tuple.at(4) || "";
+        const requestTime = tuple.at(5) || "";
+
+        if (!id) continue;
+        if (!requestTime) continue;
+        if (!totalTaxIncludedAmount) continue;
+
         rows.push({
-          id: tuple.at(3) || "",
-          totalTaxIncludedAmount: tuple.at(4) || "",
-          requestTime: tuple.at(5) || "",
+          id,
+          totalTaxIncludedAmount,
+          requestTime,
         });
       }
     }
@@ -107,77 +117,96 @@ const collectPDFResult = async (
   }
 };
 
+const mapGroupBy = <TElement, TKey>(
+  array: TElement[],
+  getGroupKey: (element: TElement, index: number) => TKey,
+) => {
+  const groupMap = new Map<TKey, TElement[]>();
+
+  array.reduce((groupMap, element, index) => {
+    const groupKey = getGroupKey(element, index);
+    const group = groupMap.get(groupKey);
+
+    if (Array.isArray(group)) {
+      group.push(element);
+    } else {
+      groupMap.set(groupKey, [element]);
+    }
+
+    return groupMap;
+  }, groupMap);
+
+  return groupMap;
+};
+
 export const bindIpcHandler = () => {
   ipcHandle(channel.XML, async (_, payload: string) => {
     const xmlPath = payload;
     const data = await xmlPathToJSONData(xmlPath);
     return data;
   });
-  // ipcHandle(channel.LAB, async (_, payload: string) => {
-  //   const result = await pdfPathToJSONData(payload);
-  //   return result;
-  // });
-  ipcHandle(channel.SELECT_XML_PDF_FROM_FOLDER, async () => {
-    const win = BrowserWindow.getAllWindows().at(0);
-    if (!win) throw new Error("No BrowserWindow exist");
-    const result = await dialog.showOpenDialog(win, {
-      properties: ["openDirectory"],
-    });
-    const allFilePaths = await collectAllFilePaths(result.filePaths);
-    const fileteredFilePaths = [...allFilePaths].filter((filePath) => {
-      const extname = path.extname(filePath);
-      switch (extname) {
-        case ".pdf":
-        case ".xml":
-          return true;
-        default:
-          return false;
-      }
-    });
-    return fileteredFilePaths;
-  });
-  ipcHandle("xxxxxx", async (_, payload: Payload) => {
-    const { paths } = payload;
-    // const map = new Map(idToDenominator);
+
+  /**
+   * @param filePath A array includes filePath & directory
+   * @returns All .pdf & .xml
+   */
+  ipcHandle(
+    channel.SELECT_XML_PDF_FROM_FOLDER,
+    async (_, filePaths: string[]) => {
+      const allFilePaths = await collectAllFilePaths(filePaths);
+      const fileteredFilePaths = [...allFilePaths].filter((filePath) => {
+        const extname = path.extname(filePath);
+        switch (extname) {
+          case ".pdf":
+          case ".xml":
+            return true;
+          default:
+            return false;
+        }
+      });
+      return fileteredFilePaths;
+    },
+  );
+  ipcHandle(channel.XML_PDF_COMPUTE, async (_, payload: Payload) => {
+    const [paths, idToDenominator] = payload;
+    const denominatorMap = new Map(idToDenominator);
     const resultMap = new Map<string, Invoice>();
+    const fileGroup = mapGroupBy(paths, (filePath) => path.extname(filePath));
+    const pdfGroup = fileGroup.get(".pdf") || [];
+    const xmlGroup = fileGroup.get(".xml") || [];
 
-    const group = {
-      pdf: [] as string[],
-      xml: [] as string[],
-    };
-
-    paths.reduce((group, filePath) => {
-      const extname = path.extname(filePath);
-      switch (extname) {
-        case ".pdf":
-          group.pdf.push(filePath);
-          break;
-        case ".xml":
-          group.xml.push(filePath);
-          break;
-      }
-      return group;
-    }, group);
-
-    for (const pdf of group.pdf) {
+    for (const pdf of pdfGroup) {
       await collectPDFResult(pdf, resultMap);
     }
 
-    for (const xml of group.xml) {
+    for (const xml of xmlGroup) {
       await collectXMLResult(xml, resultMap);
     }
 
+    const invoices = [...resultMap.values()];
+
+    console.log(invoices);
+
+    const total = invoices.reduce((latestResult, invoice) => {
+      return mathjs
+        .add(
+          mathjs.bignumber(latestResult),
+          mathjs.divide(
+            mathjs.bignumber(invoice.totalTaxIncludedAmount),
+            mathjs.bignumber(denominatorMap.get(invoice.id) || 1),
+          ),
+        )
+        .toString();
+    }, "0");
+
     return {
-      rows: [],
-      result: "0.00",
+      rows: invoices,
+      result: total,
     };
   });
 };
 
-type Payload = {
-  paths: string[];
-  idToDenominator: [string, number][];
-};
+type Payload = [string[], [string, number][]];
 
 type IssuItemInformation = {
   ItemName: string;
@@ -273,7 +302,7 @@ type XMLJSONData = {
   };
 };
 
-type Invoice = {
+export type Invoice = {
   id: string;
   totalTaxIncludedAmount: string;
   requestTime: string;
