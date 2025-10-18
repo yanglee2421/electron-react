@@ -1,17 +1,21 @@
 import {
   DeleteOutlined,
+  FolderOutlined,
+  ClearAllOutlined,
   FileOpenOutlined,
   FindInPageOutlined,
-  FolderOutlined,
+  NavigateNextOutlined,
+  NavigateBeforeOutlined,
 } from "@mui/icons-material";
 import {
   Box,
-  Button,
   Card,
-  CardContent,
-  CardHeader,
-  Divider,
   Grid,
+  Badge,
+  Button,
+  Divider,
+  CardHeader,
+  CardContent,
   IconButton,
   InputAdornment,
   LinearProgress,
@@ -21,6 +25,7 @@ import {
   ListItemIcon,
   ListItemText,
   ListSubheader,
+  MenuItem,
   Stack,
   Table,
   TableBody,
@@ -33,25 +38,27 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import {
-  createColumnHelper,
   flexRender,
-  getCoreRowModel,
   useReactTable,
+  getCoreRowModel,
+  createColumnHelper,
+  getPaginationRowModel,
 } from "@tanstack/react-table";
-import { useDialogs } from "@toolpad/core";
 import React from "react";
-import { useImmer } from "use-immer";
+import dayjs from "dayjs";
 import * as mathjs from "mathjs";
-import { mapGroupBy } from "#renderer/lib/utils";
+import { useImmer } from "use-immer";
 import {
-  fetchXMLPDFCompute,
   useOpenPath,
-  useSelectXMLPDFFromFolder,
   useShowOpenDialog,
+  fetchXMLPDFCompute,
+  useSelectXMLPDFFromFolder,
 } from "#renderer/api/fetch_preload";
 import { NumberField } from "#renderer/components/number";
+import { inRange, mapGroupBy } from "#renderer/lib/utils";
 import type { Invoice } from "#main/modules/xml";
 
 const fileListToPaths = (fileList: FileList) => {
@@ -70,25 +77,57 @@ const IdToDenominatorContext = React.createContext([
   },
 ] as const);
 
+const getTotalDays = (
+  rangeStart: dayjs.Dayjs | null,
+  rangeEnd: dayjs.Dayjs | null,
+) => {
+  if (!rangeStart) return 0;
+  if (!rangeEnd) return 0;
+  return rangeEnd.diff(rangeStart, "day") + 1;
+};
+
+const getSubsidy = (
+  rangeStart: dayjs.Dayjs | null,
+  rangeEnd: dayjs.Dayjs | null,
+  subsidyPerDay: string,
+) => {
+  const numberOfDays = getTotalDays(rangeStart, rangeEnd);
+
+  return mathjs
+    .multiply(mathjs.bignumber(numberOfDays), mathjs.bignumber(subsidyPerDay))
+    .toString();
+};
+
+const mathjsAdd = (invoiceTotal: string, subsidy: string) => {
+  return mathjs
+    .add(mathjs.bignumber(invoiceTotal), mathjs.bignumber(subsidy))
+    .toString();
+};
+
 export const Component = () => {
+  const [subsidyPerDay, setSubsidyPerDay] = React.useState("100");
+  const [rangeStart, setRangeStart] = React.useState<null | dayjs.Dayjs>(null);
+  const [rangeEnd, setRangeEnd] = React.useState<null | dayjs.Dayjs>(null);
+
   const [files, setFiles] = useImmer(initFiles);
   const [idToDenominator, setIdToDenominator] = useImmer(initIdToDenominator);
-
-  useDialogs();
   const openPath = useOpenPath();
   const showOpenDialog = useShowOpenDialog();
   const selectXMLPDF = useSelectXMLPDFFromFolder();
   const query = useQuery(fetchXMLPDFCompute([...files]));
 
-  const resultMap = mapGroupBy(query.data || [], (invoice) => invoice.itemName);
-  const total = computeTotal(query.data || [], idToDenominator);
+  const invoices = query.data || [];
+  const invoiceGroup = mapGroupBy(invoices, (invoice) => invoice.itemName);
+  const invoiceTotal = computeTotal(invoices, idToDenominator);
+  const subsidyTotal = getSubsidy(rangeStart, rangeEnd, subsidyPerDay);
+  const total = mathjsAdd(invoiceTotal, subsidyTotal);
 
   const addFiles = async (files: FileList | string[]) => {
     const paths = Array.isArray(files) ? files : fileListToPaths(files);
     const result = await selectXMLPDF.mutateAsync(paths);
 
-    result.forEach((file) => {
-      setFiles((draft) => {
+    setFiles((draft) => {
+      result.forEach((file) => {
         draft.add(file);
       });
     });
@@ -103,7 +142,18 @@ export const Component = () => {
   return (
     <Stack spacing={3}>
       <Card>
-        <CardHeader title="文件" />
+        <CardHeader
+          title="文件"
+          action={
+            <IconButton
+              onClick={() => {
+                setFiles(initFiles);
+              }}
+            >
+              <ClearAllOutlined />
+            </IconButton>
+          }
+        />
         <CardContent>
           <Grid container spacing={2}>
             <Grid size={12}>
@@ -224,24 +274,20 @@ export const Component = () => {
         >
           <DataGrid data={query.data || []} />
         </IdToDenominatorContext>
-        <TablePagination
-          component={"div"}
-          count={100}
-          page={0}
-          rowsPerPage={20}
-          rowsPerPageOptions={[20, 50, 100]}
-          onPageChange={() => {}}
-          onRowsPerPageChange={() => {}}
-        />
       </Card>
+      <Calendar
+        rangeStart={rangeStart}
+        rangeEnd={rangeEnd}
+        setRangeStart={setRangeStart}
+        setRangeEnd={setRangeEnd}
+        subsidyPerDay={subsidyPerDay}
+        onSubsidyPerDayChange={setSubsidyPerDay}
+      />
       <Card>
         <CardHeader title="结果" />
         <CardContent>
           <List>
-            <ListItem secondaryAction={total}>
-              <ListItemText primary={"总计"} />
-            </ListItem>
-            {Array.from(resultMap.entries(), ([itemName, invoices]) => (
+            {Array.from(invoiceGroup, ([itemName, invoices]) => (
               <ListItem
                 key={itemName}
                 secondaryAction={computeTotal(invoices, idToDenominator)}
@@ -249,6 +295,12 @@ export const Component = () => {
                 <ListItemText primary={itemName} />
               </ListItem>
             ))}
+            <ListItem secondaryAction={subsidyTotal}>
+              <ListItemText primary={"餐补"} />
+            </ListItem>
+            <ListItem secondaryAction={total}>
+              <ListItemText primary={"总计"} />
+            </ListItem>
           </List>
         </CardContent>
       </Card>
@@ -281,13 +333,31 @@ const DenominatorCell = (props: DenominatorCellProps) => {
 const columnHelper = createColumnHelper<Invoice>();
 
 const columns = [
-  columnHelper.accessor("id", {}),
-  columnHelper.accessor("totalTaxIncludedAmount", {}),
-  columnHelper.accessor("requestTime", {}),
-  columnHelper.accessor("itemName", {}),
-  columnHelper.accessor("additionalInformation", {}),
+  columnHelper.accessor("id", {
+    header: "发票号码",
+    cell: ({ getValue, row }) => {
+      return (
+        <OpenPathLink filePath={row.original.filePath}>
+          {getValue()}
+        </OpenPathLink>
+      );
+    },
+  }),
+  columnHelper.accessor("totalTaxIncludedAmount", {
+    header: "价税合计",
+  }),
+  columnHelper.accessor("requestTime", {
+    header: "开票日期",
+  }),
+  columnHelper.accessor("itemName", {
+    header: "项目名称",
+  }),
+  columnHelper.accessor("additionalInformation", {
+    header: "备注",
+  }),
   columnHelper.display({
     id: "denominator",
+    header: "拆票",
     cell: ({ row }) => {
       return <DenominatorCell id={row.id} />;
     },
@@ -303,10 +373,17 @@ const DataGrid = (props: DataGridProps) => {
   "use no memo";
 
   const table = useReactTable({
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     columns,
     data: props.data,
-    getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 50,
+      },
+    },
   });
 
   const renderRows = () => {
@@ -325,21 +402,30 @@ const DataGrid = (props: DataGridProps) => {
     }
 
     return rows.map((row) => (
-      <TableRow key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <TableCell key={cell.id}>
-            {cell.getIsPlaceholder() ||
-              flexRender(cell.column.columnDef.cell, cell.getContext())}
+      <React.Fragment key={row.id}>
+        <TableRow>
+          {row.getVisibleCells().map((cell) => (
+            <TableCell key={cell.id}>
+              {cell.getIsPlaceholder() ||
+                flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </TableCell>
+          ))}
+        </TableRow>
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length}>
+            <Typography variant="overline" color="textSecondary">
+              {row.original.filePath}
+            </Typography>
           </TableCell>
-        ))}
-      </TableRow>
+        </TableRow>
+      </React.Fragment>
     ));
   };
 
   return (
     <>
       <TableContainer>
-        <Table>
+        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -373,6 +459,19 @@ const DataGrid = (props: DataGridProps) => {
           </TableFooter>
         </Table>
       </TableContainer>
+      <TablePagination
+        component={"div"}
+        count={table.getRowCount()}
+        page={table.getState().pagination.pageIndex}
+        rowsPerPage={table.getState().pagination.pageSize}
+        rowsPerPageOptions={[50, 100]}
+        onPageChange={(_, page) => {
+          table.setPageIndex(page);
+        }}
+        onRowsPerPageChange={(e) => {
+          table.setPageSize(Number.parseInt(e.target.value));
+        }}
+      />
     </>
   );
 };
@@ -394,4 +493,191 @@ const computeTotal = (
   }, "0");
 
   return total;
+};
+
+type OpenPathLinkProps = {
+  children?: React.ReactNode;
+  filePath: string;
+};
+
+const OpenPathLink = (props: OpenPathLinkProps) => {
+  const openPath = useOpenPath();
+
+  return (
+    <Link
+      onClick={() => {
+        openPath.mutate(props.filePath);
+      }}
+      sx={{ cursor: "pointer" }}
+    >
+      {props.children}
+    </Link>
+  );
+};
+
+const getMonthCalendar = (date: dayjs.Dayjs) => {
+  const startOfMonth = date.startOf("month");
+  const endOfMonth = date.endOf("month");
+  const startWeekday = startOfMonth.day();
+  const endWeekday = endOfMonth.day();
+  const calendarStart = startOfMonth.subtract(startWeekday, "day");
+  const calendarEnd = endOfMonth.add(6 - endWeekday, "day");
+  const totalDays = calendarEnd.diff(calendarStart, "day") + 1;
+
+  const days = Array.from({ length: totalDays }, (_, i) =>
+    calendarStart.add(i, "day"),
+  );
+
+  const weeks = [];
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7));
+  }
+
+  return weeks;
+};
+
+const initDayjs = () => dayjs();
+
+type CalendarProps = {
+  rangeStart: dayjs.Dayjs | null;
+  rangeEnd: dayjs.Dayjs | null;
+  setRangeStart: React.Dispatch<React.SetStateAction<dayjs.Dayjs | null>>;
+  setRangeEnd: React.Dispatch<React.SetStateAction<dayjs.Dayjs | null>>;
+  subsidyPerDay: string;
+  onSubsidyPerDayChange: (value: string) => void;
+};
+
+const Calendar = (props: CalendarProps) => {
+  const { rangeStart, rangeEnd, setRangeStart, setRangeEnd } = props;
+
+  const [selectDate, setSelectDate] = React.useState(initDayjs);
+
+  const monthCalendar = getMonthCalendar(selectDate);
+
+  return (
+    <Card>
+      <CardHeader
+        title="日期"
+        subheader={`共${getTotalDays(rangeStart, rangeEnd)}天`}
+        action={
+          <>
+            <IconButton
+              onClick={() => {
+                setSelectDate((prev) => prev.month(prev.month() - 1));
+              }}
+            >
+              <NavigateBeforeOutlined />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSelectDate((prev) => prev.month(prev.month() + 1));
+              }}
+            >
+              <NavigateNextOutlined />
+            </IconButton>
+          </>
+        }
+      />
+      <CardContent>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <DatePicker
+              value={selectDate}
+              onChange={(e) => {
+                if (!e) return;
+                setSelectDate(e);
+              }}
+              slotProps={{
+                textField: { fullWidth: true },
+              }}
+              views={["month", "year"]}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              value={props.subsidyPerDay}
+              onChange={(e) => {
+                props.onSubsidyPerDayChange(e.target.value);
+              }}
+              select
+              fullWidth
+              label="餐补/天"
+            >
+              <MenuItem value="50">50</MenuItem>
+              <MenuItem value="100">100</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <DatePicker
+              value={rangeStart}
+              onChange={(e) => {
+                setRangeStart(e);
+              }}
+              maxDate={rangeEnd || void 0}
+              slotProps={{
+                textField: { fullWidth: true },
+                field: { clearable: true },
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <DatePicker
+              value={rangeEnd}
+              onChange={(e) => {
+                setRangeEnd(e);
+              }}
+              minDate={rangeStart || void 0}
+              slotProps={{
+                textField: { fullWidth: true },
+                field: { clearable: true },
+              }}
+            />
+          </Grid>
+        </Grid>
+      </CardContent>
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {Array.from({ length: 7 }, (_, index) => {
+                const day = dayjs().day(index).format("dddd");
+
+                return <TableCell key={day}>{day}</TableCell>;
+              })}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {monthCalendar.map((dates, index) => (
+              <TableRow key={index}>
+                {dates.map((date) => {
+                  const dateText = date.date();
+                  return (
+                    <TableCell key={dateText}>
+                      <Badge
+                        color="primary"
+                        badgeContent={
+                          inRange(
+                            date.valueOf(),
+                            rangeStart?.valueOf() || Number.POSITIVE_INFINITY,
+                            rangeEnd?.valueOf() || Number.NEGATIVE_INFINITY,
+                          )
+                            ? date.diff(rangeStart, "day") + 1
+                            : null
+                        }
+                      >
+                        {dateText}
+                      </Badge>
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow></TableRow>
+          </TableFooter>
+        </Table>
+      </TableContainer>
+    </Card>
+  );
 };

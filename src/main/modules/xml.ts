@@ -57,6 +57,7 @@ const xmlPathToInvoice = async (xmlPath: string) => {
     id,
     totalTaxIncludedAmount,
     requestTime,
+    filePath: xmlPath,
     itemName: getItemName(IssuItemInformation),
     additionalInformation:
       typeof jsonData.EInvoice.EInvoiceData.AdditionalInformation === "string"
@@ -92,6 +93,7 @@ const pdfPathToInvoices = async (pdfPath: string) => {
           id,
           totalTaxIncludedAmount,
           requestTime,
+          filePath: pdfPath,
           itemName: "运输服务",
           additionalInformation: "尚不支持从PDF中提取备注",
         });
@@ -303,6 +305,7 @@ export type Invoice = {
   id: string;
   totalTaxIncludedAmount: string;
   requestTime: string;
+  filePath: string;
   itemName?: string;
   additionalInformation?: string;
 };

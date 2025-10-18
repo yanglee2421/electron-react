@@ -23,3 +23,29 @@ export const mapGroupBy = <TElement, TKey>(
 export const minmax = (value: number, min: number, max: number) => {
   return Math.min(Math.max(value, min), max);
 };
+
+export const inRange = (value: number, min: number, max: number) => {
+  return Object.is(value, minmax(value, min, max));
+};
+
+export const chunk = <TElement>(
+  array: TElement[],
+  size: number,
+): TElement[][] => {
+  const result: TElement[][] = [];
+
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+
+  return result;
+};
+
+export type CallbackFn<TArgs extends unknown[], TReturn> = (
+  ...args: TArgs
+) => TReturn;
+
+export const promiseTry = <TArgs extends unknown[], TReturn>(
+  callback: CallbackFn<TArgs, TReturn>,
+  ...args: TArgs
+) => new Promise<TReturn>((resolve) => resolve(callback(...args)));
