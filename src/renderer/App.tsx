@@ -1,15 +1,16 @@
-import { RouterUI } from "./router/RouterUI";
 import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import React from "react";
+import dayjs from "dayjs";
 import "dayjs/locale/zh";
-// import "dayjs/locale/en";
-import { QueryProvider } from "./components/query";
 import { db } from "./lib/db";
+import { RouterUI } from "./router/RouterUI";
+import { QueryProvider } from "./components/query";
 import type { Log } from "./lib/db";
 
-const mediaQuery = matchMedia("(prefers-color-scheme: dark)");
+dayjs.locale("zh");
+
 const lightTheme = createTheme({
   palette: {},
   components: {
@@ -30,8 +31,10 @@ const darkTheme = createTheme({
   },
 });
 
-const useIsDark = () =>
-  React.useSyncExternalStore(
+const useIsDark = () => {
+  const mediaQuery = matchMedia("(prefers-color-scheme: dark)");
+
+  return React.useSyncExternalStore(
     (onStoreChange) => {
       mediaQuery.addEventListener("change", onStoreChange);
 
@@ -42,6 +45,7 @@ const useIsDark = () =>
     () => mediaQuery.matches,
     () => false,
   );
+};
 
 type Props = React.PropsWithChildren;
 
@@ -68,9 +72,7 @@ const useLog = () => {
 
     const unsubscribe = window.electronAPI.subscribeLog(listener);
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 };
 
