@@ -60,6 +60,7 @@ import {
 import { NumberField } from "#renderer/components/number";
 import { inRange, mapGroupBy } from "#renderer/lib/utils";
 import type { Invoice } from "#main/modules/xml";
+import { ScrollToTop } from "#renderer/components/scroll";
 
 const fileListToPaths = (fileList: FileList) => {
   return Array.from(fileList, (file) =>
@@ -115,6 +116,7 @@ export const Component = () => {
   const showOpenDialog = useShowOpenDialog();
   const selectXMLPDF = useSelectXMLPDFFromFolder();
   const query = useQuery(fetchXMLPDFCompute([...files]));
+  const [anchorRef, showScrollToTop] = ScrollToTop.useScrollToTop();
 
   const invoices = query.data || [];
   const invoiceGroup = mapGroupBy(invoices, (invoice) => invoice.itemName);
@@ -140,171 +142,175 @@ export const Component = () => {
   };
 
   return (
-    <Stack spacing={3}>
-      <Card>
-        <CardHeader
-          title="文件"
-          action={
-            <IconButton
-              onClick={() => {
-                setFiles(initFiles);
-              }}
-            >
-              <ClearAllOutlined />
-            </IconButton>
-          }
-        />
-        <CardContent>
-          <Grid container spacing={2}>
-            <Grid size={12}>
-              <TextField
-                onDrop={(e) => {
-                  e.preventDefault();
-                  addFiles(e.dataTransfer.files);
+    <>
+      <div ref={anchorRef}></div>
+      <ScrollToTop show={showScrollToTop} ref={anchorRef} />
+      <Stack spacing={3}>
+        <Card>
+          <CardHeader
+            title="文件"
+            action={
+              <IconButton
+                onClick={() => {
+                  setFiles(initFiles);
                 }}
-                onPaste={(e) => {
-                  addFiles(e.clipboardData.files);
-                }}
-                fullWidth
-                slotProps={{
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={async () => {
-                            const xmlPDFs = await showOpenDialog.mutateAsync({
-                              properties: ["openFile", "multiSelections"],
-                              filters: [
-                                {
-                                  name: "XML and PDF",
-                                  extensions: ["xml", "pdf"],
-                                },
-                              ],
-                            });
+              >
+                <ClearAllOutlined />
+              </IconButton>
+            }
+          />
+          <CardContent>
+            <Grid container spacing={2}>
+              <Grid size={12}>
+                <TextField
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    addFiles(e.dataTransfer.files);
+                  }}
+                  onPaste={(e) => {
+                    addFiles(e.clipboardData.files);
+                  }}
+                  fullWidth
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={async () => {
+                              const xmlPDFs = await showOpenDialog.mutateAsync({
+                                properties: ["openFile", "multiSelections"],
+                                filters: [
+                                  {
+                                    name: "XML and PDF",
+                                    extensions: ["xml", "pdf"],
+                                  },
+                                ],
+                              });
 
-                            await addFiles(xmlPDFs);
-                          }}
-                        >
-                          <FindInPageOutlined />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-                placeholder="Paste or Drag files to here"
-              />
-            </Grid>
-            <Grid size={12}>
-              <Divider>Or</Divider>
-            </Grid>
-            <Grid size={12}>
-              <Button
-                onClick={async () => {
-                  const paths = await showOpenDialog.mutateAsync({
-                    properties: ["openDirectory"],
-                  });
-                  await addFiles(paths);
-                }}
-                variant="outlined"
-                fullWidth
-                size="large"
-                startIcon={<FolderOutlined />}
-              >
-                Select A Folder
-              </Button>
-            </Grid>
-            <Grid size={12}>
-              <List
-                subheader={
-                  <ListSubheader sx={{ backgroundColor: "transparent" }}>
-                    Files
-                  </ListSubheader>
-                }
-              >
-                {Array.from(files, (filePath, index) => (
-                  <ListItem
-                    key={filePath}
-                    secondaryAction={
-                      <IconButton
-                        color="error"
-                        onClick={() => {
-                          handleDeletePath(filePath);
-                        }}
-                      >
-                        <DeleteOutlined />
-                      </IconButton>
-                    }
-                  >
-                    <ListItemIcon>
-                      <FileOpenOutlined />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={`#${index + 1}`}
-                      secondary={
-                        <Link
+                              await addFiles(xmlPDFs);
+                            }}
+                          >
+                            <FindInPageOutlined />
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  placeholder="Paste or Drag files to here"
+                />
+              </Grid>
+              <Grid size={12}>
+                <Divider>Or</Divider>
+              </Grid>
+              <Grid size={12}>
+                <Button
+                  onClick={async () => {
+                    const paths = await showOpenDialog.mutateAsync({
+                      properties: ["openDirectory"],
+                    });
+                    await addFiles(paths);
+                  }}
+                  variant="outlined"
+                  fullWidth
+                  size="large"
+                  startIcon={<FolderOutlined />}
+                >
+                  Select A Folder
+                </Button>
+              </Grid>
+              <Grid size={12}>
+                <List
+                  subheader={
+                    <ListSubheader sx={{ backgroundColor: "transparent" }}>
+                      Files
+                    </ListSubheader>
+                  }
+                >
+                  {Array.from(files, (filePath, index) => (
+                    <ListItem
+                      key={filePath}
+                      secondaryAction={
+                        <IconButton
+                          color="error"
                           onClick={() => {
-                            openPath.mutate(filePath);
+                            handleDeletePath(filePath);
                           }}
-                          sx={{ cursor: "pointer" }}
                         >
-                          {filePath}
-                        </Link>
+                          <DeleteOutlined />
+                        </IconButton>
                       }
-                    />
-                  </ListItem>
-                ))}
-              </List>
+                    >
+                      <ListItemIcon>
+                        <FileOpenOutlined />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={`#${index + 1}`}
+                        secondary={
+                          <Link
+                            onClick={() => {
+                              openPath.mutate(filePath);
+                            }}
+                            sx={{ cursor: "pointer" }}
+                          >
+                            {filePath}
+                          </Link>
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Grid>
             </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader title="发票" />
-        {query.isFetching && <LinearProgress />}
-        <Divider />
-        <IdToDenominatorContext
-          value={[
-            idToDenominator,
-            (id, value) => {
-              setIdToDenominator((draft) => {
-                draft.set(id, value);
-              });
-            },
-          ]}
-        >
-          <DataGrid data={query.data || []} />
-        </IdToDenominatorContext>
-      </Card>
-      <Calendar
-        rangeStart={rangeStart}
-        rangeEnd={rangeEnd}
-        setRangeStart={setRangeStart}
-        setRangeEnd={setRangeEnd}
-        subsidyPerDay={subsidyPerDay}
-        onSubsidyPerDayChange={setSubsidyPerDay}
-      />
-      <Card>
-        <CardHeader title="结果" />
-        <CardContent>
-          <List>
-            {Array.from(invoiceGroup, ([itemName, invoices]) => (
-              <ListItem
-                key={itemName}
-                secondaryAction={computeTotal(invoices, idToDenominator)}
-              >
-                <ListItemText primary={itemName} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader title="发票" />
+          {query.isFetching && <LinearProgress />}
+          <Divider />
+          <IdToDenominatorContext
+            value={[
+              idToDenominator,
+              (id, value) => {
+                setIdToDenominator((draft) => {
+                  draft.set(id, value);
+                });
+              },
+            ]}
+          >
+            <DataGrid data={query.data || []} />
+          </IdToDenominatorContext>
+        </Card>
+        <Calendar
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          setRangeStart={setRangeStart}
+          setRangeEnd={setRangeEnd}
+          subsidyPerDay={subsidyPerDay}
+          onSubsidyPerDayChange={setSubsidyPerDay}
+        />
+        <Card>
+          <CardHeader title="结果" />
+          <CardContent>
+            <List>
+              {Array.from(invoiceGroup, ([itemName, invoices]) => (
+                <ListItem
+                  key={itemName}
+                  secondaryAction={computeTotal(invoices, idToDenominator)}
+                >
+                  <ListItemText primary={itemName} />
+                </ListItem>
+              ))}
+              <ListItem secondaryAction={subsidyTotal}>
+                <ListItemText primary={"餐补"} />
               </ListItem>
-            ))}
-            <ListItem secondaryAction={subsidyTotal}>
-              <ListItemText primary={"餐补"} />
-            </ListItem>
-            <ListItem secondaryAction={total}>
-              <ListItemText primary={"总计"} />
-            </ListItem>
-          </List>
-        </CardContent>
-      </Card>
-    </Stack>
+              <ListItem secondaryAction={total}>
+                <ListItemText primary={"总计"} />
+              </ListItem>
+            </List>
+          </CardContent>
+        </Card>
+      </Stack>
+    </>
   );
 };
 
