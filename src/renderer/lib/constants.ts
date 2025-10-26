@@ -9,3 +9,5 @@ export const cellPaddingMap = new Map<string, "checkbox" | "none" | "normal">([
 ]);
 
 export const rowsPerPageOptions = [100, 200];
+export const GITHUB_URL =
+  "https://github.com/yanglee2421/yanglee2421.github.io";

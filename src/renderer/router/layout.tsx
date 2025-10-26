@@ -22,6 +22,7 @@ import {
   CodeOutlined,
   ScienceOutlined,
   SportsEsportsOutlined,
+  QrCodeOutlined,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -423,6 +424,7 @@ const addLabRoutes = (shouldAdd: boolean) => {
       title: "Minesweeper",
       icon: <SportsEsportsOutlined />,
     },
+    { segment: "qrcode", title: "QRCode", icon: <QrCodeOutlined /> },
   );
 };
 

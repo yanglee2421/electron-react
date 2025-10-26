@@ -106,6 +106,10 @@ const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/minesweeper/component"),
           },
           {
+            path: "qrcode",
+            lazy: () => import("#renderer/pages/qrcode/component"),
+          },
+          {
             id: "xlsx",
             path: "xlsx",
             children: [
