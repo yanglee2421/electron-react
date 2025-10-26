@@ -4,10 +4,12 @@ import { App } from "./App";
 import { enableMapSet } from "immer";
 import * as z from "zod";
 import { zhCN } from "zod/locales";
-
-z.config(zhCN());
+import * as pdf from "#renderer/api/pdf";
 
 enableMapSet();
+z.config(zhCN());
+pdf.prepareModule();
+
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
