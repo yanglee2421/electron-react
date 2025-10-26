@@ -90,12 +90,6 @@ export default defineConfig((config) => ({
             if (id.includes("node_modules/notistack/")) {
               return "notistack";
             }
-            if (
-              id.includes("node_modules/dexie/") ||
-              id.includes("node_modules/dexie-react-hooks/")
-            ) {
-              return "dexie";
-            }
             if (id.includes("node_modules/qrcode.react/")) {
               return "qrcode.react";
             }
