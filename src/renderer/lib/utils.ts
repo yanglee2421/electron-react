@@ -49,3 +49,9 @@ export const promiseTry = <TArgs extends unknown[], TReturn>(
   callback: CallbackFn<TArgs, TReturn>,
   ...args: TArgs
 ) => new Promise<TReturn>((resolve) => resolve(callback(...args)));
+
+export const log: typeof console.log = (...args) => {
+  if (import.meta.env.DEV) {
+    console.log(...args);
+  }
+};

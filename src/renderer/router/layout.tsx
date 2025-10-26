@@ -21,6 +21,7 @@ import {
   PermMediaOutlined,
   CodeOutlined,
   ScienceOutlined,
+  SportsEsportsOutlined,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -416,6 +417,11 @@ const addLabRoutes = (shouldAdd: boolean) => {
       segment: "lab",
       title: "实验室",
       icon: <ScienceOutlined />,
+    },
+    {
+      segment: "minesweeper",
+      title: "Minesweeper",
+      icon: <SportsEsportsOutlined />,
     },
   );
 };

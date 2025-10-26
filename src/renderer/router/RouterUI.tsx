@@ -102,6 +102,10 @@ const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/lab/component"),
           },
           {
+            path: "minesweeper",
+            lazy: () => import("#renderer/pages/minesweeper/component"),
+          },
+          {
             id: "xlsx",
             path: "xlsx",
             children: [
