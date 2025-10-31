@@ -58,7 +58,7 @@ import {
   useSelectXMLPDFFromFolder,
 } from "#renderer/api/fetch_preload";
 import { NumberField } from "#renderer/components/number";
-import { inRange, mapGroupBy } from "#renderer/lib/utils";
+import { isWithinRange, mapGroupBy } from "#renderer/lib/utils";
 import type { Invoice } from "#main/modules/xml";
 import { ScrollToTop } from "#renderer/components/scroll";
 
@@ -105,6 +105,16 @@ const mathjsAdd = (invoiceTotal: string, subsidy: string) => {
     .toString();
 };
 
+const initIdToItemName = () => new Map<string, string>();
+
+const IdToItemNameContext = React.createContext([
+  initIdToItemName(),
+  (id: string, itemName: string) => {
+    void id;
+    void itemName;
+  },
+] as const);
+
 export const Component = () => {
   const [subsidyPerDay, setSubsidyPerDay] = React.useState("100");
   const [rangeStart, setRangeStart] = React.useState<null | dayjs.Dayjs>(null);
@@ -112,6 +122,7 @@ export const Component = () => {
 
   const [files, setFiles] = useImmer(initFiles);
   const [idToDenominator, setIdToDenominator] = useImmer(initIdToDenominator);
+  const [idToItemName, setIdToItemName] = useImmer(initIdToItemName);
   const openPath = useOpenPath();
   const showOpenDialog = useShowOpenDialog();
   const selectXMLPDF = useSelectXMLPDFFromFolder();
@@ -119,7 +130,10 @@ export const Component = () => {
   const [anchorRef, showScrollToTop] = ScrollToTop.useScrollToTop();
 
   const invoices = query.data || [];
-  const invoiceGroup = mapGroupBy(invoices, (invoice) => invoice.itemName);
+  const invoiceGroup = mapGroupBy(
+    invoices,
+    (invoice) => idToItemName.get(String(invoice.id)) || invoice.itemName,
+  );
   const invoiceTotal = computeTotal(invoices, idToDenominator);
   const subsidyTotal = getSubsidy(rangeStart, rangeEnd, subsidyPerDay);
   const total = mathjsAdd(invoiceTotal, subsidyTotal);
@@ -277,7 +291,18 @@ export const Component = () => {
               },
             ]}
           >
-            <DataGrid data={query.data || []} />
+            <IdToItemNameContext
+              value={[
+                idToItemName,
+                (id, value) => {
+                  setIdToItemName((draft) => {
+                    draft.set(id, value);
+                  });
+                },
+              ]}
+            >
+              <DataGrid data={query.data || []} />
+            </IdToItemNameContext>
           </IdToDenominatorContext>
         </Card>
         <Calendar
@@ -357,6 +382,9 @@ const columns = [
   }),
   columnHelper.accessor("itemName", {
     header: "项目名称",
+    cell(props) {
+      return <ItemNameCell id={props.row.id}>{props.getValue()}</ItemNameCell>;
+    },
   }),
   columnHelper.accessor("additionalInformation", {
     header: "备注",
@@ -662,7 +690,7 @@ const Calendar = (props: CalendarProps) => {
                       <Badge
                         color="primary"
                         badgeContent={
-                          inRange(
+                          isWithinRange(
                             date.valueOf(),
                             rangeStart?.valueOf() || Number.POSITIVE_INFINITY,
                             rangeEnd?.valueOf() || Number.NEGATIVE_INFINITY,
@@ -685,5 +713,40 @@ const Calendar = (props: CalendarProps) => {
         </Table>
       </TableContainer>
     </Card>
+  );
+};
+
+type ItemNameCellProps = React.PropsWithChildren<{
+  id: string;
+}>;
+
+const ItemNameCell = (props: ItemNameCellProps) => {
+  const [editable, setEditable] = React.useState(false);
+
+  const [idToItemName, setIdToItemName] = React.use(IdToItemNameContext);
+  const itemName = idToItemName.get(props.id) || String(props.children);
+
+  if (editable) {
+    return (
+      <TextField
+        value={itemName}
+        onChange={(e) => {
+          setIdToItemName(props.id, e.target.value);
+        }}
+        onBlur={() => {
+          setEditable(false);
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      onClick={() => {
+        setEditable(true);
+      }}
+    >
+      {itemName || props.children}
+    </div>
   );
 };
