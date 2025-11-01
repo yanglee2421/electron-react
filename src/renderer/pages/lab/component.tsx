@@ -371,13 +371,6 @@ const columnHelper = createColumnHelper<Invoice>();
 const columns = [
   columnHelper.accessor("id", {
     header: "发票号码",
-    cell: ({ getValue, row }) => {
-      return (
-        <OpenPathLink filePath={row.original.filePath}>
-          {getValue()}
-        </OpenPathLink>
-      );
-    },
   }),
   columnHelper.accessor("totalTaxIncludedAmount", {
     header: "价税合计",
@@ -452,9 +445,11 @@ const DataGrid = (props: DataGridProps) => {
         </TableRow>
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length}>
-            <Typography variant="overline" color="textSecondary">
-              {row.original.filePath}
-            </Typography>
+            <OpenPathLink filePath={row.original.filePath}>
+              <Typography variant="overline" color="textSecondary">
+                {row.original.filePath}
+              </Typography>
+            </OpenPathLink>
           </TableCell>
         </TableRow>
       </React.Fragment>
