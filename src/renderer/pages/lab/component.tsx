@@ -59,8 +59,9 @@ import {
 } from "#renderer/api/fetch_preload";
 import { NumberField } from "#renderer/components/number";
 import { isWithinRange, mapGroupBy } from "#renderer/lib/utils";
-import type { Invoice } from "#main/modules/xml";
 import { ScrollToTop } from "#renderer/components/scroll";
+import type { Invoice } from "#main/modules/xml";
+import type { CallbackFn } from "#renderer/lib/utils";
 
 const fileListToPaths = (fileList: FileList) => {
   return Array.from(fileList, (file) =>
@@ -69,14 +70,28 @@ const fileListToPaths = (fileList: FileList) => {
 };
 
 const initFiles = () => new Set<string>();
+const initIdToItemName = () => new Map<string, string>();
 const initIdToDenominator = () => new Map<string, number>();
-const IdToDenominatorContext = React.createContext([
+
+type IdToDenominatorContextType = [
+  Map<string, number>,
+  CallbackFn<[string, number], void>,
+];
+
+type IdToItemNameContextType = [
+  Map<string, string>,
+  CallbackFn<[string, string], void>,
+];
+
+const IdToDenominatorContext = React.createContext<IdToDenominatorContextType>([
   initIdToDenominator(),
-  (id: string, value: number) => {
-    void id;
-    void value;
-  },
-] as const);
+  Boolean,
+]);
+
+const IdToItemNameContext = React.createContext<IdToItemNameContextType>([
+  initIdToItemName(),
+  Boolean,
+]);
 
 const getTotalDays = (
   rangeStart: dayjs.Dayjs | null,
@@ -104,16 +119,6 @@ const mathjsAdd = (invoiceTotal: string, subsidy: string) => {
     .add(mathjs.bignumber(invoiceTotal), mathjs.bignumber(subsidy))
     .toString();
 };
-
-const initIdToItemName = () => new Map<string, string>();
-
-const IdToItemNameContext = React.createContext([
-  initIdToItemName(),
-  (id: string, itemName: string) => {
-    void id;
-    void itemName;
-  },
-] as const);
 
 export const Component = () => {
   const [subsidyPerDay, setSubsidyPerDay] = React.useState("100");
@@ -383,7 +388,7 @@ const columns = [
   columnHelper.accessor("itemName", {
     header: "项目名称",
     cell(props) {
-      return <ItemNameCell id={props.row.id}>{props.getValue()}</ItemNameCell>;
+      return <ItemNameCell id={props.row.id} value={props.getValue() || ""} />;
     },
   }),
   columnHelper.accessor("additionalInformation", {
@@ -716,15 +721,17 @@ const Calendar = (props: CalendarProps) => {
   );
 };
 
-type ItemNameCellProps = React.PropsWithChildren<{
+type ItemNameCellProps = {
   id: string;
-}>;
+  value: string;
+};
 
 const ItemNameCell = (props: ItemNameCellProps) => {
   const [editable, setEditable] = React.useState(false);
 
   const [idToItemName, setIdToItemName] = React.use(IdToItemNameContext);
-  const itemName = idToItemName.get(props.id) || String(props.children);
+
+  const itemName = idToItemName.get(props.id) || props.value;
 
   if (editable) {
     return (
@@ -736,17 +743,20 @@ const ItemNameCell = (props: ItemNameCellProps) => {
         onBlur={() => {
           setEditable(false);
         }}
+        size="small"
+        autoFocus
       />
     );
   }
 
   return (
-    <div
+    <span
       onClick={() => {
         setEditable(true);
       }}
+      style={{ whiteSpace: "nowrap" }}
     >
-      {itemName || props.children}
-    </div>
+      {itemName || props.value}
+    </span>
   );
 };
