@@ -87,10 +87,7 @@ const getDataFromTable = (
   const table = reader.getTable(tableName);
   const allRows = table.getData();
 
-  let i = 0;
   const filtedRows = allRows.filter((row) => {
-    i++;
-
     if (!Array.isArray(filters)) return true;
 
     return filters.every((filter) => {
@@ -108,8 +105,6 @@ const getDataFromTable = (
       }
     });
   });
-
-  console.log(i);
 
   return filtedRows;
 };
