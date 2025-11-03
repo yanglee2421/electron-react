@@ -267,7 +267,7 @@ export const Component = () => {
     date
       ? {
           type: "date" as const,
-          field: "tmnow",
+          field: "tmNow",
           startAt: date.startOf("day").toISOString(),
           endAt: date.endOf("day").toISOString(),
         }

@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as workerThreads from "node:worker_threads";
 import MDBReader from "mdb-reader";
+import dayjs from "dayjs";
 
 export type Filter = LikeFilter | DateFilter | InFilter | EqualFilter;
 
@@ -56,7 +57,7 @@ const dateFn = (row: NonNullable<unknown>, filter: DateFilter) => {
     return false;
   }
 
-  const dateValue = fieldValue.getTime();
+  const dateValue = fixMDBDate(fieldValue).getTime();
   const startAt = Date.parse(filter.startAt);
   const endAt = Date.parse(filter.endAt);
 
@@ -84,7 +85,12 @@ const getDataFromTable = (
   filters?: Filter[],
 ) => {
   const table = reader.getTable(tableName);
-  return table.getData().filter((row) => {
+  const allRows = table.getData();
+
+  let i = 0;
+  const filtedRows = allRows.filter((row) => {
+    i++;
+
     if (!Array.isArray(filters)) return true;
 
     return filters.every((filter) => {
@@ -102,6 +108,14 @@ const getDataFromTable = (
       }
     });
   });
+
+  console.log(i);
+
+  return filtedRows;
+};
+
+const fixMDBDate = (value: Date) => {
+  return dayjs(value).add(value.getTimezoneOffset(), "minute").toDate();
 };
 
 const bootstrap = async () => {
@@ -121,7 +135,19 @@ const bootstrap = async () => {
   }
 
   const rowOffset = pageIndex * pageSize;
-  const rows = allRows.reverse().slice(rowOffset, rowOffset + pageSize);
+  const rows = allRows
+    .reverse()
+    .slice(rowOffset, rowOffset + pageSize)
+    .map((row) => {
+      const keyValuePair = Object.entries(row).map(([key, value]) => {
+        return [
+          key,
+          value instanceof Date ? fixMDBDate(value) : value,
+        ] as const;
+      });
+
+      return Object.fromEntries(keyValuePair);
+    });
 
   if (!workerData.with) {
     workerThreads.parentPort?.postMessage({ total, rows });
