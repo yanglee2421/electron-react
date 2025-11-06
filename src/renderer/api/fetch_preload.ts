@@ -806,10 +806,11 @@ export const useJtvHmisGuangzhoubeiApiSet = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const data: number = await window.electron.ipcRenderer.invoke(
-        channel.jtv_hmis_guangzhoubei_api_set,
-        id,
-      );
+      const data: JTVGuangzhoubeiBarcode =
+        await window.electron.ipcRenderer.invoke(
+          channel.jtv_hmis_guangzhoubei_api_set,
+          id,
+        );
       return data;
     },
     onSuccess: async () => {
