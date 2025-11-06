@@ -3,6 +3,7 @@ import {
   useQueryClient,
   useMutation,
 } from "@tanstack/react-query";
+import { channel } from "#main/channel";
 import type {
   HxzyHmisSettingParams,
   HxzyBarcodeGetParams,
@@ -16,7 +17,6 @@ import type {
   SqliteXlsxSizeCParams,
   SqliteXlsxSizeUParams,
 } from "#preload/index";
-import { channel } from "#main/channel";
 import type * as PRELOAD from "#preload/index";
 import type { AutoInputToVCParams } from "#main/modules/cmd";
 import type { Profile } from "#main/lib/profile";
@@ -690,6 +690,48 @@ export const fetchXMLPDFCompute = (filePaths: string[]) => {
         filePaths,
       );
       return result;
+    },
+  });
+};
+
+type JTV_HMIS_Guangzhoubei = {
+  autoInput: boolean;
+  autoUpload: boolean;
+  autoUploadInterval: number;
+  unitCode: string;
+  get_host: string;
+  post_host: string;
+};
+
+export const fetchJtvHmisGuangzhoubeiSetting = () =>
+  queryOptions({
+    queryKey: ["window.electronAPI.jtv_hmis_guangzhoubei_setting"],
+    queryFn: async () => {
+      const data: JTV_HMIS_Guangzhoubei =
+        await window.electron.ipcRenderer.invoke(
+          channel.jtv_hmis_guangzhoubei_setting,
+        );
+
+      return data;
+    },
+  });
+
+export const useUpdateJtvHmisGuangzhoubeiSetting = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (setting: JTV_HMIS_Guangzhoubei) => {
+      const data: JTV_HMIS_Guangzhoubei =
+        await window.electron.ipcRenderer.invoke(
+          channel.jtv_hmis_guangzhoubei_setting,
+          setting,
+        );
+
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: fetchJtvHmisGuangzhoubeiSetting().queryKey,
+      });
     },
   });
 };

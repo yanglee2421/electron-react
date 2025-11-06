@@ -6,6 +6,7 @@ import {
 import { QueryProvider } from "#renderer/components/query";
 import {
   fetchHxzyHmisSetting,
+  fetchJtvHmisGuangzhoubeiSetting,
   fetchJtvHmisSetting,
   fetchJtvHmisXuzhoubeiSetting,
   fetchKhHmisSetting,
@@ -28,6 +29,11 @@ const jtvXuzhoubeiLoader = async () => {
 const jtvLoader = async () => {
   const queryClient = QueryProvider.queryClient;
   return await queryClient.ensureQueryData(fetchJtvHmisSetting());
+};
+
+const jtvGuangzhoubeiLoader = async () => {
+  const queryClient = QueryProvider.queryClient;
+  return await queryClient.ensureQueryData(fetchJtvHmisGuangzhoubeiSetting());
 };
 
 const khLoader = async () => {
@@ -250,6 +256,24 @@ const routes: RouteObject[] = [
                     lazy: () =>
                       import(
                         "#renderer/pages/jtv_hmis_xuzhoubei_setting/component"
+                      ),
+                  },
+                ],
+              },
+              {
+                loader: jtvGuangzhoubeiLoader,
+                path: "jtv_guangzhoubei",
+                children: [
+                  {
+                    index: true,
+                    lazy: () =>
+                      import("#renderer/pages/jtv_hmis_guangzhoubei/component"),
+                  },
+                  {
+                    path: "setting",
+                    lazy: () =>
+                      import(
+                        "#renderer/pages/jtv_hmis_guangzhoubei_setting/component"
                       ),
                   },
                 ],

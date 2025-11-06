@@ -145,3 +145,42 @@ export const kh_hmis = new Store<KH_HMIS>({
     },
   },
 });
+
+export type JTV_HMIS_Guangzhoubei = {
+  autoInput: boolean;
+  autoUpload: boolean;
+  autoUploadInterval: number;
+  unitCode: string;
+  get_host: string;
+  post_host: string;
+};
+
+export const jtv_hmis_guangzhoubei = new Store<JTV_HMIS_Guangzhoubei>({
+  name: "jtv_hmis",
+  schema: {
+    get_host: {
+      type: "string",
+      default: "",
+    },
+    post_host: {
+      type: "string",
+      default: "",
+    },
+    autoInput: {
+      type: "boolean",
+      default: false,
+    },
+    autoUpload: {
+      type: "boolean",
+      default: false,
+    },
+    autoUploadInterval: {
+      type: "number",
+      default: 30,
+    },
+    unitCode: {
+      type: "string",
+      default: "",
+    },
+  },
+});

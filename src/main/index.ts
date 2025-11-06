@@ -15,6 +15,7 @@ import { ipcHandle } from "#main/lib";
 import * as profile from "#main/lib/profile";
 import * as hxzyHmis from "./modules/hmis/hxzy_hmis";
 import * as jtvHmis from "./modules/hmis/jtv_hmis";
+import * as jtvHmisGuangzhoubei from "./modules/hmis/jtv_hmis_guangzhoubei";
 import * as jtvHmisXuzhoubei from "./modules/hmis/jtv_hmis_xuzhoubei";
 import * as khHmis from "./modules/hmis/kh_hmis";
 import * as cmd from "./modules/cmd";
@@ -242,6 +243,7 @@ const bootstrap = async () => {
   hxzyHmis.init();
   jtvHmisXuzhoubei.init();
   jtvHmis.init();
+  jtvHmisGuangzhoubei.init();
   khHmis.init();
   cmd.initIpc();
   excel.initIpc();

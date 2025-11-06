@@ -211,6 +211,7 @@ const segmentAlias = new Map([
   ["hxzy", "华兴致远"],
   ["jtv", "京天威"],
   ["jtv_xuzhoubei", "京天威(徐州北)"],
+  ["jtv_guangzhoubei", "京天威(广州北)"],
   ["kh", "康华"],
   ["verifies", "日常校验"],
   ["setting", "设置"],
@@ -335,6 +336,21 @@ const NAVIGATION: Navigation = [
     ],
   },
   {
+    title: "京天威(广州北)",
+    segment: "jtv_guangzhoubei",
+    children: [
+      {
+        title: "HMIS",
+        icon: <QrCodeScannerOutlined />,
+      },
+      {
+        segment: "setting",
+        title: "设置",
+        icon: <TuneOutlined />,
+      },
+    ],
+  },
+  {
     title: "康华",
     segment: "kh",
     children: [
@@ -428,7 +444,7 @@ const addLabRoutes = (shouldAdd: boolean) => {
   );
 };
 
-addLabRoutes(true);
+addLabRoutes(false);
 
 export const RootRoute = () => {
   const theme = useTheme();
