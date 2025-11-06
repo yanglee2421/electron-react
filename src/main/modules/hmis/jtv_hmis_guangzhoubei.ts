@@ -125,11 +125,6 @@ type PostRequestItem = {
   CT_RESULT: string; // 合格
 };
 
-type PostResponse = {
-  code: "200";
-  msg: "数据上传成功";
-};
-
 const fetch_set = async (request: PostRequestItem[]) => {
   const host = jtv_hmis_guangzhoubei.get("post_host");
   const url = new URL(`http://${host}/pmss/example.do`);
@@ -147,11 +142,8 @@ const fetch_set = async (request: PostRequestItem[]) => {
   if (!res.ok) {
     throw `接口异常[${res.status}]:${res.statusText}`;
   }
-  const data: PostResponse = await res.json();
+  const data: boolean = await res.json();
   log(`返回数据:${JSON.stringify(data)}`);
-  if (data.code !== "200") {
-    throw `接口异常[${data.code}]:${data.msg}`;
-  }
   return data;
 };
 
