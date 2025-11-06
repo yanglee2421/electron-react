@@ -6,21 +6,28 @@ import * as sql from "drizzle-orm";
 import { log, withLog, ipcHandle, db, getIP, createEmit } from "#main/lib";
 import * as schema from "#main/schema";
 import { channel } from "#main/channel";
-import { jtv_hmis_guangzhoubei } from "#main/lib/store";
+import {
+  jtv_hmis_guangzhoubei,
+  type JTV_HMIS_Guangzhoubei,
+} from "#main/lib/store";
 import {
   getCorporation,
   getDetectionByZH,
   getDetectionDatasByOPID,
 } from "#main/modules/cmd";
 import type { DetectionData } from "#main/modules/cmd";
-import type * as PRELOAD from "#preload/index";
+
+type SQLiteGetParams = {
+  pageIndex: number;
+  pageSize: number;
+  startDate: string;
+  endDate: string;
+};
 
 /**
  * Sqlite barcode
  */
-const sqlite_get = async (
-  params: PRELOAD.JtvBarcodeGetParams,
-): Promise<PRELOAD.JtvBarcodeGetResult> => {
+const sqlite_get = async (params: SQLiteGetParams) => {
   const [{ count }] = await db
     .select({ count: sql.count() })
     .from(schema.jtvGuangzhoubeiBarcodeTable)
@@ -44,7 +51,7 @@ const sqlite_get = async (
   return { rows, count };
 };
 
-const sqlite_delete = async (id: number): Promise<schema.JTVBarcode> => {
+const sqlite_delete = async (id: number) => {
   const [result] = await db
     .delete(schema.jtvGuangzhoubeiBarcodeTable)
     .where(sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id))
@@ -325,13 +332,11 @@ const initAutoUpload = () => {
 const initIpc = () => {
   ipcHandle(
     channel.jtv_hmis_guangzhoubei_sqlite_get,
-    (_, params: PRELOAD.JtvBarcodeGetParams) => sqlite_get(params),
+    (_, params: SQLiteGetParams) => sqlite_get(params),
   );
-
   ipcHandle(channel.jtv_hmis_guangzhoubei_sqlite_delete, (_, id: number) =>
     sqlite_delete(id),
   );
-
   ipcHandle(channel.jtv_hmis_guangzhoubei_api_get, (_, barcode: string) =>
     api_get(barcode),
   );
@@ -341,7 +346,7 @@ const initIpc = () => {
 
   ipcHandle(
     channel.jtv_hmis_guangzhoubei_setting,
-    (_, data?: PRELOAD.JtvHmisSettingParams) => {
+    (_, data?: JTV_HMIS_Guangzhoubei) => {
       if (data) {
         jtv_hmis_guangzhoubei.set(data);
       }

@@ -43,12 +43,12 @@ import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import type { JTVBarcode } from "#main/schema";
 import { useQuery } from "@tanstack/react-query";
 import {
-  fetchJtvHmisSetting,
-  fetchJtvHmisSqliteGet,
   useAutoInputToVC,
-  useJtvHmisApiGet,
-  useJtvHmisApiSet,
-  useJtvHmisSqliteDelete,
+  fetchJtvHmisGuangzhoubeiSetting,
+  fetchJtvHmisGuangzhoubeiSqliteGet,
+  useJtvHmisGuangzhoubeiApiGet,
+  useJtvHmisGuangzhoubeiApiSet,
+  useJtvHmisGuangzhoubeiSqliteDelete,
 } from "#renderer/api/fetch_preload";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -60,8 +60,8 @@ type ActionCellProps = {
 const ActionCell = (props: ActionCellProps) => {
   const snackbar = useNotifications();
   const dialog = useDialogs();
-  const saveData = useJtvHmisApiSet();
-  const deleteBarcode = useJtvHmisSqliteDelete();
+  const saveData = useJtvHmisGuangzhoubeiApiSet();
+  const deleteBarcode = useJtvHmisGuangzhoubeiSqliteDelete();
 
   const handleUpload = () => {
     saveData.mutate(props.id, {
@@ -177,10 +177,10 @@ export const Component = () => {
   const form = useScanerForm();
   const snackbar = useNotifications();
   const autoInput = useAutoInputToVC();
-  const saveData = useJtvHmisApiSet();
-  const getData = useJtvHmisApiGet();
-  const { data: hmis } = useQuery(fetchJtvHmisSetting());
-  const barcode = useQuery(fetchJtvHmisSqliteGet(params));
+  const saveData = useJtvHmisGuangzhoubeiApiSet();
+  const getData = useJtvHmisGuangzhoubeiApiGet();
+  const { data: hmis } = useQuery(fetchJtvHmisGuangzhoubeiSetting());
+  const barcode = useQuery(fetchJtvHmisGuangzhoubeiSqliteGet(params));
 
   const setInputFocus = React.useEffectEvent(() => {
     inputRef.current?.focus();
