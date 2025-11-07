@@ -25,7 +25,7 @@ type SQLiteGetParams = {
 /**
  * Sqlite barcode
  */
-const handleReadRecord = async (params: SQLiteGetParams) => {
+const handleReadRecords = async (params: SQLiteGetParams) => {
   const [{ count }] = await db
     .select({ count: sql.count() })
     .from(schema.jtvGuangzhoubeiBarcodeTable)
@@ -61,7 +61,7 @@ const handleDeleteRecord = async (id: number) => {
   return result;
 };
 
-const generateGetURL = (dh: string) => {
+const makeDataRequestURL = (dh: string) => {
   const host = jtv_hmis_guangzhoubei.get("get_host");
   const unitCode = jtv_hmis_guangzhoubei.get("unitCode");
   const url = new URL(`http://${host}/api/getData`);
@@ -111,20 +111,28 @@ export type ZH_Response = {
 };
 
 const fetchAxleInfoByZH = async (zh: string) => {
-  const url = generateGetURL(zh);
+  const url = makeDataRequestURL(zh);
 
   url.searchParams.set("type", "csbtszh");
   log(`请求轴号数据:${url.href}`);
 
   const res = await net.fetch(url.href, { method: "GET" });
-  const data: ZH_Response = await res.json();
 
+  if (!res.ok) {
+    throw new Error(`接口异常[${res.status}]:${res.statusText}`);
+  }
+
+  const data: ZH_Response = await res.json();
   log(`返回轴号数据:${JSON.stringify(data)}`);
+
+  if (data.code !== "200") {
+    throw new Error(data.msg);
+  }
 
   return data;
 };
 
-const formatZHResponse = (data: ZH_Response) => {
+const normalizeZHResponse = (data: ZH_Response) => {
   if (data.code !== "200") {
     throw new Error(data.msg);
   }
@@ -177,24 +185,28 @@ export type DH_Response = {
 };
 
 const fetchAxleInfoByDH = async (dh: string) => {
-  const url = generateGetURL(dh);
+  const url = makeDataRequestURL(dh);
 
   url.searchParams.set("type", "csbts");
   log(`请求单号数据:${url.href}`);
 
   const res = await net.fetch(url.href, { method: "GET" });
-  const data: DH_Response = await res.json();
 
+  if (!res.ok) {
+    throw new Error(`接口异常[${res.status}]:${res.statusText}`);
+  }
+
+  const data: DH_Response = await res.json();
   log(`返回单号数据:${JSON.stringify(data)}`);
 
-  return data;
-};
-
-const formatDHResponse = (data: DH_Response) => {
   if (data.code !== "200") {
     throw new Error(data.msg);
   }
 
+  return data;
+};
+
+const normalizeDHResponse = (data: DH_Response) => {
   const firstRecord = data.data.at(0);
 
   if (!firstRecord) {
@@ -214,37 +226,30 @@ const formatDHResponse = (data: DH_Response) => {
   };
 };
 
-const getFormatedResponse = async (barCode: string, isZhMode?: boolean) => {
+const normalizeResponse = async (barCode: string, isZhMode?: boolean) => {
   if (isZhMode) {
     const data = await fetchAxleInfoByZH(barCode);
-    const result = formatZHResponse(data);
+    const result = normalizeZHResponse(data);
+
     return result;
   } else {
     const data = await fetchAxleInfoByDH(barCode);
-    const result = formatDHResponse(data);
+    const result = normalizeDHResponse(data);
+
     return result;
   }
 };
 
-export type FormatedResponse = Awaited<ReturnType<typeof getFormatedResponse>>;
+export type NormalizedResponse = Awaited<ReturnType<typeof normalizeResponse>>;
 
-const insertAxleInfoToDB = async (data: { barcode: string; zh: string }) => {
-  const { barcode, zh } = data;
+const handleFetchRecord = async (barcode: string, isZhMode?: boolean) => {
+  const data = await normalizeResponse(barcode, isZhMode);
 
   await db.insert(schema.jtvGuangzhoubeiBarcodeTable).values({
-    barCode: barcode,
-    zh,
+    barCode: data.DH,
+    zh: data.ZH,
     date: new Date(),
     isUploaded: false,
-  });
-};
-
-const handleGetRequest = async (barcode: string, isZhMode?: boolean) => {
-  const data = await getFormatedResponse(barcode, isZhMode);
-
-  await insertAxleInfoToDB({
-    barcode: data.DH,
-    zh: data.ZH,
   });
 
   return data;
@@ -316,7 +321,7 @@ const tmnowToTSSJ = (tmnow: string) => {
   return dayjs(tmnow).format("YYYY-MM-DD HH:mm:ss");
 };
 
-const generatePostRequestItem = (
+const makePostRequestItem = (
   record: schema.JTVGuangzhoubeiBarcode,
   detection: Detection,
   detectionData: DetectionData,
@@ -351,10 +356,12 @@ const generatePostRequestItem = (
 const sendPostRequest = async (request: PostRequestItem[]) => {
   const host = jtv_hmis_guangzhoubei.get("post_host");
   const url = new URL(`http://${host}/pmss/example.do`);
+  const body = JSON.stringify(request);
+
   url.searchParams.set("method", "saveData");
   url.searchParams.set("type", "csbts");
-  const body = JSON.stringify(request);
   log(`请求数据:${url.href},${body}`);
+
   const res = await net.fetch(url.href, {
     method: "POST",
     body,
@@ -362,15 +369,18 @@ const sendPostRequest = async (request: PostRequestItem[]) => {
       "Content-Type": "application/json",
     },
   });
+
   if (!res.ok) {
     throw `接口异常[${res.status}]:${res.statusText}`;
   }
+
   const data: boolean = await res.json();
   log(`返回数据:${JSON.stringify(data)}`);
+
   return data;
 };
 
-const recordToBody = async (
+const makeRequestBody = async (
   record: schema.JTVGuangzhoubeiBarcode,
 ): Promise<PostRequestItem[]> => {
   const id = record.id;
@@ -439,19 +449,13 @@ const recordToBody = async (
   }
 
   return detectionDatas.map((detectionData) => {
-    return generatePostRequestItem(
-      record,
-      detection,
-      detectionData,
-      eq_ip,
-      eq_bh,
-    );
+    return makePostRequestItem(record, detection, detectionData, eq_ip, eq_bh);
   });
 };
 
 const emit = createEmit(channel.jtv_hmis_api_set);
 
-const handlePostRequest = async (id: number): Promise<schema.JTVBarcode> => {
+const handleSendData = async (id: number): Promise<schema.JTVBarcode> => {
   const record = await db.query.jtvGuangzhoubeiBarcodeTable.findFirst({
     where: sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id),
   });
@@ -460,7 +464,7 @@ const handlePostRequest = async (id: number): Promise<schema.JTVBarcode> => {
     throw new Error(`记录#${id}不存在`);
   }
 
-  const body = await recordToBody(record);
+  const body = await makeRequestBody(record);
   await sendPostRequest(body);
 
   const [result] = await db
@@ -477,7 +481,7 @@ const handlePostRequest = async (id: number): Promise<schema.JTVBarcode> => {
 /**
  * Auto upload
  */
-const doTask = withLog(handlePostRequest);
+const doTask = withLog(handleSendData);
 let timer: NodeJS.Timeout | null = null;
 
 const autoUploadHandler = async () => {
@@ -522,7 +526,7 @@ const initAutoUpload = () => {
 const initIpc = () => {
   ipcHandle(
     channel.jtv_hmis_guangzhoubei_sqlite_get,
-    (_, params: SQLiteGetParams) => handleReadRecord(params),
+    (_, params: SQLiteGetParams) => handleReadRecords(params),
   );
   ipcHandle(channel.jtv_hmis_guangzhoubei_sqlite_delete, (_, id: number) =>
     handleDeleteRecord(id),
@@ -530,11 +534,11 @@ const initIpc = () => {
   ipcHandle(
     channel.jtv_hmis_guangzhoubei_api_get,
     (_, barcode: string, isZhMode?: boolean) => {
-      return handleGetRequest(barcode, isZhMode);
+      return handleFetchRecord(barcode, isZhMode);
     },
   );
   ipcHandle(channel.jtv_hmis_guangzhoubei_api_set, (_, id: number) => {
-    return handlePostRequest(id);
+    return handleSendData(id);
   });
 
   ipcHandle(

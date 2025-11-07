@@ -12,13 +12,13 @@ import {
   getDetectionByZH,
   getDetectionDatasByOPID,
 } from "#main/modules/cmd";
-import type { DetectionData } from "#main/modules/cmd";
+import type { Detection, DetectionData } from "#main/modules/cmd";
 import type * as PRELOAD from "#preload/index";
 
 /**
  * Sqlite barcode
  */
-const sqlite_get = async (
+const handleReadRecords = async (
   params: PRELOAD.JtvBarcodeGetParams,
 ): Promise<PRELOAD.JtvBarcodeGetResult> => {
   const [{ count }] = await db
@@ -32,6 +32,7 @@ const sqlite_get = async (
       ),
     )
     .limit(1);
+
   const rows = await db.query.jtvBarcodeTable.findMany({
     where: sql.between(
       schema.jtvBarcodeTable.date,
@@ -41,14 +42,16 @@ const sqlite_get = async (
     offset: params.pageIndex * params.pageSize,
     limit: params.pageSize,
   });
+
   return { rows, count };
 };
 
-const sqlite_delete = async (id: number): Promise<schema.JTVBarcode> => {
+const handleDeleteRecord = async (id: number): Promise<schema.JTVBarcode> => {
   const [result] = await db
     .delete(schema.jtvBarcodeTable)
     .where(sql.eq(schema.jtvBarcodeTable.id, id))
     .returning();
+
   return result;
 };
 
@@ -60,43 +63,82 @@ export type GetResponse = {
   msg: "数据读取成功";
   data: [
     {
+      DH: "91022070168";
+      ZH: "67444";
+      ZX: "RE2B";
       CZZZDW: "048";
       CZZZRQ: "2009-10";
       MCZZDW: "131";
       MCZZRQ: "2018-07-09 00:00:00";
       SCZZDW: "131";
       SCZZRQ: "2018-07-09 00:00:00";
-      DH: "91022070168";
-      ZH: "67444";
-      ZX: "RE2B";
+
       SRYY: "厂修";
       SRDW: "588";
     },
   ];
 };
 
-const fetch_get = async (barcode: string) => {
+const fetchDataByDH = async (barcode: string) => {
   const host = jtv_hmis.get("host");
   const unitCode = jtv_hmis.get("unitCode");
   const url = new URL(`http://${host}/api/getData`);
+
   url.searchParams.set("type", "csbts");
   url.searchParams.set("param", [barcode, unitCode].join(","));
   log(`请求数据:${url.href}`);
-  const res = await net.fetch(url.href, {
-    method: "GET",
-  });
+
+  const res = await net.fetch(url.href, { method: "GET" });
 
   if (!res.ok) {
-    throw `接口异常[${res.status}]:${res.statusText}`;
+    throw new Error(`接口异常[${res.status}]:${res.statusText}`);
   }
 
-  const data = await res.json();
-
+  const data: GetResponse = await res.json();
   log(`返回数据:${JSON.stringify(data)}`);
-  return data as GetResponse;
+
+  if (data.code !== "200") {
+    throw new Error(data.msg);
+  }
+
+  return data;
 };
 
-type PostRequestItem = {
+const normalizeDHResponse = (data: GetResponse) => {
+  const firstRecord = data.data.at(0);
+
+  if (!firstRecord) {
+    throw new Error("返回空记录");
+  }
+
+  return {
+    DH: firstRecord.DH,
+    ZH: firstRecord.ZH,
+    ZX: firstRecord.ZX,
+    CZZZDW: firstRecord.CZZZDW,
+    CZZZRQ: firstRecord.CZZZRQ,
+    MCZZDW: firstRecord.MCZZDW,
+    MCZZRQ: firstRecord.MCZZRQ,
+    SCZZDW: firstRecord.SCZZDW,
+    SCZZRQ: firstRecord.SCZZRQ,
+  };
+};
+
+const handleGetRequest = async (barcode: string): Promise<GetResponse> => {
+  const data = await fetchDataByDH(barcode);
+  const firstRecord = normalizeDHResponse(data);
+
+  await db.insert(schema.jtvBarcodeTable).values({
+    barCode: firstRecord.DH,
+    zh: firstRecord.ZH,
+    date: new Date(),
+    isUploaded: false,
+  });
+
+  return data;
+};
+
+type PostItem = {
   eq_ip: string; // 设备IP
   eq_bh: string; // 设备编号
   dh: string; // 扫码单号
@@ -123,12 +165,14 @@ type PostResponse = {
   msg: "数据上传成功";
 };
 
-const fetch_set = async (request: PostRequestItem[]) => {
+const sendPostRequest = async (request: PostItem[]) => {
   const host = jtv_hmis.get("host");
   const url = new URL(`http://${host}/api/saveData`);
-  url.searchParams.set("type", "csbts");
   const body = JSON.stringify(request);
+
+  url.searchParams.set("type", "csbts");
   log(`请求数据:${url.href},${body}`);
+
   const res = await net.fetch(url.href, {
     method: "POST",
     body,
@@ -136,36 +180,100 @@ const fetch_set = async (request: PostRequestItem[]) => {
       "Content-Type": "application/json",
     },
   });
+
   if (!res.ok) {
     throw `接口异常[${res.status}]:${res.statusText}`;
   }
+
   const data: PostResponse = await res.json();
+
   log(`返回数据:${JSON.stringify(data)}`);
   if (data.code !== "200") {
     throw `接口异常[${data.code}]:${data.msg}`;
   }
+
   return data;
 };
 
-/**
- * Ipc handlers
- */
-const api_get = async (barcode: string): Promise<GetResponse> => {
-  const data = await fetch_get(barcode);
+const nBoardToDirection = (nBoard: number) => {
+  //board(板卡)：0.左 1.右
+  switch (nBoard) {
+    case 1:
+      return "右";
+    case 0:
+      return "左";
+    default:
+      return "";
+  }
+};
 
-  await db.insert(schema.jtvBarcodeTable).values({
-    barCode: barcode,
-    zh: data.data[0].ZH,
-    date: new Date(),
-    isUploaded: false,
-  });
+const nChannelToPlace = (nChannel: number) => {
+  switch (nChannel) {
+    case 0:
+      return "穿透";
+    case 1:
+    case 2:
+      return "卸荷槽";
+    case 3:
+      return "外";
+    case 4:
+      return "内";
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+      return "轮座";
+    default:
+      return "车轴";
+  }
+};
 
-  return data;
+const detectionDataToTPlace = (detectionData: DetectionData) => {
+  const direction = nBoardToDirection(detectionData.nBoard);
+  const place = nChannelToPlace(detectionData.nChannel);
+
+  return direction + place;
+};
+
+const tmnowToTSSJ = (tmnow: string) => {
+  return dayjs(tmnow).format("YYYY-MM-DD HH:mm:ss");
+};
+
+const makePostItem = (
+  record: schema.JTVGuangzhoubeiBarcode,
+  detection: Detection,
+  detectionData: DetectionData,
+  eq_ip: string,
+  eq_bh: string,
+): PostItem => {
+  const user = detection.szUsername || "";
+
+  return {
+    eq_ip,
+    eq_bh,
+    dh: record.barCode || "",
+    zh: record.zh || "",
+    zx: detection.szWHModel || "",
+    TSFF: "超声波",
+    TSSJ: tmnowToTSSJ(detection.tmnow || ""),
+    TFLAW_PLACE: detectionDataToTPlace(detectionData),
+    TFLAW_TYPE: "裂纹",
+    TVIEW: "人工复探",
+    CZCTZ: user,
+    CZCTY: user,
+    LZXRBZ: user,
+    LZXRBY: user,
+    XHCZ: user,
+    XHCY: user,
+    TSZ: user,
+    TSZY: user,
+    CT_RESULT: detection.szResult || "",
+  };
 };
 
 const recordToBody = async (
-  record: schema.JTVBarcode,
-): Promise<PostRequestItem> => {
+  record: schema.JTVGuangzhoubeiBarcode,
+): Promise<PostItem[]> => {
   const id = record.id;
 
   if (!record) {
@@ -180,11 +288,11 @@ const recordToBody = async (
     throw new Error(`记录#${id}条形码不存在`);
   }
 
-  const startDate = dayjs(record.date).toISOString();
-  const endDate = dayjs(record.date).endOf("day").toISOString();
-  const eq_ip = getIP();
   const corporation = await getCorporation();
   const eq_bh = corporation.DeviceNO || "";
+  const eq_ip = getIP();
+  const startDate = dayjs(record.date).toISOString();
+  const endDate = dayjs(record.date).endOf("day").toISOString();
 
   const detection = await getDetectionByZH({
     zh: record.zh,
@@ -192,70 +300,53 @@ const recordToBody = async (
     endDate,
   });
 
-  const user = detection.szUsername || "";
   let detectionDatas: DetectionData[] = [];
-  let TFLAW_PLACE = "";
-  let TFLAW_TYPE = "";
-  let TVIEW = "";
 
   switch (detection.szResult) {
     case "故障":
     case "有故障":
     case "疑似故障":
-      TFLAW_PLACE = "车轴";
-      TFLAW_TYPE = "裂纹";
-      TVIEW = "人工复探";
       detectionDatas = await getDetectionDatasByOPID(detection.szIDs);
       break;
     default:
   }
 
-  detectionDatas.forEach((detectionData) => {
-    switch (detectionData.nChannel) {
-      case 0:
-        TFLAW_PLACE = "穿透";
-        break;
-      case 1:
-      case 2:
-        TFLAW_PLACE = "卸荷槽";
-        break;
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-        TFLAW_PLACE = "轮座";
-        break;
-    }
-  });
+  if (detectionDatas.length === 0) {
+    const user = detection.szUsername || "";
 
-  return {
-    eq_ip,
-    eq_bh,
-    dh: record.barCode,
-    zx: detection.szWHModel || "",
-    zh: record.zh,
-    TSFF: "超声波",
-    TSSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-    TFLAW_PLACE,
-    TFLAW_TYPE,
-    TVIEW,
-    CZCTZ: user,
-    CZCTY: user,
-    LZXRBZ: user,
-    LZXRBY: user,
-    XHCZ: user,
-    XHCY: user,
-    TSZ: user,
-    TSZY: user,
-    CT_RESULT: detection.szResult || "",
-  };
+    return [
+      {
+        eq_ip,
+        eq_bh,
+        dh: record.barCode || "",
+        zh: record.zh || "",
+        zx: detection.szWHModel || "",
+        TSFF: "超声波",
+        TSSJ: tmnowToTSSJ(detection.tmnow || ""),
+        TFLAW_PLACE: "",
+        TFLAW_TYPE: "",
+        TVIEW: "",
+        CZCTZ: user,
+        CZCTY: user,
+        LZXRBZ: user,
+        LZXRBY: user,
+        XHCZ: user,
+        XHCY: user,
+        TSZ: user,
+        TSZY: user,
+        CT_RESULT: detection.szResult || "",
+      },
+    ];
+  }
+
+  return detectionDatas.map((detectionData) => {
+    return makePostItem(record, detection, detectionData, eq_ip, eq_bh);
+  });
 };
 
 const emit = createEmit(channel.jtv_hmis_api_set);
 
-const api_set = async (id: number): Promise<schema.JTVBarcode> => {
+const handleSendData = async (id: number): Promise<schema.JTVBarcode> => {
   const record = await db.query.jtvBarcodeTable.findFirst({
     where: sql.eq(schema.jtvBarcodeTable.id, id),
   });
@@ -265,7 +356,8 @@ const api_set = async (id: number): Promise<schema.JTVBarcode> => {
   }
 
   const body = await recordToBody(record);
-  await fetch_set([body]);
+  await sendPostRequest(body);
+
   const [result] = await db
     .update(schema.jtvBarcodeTable)
     .set({ isUploaded: true })
@@ -279,7 +371,7 @@ const api_set = async (id: number): Promise<schema.JTVBarcode> => {
 /**
  * Auto upload
  */
-const doTask = withLog(api_set);
+const doTask = withLog(handleSendData);
 let timer: NodeJS.Timeout | null = null;
 
 const autoUploadHandler = async () => {
@@ -324,15 +416,15 @@ const initAutoUpload = () => {
 const initIpc = () => {
   ipcHandle(
     channel.jtv_hmis_sqlite_get,
-    (_, params: PRELOAD.JtvBarcodeGetParams) => sqlite_get(params),
+    (_, params: PRELOAD.JtvBarcodeGetParams) => handleReadRecords(params),
   );
-
   ipcHandle(channel.jtv_hmis_sqlite_delete, (_, id: number) =>
-    sqlite_delete(id),
+    handleDeleteRecord(id),
   );
-
-  ipcHandle(channel.jtv_hmis_api_get, (_, barcode: string) => api_get(barcode));
-  ipcHandle(channel.jtv_hmis_api_set, (_, id: number) => api_set(id));
+  ipcHandle(channel.jtv_hmis_api_get, (_, barcode: string) =>
+    handleGetRequest(barcode),
+  );
+  ipcHandle(channel.jtv_hmis_api_set, (_, id: number) => handleSendData(id));
 
   ipcHandle(
     channel.jtv_hmis_setting,

@@ -52,3 +52,11 @@ npx drizzle-kit generate
 ```
 
 ## Note
+
+> `get`: 从缓存/存储/API中取值  
+> `make`/`build`: 创建新对象/实例  
+> `format`/`transform`/`convert`: 转换/格式化数据
+> `update`/`modify`: 更新操作  
+> `detelte`/`remove`: 删除操作  
+> `velidate`/`verify`: 验证操作
+> `normalize`: 归一化
