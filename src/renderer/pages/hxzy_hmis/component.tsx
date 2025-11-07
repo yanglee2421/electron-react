@@ -161,7 +161,7 @@ export const Component = () => {
   "use no memo";
   const [date, setDate] = React.useState(initDate);
   const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(10);
+  const [pageSize, setPageSize] = React.useState(100);
   const [showFilter, setShowFilter] = React.useState(false);
 
   const formRef = React.useRef<HTMLFormElement>(null);

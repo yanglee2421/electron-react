@@ -159,7 +159,7 @@ const initDate = () => dayjs();
 export const Component = () => {
   "use no memo";
   const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(20);
+  const [pageSize, setPageSize] = React.useState(100);
   const [date, setDate] = React.useState(initDate);
   const [showFilter, setShowFilter] = React.useState(false);
 
