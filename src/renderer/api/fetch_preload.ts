@@ -23,6 +23,7 @@ import type { Profile } from "#main/lib/profile";
 import type { Payload } from "#main/modules/mdb";
 import type { Invoice } from "#main/modules/xml";
 import type { JTVGuangzhoubeiBarcode } from "#main/schema";
+import type { FormatedResponse } from "#main/modules/hmis/jtv_hmis_guangzhoubei";
 
 // 自动录入功能
 export const useAutoInputToVC = () => {
@@ -781,10 +782,17 @@ export const useJtvHmisGuangzhoubeiSqliteDelete = () => {
 export const useJtvHmisGuangzhoubeiApiGet = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (barcode: string) => {
-      const data = await window.electron.ipcRenderer.invoke(
+    mutationFn: async ({
+      barcode,
+      isZhMode,
+    }: {
+      barcode: string;
+      isZhMode?: boolean;
+    }) => {
+      const data: FormatedResponse = await window.electron.ipcRenderer.invoke(
         channel.jtv_hmis_guangzhoubei_api_get,
         barcode,
+        isZhMode,
       );
 
       return data;

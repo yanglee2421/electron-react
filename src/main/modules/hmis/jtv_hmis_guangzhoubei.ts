@@ -1,4 +1,4 @@
-// 京天威 统型
+// 京天威 广州北
 
 import dayjs from "dayjs";
 import { net } from "electron";
@@ -6,16 +6,14 @@ import * as sql from "drizzle-orm";
 import { log, withLog, ipcHandle, db, getIP, createEmit } from "#main/lib";
 import * as schema from "#main/schema";
 import { channel } from "#main/channel";
-import {
-  jtv_hmis_guangzhoubei,
-  type JTV_HMIS_Guangzhoubei,
-} from "#main/lib/store";
+import { jtv_hmis_guangzhoubei } from "#main/lib/store";
 import {
   getCorporation,
   getDetectionByZH,
   getDetectionDatasByOPID,
 } from "#main/modules/cmd";
-import type { DetectionData } from "#main/modules/cmd";
+import type { Detection, DetectionData } from "#main/modules/cmd";
+import type { JTV_HMIS_Guangzhoubei } from "#main/lib/store";
 
 type SQLiteGetParams = {
   pageIndex: number;
@@ -27,7 +25,7 @@ type SQLiteGetParams = {
 /**
  * Sqlite barcode
  */
-const sqlite_get = async (params: SQLiteGetParams) => {
+const handleReadRecord = async (params: SQLiteGetParams) => {
   const [{ count }] = await db
     .select({ count: sql.count() })
     .from(schema.jtvGuangzhoubeiBarcodeTable)
@@ -39,6 +37,7 @@ const sqlite_get = async (params: SQLiteGetParams) => {
       ),
     )
     .limit(1);
+
   const rows = await db.query.jtvGuangzhoubeiBarcodeTable.findMany({
     where: sql.between(
       schema.jtvGuangzhoubeiBarcodeTable.date,
@@ -47,60 +46,208 @@ const sqlite_get = async (params: SQLiteGetParams) => {
     ),
     offset: params.pageIndex * params.pageSize,
     limit: params.pageSize,
+    orderBy: sql.desc(schema.jtvGuangzhoubeiBarcodeTable.date),
   });
+
   return { rows, count };
 };
 
-const sqlite_delete = async (id: number) => {
+const handleDeleteRecord = async (id: number) => {
   const [result] = await db
     .delete(schema.jtvGuangzhoubeiBarcodeTable)
     .where(sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id))
     .returning();
+
   return result;
 };
 
-/**
- * HMIS API
- */
-export type GetResponse = {
-  code: "200";
-  msg: "数据读取成功";
-  data: [
-    {
-      CZZZDW: "048";
-      CZZZRQ: "2009-10";
-      MCZZDW: "131";
-      MCZZRQ: "2018-07-09 00:00:00";
-      SCZZDW: "131";
-      SCZZRQ: "2018-07-09 00:00:00";
-      DH: "91022070168";
-      ZH: "67444";
-      ZX: "RE2B";
-      SRYY: "厂修";
-      SRDW: "588";
-    },
-  ];
-};
-
-const fetch_get = async (barcode: string) => {
+const generateGetURL = (dh: string) => {
   const host = jtv_hmis_guangzhoubei.get("get_host");
   const unitCode = jtv_hmis_guangzhoubei.get("unitCode");
   const url = new URL(`http://${host}/api/getData`);
-  url.searchParams.set("type", "csbts");
-  url.searchParams.set("param", [barcode, unitCode].join(","));
-  log(`请求数据:${url.href}`);
-  const res = await net.fetch(url.href, {
-    method: "GET",
-  });
 
-  if (!res.ok) {
-    throw `接口异常[${res.status}]:${res.statusText}`;
+  url.searchParams.set("param", [dh, unitCode].join(","));
+
+  return url;
+};
+
+type ZH_Item = {
+  DH: string;
+  ZH: string;
+  ZX: string;
+  CZZZRQ: string;
+  CZZZDW: string;
+  SCZZRQ: string;
+  SCZZDW: string;
+  MCZZRQ: string;
+  MCZZDW: string;
+  SRRQ: string;
+
+  LBZGZPH: string | null;
+  CLLWKSRZ: number | null;
+  CLLWKSRY: number | null;
+  PJ_ID: string | null;
+  LBYGZPH: string | null;
+  LBYLH: string | null;
+  LBZCDH: string | null;
+  LBYLX: string | null;
+  CLLWHSRY: number | null;
+  CLLWHSRZ: number | null;
+  LBZSXH: string | null;
+  CLZJSRY: number | null;
+  CLZJSRZ: number | null;
+  LBYZZRQ: string | null;
+  LBZLH: string | null;
+  LBZZZRQ: string | null;
+  LBYSXH: string | null;
+  LBZLX: string | null;
+  LBYCDH: string | null;
+};
+
+export type ZH_Response = {
+  code: string;
+  msg: string;
+  data: ZH_Item[];
+};
+
+const fetchAxleInfoByZH = async (zh: string) => {
+  const url = generateGetURL(zh);
+
+  url.searchParams.set("type", "csbtszh");
+  log(`请求轴号数据:${url.href}`);
+
+  const res = await net.fetch(url.href, { method: "GET" });
+  const data: ZH_Response = await res.json();
+
+  log(`返回轴号数据:${JSON.stringify(data)}`);
+
+  return data;
+};
+
+const formatZHResponse = (data: ZH_Response) => {
+  if (data.code !== "200") {
+    throw new Error(data.msg);
   }
 
-  const data = await res.json();
+  const firstRecord = data.data
+    .sort((a, b) => {
+      const srrqA = dayjs(a.SRRQ).valueOf();
+      const srrqB = dayjs(b.SRRQ).valueOf();
+      return srrqA - srrqB;
+    })
+    .at(0);
 
-  log(`返回数据:${JSON.stringify(data)}`);
-  return data as GetResponse;
+  if (!firstRecord) {
+    throw new Error("空记录");
+  }
+
+  return {
+    DH: firstRecord.DH,
+    ZH: firstRecord.ZH,
+    ZX: firstRecord.ZX,
+    CZZZDW: firstRecord.CZZZDW,
+    CZZZRQ: firstRecord.CZZZRQ,
+    MCZZDW: firstRecord.MCZZDW,
+    MCZZRQ: firstRecord.MCZZRQ,
+    SCZZDW: firstRecord.SCZZDW,
+    SCZZRQ: firstRecord.SCZZRQ,
+  };
+};
+
+type DH_Item = {
+  DH: string;
+  ZH: string;
+  ZX: string;
+  CZZZDW: string;
+  CZZZRQ: string;
+  MCZZDW: string;
+  MCZZRQ: string;
+  SCZZDW: string;
+  SCZZRQ: string;
+  SRRQ: string;
+
+  SRYY?: string | null;
+  SRDW?: string | null;
+};
+
+export type DH_Response = {
+  code: string;
+  msg: string;
+  data: DH_Item[];
+};
+
+const fetchAxleInfoByDH = async (dh: string) => {
+  const url = generateGetURL(dh);
+
+  url.searchParams.set("type", "csbts");
+  log(`请求单号数据:${url.href}`);
+
+  const res = await net.fetch(url.href, { method: "GET" });
+  const data: DH_Response = await res.json();
+
+  log(`返回单号数据:${JSON.stringify(data)}`);
+
+  return data;
+};
+
+const formatDHResponse = (data: DH_Response) => {
+  if (data.code !== "200") {
+    throw new Error(data.msg);
+  }
+
+  const firstRecord = data.data.at(0);
+
+  if (!firstRecord) {
+    throw new Error("接口返回异常");
+  }
+
+  return {
+    DH: firstRecord.DH,
+    ZH: firstRecord.ZH,
+    ZX: firstRecord.ZX,
+    CZZZDW: firstRecord.CZZZDW,
+    CZZZRQ: firstRecord.CZZZRQ,
+    MCZZDW: firstRecord.MCZZDW,
+    MCZZRQ: firstRecord.MCZZRQ,
+    SCZZDW: firstRecord.SCZZDW,
+    SCZZRQ: firstRecord.SCZZRQ,
+  };
+};
+
+const getFormatedResponse = async (barCode: string, isZhMode?: boolean) => {
+  if (isZhMode) {
+    const data = await fetchAxleInfoByZH(barCode);
+    const result = formatZHResponse(data);
+    return result;
+  } else {
+    const data = await fetchAxleInfoByDH(barCode);
+    const result = formatDHResponse(data);
+    return result;
+  }
+};
+
+export type FormatedResponse = Awaited<ReturnType<typeof getFormatedResponse>>;
+
+const insertAxleInfoToDB = async (data: { barcode: string; zh: string }) => {
+  const { barcode, zh } = data;
+
+  await db.insert(schema.jtvGuangzhoubeiBarcodeTable).values({
+    barCode: barcode,
+    zh,
+    date: new Date(),
+    isUploaded: false,
+  });
+};
+
+const handleGetRequest = async (barcode: string, isZhMode?: boolean) => {
+  const data = await getFormatedResponse(barcode, isZhMode);
+
+  await insertAxleInfoToDB({
+    barcode: data.DH,
+    zh: data.ZH,
+  });
+
+  return data;
 };
 
 type PostRequestItem = {
@@ -125,7 +272,83 @@ type PostRequestItem = {
   CT_RESULT: string; // 合格
 };
 
-const fetch_set = async (request: PostRequestItem[]) => {
+const nBoardToDirection = (nBoard: number) => {
+  //board(板卡)：0.左 1.右
+  switch (nBoard) {
+    case 1:
+      return "右";
+    case 0:
+      return "左";
+    default:
+      return "";
+  }
+};
+
+const nChannelToPlace = (nChannel: number) => {
+  switch (nChannel) {
+    case 0:
+      return "穿透";
+    case 1:
+    case 2:
+      return "卸荷槽";
+    case 3:
+      return "外";
+    case 4:
+      return "内";
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+      return "轮座";
+    default:
+      return "车轴";
+  }
+};
+
+const detectionDataToTPlace = (detectionData: DetectionData) => {
+  const direction = nBoardToDirection(detectionData.nBoard);
+  const place = nChannelToPlace(detectionData.nChannel);
+
+  return direction + place;
+};
+
+const tmnowToTSSJ = (tmnow: string) => {
+  return dayjs(tmnow).format("YYYY-MM-DD HH:mm:ss");
+};
+
+const generatePostRequestItem = (
+  record: schema.JTVGuangzhoubeiBarcode,
+  detection: Detection,
+  detectionData: DetectionData,
+  eq_ip: string,
+  eq_bh: string,
+): PostRequestItem => {
+  const user = detection.szUsername || "";
+
+  return {
+    eq_ip,
+    eq_bh,
+    dh: record.barCode || "",
+    zh: record.zh || "",
+    zx: detection.szWHModel || "",
+    TSFF: "超声波",
+    TSSJ: tmnowToTSSJ(detection.tmnow || ""),
+    TFLAW_PLACE: detectionDataToTPlace(detectionData),
+    TFLAW_TYPE: "裂纹",
+    TVIEW: "人工复探",
+    CZCTZ: user,
+    CZCTY: user,
+    LZXRBZ: user,
+    LZXRBY: user,
+    XHCZ: user,
+    XHCY: user,
+    TSZ: user,
+    TSZY: user,
+    CT_RESULT: detection.szResult || "",
+  };
+};
+
+const sendPostRequest = async (request: PostRequestItem[]) => {
   const host = jtv_hmis_guangzhoubei.get("post_host");
   const url = new URL(`http://${host}/pmss/example.do`);
   url.searchParams.set("method", "saveData");
@@ -147,25 +370,9 @@ const fetch_set = async (request: PostRequestItem[]) => {
   return data;
 };
 
-/**
- * Ipc handlers
- */
-const api_get = async (barcode: string): Promise<GetResponse> => {
-  const data = await fetch_get(barcode);
-
-  await db.insert(schema.jtvGuangzhoubeiBarcodeTable).values({
-    barCode: barcode,
-    zh: data.data[0].ZH,
-    date: new Date(),
-    isUploaded: false,
-  });
-
-  return data;
-};
-
 const recordToBody = async (
-  record: schema.JTVBarcode,
-): Promise<PostRequestItem> => {
+  record: schema.JTVGuangzhoubeiBarcode,
+): Promise<PostRequestItem[]> => {
   const id = record.id;
 
   if (!record) {
@@ -180,11 +387,11 @@ const recordToBody = async (
     throw new Error(`记录#${id}条形码不存在`);
   }
 
-  const startDate = dayjs(record.date).toISOString();
-  const endDate = dayjs(record.date).endOf("day").toISOString();
-  const eq_ip = getIP();
   const corporation = await getCorporation();
   const eq_bh = corporation.DeviceNO || "";
+  const eq_ip = getIP();
+  const startDate = dayjs(record.date).toISOString();
+  const endDate = dayjs(record.date).endOf("day").toISOString();
 
   const detection = await getDetectionByZH({
     zh: record.zh,
@@ -192,70 +399,59 @@ const recordToBody = async (
     endDate,
   });
 
-  const user = detection.szUsername || "";
   let detectionDatas: DetectionData[] = [];
-  let TFLAW_PLACE = "";
-  let TFLAW_TYPE = "";
-  let TVIEW = "";
 
   switch (detection.szResult) {
     case "故障":
     case "有故障":
     case "疑似故障":
-      TFLAW_PLACE = "车轴";
-      TFLAW_TYPE = "裂纹";
-      TVIEW = "人工复探";
       detectionDatas = await getDetectionDatasByOPID(detection.szIDs);
       break;
     default:
   }
 
-  detectionDatas.forEach((detectionData) => {
-    switch (detectionData.nChannel) {
-      case 0:
-        TFLAW_PLACE = "穿透";
-        break;
-      case 1:
-      case 2:
-        TFLAW_PLACE = "卸荷槽";
-        break;
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-        TFLAW_PLACE = "轮座";
-        break;
-    }
-  });
+  if (detectionDatas.length === 0) {
+    const user = detection.szUsername || "";
 
-  return {
-    eq_ip,
-    eq_bh,
-    dh: record.barCode,
-    zx: detection.szWHModel || "",
-    zh: record.zh,
-    TSFF: "超声波",
-    TSSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-    TFLAW_PLACE,
-    TFLAW_TYPE,
-    TVIEW,
-    CZCTZ: user,
-    CZCTY: user,
-    LZXRBZ: user,
-    LZXRBY: user,
-    XHCZ: user,
-    XHCY: user,
-    TSZ: user,
-    TSZY: user,
-    CT_RESULT: detection.szResult || "",
-  };
+    return [
+      {
+        eq_ip,
+        eq_bh,
+        dh: record.barCode || "",
+        zh: record.zh || "",
+        zx: detection.szWHModel || "",
+        TSFF: "超声波e",
+        TSSJ: tmnowToTSSJ(detection.tmnow || ""),
+        TFLAW_PLACE: "",
+        TFLAW_TYPE: "",
+        TVIEW: "",
+        CZCTZ: user,
+        CZCTY: user,
+        LZXRBZ: user,
+        LZXRBY: user,
+        XHCZ: user,
+        XHCY: user,
+        TSZ: user,
+        TSZY: user,
+        CT_RESULT: detection.szResult || "",
+      },
+    ];
+  }
+
+  return detectionDatas.map((detectionData) => {
+    return generatePostRequestItem(
+      record,
+      detection,
+      detectionData,
+      eq_ip,
+      eq_bh,
+    );
+  });
 };
 
 const emit = createEmit(channel.jtv_hmis_api_set);
 
-const api_set = async (id: number): Promise<schema.JTVBarcode> => {
+const handlePostRequest = async (id: number): Promise<schema.JTVBarcode> => {
   const record = await db.query.jtvGuangzhoubeiBarcodeTable.findFirst({
     where: sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id),
   });
@@ -265,12 +461,14 @@ const api_set = async (id: number): Promise<schema.JTVBarcode> => {
   }
 
   const body = await recordToBody(record);
-  await fetch_set([body]);
+  await sendPostRequest(body);
+
   const [result] = await db
     .update(schema.jtvGuangzhoubeiBarcodeTable)
     .set({ isUploaded: true })
     .where(sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, record.id))
     .returning();
+
   emit();
 
   return result;
@@ -279,7 +477,7 @@ const api_set = async (id: number): Promise<schema.JTVBarcode> => {
 /**
  * Auto upload
  */
-const doTask = withLog(api_set);
+const doTask = withLog(handlePostRequest);
 let timer: NodeJS.Timeout | null = null;
 
 const autoUploadHandler = async () => {
@@ -324,17 +522,20 @@ const initAutoUpload = () => {
 const initIpc = () => {
   ipcHandle(
     channel.jtv_hmis_guangzhoubei_sqlite_get,
-    (_, params: SQLiteGetParams) => sqlite_get(params),
+    (_, params: SQLiteGetParams) => handleReadRecord(params),
   );
   ipcHandle(channel.jtv_hmis_guangzhoubei_sqlite_delete, (_, id: number) =>
-    sqlite_delete(id),
+    handleDeleteRecord(id),
   );
-  ipcHandle(channel.jtv_hmis_guangzhoubei_api_get, (_, barcode: string) =>
-    api_get(barcode),
+  ipcHandle(
+    channel.jtv_hmis_guangzhoubei_api_get,
+    (_, barcode: string, isZhMode?: boolean) => {
+      return handleGetRequest(barcode, isZhMode);
+    },
   );
-  ipcHandle(channel.jtv_hmis_guangzhoubei_api_set, (_, id: number) =>
-    api_set(id),
-  );
+  ipcHandle(channel.jtv_hmis_guangzhoubei_api_set, (_, id: number) => {
+    return handlePostRequest(id);
+  });
 
   ipcHandle(
     channel.jtv_hmis_guangzhoubei_setting,

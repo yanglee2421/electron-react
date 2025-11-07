@@ -28,6 +28,8 @@ import {
   CircularProgress,
   TableContainer,
   LinearProgress,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -40,7 +42,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import type { JTVBarcode } from "#main/schema";
 import { useQuery } from "@tanstack/react-query";
 import {
   useAutoInputToVC,
@@ -52,6 +53,7 @@ import {
 } from "#renderer/api/fetch_preload";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
+import type { JTVGuangzhoubeiBarcode } from "#main/schema";
 
 type ActionCellProps = {
   id: number;
@@ -112,15 +114,16 @@ const schema = z.object({
   barCode: z.string().min(1),
 });
 
-const useScanerForm = () =>
-  useForm({
+const useScanerForm = () => {
+  return useForm({
     defaultValues: {
       barCode: "",
     },
     resolver: zodResolver(schema),
   });
+};
 
-const columnHelper = createColumnHelper<JTVBarcode>();
+const columnHelper = createColumnHelper<JTVGuangzhoubeiBarcode>();
 
 const columns = [
   columnHelper.accessor("id", {
@@ -154,39 +157,21 @@ const columns = [
   }),
 ];
 
-const initDate = () => dayjs();
+type DataGridProps = {
+  rows?: JTVGuangzhoubeiBarcode[];
+  count?: number;
+  pageIndex: number;
+  pageSize: number;
+  setPageIndex: React.Dispatch<React.SetStateAction<number>>;
+  setPageSize: React.Dispatch<React.SetStateAction<number>>;
+};
 
-export const Component = () => {
+const DataGrid = (props: DataGridProps) => {
   "use no memo";
-  const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(20);
-  const [date, setDate] = React.useState(initDate);
-  const [showFilter, setShowFilter] = React.useState(false);
 
-  const formRef = React.useRef<HTMLFormElement>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const formId = React.useId();
+  const { pageIndex, pageSize, count = 0, setPageIndex, setPageSize } = props;
 
-  const params = {
-    pageIndex,
-    pageSize,
-    startDate: date.startOf("day").toISOString(),
-    endDate: date.endOf("day").toISOString(),
-  };
-
-  const form = useScanerForm();
-  const snackbar = useNotifications();
-  const autoInput = useAutoInputToVC();
-  const saveData = useJtvHmisGuangzhoubeiApiSet();
-  const getData = useJtvHmisGuangzhoubeiApiGet();
-  const { data: hmis } = useQuery(fetchJtvHmisGuangzhoubeiSetting());
-  const barcode = useQuery(fetchJtvHmisGuangzhoubeiSqliteGet(params));
-
-  const setInputFocus = React.useEffectEvent(() => {
-    inputRef.current?.focus();
-  });
-
-  const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
+  const data = React.useMemo(() => props.rows || [], [props.rows]);
 
   const table = useReactTable({
     data,
@@ -195,54 +180,8 @@ export const Component = () => {
     getCoreRowModel: getCoreRowModel(),
 
     manualPagination: true,
-    rowCount: barcode.data?.count || 0,
+    rowCount: count,
   });
-
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeWindowFocus(setInputFocus);
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeWindowBlur(setInputFocus);
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const controller = new AbortController();
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (document.visibilityState !== "visible") return;
-        setInputFocus();
-      },
-      controller,
-    );
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
-  const refetchBarcode = React.useEffectEvent(() => {
-    barcode.refetch();
-  });
-
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeJtvHmisAPISet(() => {
-      refetchBarcode();
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
 
   const renderRow = () => {
     if (!table.getRowCount()) {
@@ -266,137 +205,8 @@ export const Component = () => {
     ));
   };
 
-  const renderFilter = () => {
-    if (!showFilter) return null;
-    return (
-      <>
-        <Divider />
-        <CardContent>
-          <Grid container spacing={6}>
-            <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
-              <DatePicker
-                label="日期"
-                value={date}
-                onChange={(e) => {
-                  if (!e) return;
-                  setDate(e);
-                }}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                  },
-                }}
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </>
-    );
-  };
-
   return (
-    <Card>
-      <CardHeader
-        title="京天威HMIS"
-        subheader="统型"
-        action={
-          <IconButton onClick={() => setShowFilter((prev) => !prev)}>
-            <FilterListOutlined color={showFilter ? "primary" : void 0} />
-          </IconButton>
-        }
-      />
-      <CardContent>
-        <Grid container spacing={6}>
-          <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
-            <form
-              ref={formRef}
-              id={formId}
-              noValidate
-              autoComplete="off"
-              onSubmit={form.handleSubmit(async (values) => {
-                if (saveData.isPending) return;
-
-                form.reset();
-                const data = await getData.mutateAsync(values.barCode, {
-                  onError: (error) => {
-                    snackbar.show(error.message, {
-                      severity: "error",
-                    });
-                  },
-                });
-
-                if (!hmis) return;
-                if (!hmis.autoInput) return;
-
-                autoInput.mutate(
-                  {
-                    zx: data.data[0].ZX,
-                    zh: data.data[0].ZH,
-                    czzzdw: data.data[0].CZZZDW,
-                    sczzdw: data.data[0].SCZZDW,
-                    mczzdw: data.data[0].MCZZDW,
-                    czzzrq: data.data[0].CZZZRQ,
-                    sczzrq: data.data[0].SCZZRQ,
-                    mczzrq: data.data[0].MCZZRQ,
-                    ztx: "1",
-                    ytx: "1",
-                  },
-                  {
-                    onError(error) {
-                      snackbar.show(error.message, {
-                        severity: "error",
-                      });
-                    },
-                  },
-                );
-              }, console.warn)}
-              onReset={() => form.reset()}
-            >
-              <Controller
-                control={form.control}
-                name="barCode"
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    inputRef={inputRef}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    fullWidth
-                    slotProps={{
-                      input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <Button
-                              form={formId}
-                              type="submit"
-                              endIcon={
-                                getData.isPending ? (
-                                  <CircularProgress size={16} color="inherit" />
-                                ) : (
-                                  <KeyboardReturnOutlined />
-                                )
-                              }
-                              variant="contained"
-                              disabled={getData.isPending}
-                            >
-                              录入
-                            </Button>
-                          </InputAdornment>
-                        ),
-                        autoFocus: true,
-                      },
-                    }}
-                    label="条形码/二维码"
-                    placeholder="请扫描条形码或二维码"
-                  />
-                )}
-              />
-            </form>
-          </Grid>
-        </Grid>
-      </CardContent>
-      {renderFilter()}
-      {barcode.isFetching && <LinearProgress />}
+    <>
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>
@@ -451,6 +261,284 @@ export const Component = () => {
         }}
         labelRowsPerPage="每页行数"
       />
+    </>
+  );
+};
+
+const initDate = () => dayjs();
+
+export const Component = () => {
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(100);
+  const [date, setDate] = React.useState(initDate);
+  const [showFilter, setShowFilter] = React.useState(false);
+  const [zhMode, setZhMode] = React.useState(true);
+
+  const formId = React.useId();
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const debounceRef = React.useRef<NodeJS.Timeout | number>(0);
+
+  const params = {
+    pageIndex,
+    pageSize,
+    startDate: date.startOf("day").toISOString(),
+    endDate: date.endOf("day").toISOString(),
+  };
+
+  const form = useScanerForm();
+  const snackbar = useNotifications();
+  const autoInput = useAutoInputToVC();
+  const saveData = useJtvHmisGuangzhoubeiApiSet();
+  const getData = useJtvHmisGuangzhoubeiApiGet();
+  const { data: hmis } = useQuery(fetchJtvHmisGuangzhoubeiSetting());
+  const barcode = useQuery(fetchJtvHmisGuangzhoubeiSqliteGet(params));
+  const inputRef = useAutoFocusInputRef();
+
+  const refetchBarcode = React.useEffectEvent(() => {
+    barcode.refetch();
+  });
+
+  React.useEffect(() => {
+    const unsubscribe = window.electronAPI.subscribeJtvHmisAPISet(() => {
+      refetchBarcode();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const sendMessageToWindow = async (SendMessageToWIndowParams: {
+    zx: string;
+    zh: string;
+    czzzdw: string;
+    sczzdw: string;
+    mczzdw: string;
+    czzzrq: string;
+    sczzrq: string;
+    mczzrq: string;
+  }) => {
+    if (!hmis) return;
+    if (!hmis.autoInput) return;
+
+    const { zx, zh, czzzdw, sczzdw, mczzdw, czzzrq, sczzrq, mczzrq } =
+      SendMessageToWIndowParams;
+
+    await autoInput.mutateAsync(
+      {
+        zx,
+        zh,
+        czzzdw,
+        sczzdw,
+        mczzdw,
+        czzzrq,
+        sczzrq,
+        mczzrq,
+        ztx: "1",
+        ytx: "1",
+      },
+      {
+        onError(error) {
+          snackbar.show(error.message, {
+            severity: "error",
+          });
+        },
+      },
+    );
+  };
+
+  const renderFilter = () => {
+    if (!showFilter) return null;
+    return (
+      <>
+        <Divider />
+        <CardContent>
+          <Grid container spacing={6}>
+            <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+              <DatePicker
+                label="日期"
+                value={date}
+                onChange={(e) => {
+                  if (!e) return;
+                  setDate(e);
+                }}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </>
+    );
+  };
+
+  return (
+    <Card>
+      <CardHeader
+        title="京天威HMIS"
+        subheader="广州北"
+        action={
+          <IconButton onClick={() => setShowFilter((prev) => !prev)}>
+            <FilterListOutlined color={showFilter ? "primary" : void 0} />
+          </IconButton>
+        }
+      />
+      <CardContent>
+        <Grid container spacing={6}>
+          <Grid size={12}>
+            <FormControlLabel
+              label="轴号模式"
+              control={
+                <Switch
+                  checked={zhMode}
+                  onChange={(e) => {
+                    setZhMode(e.target.checked);
+                  }}
+                />
+              }
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
+            <form
+              ref={formRef}
+              id={formId}
+              noValidate
+              autoComplete="off"
+              onSubmit={form.handleSubmit(async (values) => {
+                if (saveData.isPending) return;
+
+                form.reset();
+                const data = await getData.mutateAsync(
+                  { barcode: values.barCode, isZhMode: zhMode },
+                  {
+                    onError: (error) => {
+                      snackbar.show(error.message, {
+                        severity: "error",
+                      });
+                    },
+                  },
+                );
+
+                await sendMessageToWindow({
+                  zx: data.ZX,
+                  zh: data.ZH,
+                  czzzdw: data.CZZZDW,
+                  sczzdw: data.SCZZDW,
+                  mczzdw: data.MCZZDW,
+                  czzzrq: data.CZZZRQ,
+                  sczzrq: data.SCZZRQ,
+                  mczzrq: data.MCZZRQ,
+                });
+              }, console.warn)}
+              onReset={() => form.reset()}
+            >
+              <Controller
+                control={form.control}
+                name="barCode"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    onChange={(e) => {
+                      field.onChange(e);
+
+                      if (zhMode) return;
+                      clearTimeout(debounceRef.current);
+                      debounceRef.current = setTimeout(() => {
+                        formRef.current?.requestSubmit();
+                      }, 1000 * 1);
+                    }}
+                    inputRef={inputRef}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    fullWidth
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <Button
+                              form={formId}
+                              type="submit"
+                              endIcon={
+                                getData.isPending ? (
+                                  <CircularProgress size={16} color="inherit" />
+                                ) : (
+                                  <KeyboardReturnOutlined />
+                                )
+                              }
+                              variant="contained"
+                              disabled={getData.isPending}
+                            >
+                              录入
+                            </Button>
+                          </InputAdornment>
+                        ),
+                        autoFocus: true,
+                      },
+                    }}
+                    label={zhMode ? "轴号" : "条形码/二维码"}
+                    placeholder={zhMode ? "请输入轴号" : "请扫描条形码或二维码"}
+                  />
+                )}
+              />
+            </form>
+          </Grid>
+        </Grid>
+      </CardContent>
+      {renderFilter()}
+      {barcode.isFetching && <LinearProgress />}
+      <DataGrid
+        rows={barcode.data?.rows}
+        count={barcode.data?.count}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        setPageIndex={setPageIndex}
+        setPageSize={setPageSize}
+      />
     </Card>
   );
+};
+
+const useAutoFocusInputRef = () => {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const setInputFocus = React.useEffectEvent(() => {
+    inputRef.current?.focus();
+  });
+
+  React.useEffect(() => {
+    const unsubscribe = window.electronAPI.subscribeWindowFocus(setInputFocus);
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const unsubscribe = window.electronAPI.subscribeWindowBlur(setInputFocus);
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const controller = new AbortController();
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.visibilityState !== "visible") return;
+        setInputFocus();
+      },
+      controller,
+    );
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  return inputRef;
 };

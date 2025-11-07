@@ -44,7 +44,6 @@ export const getDirection = (nBoard: number) => {
 };
 
 export const getPlace = (nChannel: number) => {
-  //channel：0.穿透 1~2.轴颈 3~8.轮座
   switch (nChannel) {
     case 0:
       return "穿透";
@@ -52,7 +51,9 @@ export const getPlace = (nChannel: number) => {
     case 2:
       return "卸荷槽";
     case 3:
+      return "外";
     case 4:
+      return "内";
     case 5:
     case 6:
     case 7:
