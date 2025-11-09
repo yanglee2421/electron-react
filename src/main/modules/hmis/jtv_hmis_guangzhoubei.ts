@@ -139,8 +139,8 @@ const normalizeZHResponse = (data: ZH_Response) => {
 
   const firstRecord = data.data
     .sort((a, b) => {
-      const srrqA = dayjs(a.SRRQ).valueOf();
-      const srrqB = dayjs(b.SRRQ).valueOf();
+      const srrqA = a.SRRQ ? dayjs(a.SRRQ).valueOf() : 0;
+      const srrqB = a.SRRQ ? dayjs(b.SRRQ).valueOf() : 0;
       return srrqA - srrqB;
     })
     .at(0);
