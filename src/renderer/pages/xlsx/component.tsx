@@ -135,7 +135,7 @@ type State = {
 
 const initialState = (): State => ({
   pageIndex: 0,
-  pageSize: 10,
+  pageSize: 100,
   xlsxName: "",
   type: "",
 });

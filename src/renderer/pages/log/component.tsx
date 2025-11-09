@@ -188,7 +188,7 @@ const initDayjs = () => dayjs();
 
 export const Component = () => {
   const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(20);
+  const [pageSize, setPageSize] = React.useState(100);
   const [startDate, setStartDate] = React.useState(initDayjs);
   const [endDate, setEndDate] = React.useState(initDayjs);
 
