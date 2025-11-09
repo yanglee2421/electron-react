@@ -1,4 +1,3 @@
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CheckOutlined,
   ClearOutlined,
@@ -31,18 +30,23 @@ import {
   FormControlLabel,
   Switch,
 } from "@mui/material";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
-import React from "react";
-import { useDialogs, useNotifications } from "@toolpad/core";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import { z } from "zod";
+import React from "react";
+import dayjs from "dayjs";
+import { create } from "zustand";
 import { useQuery } from "@tanstack/react-query";
+import { immer } from "zustand/middleware/immer";
+import { DatePicker } from "@mui/x-date-pickers";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useDialogs, useNotifications } from "@toolpad/core";
+import { persist, createJSONStorage } from "zustand/middleware";
 import {
   useAutoInputToVC,
   fetchJtvHmisGuangzhoubeiSetting,
@@ -51,9 +55,25 @@ import {
   useJtvHmisGuangzhoubeiApiSet,
   useJtvHmisGuangzhoubeiSqliteDelete,
 } from "#renderer/api/fetch_preload";
-import dayjs from "dayjs";
-import { DatePicker } from "@mui/x-date-pickers";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import type { JTVGuangzhoubeiBarcode } from "#main/schema";
+
+const initialSessionState = () => {
+  return {
+    isZhMode: true,
+    showFilter: false,
+    pageIndex: 0,
+    pageSize: 100,
+    date: new Date().toISOString(),
+  };
+};
+
+const useSessionStore = create<ReturnType<typeof initialSessionState>>()(
+  persist(immer(initialSessionState), {
+    name: "useSessionStore:jtv_guangzhoubei",
+    storage: createJSONStorage(() => sessionStorage),
+  }),
+);
 
 type ActionCellProps = {
   id: number;
@@ -162,8 +182,8 @@ type DataGridProps = {
   count?: number;
   pageIndex: number;
   pageSize: number;
-  setPageIndex: React.Dispatch<React.SetStateAction<number>>;
-  setPageSize: React.Dispatch<React.SetStateAction<number>>;
+  setPageIndex: (page: number) => void;
+  setPageSize: (size: number) => void;
 };
 
 const DataGrid = (props: DataGridProps) => {
@@ -265,14 +285,44 @@ const DataGrid = (props: DataGridProps) => {
   );
 };
 
-const initDate = () => dayjs();
-
 export const Component = () => {
-  const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(100);
-  const [date, setDate] = React.useState(initDate);
-  const [showFilter, setShowFilter] = React.useState(false);
-  const [zhMode, setZhMode] = React.useState(true);
+  const zhMode = useSessionStore((store) => store.isZhMode);
+  const showFilter = useSessionStore((store) => store.showFilter);
+  const pageIndex = useSessionStore((store) => store.pageIndex);
+  const pageSize = useSessionStore((store) => store.pageSize);
+  const dateIso = useSessionStore((store) => store.date);
+
+  const date = dayjs(dateIso);
+
+  const setDate = (day: dayjs.Dayjs) => {
+    useSessionStore.setState((draft) => {
+      draft.date = day.toISOString();
+    });
+  };
+
+  const setPageIndex = (page: number) => {
+    useSessionStore.setState((draft) => {
+      draft.pageIndex = page;
+    });
+  };
+
+  const setPageSize = (size: number) => {
+    useSessionStore.setState((draft) => {
+      draft.pageSize = size;
+    });
+  };
+
+  const setZhMode = (value: boolean) => {
+    useSessionStore.setState((draft) => {
+      draft.isZhMode = value;
+    });
+  };
+
+  const setShowFilter = () => {
+    useSessionStore.setState((draft) => {
+      draft.showFilter = !draft.showFilter;
+    });
+  };
 
   const formId = React.useId();
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -381,7 +431,7 @@ export const Component = () => {
         title="京天威HMIS"
         subheader="广州北"
         action={
-          <IconButton onClick={() => setShowFilter((prev) => !prev)}>
+          <IconButton onClick={() => setShowFilter()}>
             <FilterListOutlined color={showFilter ? "primary" : void 0} />
           </IconButton>
         }
