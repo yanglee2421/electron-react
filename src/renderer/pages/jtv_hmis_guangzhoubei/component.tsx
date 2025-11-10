@@ -4,6 +4,7 @@ import {
   CloudUploadOutlined,
   DeleteOutlined,
   KeyboardReturnOutlined,
+  RefreshOutlined,
 } from "@mui/icons-material";
 import {
   Card,
@@ -432,6 +433,7 @@ export const Component = () => {
                     if (saveData.isPending) return;
 
                     form.reset();
+
                     const data = await getData.mutateAsync(
                       { barcode: values.barCode, isZhMode: zhMode },
                       {
@@ -448,12 +450,12 @@ export const Component = () => {
                     });
 
                     const isSingleElement = Object.is(data.length, 1);
+                    if (!isSingleElement) return;
 
-                    if (isSingleElement) {
-                      const record = data.at(0)!;
+                    const record = data.at(0)!;
+                    if (!record) return;
 
-                      await handleRowSelect(record);
-                    }
+                    await handleRowSelect(record);
                   }, console.warn)}
                   onReset={() => form.reset()}
                 >
@@ -517,11 +519,24 @@ export const Component = () => {
           <RowSelectGrid data={selectOptions} onRowSelect={handleRowSelect} />
         </Card>
         <Card>
-          <CardHeader title="上传情况" subheader="待上传的轮轴情况" />
+          <CardHeader
+            title="上传情况"
+            subheader="待上传的轮轴情况"
+            action={
+              <IconButton
+                onClick={() => {
+                  barcode.refetch();
+                }}
+                disabled={barcode.isFetching}
+              >
+                <RefreshOutlined />
+              </IconButton>
+            }
+          />
           <Divider />
           <CardContent>
             <Grid container spacing={6}>
-              <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <DatePicker
                   label="日期"
                   value={date}

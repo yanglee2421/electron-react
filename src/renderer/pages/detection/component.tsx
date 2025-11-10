@@ -27,38 +27,38 @@ import {
   TextField,
   type DialogProps,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers";
-import { useQuery } from "@tanstack/react-query";
-import dayjs from "dayjs";
-import React from "react";
-import {
-  createColumnHelper,
-  getCoreRowModel,
-  useReactTable,
-  flexRender,
-} from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
   CheckBoxOutlineBlankOutlined,
   CheckBoxOutlined,
   PrintOutlined,
   RefreshOutlined,
 } from "@mui/icons-material";
-import type { Detection } from "#main/modules/cmd";
-import { Loading } from "#renderer/components/Loading";
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  useReactTable,
+  flexRender,
+} from "@tanstack/react-table";
+import { z } from "zod";
+import dayjs from "dayjs";
+import React from "react";
+import { useDialogs } from "@toolpad/core";
+import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
+import { DatePicker } from "@mui/x-date-pickers";
 import { Link as RouterLink } from "react-router";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#main/modules/mdb.worker";
+import { Loading } from "#renderer/components/Loading";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
   useChr53aExport,
   fetchDataFromRootDB,
   fetchDataFromAppDB,
-  type MDBUser,
 } from "#renderer/api/fetch_preload";
-import { ScrollToTop } from "#renderer/components/scroll";
-import { useDialogs } from "@toolpad/core";
-import { useForm } from "@tanstack/react-form";
-import { z } from "zod";
+import { ScrollToTopButton } from "#renderer/components/scroll";
+import type { Detection } from "#main/modules/cmd";
+import type { Filter } from "#main/modules/mdb.worker";
+import type { MDBUser } from "#renderer/api/fetch_preload";
 
 const renderCheckBoxIcon = (value: boolean | null) => {
   return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
@@ -260,7 +260,6 @@ const DataGrid = ({
 };
 
 export const Component = () => {
-  const [anchorEl, showScrollToTop] = ScrollToTop.useScrollToTop();
   const selectDate = useSessionStore((s) => s.date);
   const pageIndex = useSessionStore((s) => s.pageIndex);
   const pageSize = useSessionStore((s) => s.pageSize);
@@ -357,105 +356,106 @@ export const Component = () => {
     });
 
   return (
-    <Card>
-      <div ref={anchorEl}></div>
-      <CardHeader
-        title="现车作业"
-        action={
-          <IconButton
-            onClick={() => query.refetch()}
-            disabled={query.isRefetching}
-          >
-            <RefreshOutlined />
-          </IconButton>
-        }
-      />
-      <CardContent>
-        <Grid container spacing={1.5}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <DatePicker
-              value={null}
-              onChange={(day) => {
-                setDate(day);
-              }}
-              slotProps={{
-                textField: {
-                  label: "日期",
-                  fullWidth: true,
-                },
-                field: {
-                  clearable: true,
-                },
-              }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="检测员"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              fullWidth
-              select
+    <>
+      <ScrollToTopButton />
+      <Card>
+        <CardHeader
+          title="现车作业"
+          action={
+            <IconButton
+              onClick={() => query.refetch()}
+              disabled={query.isRefetching}
             >
-              {usersQuery.data?.rows.map((user) => (
-                <MenuItem key={user.szUid} value={user.szUid}>
-                  {user.szUid}
-                </MenuItem>
-              ))}
-            </TextField>
+              <RefreshOutlined />
+            </IconButton>
+          }
+        />
+        <CardContent>
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <DatePicker
+                value={date}
+                onChange={(day) => {
+                  setDate(day);
+                }}
+                slotProps={{
+                  textField: {
+                    label: "日期",
+                    fullWidth: true,
+                  },
+                  field: {
+                    clearable: true,
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="检测员"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                fullWidth
+                select
+              >
+                {usersQuery.data?.rows.map((user) => (
+                  <MenuItem key={user.szUid} value={user.szUid}>
+                    {user.szUid}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="轴型"
+                value={whModel}
+                onChange={(e) => setWHModel(e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="轴号"
+                value={idsWheel}
+                onChange={(e) => setIdsWheel(e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="检测结果"
+                value={result}
+                onChange={(e) => setResult(e.target.value)}
+                fullWidth
+              />
+            </Grid>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="轴型"
-              value={whModel}
-              onChange={(e) => setWHModel(e.target.value)}
-              fullWidth
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="轴号"
-              value={idsWheel}
-              onChange={(e) => setIdsWheel(e.target.value)}
-              fullWidth
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="检测结果"
-              value={result}
-              onChange={(e) => setResult(e.target.value)}
-              fullWidth
-            />
-          </Grid>
-        </Grid>
-      </CardContent>
-      <Divider />
-      <DataGrid
-        data={data}
-        total={query.data?.total}
-        isPending={query.isPending}
-        isError={query.isError}
-        isFetching={query.isFetching}
-        error={query.error}
-      />
-      <Divider />
-      <TablePagination
-        component={"div"}
-        page={pageIndex}
-        count={query.data?.total || 0}
-        rowsPerPage={pageSize}
-        rowsPerPageOptions={rowsPerPageOptions}
-        onPageChange={(_, page) => {
-          setPageIndex(page);
-        }}
-        onRowsPerPageChange={(e) => {
-          setPageSize(Number.parseInt(e.target.value, 10));
-        }}
-        labelRowsPerPage="每页行数"
-      />
-      <ScrollToTop ref={anchorEl} show={showScrollToTop} />
-    </Card>
+        </CardContent>
+        <Divider />
+        <DataGrid
+          data={data}
+          total={query.data?.total}
+          isPending={query.isPending}
+          isError={query.isError}
+          isFetching={query.isFetching}
+          error={query.error}
+        />
+        <Divider />
+        <TablePagination
+          component={"div"}
+          page={pageIndex}
+          count={query.data?.total || 0}
+          rowsPerPage={pageSize}
+          rowsPerPageOptions={rowsPerPageOptions}
+          onPageChange={(_, page) => {
+            setPageIndex(page);
+          }}
+          onRowsPerPageChange={(e) => {
+            setPageSize(Number.parseInt(e.target.value, 10));
+          }}
+          labelRowsPerPage="每页行数"
+        />
+      </Card>
+    </>
   );
 };
 
