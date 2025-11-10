@@ -1,6 +1,7 @@
 import { ArrowUpwardOutlined } from "@mui/icons-material";
 import { Zoom, Fab } from "@mui/material";
 import React from "react";
+import { createPortal } from "react-dom";
 
 const useScrollToTop = () => {
   const [showScrollToTop, setShowScrollToTop] = React.useState(false);
@@ -54,3 +55,14 @@ export const ScrollToTop = (props: ScrollToTopProps) => {
 };
 
 ScrollToTop.useScrollToTop = useScrollToTop;
+
+export const ScrollToTopButton = () => {
+  const [ref, show] = useScrollToTop();
+
+  return (
+    <>
+      <div ref={ref}></div>
+      {createPortal(<ScrollToTop ref={ref} show={show} />, document.body)}
+    </>
+  );
+};

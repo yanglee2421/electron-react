@@ -61,6 +61,7 @@ import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import type { JTVGuangzhoubeiBarcode } from "#main/schema";
 import type { NormalizedResponse } from "#main/modules/hmis/jtv_hmis_guangzhoubei";
 import type { ElementOf } from "#renderer/lib/utils";
+import { ScrollToTopButton } from "#renderer/components/scroll";
 
 const initialSessionState = () => {
   return {
@@ -401,152 +402,155 @@ export const Component = () => {
   };
 
   return (
-    <Stack spacing={3}>
-      <Card>
-        <CardHeader title="京天威HMIS" subheader="广州北" />
-        <CardContent>
-          <Grid container spacing={6}>
-            <Grid size={12}>
-              <FormControlLabel
-                label="轴号模式"
-                control={
-                  <Switch
-                    checked={zhMode}
-                    onChange={(e) => {
-                      setZhMode(e.target.checked);
-                    }}
-                  />
-                }
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
-              <form
-                ref={formRef}
-                id={formId}
-                noValidate
-                autoComplete="off"
-                onSubmit={form.handleSubmit(async (values) => {
-                  if (saveData.isPending) return;
-
-                  form.reset();
-                  const data = await getData.mutateAsync(
-                    { barcode: values.barCode, isZhMode: zhMode },
-                    {
-                      onError: (error) => {
-                        snackbar.show(error.message, {
-                          severity: "error",
-                        });
-                      },
-                    },
-                  );
-
-                  useSessionStore.setState((draft) => {
-                    draft.selectOptions = data;
-                  });
-
-                  const isSingleElement = Object.is(data.length, 1);
-
-                  if (isSingleElement) {
-                    const record = data.at(0)!;
-
-                    await handleRowSelect(record);
-                  }
-                }, console.warn)}
-                onReset={() => form.reset()}
-              >
-                <Controller
-                  control={form.control}
-                  name="barCode"
-                  render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
+    <>
+      <ScrollToTopButton />
+      <Stack spacing={3}>
+        <Card>
+          <CardHeader title="京天威HMIS" subheader="广州北" />
+          <CardContent>
+            <Grid container spacing={6}>
+              <Grid size={12}>
+                <FormControlLabel
+                  label="轴号模式"
+                  control={
+                    <Switch
+                      checked={zhMode}
                       onChange={(e) => {
-                        field.onChange(e);
-
-                        if (zhMode) return;
-                        clearTimeout(debounceRef.current);
-                        debounceRef.current = setTimeout(() => {
-                          formRef.current?.requestSubmit();
-                        }, 1000 * 1);
+                        setZhMode(e.target.checked);
                       }}
-                      inputRef={inputRef}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                      fullWidth
-                      slotProps={{
-                        input: {
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <Button
-                                form={formId}
-                                type="submit"
-                                endIcon={
-                                  getData.isPending ? (
-                                    <CircularProgress
-                                      size={16}
-                                      color="inherit"
-                                    />
-                                  ) : (
-                                    <KeyboardReturnOutlined />
-                                  )
-                                }
-                                variant="contained"
-                                disabled={getData.isPending}
-                              >
-                                录入
-                              </Button>
-                            </InputAdornment>
-                          ),
-                          autoFocus: true,
-                        },
-                      }}
-                      label={zhMode ? "轴号" : "条形码/二维码"}
-                      placeholder={
-                        zhMode ? "请输入轴号" : "请扫描条形码或二维码"
-                      }
                     />
-                  )}
+                  }
                 />
-              </form>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
+                <form
+                  ref={formRef}
+                  id={formId}
+                  noValidate
+                  autoComplete="off"
+                  onSubmit={form.handleSubmit(async (values) => {
+                    if (saveData.isPending) return;
+
+                    form.reset();
+                    const data = await getData.mutateAsync(
+                      { barcode: values.barCode, isZhMode: zhMode },
+                      {
+                        onError: (error) => {
+                          snackbar.show(error.message, {
+                            severity: "error",
+                          });
+                        },
+                      },
+                    );
+
+                    useSessionStore.setState((draft) => {
+                      draft.selectOptions = data;
+                    });
+
+                    const isSingleElement = Object.is(data.length, 1);
+
+                    if (isSingleElement) {
+                      const record = data.at(0)!;
+
+                      await handleRowSelect(record);
+                    }
+                  }, console.warn)}
+                  onReset={() => form.reset()}
+                >
+                  <Controller
+                    control={form.control}
+                    name="barCode"
+                    render={({ field, fieldState }) => (
+                      <TextField
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+
+                          if (zhMode) return;
+                          clearTimeout(debounceRef.current);
+                          debounceRef.current = setTimeout(() => {
+                            formRef.current?.requestSubmit();
+                          }, 1000 * 1);
+                        }}
+                        inputRef={inputRef}
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                        fullWidth
+                        slotProps={{
+                          input: {
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <Button
+                                  form={formId}
+                                  type="submit"
+                                  endIcon={
+                                    getData.isPending ? (
+                                      <CircularProgress
+                                        size={16}
+                                        color="inherit"
+                                      />
+                                    ) : (
+                                      <KeyboardReturnOutlined />
+                                    )
+                                  }
+                                  variant="contained"
+                                  disabled={getData.isPending}
+                                >
+                                  录入
+                                </Button>
+                              </InputAdornment>
+                            ),
+                            autoFocus: true,
+                          },
+                        }}
+                        label={zhMode ? "轴号" : "条形码/二维码"}
+                        placeholder={
+                          zhMode ? "请输入轴号" : "请扫描条形码或二维码"
+                        }
+                      />
+                    )}
+                  />
+                </form>
+              </Grid>
             </Grid>
-          </Grid>
-        </CardContent>
-        <RowSelectGrid data={selectOptions} onRowSelect={handleRowSelect} />
-      </Card>
-      <Card>
-        <CardHeader title="上传情况" subheader="待上传的轮轴情况" />
-        <Divider />
-        <CardContent>
-          <Grid container spacing={6}>
-            <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
-              <DatePicker
-                label="日期"
-                value={date}
-                onChange={(e) => {
-                  if (!e) return;
-                  setDate(e);
-                }}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                  },
-                }}
-              />
+          </CardContent>
+          <RowSelectGrid data={selectOptions} onRowSelect={handleRowSelect} />
+        </Card>
+        <Card>
+          <CardHeader title="上传情况" subheader="待上传的轮轴情况" />
+          <Divider />
+          <CardContent>
+            <Grid container spacing={6}>
+              <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+                <DatePicker
+                  label="日期"
+                  value={date}
+                  onChange={(e) => {
+                    if (!e) return;
+                    setDate(e);
+                  }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                    },
+                  }}
+                />
+              </Grid>
             </Grid>
-          </Grid>
-        </CardContent>
-        <Divider />
-        {barcode.isFetching && <LinearProgress />}
-        <DataGrid
-          rows={barcode.data?.rows}
-          count={barcode.data?.count}
-          pageIndex={pageIndex}
-          pageSize={pageSize}
-          setPageIndex={setPageIndex}
-          setPageSize={setPageSize}
-        />
-      </Card>
-    </Stack>
+          </CardContent>
+          <Divider />
+          {barcode.isFetching && <LinearProgress />}
+          <DataGrid
+            rows={barcode.data?.rows}
+            count={barcode.data?.count}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            setPageIndex={setPageIndex}
+            setPageSize={setPageSize}
+          />
+        </Card>
+      </Stack>
+    </>
   );
 };
 
