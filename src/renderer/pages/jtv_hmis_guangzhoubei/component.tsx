@@ -297,7 +297,79 @@ export const Component = () => {
   const dateIso = useSessionStore((store) => store.date);
   const selectOptions = useSessionStore((store) => store.selectOptions);
 
+  const formId = React.useId();
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const debounceRef = React.useRef<NodeJS.Timeout | number>(0);
+
   const date = dayjs(dateIso);
+
+  const params = {
+    pageIndex,
+    pageSize,
+    startDate: date.startOf("day").toISOString(),
+    endDate: date.endOf("day").toISOString(),
+  };
+
+  const form = useScanerForm();
+  const snackbar = useNotifications();
+  const autoInput = useAutoInputToVC();
+  const inputRef = useAutoFocusInputRef();
+  const getData = useJtvHmisGuangzhoubeiApiGet();
+  const saveData = useJtvHmisGuangzhoubeiApiSet();
+  const insertBarcode = useJtvHmisGuangzhoubeiSqliteInsert();
+  const { data: hmis } = useQuery(fetchJtvHmisGuangzhoubeiSetting());
+  const barcode = useQuery(fetchJtvHmisGuangzhoubeiSqliteGet(params));
+
+  const refetchBarcode = React.useEffectEvent(() => {
+    barcode.refetch();
+  });
+
+  React.useEffect(() => {
+    const unsubscribe = window.electronAPI.subscribeJtvHmisAPISet(() => {
+      refetchBarcode();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const sendDataItemToWindow = async (dataItem: NormalizedDataItem) => {
+    if (!hmis) return;
+    if (!hmis.autoInput) return;
+
+    await autoInput.mutateAsync(
+      {
+        zx: dataItem.ZX,
+        zh: dataItem.ZH,
+        czzzdw: dataItem.CZZZDW,
+        sczzdw: dataItem.SCZZDW,
+        mczzdw: dataItem.MCZZDW,
+        czzzrq: dataItem.CZZZRQ,
+        sczzrq: dataItem.SCZZRQ,
+        mczzrq: dataItem.MCZZRQ,
+        ztx: "1",
+        ytx: "1",
+      },
+      {
+        onError(error) {
+          snackbar.show(error.message, {
+            severity: "error",
+          });
+        },
+      },
+    );
+  };
+
+  const inserDataItemToDB = async (dataItem: NormalizedDataItem) => {
+    await insertBarcode.mutateAsync(dataItem, {
+      onError(error) {
+        snackbar.show(error.message, {
+          severity: "error",
+        });
+      },
+    });
+  };
 
   const setDate = (day: dayjs.Dayjs) => {
     useSessionStore.setState((draft) => {
@@ -323,77 +395,9 @@ export const Component = () => {
     });
   };
 
-  const formId = React.useId();
-  const formRef = React.useRef<HTMLFormElement>(null);
-  const debounceRef = React.useRef<NodeJS.Timeout | number>(0);
-
-  const params = {
-    pageIndex,
-    pageSize,
-    startDate: date.startOf("day").toISOString(),
-    endDate: date.endOf("day").toISOString(),
-  };
-
-  const form = useScanerForm();
-  const snackbar = useNotifications();
-  const autoInput = useAutoInputToVC();
-  const saveData = useJtvHmisGuangzhoubeiApiSet();
-  const getData = useJtvHmisGuangzhoubeiApiGet();
-  const { data: hmis } = useQuery(fetchJtvHmisGuangzhoubeiSetting());
-  const barcode = useQuery(fetchJtvHmisGuangzhoubeiSqliteGet(params));
-  const inputRef = useAutoFocusInputRef();
-
-  const refetchBarcode = React.useEffectEvent(() => {
-    barcode.refetch();
-  });
-
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeJtvHmisAPISet(() => {
-      refetchBarcode();
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  const sendMessageToWindow = async (SendMessageToWIndowParams: {
-    zx: string;
-    zh: string;
-    czzzdw: string;
-    sczzdw: string;
-    mczzdw: string;
-    czzzrq: string;
-    sczzrq: string;
-    mczzrq: string;
-  }) => {
-    if (!hmis) return;
-    if (!hmis.autoInput) return;
-
-    const { zx, zh, czzzdw, sczzdw, mczzdw, czzzrq, sczzrq, mczzrq } =
-      SendMessageToWIndowParams;
-
-    await autoInput.mutateAsync(
-      {
-        zx,
-        zh,
-        czzzdw,
-        sczzdw,
-        mczzdw,
-        czzzrq,
-        sczzrq,
-        mczzrq,
-        ztx: "1",
-        ytx: "1",
-      },
-      {
-        onError(error) {
-          snackbar.show(error.message, {
-            severity: "error",
-          });
-        },
-      },
-    );
+  const handleRowSelect = async (dataItem: NormalizedDataItem) => {
+    await inserDataItemToDB(dataItem);
+    await sendDataItemToWindow(dataItem);
   };
 
   return (
@@ -445,16 +449,7 @@ export const Component = () => {
                   if (isSingleElement) {
                     const record = data.at(0)!;
 
-                    await sendMessageToWindow({
-                      zx: record.ZX,
-                      zh: record.ZH,
-                      czzzdw: record.CZZZDW,
-                      sczzdw: record.SCZZDW,
-                      mczzdw: record.MCZZDW,
-                      czzzrq: record.CZZZRQ,
-                      sczzrq: record.SCZZRQ,
-                      mczzrq: record.MCZZRQ,
-                    });
+                    await handleRowSelect(record);
                   }
                 }, console.warn)}
                 onReset={() => form.reset()}
@@ -516,7 +511,7 @@ export const Component = () => {
             </Grid>
           </Grid>
         </CardContent>
-        <RowSelectGrid data={selectOptions} />
+        <RowSelectGrid data={selectOptions} onRowSelect={handleRowSelect} />
       </Card>
       <Card>
         <CardHeader title="上传情况" subheader="待上传的轮轴情况" />
@@ -597,8 +592,9 @@ const useAutoFocusInputRef = () => {
   return inputRef;
 };
 
-const rowSelectColumnHelper =
-  createColumnHelper<ElementOf<NormalizedResponse>>();
+type NormalizedDataItem = ElementOf<NormalizedResponse>;
+
+const rowSelectColumnHelper = createColumnHelper<NormalizedDataItem>();
 
 const rowSelectColumns = [
   rowSelectColumnHelper.accessor("ZH", {
@@ -644,16 +640,13 @@ const rowSelectColumns = [
 
 type RowSelectGridProps = {
   data?: NormalizedResponse;
+  onRowSelect?: (record: NormalizedDataItem) => void;
 };
 
 const RowSelectGrid = (props: RowSelectGridProps) => {
   "use no memo";
 
   const rows = React.useMemo(() => props.data || [], [props.data]);
-
-  const autoInput = useAutoInputToVC();
-  const notifications = useNotifications();
-  const insert = useJtvHmisGuangzhoubeiSqliteInsert();
 
   const table = useReactTable({
     getCoreRowModel: getCoreRowModel(),
@@ -682,34 +675,7 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
         key={row.id}
         hover
         onClick={async () => {
-          await insert.mutateAsync(row.original, {
-            onError(error) {
-              notifications.show(error.message, {
-                severity: "error",
-              });
-            },
-          });
-          await autoInput.mutateAsync(
-            {
-              zx: row.original.ZX,
-              zh: row.original.ZH,
-              czzzdw: row.original.CZZZDW,
-              sczzdw: row.original.SCZZDW,
-              mczzdw: row.original.MCZZDW,
-              czzzrq: row.original.CZZZRQ,
-              sczzrq: row.original.SCZZRQ,
-              mczzrq: row.original.MCZZRQ,
-              ztx: "1",
-              ytx: "1",
-            },
-            {
-              onError(error) {
-                notifications.show(error.message, {
-                  severity: "error",
-                });
-              },
-            },
-          );
+          props.onRowSelect?.(row.original);
         }}
         sx={{ cursor: "pointer" }}
       >
