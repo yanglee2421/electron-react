@@ -58,6 +58,29 @@ const handleDeleteRecord = async (id: number) => {
     .where(sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id))
     .returning();
 
+  emit();
+
+  return result;
+};
+
+export type InsertRecordParams = {
+  DH: string;
+  ZH: string;
+};
+
+const handleInsertRecord = async (data: InsertRecordParams) => {
+  const [result] = await db
+    .insert(schema.jtvGuangzhoubeiBarcodeTable)
+    .values({
+      barCode: data.DH,
+      zh: data.ZH,
+      date: new Date(),
+      isUploaded: false,
+    })
+    .returning();
+
+  emit();
+
   return result;
 };
 
@@ -137,29 +160,19 @@ const normalizeZHResponse = (data: ZH_Response) => {
     throw new Error(data.msg);
   }
 
-  const firstRecord = data.data
-    .sort((a, b) => {
-      const srrqA = a.SRRQ ? dayjs(a.SRRQ).valueOf() : 0;
-      const srrqB = a.SRRQ ? dayjs(b.SRRQ).valueOf() : 0;
-      return srrqA - srrqB;
-    })
-    .at(0);
-
-  if (!firstRecord) {
-    throw new Error("空记录");
-  }
-
-  return {
-    DH: firstRecord.DH,
-    ZH: firstRecord.ZH,
-    ZX: firstRecord.ZX,
-    CZZZDW: firstRecord.CZZZDW,
-    CZZZRQ: firstRecord.CZZZRQ,
-    MCZZDW: firstRecord.MCZZDW,
-    MCZZRQ: firstRecord.MCZZRQ,
-    SCZZDW: firstRecord.SCZZDW,
-    SCZZRQ: firstRecord.SCZZRQ,
-  };
+  return data.data.map((record) => {
+    return {
+      DH: record.DH,
+      ZH: record.ZH,
+      ZX: record.ZX,
+      CZZZDW: record.CZZZDW,
+      CZZZRQ: record.CZZZRQ,
+      MCZZDW: record.MCZZDW,
+      MCZZRQ: record.MCZZRQ,
+      SCZZDW: record.SCZZDW,
+      SCZZRQ: record.SCZZRQ,
+    };
+  });
 };
 
 type DH_Item = {
@@ -207,23 +220,23 @@ const fetchAxleInfoByDH = async (dh: string) => {
 };
 
 const normalizeDHResponse = (data: DH_Response) => {
-  const firstRecord = data.data.at(0);
-
-  if (!firstRecord) {
-    throw new Error("接口返回异常");
+  if (data.code !== "200") {
+    throw new Error(data.msg);
   }
 
-  return {
-    DH: firstRecord.DH,
-    ZH: firstRecord.ZH,
-    ZX: firstRecord.ZX,
-    CZZZDW: firstRecord.CZZZDW,
-    CZZZRQ: firstRecord.CZZZRQ,
-    MCZZDW: firstRecord.MCZZDW,
-    MCZZRQ: firstRecord.MCZZRQ,
-    SCZZDW: firstRecord.SCZZDW,
-    SCZZRQ: firstRecord.SCZZRQ,
-  };
+  return data.data.map((record) => {
+    return {
+      DH: record.DH,
+      ZH: record.ZH,
+      ZX: record.ZX,
+      CZZZDW: record.CZZZDW,
+      CZZZRQ: record.CZZZRQ,
+      MCZZDW: record.MCZZDW,
+      MCZZRQ: record.MCZZRQ,
+      SCZZDW: record.SCZZDW,
+      SCZZRQ: record.SCZZRQ,
+    };
+  });
 };
 
 const normalizeResponse = async (barCode: string, isZhMode?: boolean) => {
@@ -244,13 +257,6 @@ export type NormalizedResponse = Awaited<ReturnType<typeof normalizeResponse>>;
 
 const handleFetchRecord = async (barcode: string, isZhMode?: boolean) => {
   const data = await normalizeResponse(barcode, isZhMode);
-
-  await db.insert(schema.jtvGuangzhoubeiBarcodeTable).values({
-    barCode: data.DH,
-    zh: data.ZH,
-    date: new Date(),
-    isUploaded: false,
-  });
 
   return data;
 };
@@ -530,6 +536,12 @@ const initIpc = () => {
   );
   ipcHandle(channel.jtv_hmis_guangzhoubei_sqlite_delete, (_, id: number) =>
     handleDeleteRecord(id),
+  );
+  ipcHandle(
+    channel.jtv_hmis_guangzhoubei_sqlite_insert,
+    (_, payload: InsertRecordParams) => {
+      return handleInsertRecord(payload);
+    },
   );
   ipcHandle(
     channel.jtv_hmis_guangzhoubei_api_get,

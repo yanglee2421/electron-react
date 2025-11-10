@@ -3,7 +3,6 @@ import {
   ClearOutlined,
   CloudUploadOutlined,
   DeleteOutlined,
-  FilterListOutlined,
   KeyboardReturnOutlined,
 } from "@mui/icons-material";
 import {
@@ -29,11 +28,13 @@ import {
   LinearProgress,
   FormControlLabel,
   Switch,
+  Stack,
 } from "@mui/material";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { z } from "zod";
@@ -54,9 +55,12 @@ import {
   useJtvHmisGuangzhoubeiApiGet,
   useJtvHmisGuangzhoubeiApiSet,
   useJtvHmisGuangzhoubeiSqliteDelete,
+  useJtvHmisGuangzhoubeiSqliteInsert,
 } from "#renderer/api/fetch_preload";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import type { JTVGuangzhoubeiBarcode } from "#main/schema";
+import type { NormalizedResponse } from "#main/modules/hmis/jtv_hmis_guangzhoubei";
+import type { ElementOf } from "#renderer/lib/utils";
 
 const initialSessionState = () => {
   return {
@@ -65,6 +69,7 @@ const initialSessionState = () => {
     pageIndex: 0,
     pageSize: 100,
     date: new Date().toISOString(),
+    selectOptions: [] as NormalizedResponse,
   };
 };
 
@@ -287,10 +292,10 @@ const DataGrid = (props: DataGridProps) => {
 
 export const Component = () => {
   const zhMode = useSessionStore((store) => store.isZhMode);
-  const showFilter = useSessionStore((store) => store.showFilter);
   const pageIndex = useSessionStore((store) => store.pageIndex);
   const pageSize = useSessionStore((store) => store.pageSize);
   const dateIso = useSessionStore((store) => store.date);
+  const selectOptions = useSessionStore((store) => store.selectOptions);
 
   const date = dayjs(dateIso);
 
@@ -315,12 +320,6 @@ export const Component = () => {
   const setZhMode = (value: boolean) => {
     useSessionStore.setState((draft) => {
       draft.isZhMode = value;
-    });
-  };
-
-  const setShowFilter = () => {
-    useSessionStore.setState((draft) => {
-      draft.showFilter = !draft.showFilter;
     });
   };
 
@@ -397,10 +396,130 @@ export const Component = () => {
     );
   };
 
-  const renderFilter = () => {
-    if (!showFilter) return null;
-    return (
-      <>
+  return (
+    <Stack spacing={3}>
+      <Card>
+        <CardHeader title="京天威HMIS" subheader="广州北" />
+        <CardContent>
+          <Grid container spacing={6}>
+            <Grid size={12}>
+              <FormControlLabel
+                label="轴号模式"
+                control={
+                  <Switch
+                    checked={zhMode}
+                    onChange={(e) => {
+                      setZhMode(e.target.checked);
+                    }}
+                  />
+                }
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
+              <form
+                ref={formRef}
+                id={formId}
+                noValidate
+                autoComplete="off"
+                onSubmit={form.handleSubmit(async (values) => {
+                  if (saveData.isPending) return;
+
+                  form.reset();
+                  const data = await getData.mutateAsync(
+                    { barcode: values.barCode, isZhMode: zhMode },
+                    {
+                      onError: (error) => {
+                        snackbar.show(error.message, {
+                          severity: "error",
+                        });
+                      },
+                    },
+                  );
+
+                  useSessionStore.setState((draft) => {
+                    draft.selectOptions = data;
+                  });
+
+                  const isSingleElement = Object.is(data.length, 1);
+
+                  if (isSingleElement) {
+                    const record = data.at(0)!;
+
+                    await sendMessageToWindow({
+                      zx: record.ZX,
+                      zh: record.ZH,
+                      czzzdw: record.CZZZDW,
+                      sczzdw: record.SCZZDW,
+                      mczzdw: record.MCZZDW,
+                      czzzrq: record.CZZZRQ,
+                      sczzrq: record.SCZZRQ,
+                      mczzrq: record.MCZZRQ,
+                    });
+                  }
+                }, console.warn)}
+                onReset={() => form.reset()}
+              >
+                <Controller
+                  control={form.control}
+                  name="barCode"
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+
+                        if (zhMode) return;
+                        clearTimeout(debounceRef.current);
+                        debounceRef.current = setTimeout(() => {
+                          formRef.current?.requestSubmit();
+                        }, 1000 * 1);
+                      }}
+                      inputRef={inputRef}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                      fullWidth
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <Button
+                                form={formId}
+                                type="submit"
+                                endIcon={
+                                  getData.isPending ? (
+                                    <CircularProgress
+                                      size={16}
+                                      color="inherit"
+                                    />
+                                  ) : (
+                                    <KeyboardReturnOutlined />
+                                  )
+                                }
+                                variant="contained"
+                                disabled={getData.isPending}
+                              >
+                                录入
+                              </Button>
+                            </InputAdornment>
+                          ),
+                          autoFocus: true,
+                        },
+                      }}
+                      label={zhMode ? "轴号" : "条形码/二维码"}
+                      placeholder={
+                        zhMode ? "请输入轴号" : "请扫描条形码或二维码"
+                      }
+                    />
+                  )}
+                />
+              </form>
+            </Grid>
+          </Grid>
+        </CardContent>
+        <RowSelectGrid data={selectOptions} />
+      </Card>
+      <Card>
+        <CardHeader title="上传情况" subheader="待上传的轮轴情况" />
         <Divider />
         <CardContent>
           <Grid container spacing={6}>
@@ -421,133 +540,18 @@ export const Component = () => {
             </Grid>
           </Grid>
         </CardContent>
-      </>
-    );
-  };
-
-  return (
-    <Card>
-      <CardHeader
-        title="京天威HMIS"
-        subheader="广州北"
-        action={
-          <IconButton onClick={() => setShowFilter()}>
-            <FilterListOutlined color={showFilter ? "primary" : void 0} />
-          </IconButton>
-        }
-      />
-      <CardContent>
-        <Grid container spacing={6}>
-          <Grid size={12}>
-            <FormControlLabel
-              label="轴号模式"
-              control={
-                <Switch
-                  checked={zhMode}
-                  onChange={(e) => {
-                    setZhMode(e.target.checked);
-                  }}
-                />
-              }
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
-            <form
-              ref={formRef}
-              id={formId}
-              noValidate
-              autoComplete="off"
-              onSubmit={form.handleSubmit(async (values) => {
-                if (saveData.isPending) return;
-
-                form.reset();
-                const data = await getData.mutateAsync(
-                  { barcode: values.barCode, isZhMode: zhMode },
-                  {
-                    onError: (error) => {
-                      snackbar.show(error.message, {
-                        severity: "error",
-                      });
-                    },
-                  },
-                );
-
-                await sendMessageToWindow({
-                  zx: data.ZX,
-                  zh: data.ZH,
-                  czzzdw: data.CZZZDW,
-                  sczzdw: data.SCZZDW,
-                  mczzdw: data.MCZZDW,
-                  czzzrq: data.CZZZRQ,
-                  sczzrq: data.SCZZRQ,
-                  mczzrq: data.MCZZRQ,
-                });
-              }, console.warn)}
-              onReset={() => form.reset()}
-            >
-              <Controller
-                control={form.control}
-                name="barCode"
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    onChange={(e) => {
-                      field.onChange(e);
-
-                      if (zhMode) return;
-                      clearTimeout(debounceRef.current);
-                      debounceRef.current = setTimeout(() => {
-                        formRef.current?.requestSubmit();
-                      }, 1000 * 1);
-                    }}
-                    inputRef={inputRef}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    fullWidth
-                    slotProps={{
-                      input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <Button
-                              form={formId}
-                              type="submit"
-                              endIcon={
-                                getData.isPending ? (
-                                  <CircularProgress size={16} color="inherit" />
-                                ) : (
-                                  <KeyboardReturnOutlined />
-                                )
-                              }
-                              variant="contained"
-                              disabled={getData.isPending}
-                            >
-                              录入
-                            </Button>
-                          </InputAdornment>
-                        ),
-                        autoFocus: true,
-                      },
-                    }}
-                    label={zhMode ? "轴号" : "条形码/二维码"}
-                    placeholder={zhMode ? "请输入轴号" : "请扫描条形码或二维码"}
-                  />
-                )}
-              />
-            </form>
-          </Grid>
-        </Grid>
-      </CardContent>
-      {renderFilter()}
-      {barcode.isFetching && <LinearProgress />}
-      <DataGrid
-        rows={barcode.data?.rows}
-        count={barcode.data?.count}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
-    </Card>
+        <Divider />
+        {barcode.isFetching && <LinearProgress />}
+        <DataGrid
+          rows={barcode.data?.rows}
+          count={barcode.data?.count}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+        />
+      </Card>
+    </Stack>
   );
 };
 
@@ -591,4 +595,187 @@ const useAutoFocusInputRef = () => {
   }, []);
 
   return inputRef;
+};
+
+const rowSelectColumnHelper =
+  createColumnHelper<ElementOf<NormalizedResponse>>();
+
+const rowSelectColumns = [
+  rowSelectColumnHelper.accessor("ZH", {
+    header: "轴号",
+    footer: "轴号",
+  }),
+  rowSelectColumnHelper.accessor("ZX", {
+    header: "轴型",
+    footer: "轴型",
+  }),
+  rowSelectColumnHelper.accessor("CZZZRQ", {
+    header: "车轴制造",
+    footer: "车轴制造",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  rowSelectColumnHelper.accessor("CZZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  rowSelectColumnHelper.accessor("SCZZRQ", {
+    header: "首次组装日期",
+    footer: "首次组装日期",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  rowSelectColumnHelper.accessor("SCZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  rowSelectColumnHelper.accessor("MCZZRQ", {
+    header: "末次组装日期",
+    footer: "末次组装日期",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  rowSelectColumnHelper.accessor("MCZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  rowSelectColumnHelper.accessor("DH", {
+    header: "单号",
+    footer: "单号",
+  }),
+];
+
+type RowSelectGridProps = {
+  data?: NormalizedResponse;
+};
+
+const RowSelectGrid = (props: RowSelectGridProps) => {
+  "use no memo";
+
+  const rows = React.useMemo(() => props.data || [], [props.data]);
+
+  const autoInput = useAutoInputToVC();
+  const notifications = useNotifications();
+  const insert = useJtvHmisGuangzhoubeiSqliteInsert();
+
+  const table = useReactTable({
+    getCoreRowModel: getCoreRowModel(),
+    columns: rowSelectColumns,
+    data: rows,
+    getRowId(row) {
+      return row.DH;
+    },
+
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  const renderRow = () => {
+    if (!table.getRowCount()) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
+            暂无数据
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return table.getRowModel().rows.map((row) => (
+      <TableRow
+        key={row.id}
+        hover
+        onClick={async () => {
+          await insert.mutateAsync(row.original, {
+            onError(error) {
+              notifications.show(error.message, {
+                severity: "error",
+              });
+            },
+          });
+          await autoInput.mutateAsync(
+            {
+              zx: row.original.ZX,
+              zh: row.original.ZH,
+              czzzdw: row.original.CZZZDW,
+              sczzdw: row.original.SCZZDW,
+              mczzdw: row.original.MCZZDW,
+              czzzrq: row.original.CZZZRQ,
+              sczzrq: row.original.SCZZRQ,
+              mczzrq: row.original.MCZZRQ,
+              ztx: "1",
+              ytx: "1",
+            },
+            {
+              onError(error) {
+                notifications.show(error.message, {
+                  severity: "error",
+                });
+              },
+            },
+          );
+        }}
+        sx={{ cursor: "pointer" }}
+      >
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    ));
+  };
+
+  return (
+    <>
+      <TableContainer>
+        <Table>
+          <TableHead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableHead>
+          <TableBody>{renderRow()}</TableBody>
+          <TableFooter>
+            {table.getFooterGroups().map((footerGroup) => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.footer,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableFooter>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        component={"div"}
+        page={table.getState().pagination.pageIndex}
+        onPageChange={(_, page) => {
+          table.setPageIndex(page);
+        }}
+        rowsPerPage={table.getState().pagination.pageSize}
+        onRowsPerPageChange={(e) => {
+          table.setPageSize(Number.parseInt(e.target.value));
+        }}
+        rowsPerPageOptions={[10, 20]}
+        count={table.getRowCount()}
+      />
+    </>
+  );
 };

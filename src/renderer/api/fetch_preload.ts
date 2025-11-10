@@ -23,7 +23,10 @@ import type { Profile } from "#main/lib/profile";
 import type { Payload } from "#main/modules/mdb";
 import type { Invoice } from "#main/modules/xml";
 import type { JTVGuangzhoubeiBarcode } from "#main/schema";
-import type { FormatedResponse } from "#main/modules/hmis/jtv_hmis_guangzhoubei";
+import type {
+  InsertRecordParams,
+  NormalizedResponse,
+} from "#main/modules/hmis/jtv_hmis_guangzhoubei";
 
 // 自动录入功能
 export const useAutoInputToVC = () => {
@@ -779,6 +782,30 @@ export const useJtvHmisGuangzhoubeiSqliteDelete = () => {
   });
 };
 
+export const useJtvHmisGuangzhoubeiSqliteInsert = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: InsertRecordParams) => {
+      const data: JTVGuangzhoubeiBarcode =
+        await window.electron.ipcRenderer.invoke(
+          channel.jtv_hmis_guangzhoubei_sqlite_insert,
+          payload,
+        );
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
+          pageIndex: 1,
+          pageSize: 10,
+          startDate: "",
+          endDate: "",
+        }).queryKey.slice(0, 1),
+      });
+    },
+  });
+};
+
 export const useJtvHmisGuangzhoubeiApiGet = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -789,7 +816,7 @@ export const useJtvHmisGuangzhoubeiApiGet = () => {
       barcode: string;
       isZhMode?: boolean;
     }) => {
-      const data: FormatedResponse = await window.electron.ipcRenderer.invoke(
+      const data: NormalizedResponse = await window.electron.ipcRenderer.invoke(
         channel.jtv_hmis_guangzhoubei_api_get,
         barcode,
         isZhMode,
