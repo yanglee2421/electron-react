@@ -52,6 +52,7 @@ import {
 } from "#renderer/api/fetch_preload";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
+import { ScrollToTopButton } from "#renderer/components/scroll";
 
 type ActionCellProps = {
   id: number;
@@ -295,162 +296,168 @@ export const Component = () => {
   };
 
   return (
-    <Card>
-      <CardHeader
-        title="京天威HMIS"
-        subheader="统型"
-        action={
-          <IconButton onClick={() => setShowFilter((prev) => !prev)}>
-            <FilterListOutlined color={showFilter ? "primary" : void 0} />
-          </IconButton>
-        }
-      />
-      <CardContent>
-        <Grid container spacing={6}>
-          <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
-            <form
-              ref={formRef}
-              id={formId}
-              noValidate
-              autoComplete="off"
-              onSubmit={form.handleSubmit(async (values) => {
-                if (saveData.isPending) return;
+    <>
+      <ScrollToTopButton />
+      <Card>
+        <CardHeader
+          title="京天威HMIS"
+          subheader="统型"
+          action={
+            <IconButton onClick={() => setShowFilter((prev) => !prev)}>
+              <FilterListOutlined color={showFilter ? "primary" : void 0} />
+            </IconButton>
+          }
+        />
+        <CardContent>
+          <Grid container spacing={6}>
+            <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
+              <form
+                ref={formRef}
+                id={formId}
+                noValidate
+                autoComplete="off"
+                onSubmit={form.handleSubmit(async (values) => {
+                  if (saveData.isPending) return;
 
-                form.reset();
-                const data = await getData.mutateAsync(values.barCode, {
-                  onError: (error) => {
-                    snackbar.show(error.message, {
-                      severity: "error",
-                    });
-                  },
-                });
-
-                if (!hmis) return;
-                if (!hmis.autoInput) return;
-
-                autoInput.mutate(
-                  {
-                    zx: data.data[0].ZX,
-                    zh: data.data[0].ZH,
-                    czzzdw: data.data[0].CZZZDW,
-                    sczzdw: data.data[0].SCZZDW,
-                    mczzdw: data.data[0].MCZZDW,
-                    czzzrq: data.data[0].CZZZRQ,
-                    sczzrq: data.data[0].SCZZRQ,
-                    mczzrq: data.data[0].MCZZRQ,
-                    ztx: "1",
-                    ytx: "1",
-                  },
-                  {
-                    onError(error) {
+                  form.reset();
+                  const data = await getData.mutateAsync(values.barCode, {
+                    onError: (error) => {
                       snackbar.show(error.message, {
                         severity: "error",
                       });
                     },
-                  },
-                );
-              }, console.warn)}
-              onReset={() => form.reset()}
-            >
-              <Controller
-                control={form.control}
-                name="barCode"
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    inputRef={inputRef}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    fullWidth
-                    slotProps={{
-                      input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <Button
-                              form={formId}
-                              type="submit"
-                              endIcon={
-                                getData.isPending ? (
-                                  <CircularProgress size={16} color="inherit" />
-                                ) : (
-                                  <KeyboardReturnOutlined />
-                                )
-                              }
-                              variant="contained"
-                              disabled={getData.isPending}
-                            >
-                              录入
-                            </Button>
-                          </InputAdornment>
-                        ),
-                        autoFocus: true,
+                  });
+
+                  if (!hmis) return;
+                  if (!hmis.autoInput) return;
+
+                  autoInput.mutate(
+                    {
+                      zx: data.data[0].ZX,
+                      zh: data.data[0].ZH,
+                      czzzdw: data.data[0].CZZZDW,
+                      sczzdw: data.data[0].SCZZDW,
+                      mczzdw: data.data[0].MCZZDW,
+                      czzzrq: data.data[0].CZZZRQ,
+                      sczzrq: data.data[0].SCZZRQ,
+                      mczzrq: data.data[0].MCZZRQ,
+                      ztx: "1",
+                      ytx: "1",
+                    },
+                    {
+                      onError(error) {
+                        snackbar.show(error.message, {
+                          severity: "error",
+                        });
                       },
-                    }}
-                    label="条形码/二维码"
-                    placeholder="请扫描条形码或二维码"
-                  />
-                )}
-              />
-            </form>
+                    },
+                  );
+                }, console.warn)}
+                onReset={() => form.reset()}
+              >
+                <Controller
+                  control={form.control}
+                  name="barCode"
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      {...field}
+                      inputRef={inputRef}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                      fullWidth
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <Button
+                                form={formId}
+                                type="submit"
+                                endIcon={
+                                  getData.isPending ? (
+                                    <CircularProgress
+                                      size={16}
+                                      color="inherit"
+                                    />
+                                  ) : (
+                                    <KeyboardReturnOutlined />
+                                  )
+                                }
+                                variant="contained"
+                                disabled={getData.isPending}
+                              >
+                                录入
+                              </Button>
+                            </InputAdornment>
+                          ),
+                          autoFocus: true,
+                        },
+                      }}
+                      label="条形码/二维码"
+                      placeholder="请扫描条形码或二维码"
+                    />
+                  )}
+                />
+              </form>
+            </Grid>
           </Grid>
-        </Grid>
-      </CardContent>
-      {renderFilter()}
-      {barcode.isFetching && <LinearProgress />}
-      <TableContainer>
-        <Table sx={{ minWidth: 720 }}>
-          <TableHead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>{renderRow()}</TableBody>
-          <TableFooter>
-            {table.getFooterGroups().map((footerGroup) => (
-              <TableRow key={footerGroup.id}>
-                {footerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.footer,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableFooter>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        component={"div"}
-        page={pageIndex}
-        count={table.getRowCount()}
-        rowsPerPage={pageSize}
-        rowsPerPageOptions={rowsPerPageOptions}
-        onPageChange={(e, page) => {
-          void e;
-          setPageIndex(page);
-        }}
-        onRowsPerPageChange={(e) => {
-          setPageSize(Number.parseInt(e.target.value, 10));
-        }}
-        labelRowsPerPage="每页行数"
-      />
-    </Card>
+        </CardContent>
+        {renderFilter()}
+        {barcode.isFetching && <LinearProgress />}
+        <TableContainer>
+          <Table sx={{ minWidth: 720 }}>
+            <TableHead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableCell
+                      key={header.id}
+                      padding={cellPaddingMap.get(header.column.id)}
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHead>
+            <TableBody>{renderRow()}</TableBody>
+            <TableFooter>
+              {table.getFooterGroups().map((footerGroup) => (
+                <TableRow key={footerGroup.id}>
+                  {footerGroup.headers.map((header) => (
+                    <TableCell
+                      key={header.id}
+                      padding={cellPaddingMap.get(header.column.id)}
+                    >
+                      {flexRender(
+                        header.column.columnDef.footer,
+                        header.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableFooter>
+          </Table>
+        </TableContainer>
+        <TablePagination
+          component={"div"}
+          page={pageIndex}
+          count={table.getRowCount()}
+          rowsPerPage={pageSize}
+          rowsPerPageOptions={rowsPerPageOptions}
+          onPageChange={(e, page) => {
+            void e;
+            setPageIndex(page);
+          }}
+          onRowsPerPageChange={(e) => {
+            setPageSize(Number.parseInt(e.target.value, 10));
+          }}
+          labelRowsPerPage="每页行数"
+        />
+      </Card>
+    </>
   );
 };
