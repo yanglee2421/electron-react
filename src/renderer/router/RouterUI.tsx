@@ -92,6 +92,10 @@ const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/log/component"),
           },
           {
+            path: "help",
+            lazy: () => import("#renderer/pages/help/component"),
+          },
+          {
             path: "md5_compute",
             lazy: () => import("#renderer/pages/md5_compute/component"),
           },

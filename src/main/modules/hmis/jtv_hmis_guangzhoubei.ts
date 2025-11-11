@@ -261,7 +261,7 @@ const handleFetchRecord = async (barcode: string, isZhMode?: boolean) => {
   return data;
 };
 
-type PostRequestItem = {
+type PostItem = {
   eq_ip: string; // 设备IP
   eq_bh: string; // 设备编号
   dh: string; // 扫码单号
@@ -327,13 +327,13 @@ const tmnowToTSSJ = (tmnow: string) => {
   return dayjs(tmnow).format("YYYY-MM-DD HH:mm:ss");
 };
 
-const makePostRequestItem = (
-  record: schema.JTVGuangzhoubeiBarcode,
-  detection: Detection,
-  detectionData: DetectionData,
+const makePostItem = (
   eq_ip: string,
   eq_bh: string,
-): PostRequestItem => {
+  record: schema.JTVGuangzhoubeiBarcode,
+  detection: Detection,
+  detectionData?: DetectionData,
+): PostItem => {
   const user = detection.szUsername || "";
 
   return {
@@ -344,22 +344,22 @@ const makePostRequestItem = (
     zx: detection.szWHModel || "",
     TSFF: "超声波",
     TSSJ: tmnowToTSSJ(detection.tmnow || ""),
-    TFLAW_PLACE: detectionDataToTPlace(detectionData),
-    TFLAW_TYPE: "裂纹",
-    TVIEW: "人工复探",
+    TFLAW_PLACE: detectionData ? detectionDataToTPlace(detectionData) : "",
+    TFLAW_TYPE: detectionData ? "裂纹" : "",
+    TVIEW: detectionData ? "人工复探" : "",
     CZCTZ: user,
     CZCTY: user,
     LZXRBZ: user,
     LZXRBY: user,
-    XHCZ: user,
-    XHCY: user,
+    XHCZ: detection.bWheelLS ? user : "",
+    XHCY: detection.bWheelRS ? user : "",
     TSZ: user,
     TSZY: user,
     CT_RESULT: detection.szResult || "",
   };
 };
 
-const sendPostRequest = async (request: PostRequestItem[]) => {
+const sendPostRequest = async (request: PostItem[]) => {
   const host = jtv_hmis_guangzhoubei.get("post_host");
   const url = new URL(`http://${host}/pmss/example.do`);
   const body = JSON.stringify(request);
@@ -388,7 +388,7 @@ const sendPostRequest = async (request: PostRequestItem[]) => {
 
 const makeRequestBody = async (
   record: schema.JTVGuangzhoubeiBarcode,
-): Promise<PostRequestItem[]> => {
+): Promise<PostItem[]> => {
   const id = record.id;
 
   if (!record) {
@@ -427,35 +427,11 @@ const makeRequestBody = async (
   }
 
   if (detectionDatas.length === 0) {
-    const user = detection.szUsername || "";
-
-    return [
-      {
-        eq_ip,
-        eq_bh,
-        dh: record.barCode || "",
-        zh: record.zh || "",
-        zx: detection.szWHModel || "",
-        TSFF: "超声波e",
-        TSSJ: tmnowToTSSJ(detection.tmnow || ""),
-        TFLAW_PLACE: "",
-        TFLAW_TYPE: "",
-        TVIEW: "",
-        CZCTZ: user,
-        CZCTY: user,
-        LZXRBZ: user,
-        LZXRBY: user,
-        XHCZ: user,
-        XHCY: user,
-        TSZ: user,
-        TSZY: user,
-        CT_RESULT: detection.szResult || "",
-      },
-    ];
+    return [makePostItem(eq_ip, eq_bh, record, detection)];
   }
 
   return detectionDatas.map((detectionData) => {
-    return makePostRequestItem(record, detection, detectionData, eq_ip, eq_bh);
+    return makePostItem(eq_ip, eq_bh, record, detection, detectionData);
   });
 };
 
@@ -532,11 +508,13 @@ const initAutoUpload = () => {
 const initIpc = () => {
   ipcHandle(
     channel.jtv_hmis_guangzhoubei_sqlite_get,
-    (_, params: SQLiteGetParams) => handleReadRecords(params),
+    (_, params: SQLiteGetParams) => {
+      return handleReadRecords(params);
+    },
   );
-  ipcHandle(channel.jtv_hmis_guangzhoubei_sqlite_delete, (_, id: number) =>
-    handleDeleteRecord(id),
-  );
+  ipcHandle(channel.jtv_hmis_guangzhoubei_sqlite_delete, (_, id: number) => {
+    return handleDeleteRecord(id);
+  });
   ipcHandle(
     channel.jtv_hmis_guangzhoubei_sqlite_insert,
     (_, payload: InsertRecordParams) => {

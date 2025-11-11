@@ -18,9 +18,14 @@ import type * as PRELOAD from "#preload/index";
 /**
  * Sqlite barcode
  */
-const handleReadRecords = async (
-  params: PRELOAD.JtvBarcodeGetParams,
-): Promise<PRELOAD.JtvBarcodeGetResult> => {
+type SQLiteGetParams = {
+  pageIndex: number;
+  pageSize: number;
+  startDate: string;
+  endDate: string;
+};
+
+const handleReadRecords = async (params: SQLiteGetParams) => {
   const [{ count }] = await db
     .select({ count: sql.count() })
     .from(schema.jtvBarcodeTable)
@@ -41,52 +46,98 @@ const handleReadRecords = async (
     ),
     offset: params.pageIndex * params.pageSize,
     limit: params.pageSize,
+    orderBy: sql.desc(schema.jtvBarcodeTable.date),
   });
 
   return { rows, count };
 };
 
-const handleDeleteRecord = async (id: number): Promise<schema.JTVBarcode> => {
+const handleDeleteRecord = async (id: number) => {
   const [result] = await db
     .delete(schema.jtvBarcodeTable)
     .where(sql.eq(schema.jtvBarcodeTable.id, id))
     .returning();
 
+  emit();
+
   return result;
 };
 
-/**
- * HMIS API
- */
-export type GetResponse = {
-  code: "200";
-  msg: "数据读取成功";
-  data: [
-    {
-      DH: "91022070168";
-      ZH: "67444";
-      ZX: "RE2B";
-      CZZZDW: "048";
-      CZZZRQ: "2009-10";
-      MCZZDW: "131";
-      MCZZRQ: "2018-07-09 00:00:00";
-      SCZZDW: "131";
-      SCZZRQ: "2018-07-09 00:00:00";
-
-      SRYY: "厂修";
-      SRDW: "588";
-    },
-  ];
+export type InsertRecordParams = {
+  DH: string;
+  ZH: string;
 };
 
-const fetchDataByDH = async (barcode: string) => {
+const handleInsertRecord = async (data: InsertRecordParams) => {
+  const [result] = await db
+    .insert(schema.jtvBarcodeTable)
+    .values({
+      barCode: data.DH,
+      zh: data.ZH,
+      date: new Date(),
+      isUploaded: false,
+    })
+    .returning();
+
+  emit();
+
+  return result;
+};
+
+const makeDataRequestURL = (dh: string) => {
   const host = jtv_hmis.get("host");
   const unitCode = jtv_hmis.get("unitCode");
   const url = new URL(`http://${host}/api/getData`);
 
-  url.searchParams.set("type", "csbts");
-  url.searchParams.set("param", [barcode, unitCode].join(","));
-  log(`请求数据:${url.href}`);
+  url.searchParams.set("param", [dh, unitCode].join(","));
+
+  return url;
+};
+
+type ZH_Item = {
+  DH: string;
+  ZH: string;
+  ZX: string;
+  CZZZRQ: string;
+  CZZZDW: string;
+  SCZZRQ: string;
+  SCZZDW: string;
+  MCZZRQ: string;
+  MCZZDW: string;
+  SRRQ: string;
+
+  LBZGZPH: string | null;
+  CLLWKSRZ: number | null;
+  CLLWKSRY: number | null;
+  PJ_ID: string | null;
+  LBYGZPH: string | null;
+  LBYLH: string | null;
+  LBZCDH: string | null;
+  LBYLX: string | null;
+  CLLWHSRY: number | null;
+  CLLWHSRZ: number | null;
+  LBZSXH: string | null;
+  CLZJSRY: number | null;
+  CLZJSRZ: number | null;
+  LBYZZRQ: string | null;
+  LBZLH: string | null;
+  LBZZZRQ: string | null;
+  LBYSXH: string | null;
+  LBZLX: string | null;
+  LBYCDH: string | null;
+};
+
+export type ZH_Response = {
+  code: string;
+  msg: string;
+  data: ZH_Item[];
+};
+
+const fetchAxleInfoByZH = async (zh: string) => {
+  const url = makeDataRequestURL(zh);
+
+  url.searchParams.set("type", "csbtszh");
+  log(`请求轴号数据:${url.href}`);
 
   const res = await net.fetch(url.href, { method: "GET" });
 
@@ -94,8 +145,8 @@ const fetchDataByDH = async (barcode: string) => {
     throw new Error(`接口异常[${res.status}]:${res.statusText}`);
   }
 
-  const data: GetResponse = await res.json();
-  log(`返回数据:${JSON.stringify(data)}`);
+  const data: ZH_Response = await res.json();
+  log(`返回轴号数据:${JSON.stringify(data)}`);
 
   if (data.code !== "200") {
     throw new Error(data.msg);
@@ -104,36 +155,108 @@ const fetchDataByDH = async (barcode: string) => {
   return data;
 };
 
-const normalizeDHResponse = (data: GetResponse) => {
-  const firstRecord = data.data.at(0);
-
-  if (!firstRecord) {
-    throw new Error("返回空记录");
+const normalizeZHResponse = (data: ZH_Response) => {
+  if (data.code !== "200") {
+    throw new Error(data.msg);
   }
 
-  return {
-    DH: firstRecord.DH,
-    ZH: firstRecord.ZH,
-    ZX: firstRecord.ZX,
-    CZZZDW: firstRecord.CZZZDW,
-    CZZZRQ: firstRecord.CZZZRQ,
-    MCZZDW: firstRecord.MCZZDW,
-    MCZZRQ: firstRecord.MCZZRQ,
-    SCZZDW: firstRecord.SCZZDW,
-    SCZZRQ: firstRecord.SCZZRQ,
-  };
+  return data.data.map((record) => {
+    return {
+      DH: record.DH,
+      ZH: record.ZH,
+      ZX: record.ZX,
+      CZZZDW: record.CZZZDW,
+      CZZZRQ: record.CZZZRQ,
+      MCZZDW: record.MCZZDW,
+      MCZZRQ: record.MCZZRQ,
+      SCZZDW: record.SCZZDW,
+      SCZZRQ: record.SCZZRQ,
+    };
+  });
 };
 
-const handleGetRequest = async (barcode: string): Promise<GetResponse> => {
-  const data = await fetchDataByDH(barcode);
-  const firstRecord = normalizeDHResponse(data);
+type DH_Item = {
+  DH: string;
+  ZH: string;
+  ZX: string;
+  CZZZDW: string;
+  CZZZRQ: string;
+  MCZZDW: string;
+  MCZZRQ: string;
+  SCZZDW: string;
+  SCZZRQ: string;
+  SRRQ: string;
 
-  await db.insert(schema.jtvBarcodeTable).values({
-    barCode: firstRecord.DH,
-    zh: firstRecord.ZH,
-    date: new Date(),
-    isUploaded: false,
+  SRYY?: string | null;
+  SRDW?: string | null;
+};
+
+export type DH_Response = {
+  code: string;
+  msg: string;
+  data: DH_Item[];
+};
+
+const fetchAxleInfoByDH = async (dh: string) => {
+  const url = makeDataRequestURL(dh);
+
+  url.searchParams.set("type", "csbts");
+  log(`请求单号数据:${url.href}`);
+
+  const res = await net.fetch(url.href, { method: "GET" });
+
+  if (!res.ok) {
+    throw new Error(`接口异常[${res.status}]:${res.statusText}`);
+  }
+
+  const data: DH_Response = await res.json();
+  log(`返回单号数据:${JSON.stringify(data)}`);
+
+  if (data.code !== "200") {
+    throw new Error(data.msg);
+  }
+
+  return data;
+};
+
+const normalizeDHResponse = (data: DH_Response) => {
+  if (data.code !== "200") {
+    throw new Error(data.msg);
+  }
+
+  return data.data.map((record) => {
+    return {
+      DH: record.DH,
+      ZH: record.ZH,
+      ZX: record.ZX,
+      CZZZDW: record.CZZZDW,
+      CZZZRQ: record.CZZZRQ,
+      MCZZDW: record.MCZZDW,
+      MCZZRQ: record.MCZZRQ,
+      SCZZDW: record.SCZZDW,
+      SCZZRQ: record.SCZZRQ,
+    };
   });
+};
+
+const normalizeResponse = async (barCode: string, isZhMode?: boolean) => {
+  if (isZhMode) {
+    const data = await fetchAxleInfoByZH(barCode);
+    const result = normalizeZHResponse(data);
+
+    return result;
+  } else {
+    const data = await fetchAxleInfoByDH(barCode);
+    const result = normalizeDHResponse(data);
+
+    return result;
+  }
+};
+
+export type NormalizedResponse = Awaited<ReturnType<typeof normalizeResponse>>;
+
+const handleFetchRecord = async (barcode: string, isZhMode?: boolean) => {
+  const data = await normalizeResponse(barcode, isZhMode);
 
   return data;
 };
@@ -240,11 +363,11 @@ const tmnowToTSSJ = (tmnow: string) => {
 };
 
 const makePostItem = (
-  record: schema.JTVGuangzhoubeiBarcode,
-  detection: Detection,
-  detectionData: DetectionData,
   eq_ip: string,
   eq_bh: string,
+  record: schema.JTVBarcode,
+  detection: Detection,
+  detectionData?: DetectionData,
 ): PostItem => {
   const user = detection.szUsername || "";
 
@@ -256,24 +379,22 @@ const makePostItem = (
     zx: detection.szWHModel || "",
     TSFF: "超声波",
     TSSJ: tmnowToTSSJ(detection.tmnow || ""),
-    TFLAW_PLACE: detectionDataToTPlace(detectionData),
-    TFLAW_TYPE: "裂纹",
-    TVIEW: "人工复探",
+    TFLAW_PLACE: detectionData ? detectionDataToTPlace(detectionData) : "",
+    TFLAW_TYPE: detectionData ? "裂纹" : "",
+    TVIEW: detectionData ? "人工复探" : "",
     CZCTZ: user,
     CZCTY: user,
     LZXRBZ: user,
     LZXRBY: user,
-    XHCZ: user,
-    XHCY: user,
+    XHCZ: detection.bWheelLS ? user : "",
+    XHCY: detection.bWheelRS ? user : "",
     TSZ: user,
     TSZY: user,
     CT_RESULT: detection.szResult || "",
   };
 };
 
-const recordToBody = async (
-  record: schema.JTVGuangzhoubeiBarcode,
-): Promise<PostItem[]> => {
+const recordToBody = async (record: schema.JTVBarcode): Promise<PostItem[]> => {
   const id = record.id;
 
   if (!record) {
@@ -312,35 +433,11 @@ const recordToBody = async (
   }
 
   if (detectionDatas.length === 0) {
-    const user = detection.szUsername || "";
-
-    return [
-      {
-        eq_ip,
-        eq_bh,
-        dh: record.barCode || "",
-        zh: record.zh || "",
-        zx: detection.szWHModel || "",
-        TSFF: "超声波",
-        TSSJ: tmnowToTSSJ(detection.tmnow || ""),
-        TFLAW_PLACE: "",
-        TFLAW_TYPE: "",
-        TVIEW: "",
-        CZCTZ: user,
-        CZCTY: user,
-        LZXRBZ: user,
-        LZXRBY: user,
-        XHCZ: user,
-        XHCY: user,
-        TSZ: user,
-        TSZY: user,
-        CT_RESULT: detection.szResult || "",
-      },
-    ];
+    return [makePostItem(eq_ip, eq_bh, record, detection)];
   }
 
   return detectionDatas.map((detectionData) => {
-    return makePostItem(record, detection, detectionData, eq_ip, eq_bh);
+    return makePostItem(eq_ip, eq_bh, record, detection, detectionData);
   });
 };
 
@@ -416,15 +513,28 @@ const initAutoUpload = () => {
 const initIpc = () => {
   ipcHandle(
     channel.jtv_hmis_sqlite_get,
-    (_, params: PRELOAD.JtvBarcodeGetParams) => handleReadRecords(params),
+    (_, params: PRELOAD.JtvBarcodeGetParams) => {
+      return handleReadRecords(params);
+    },
   );
-  ipcHandle(channel.jtv_hmis_sqlite_delete, (_, id: number) =>
-    handleDeleteRecord(id),
+  ipcHandle(channel.jtv_hmis_sqlite_delete, (_, id: number) => {
+    return handleDeleteRecord(id);
+  });
+  ipcHandle(
+    channel.jtv_hmis_sqlite_insert,
+    (_, payload: InsertRecordParams) => {
+      return handleInsertRecord(payload);
+    },
   );
-  ipcHandle(channel.jtv_hmis_api_get, (_, barcode: string) =>
-    handleGetRequest(barcode),
+  ipcHandle(
+    channel.jtv_hmis_api_get,
+    (_, barcode: string, isZhMode?: boolean) => {
+      return handleFetchRecord(barcode, isZhMode);
+    },
   );
-  ipcHandle(channel.jtv_hmis_api_set, (_, id: number) => handleSendData(id));
+  ipcHandle(channel.jtv_hmis_api_set, (_, id: number) => {
+    return handleSendData(id);
+  });
 
   ipcHandle(
     channel.jtv_hmis_setting,

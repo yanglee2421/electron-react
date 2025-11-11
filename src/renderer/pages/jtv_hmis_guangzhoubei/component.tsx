@@ -760,6 +760,7 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
         }}
         rowsPerPageOptions={[10, 20]}
         count={table.getRowCount()}
+        labelRowsPerPage="每页行数"
       />
     </>
   );

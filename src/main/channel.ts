@@ -29,6 +29,7 @@ export const channel = createEnum({
   jtv_hmis_setting: "",
   jtv_hmis_sqlite_get: "",
   jtv_hmis_sqlite_delete: "",
+  jtv_hmis_sqlite_insert: "",
 
   jtv_hmis_guangzhoubei_api_get: "",
   jtv_hmis_guangzhoubei_api_set: "",

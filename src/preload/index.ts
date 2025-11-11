@@ -1,21 +1,18 @@
 import { ipcRenderer, contextBridge, webUtils } from "electron";
+import { electronAPI as electron } from "@electron-toolkit/preload";
 import { channel } from "#main/channel";
+import type { ElectronAPI } from "@electron-toolkit/preload";
+import type { Log } from "#renderer/lib/db";
+import type * as SCHEMA from "#main/schema";
+import type * as STORE from "#main/lib/store";
+import type * as KH_HMIS from "#main/modules/hmis/kh_hmis";
+import type * as HXZY_HMIS from "#main/modules/hmis/hxzy_hmis";
+import type * as JTV_HMIS_XUZHOUBEI from "#main/modules/hmis/jtv_hmis_xuzhoubei";
 import type {
   Verify,
   VerifyData,
   AutoInputToVCParams,
 } from "#main/modules/cmd";
-import type * as SCHEMA from "#main/schema";
-import type * as STORE from "#main/lib/store";
-import type { Log } from "#renderer/lib/db";
-import type * as HXZY_HMIS from "#main/modules/hmis/hxzy_hmis";
-import type * as JTV_HMIS from "#main/modules/hmis/jtv_hmis";
-import type * as KH_HMIS from "#main/modules/hmis/kh_hmis";
-import type * as JTV_HMIS_XUZHOUBEI from "#main/modules/hmis/jtv_hmis_xuzhoubei";
-import {
-  electronAPI as electron,
-  type ElectronAPI,
-} from "@electron-toolkit/preload";
 
 type LogCallback = (data: Log) => void;
 type SubscribeLog = (handler: LogCallback) => () => void;
@@ -131,9 +128,6 @@ const jtv_hmis_sqlite_get = (params: JtvBarcodeGetParams) =>
 
 const jtv_hmis_sqlite_delete = (id: number) =>
   invoke<SCHEMA.JTVBarcode>(channel.jtv_hmis_sqlite_delete, id);
-
-const jtv_hmis_api_get = (barcode: string) =>
-  invoke<JTV_HMIS.GetResponse>(channel.jtv_hmis_api_get, barcode);
 
 const jtv_hmis_api_set = async (id: number): Promise<number> => {
   await invoke(channel.jtv_hmis_api_set, id);
@@ -276,7 +270,6 @@ const electronAPI = {
   hxzy_hmis_sqlite_delete,
 
   // 京天威HMIS (统型)
-  jtv_hmis_api_get,
   jtv_hmis_api_set,
   jtv_hmis_setting,
   jtv_hmis_sqlite_get,

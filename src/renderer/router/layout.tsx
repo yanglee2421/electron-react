@@ -23,6 +23,7 @@ import {
   ScienceOutlined,
   SportsEsportsOutlined,
   QrCodeOutlined,
+  HelpOutlined,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -224,6 +225,7 @@ const segmentAlias = new Map([
   ["md5_compute", "MD5计算"],
   ["md5_backup_image", "图片备份"],
   ["lab", "实验室"],
+  ["help", "帮助"],
 ]);
 
 const alias = (title: string) => segmentAlias.get(title) || title;
@@ -408,6 +410,11 @@ const NAVIGATION: Navigation = [
     segment: "settings",
     title: "设置",
     icon: <SettingsOutlined />,
+  },
+  {
+    segment: "help",
+    title: "帮助",
+    icon: <HelpOutlined />,
   },
 ];
 
