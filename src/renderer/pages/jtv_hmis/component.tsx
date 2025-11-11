@@ -234,7 +234,7 @@ const DataGrid = (props: DataGridProps) => {
   return (
     <>
       <TableContainer>
-        <Table sx={{ minWidth: 720 }}>
+        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -730,7 +730,7 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
   return (
     <>
       <TableContainer>
-        <Table>
+        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

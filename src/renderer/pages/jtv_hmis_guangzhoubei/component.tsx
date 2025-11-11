@@ -49,6 +49,8 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDialogs, useNotifications } from "@toolpad/core";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { ScrollToTopButton } from "#renderer/components/scroll";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
   useAutoInputToVC,
   fetchJtvHmisGuangzhoubeiSetting,
@@ -58,11 +60,9 @@ import {
   useJtvHmisGuangzhoubeiSqliteDelete,
   useJtvHmisGuangzhoubeiSqliteInsert,
 } from "#renderer/api/fetch_preload";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import type { JTVGuangzhoubeiBarcode } from "#main/schema";
 import type { NormalizedResponse } from "#main/modules/hmis/jtv_hmis_guangzhoubei";
 import type { ElementOf } from "#renderer/lib/utils";
-import { ScrollToTopButton } from "#renderer/components/scroll";
 
 const initialSessionState = () => {
   return {
@@ -235,7 +235,7 @@ const DataGrid = (props: DataGridProps) => {
   return (
     <>
       <TableContainer>
-        <Table sx={{ minWidth: 720 }}>
+        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -710,7 +710,7 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
   return (
     <>
       <TableContainer>
-        <Table>
+        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
