@@ -6,6 +6,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { channel } from "#main/channel";
+import { invoke } from "./invoke";
+import type { ElementOf } from "#renderer/lib/utils";
 import type {
   HandleDeleteRecord,
   HandleFetchRecord,
@@ -14,10 +16,6 @@ import type {
   HandleReadRecords,
   HandleSendData,
 } from "#main/modules/hmis/jtv_hmis";
-
-const invoke = window.electron.ipcRenderer.invoke.bind(
-  window.electron.ipcRenderer,
-);
 
 const handleDeleteRecord: HandleDeleteRecord = (...args) =>
   invoke(channel.jtv_hmis_sqlite_delete, ...args);
@@ -31,6 +29,8 @@ const handleReadRecords: HandleReadRecords = (...args) =>
   invoke(channel.jtv_hmis_sqlite_get, ...args);
 const handleSendData: HandleSendData = (...args) =>
   invoke(channel.jtv_hmis_api_set, ...args);
+
+export type Record = ElementOf<Awaited<ReturnType<HandleFetchRecord>>>;
 
 export const fetchJtvHmisSqliteGet = (...args: Parameters<HandleReadRecords>) =>
   queryOptions({

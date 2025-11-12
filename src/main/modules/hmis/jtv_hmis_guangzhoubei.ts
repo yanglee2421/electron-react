@@ -63,7 +63,7 @@ const handleDeleteRecord = async (id: number) => {
   return result;
 };
 
-export type InsertRecordParams = {
+type InsertRecordParams = {
   DH: string;
   ZH: string;
 };
@@ -127,7 +127,7 @@ type ZH_Item = {
   LBYCDH: string | null;
 };
 
-export type ZH_Response = {
+type ZH_Response = {
   code: string;
   msg: string;
   data: ZH_Item[];
@@ -191,7 +191,7 @@ type DH_Item = {
   SRDW?: string | null;
 };
 
-export type DH_Response = {
+type DH_Response = {
   code: string;
   msg: string;
   data: DH_Item[];
@@ -252,8 +252,6 @@ const normalizeResponse = async (barCode: string, isZhMode?: boolean) => {
     return result;
   }
 };
-
-export type NormalizedResponse = Awaited<ReturnType<typeof normalizeResponse>>;
 
 const handleFetchRecord = async (barcode: string, isZhMode?: boolean) => {
   const data = await normalizeResponse(barcode, isZhMode);

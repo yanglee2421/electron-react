@@ -51,18 +51,17 @@ import { useDialogs, useNotifications } from "@toolpad/core";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
   fetchJtvHmisSetting,
   fetchJtvHmisSqliteGet,
-  useAutoInputToVC,
   useJtvHmisApiGet,
   useJtvHmisApiSet,
   useJtvHmisSqliteDelete,
   useJtvHmisSqliteInsert,
-} from "#renderer/api/fetch_preload";
+} from "#renderer/api/jtv_hmis";
+import type { Record } from "#renderer/api/jtv_hmis";
 import type { JTVBarcode } from "#main/schema";
-import type { ElementOf } from "#renderer/lib/utils";
-import type { NormalizedResponse } from "#main/modules/hmis/jtv_hmis";
 
 const initialSessionState = () => {
   return {
@@ -71,7 +70,7 @@ const initialSessionState = () => {
     pageIndex: 0,
     pageSize: 100,
     date: new Date().toISOString(),
-    selectOptions: [] as NormalizedResponse,
+    selectOptions: [] as Record[],
   };
 };
 
@@ -355,7 +354,7 @@ export const Component = () => {
     };
   }, []);
 
-  const sendDataItemToWindow = async (dataItem: NormalizedDataItem) => {
+  const sendDataItemToWindow = async (dataItem: Record) => {
     if (!hmis) return;
     if (!hmis.autoInput) return;
 
@@ -382,7 +381,7 @@ export const Component = () => {
     );
   };
 
-  const inserDataItemToDB = async (dataItem: NormalizedDataItem) => {
+  const inserDataItemToDB = async (dataItem: Record) => {
     await insertBarcode.mutateAsync(dataItem, {
       onError(error) {
         snackbar.show(error.message, {
@@ -416,7 +415,7 @@ export const Component = () => {
     });
   };
 
-  const handleRowSelect = async (dataItem: NormalizedDataItem) => {
+  const handleRowSelect = async (dataItem: Record) => {
     await inserDataItemToDB(dataItem);
     await sendDataItemToWindow(dataItem);
   };
@@ -631,9 +630,7 @@ const useAutoFocusInputRef = () => {
   return inputRef;
 };
 
-type NormalizedDataItem = ElementOf<NormalizedResponse>;
-
-const rowSelectColumnHelper = createColumnHelper<NormalizedDataItem>();
+const rowSelectColumnHelper = createColumnHelper<Record>();
 
 const rowSelectColumns = [
   rowSelectColumnHelper.accessor("ZH", {
@@ -678,8 +675,8 @@ const rowSelectColumns = [
 ];
 
 type RowSelectGridProps = {
-  data?: NormalizedResponse;
-  onRowSelect?: (record: NormalizedDataItem) => void;
+  data?: Record[];
+  onRowSelect?: (record: Record) => void;
 };
 
 const RowSelectGrid = (props: RowSelectGridProps) => {

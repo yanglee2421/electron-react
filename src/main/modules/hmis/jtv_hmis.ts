@@ -253,8 +253,6 @@ const normalizeResponse = async (barCode: string, isZhMode?: boolean) => {
   }
 };
 
-export type NormalizedResponse = Awaited<ReturnType<typeof normalizeResponse>>;
-
 const handleFetchRecord = async (barcode: string, isZhMode?: boolean) => {
   const data = await normalizeResponse(barcode, isZhMode);
 

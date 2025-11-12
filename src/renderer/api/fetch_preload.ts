@@ -21,9 +21,6 @@ import type { Profile } from "#main/lib/profile";
 import type { Payload } from "#main/modules/mdb";
 import type { Invoice } from "#main/modules/xml";
 
-export * from "./jtv_hmis";
-export * from "./jtv_hmis_guangzhoubei";
-
 const invoke = window.electron.ipcRenderer.invoke.bind(
   window.electron.ipcRenderer,
 );
