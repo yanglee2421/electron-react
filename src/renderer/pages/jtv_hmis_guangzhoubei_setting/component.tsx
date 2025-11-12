@@ -33,6 +33,7 @@ const schema = z.object({
   autoUpload: z.boolean(),
   autoUploadInterval: z.number().int().min(10),
   unitCode: z.string(),
+  signature_prefix: z.string(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -54,6 +55,7 @@ const useSettingForm = () => {
       autoUpload: hmis.autoUpload,
       autoUploadInterval: hmis.autoUploadInterval,
       unitCode: hmis.unitCode,
+      signature_prefix: hmis.signature_prefix,
     },
 
     resolver: zodResolver(schema),
@@ -177,6 +179,21 @@ export const Component = () => {
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                     label="单位代码"
+                    fullWidth
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                control={form.control}
+                name="signature_prefix"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    label="签章前缀"
                     fullWidth
                   />
                 )}

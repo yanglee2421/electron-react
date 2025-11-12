@@ -110,35 +110,6 @@ export type JtvHmisXuzhoubeiSettingParams = Partial<STORE.JTV_HMIS_XUZHOUBEI>;
 const jtv_hmis_xuzhoubei_setting = (setting?: JtvHmisXuzhoubeiSettingParams) =>
   invoke<STORE.JTV_HMIS_XUZHOUBEI>(channel.jtv_hmis_xuzhoubei_setting, setting);
 
-// 京天威HMIS (统型)
-export type JtvBarcodeGetParams = {
-  pageIndex: number;
-  pageSize: number;
-  startDate: string;
-  endDate: string;
-};
-
-export type JtvBarcodeGetResult = {
-  count: number;
-  rows: SCHEMA.JTVBarcode[];
-};
-
-const jtv_hmis_sqlite_get = (params: JtvBarcodeGetParams) =>
-  invoke<JtvBarcodeGetResult>(channel.jtv_hmis_sqlite_get, params);
-
-const jtv_hmis_sqlite_delete = (id: number) =>
-  invoke<SCHEMA.JTVBarcode>(channel.jtv_hmis_sqlite_delete, id);
-
-const jtv_hmis_api_set = async (id: number): Promise<number> => {
-  await invoke(channel.jtv_hmis_api_set, id);
-  return id;
-};
-
-export type JtvHmisSettingParams = Partial<STORE.JTV_HMIS>;
-
-const jtv_hmis_setting = (setting?: JtvHmisSettingParams) =>
-  invoke<STORE.JTV_HMIS>(channel.jtv_hmis_setting, setting);
-
 // 康华HMIS (安康)
 export type KhBarcodeGetParams = {
   pageIndex: number;
@@ -268,12 +239,6 @@ const electronAPI = {
   hxzy_hmis_setting,
   hxzy_hmis_sqlite_get,
   hxzy_hmis_sqlite_delete,
-
-  // 京天威HMIS (统型)
-  jtv_hmis_api_set,
-  jtv_hmis_setting,
-  jtv_hmis_sqlite_get,
-  jtv_hmis_sqlite_delete,
 
   // 京天威HMIS (徐州北)
   jtv_hmis_xuzhoubei_api_get,

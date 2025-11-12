@@ -12,8 +12,8 @@ import {
   getDetectionByZH,
   getDetectionDatasByOPID,
 } from "#main/modules/cmd";
+import type { JTV_HMIS } from "#main/lib/store";
 import type { Detection, DetectionData } from "#main/modules/cmd";
-import type * as PRELOAD from "#preload/index";
 
 /**
  * Sqlite barcode
@@ -63,7 +63,7 @@ const handleDeleteRecord = async (id: number) => {
   return result;
 };
 
-export type InsertRecordParams = {
+type InsertRecordParams = {
   DH: string;
   ZH: string;
 };
@@ -127,7 +127,7 @@ type ZH_Item = {
   LBYCDH: string | null;
 };
 
-export type ZH_Response = {
+type ZH_Response = {
   code: string;
   msg: string;
   data: ZH_Item[];
@@ -191,7 +191,7 @@ type DH_Item = {
   SRDW?: string | null;
 };
 
-export type DH_Response = {
+type DH_Response = {
   code: string;
   msg: string;
   data: DH_Item[];
@@ -370,6 +370,8 @@ const makePostItem = (
   detectionData?: DetectionData,
 ): PostItem => {
   const user = detection.szUsername || "";
+  const signature_prefix = jtv_hmis.get("signature_prefix");
+  const signature = signature_prefix + user;
 
   return {
     eq_ip,
@@ -382,14 +384,14 @@ const makePostItem = (
     TFLAW_PLACE: detectionData ? detectionDataToTPlace(detectionData) : "",
     TFLAW_TYPE: detectionData ? "裂纹" : "",
     TVIEW: detectionData ? "人工复探" : "",
-    CZCTZ: user,
-    CZCTY: user,
-    LZXRBZ: user,
-    LZXRBY: user,
-    XHCZ: detection.bWheelLS ? user : "",
-    XHCY: detection.bWheelRS ? user : "",
-    TSZ: user,
-    TSZY: user,
+    CZCTZ: signature,
+    CZCTY: signature,
+    LZXRBZ: signature,
+    LZXRBY: signature,
+    XHCZ: detection.bWheelLS ? signature : "",
+    XHCY: detection.bWheelRS ? signature : "",
+    TSZ: signature,
+    TSZY: signature,
     CT_RESULT: detection.szResult || "",
   };
 };
@@ -507,45 +509,63 @@ const initAutoUpload = () => {
   });
 };
 
+type JTV_HMIS_setting_payload = Partial<JTV_HMIS>;
+
+const handleHMISSetting = async (data?: JTV_HMIS_setting_payload) => {
+  if (data) {
+    jtv_hmis.set(data);
+  }
+  return jtv_hmis.store;
+};
+
 /**
  * Initialize
  */
 const initIpc = () => {
   ipcHandle(
     channel.jtv_hmis_sqlite_get,
-    (_, params: PRELOAD.JtvBarcodeGetParams) => {
-      return handleReadRecords(params);
+    (_, ...args: Parameters<typeof handleReadRecords>) => {
+      return handleReadRecords(...args);
     },
   );
-  ipcHandle(channel.jtv_hmis_sqlite_delete, (_, id: number) => {
-    return handleDeleteRecord(id);
-  });
+  ipcHandle(
+    channel.jtv_hmis_sqlite_delete,
+    (_, ...args: Parameters<typeof handleDeleteRecord>) => {
+      return handleDeleteRecord(...args);
+    },
+  );
   ipcHandle(
     channel.jtv_hmis_sqlite_insert,
-    (_, payload: InsertRecordParams) => {
-      return handleInsertRecord(payload);
+    (_, ...args: Parameters<typeof handleInsertRecord>) => {
+      return handleInsertRecord(...args);
     },
   );
   ipcHandle(
     channel.jtv_hmis_api_get,
-    (_, barcode: string, isZhMode?: boolean) => {
-      return handleFetchRecord(barcode, isZhMode);
+    (_, ...args: Parameters<typeof handleFetchRecord>) => {
+      return handleFetchRecord(...args);
     },
   );
-  ipcHandle(channel.jtv_hmis_api_set, (_, id: number) => {
-    return handleSendData(id);
-  });
-
+  ipcHandle(
+    channel.jtv_hmis_api_set,
+    (_, ...args: Parameters<typeof handleSendData>) => {
+      return handleSendData(...args);
+    },
+  );
   ipcHandle(
     channel.jtv_hmis_setting,
-    (_, data?: PRELOAD.JtvHmisSettingParams) => {
-      if (data) {
-        jtv_hmis.set(data);
-      }
-      return jtv_hmis.store;
+    (_, ...args: Parameters<typeof handleHMISSetting>) => {
+      return handleHMISSetting(...args);
     },
   );
 };
+
+export type HandleReadRecords = typeof handleReadRecords;
+export type HandleDeleteRecord = typeof handleDeleteRecord;
+export type HandleInsertRecord = typeof handleInsertRecord;
+export type HandleFetchRecord = typeof handleFetchRecord;
+export type HandleSendData = typeof handleSendData;
+export type HandleHMISSetting = typeof handleHMISSetting;
 
 export const init = () => {
   initIpc();

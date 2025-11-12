@@ -23,6 +23,8 @@ export const Markdown = (props: MarkdownProps) => {
       fallback={
         <Box>
           <Skeleton />
+          <Skeleton animation="wave" />
+          <Skeleton animation={false} />
         </Box>
       }
     >

@@ -7,8 +7,6 @@ import { channel } from "#main/channel";
 import type {
   HxzyHmisSettingParams,
   HxzyBarcodeGetParams,
-  JtvHmisSettingParams,
-  JtvBarcodeGetParams,
   JtvHmisXuzhoubeiSettingParams,
   JtvXuzhoubeiBarcodeGetParams,
   KhHmisSettingParams,
@@ -22,11 +20,13 @@ import type { AutoInputToVCParams } from "#main/modules/cmd";
 import type { Profile } from "#main/lib/profile";
 import type { Payload } from "#main/modules/mdb";
 import type { Invoice } from "#main/modules/xml";
-import type { JTVBarcode, JTVGuangzhoubeiBarcode } from "#main/schema";
-import type {
-  InsertRecordParams,
-  NormalizedResponse,
-} from "#main/modules/hmis/jtv_hmis_guangzhoubei";
+
+export * from "./jtv_hmis";
+export * from "./jtv_hmis_guangzhoubei";
+
+const invoke = window.electron.ipcRenderer.invoke.bind(
+  window.electron.ipcRenderer,
+);
 
 // 自动录入功能
 export const useAutoInputToVC = () => {
@@ -128,127 +128,6 @@ export const useUpdateHxzyHmisSetting = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: fetchHxzyHmisSetting().queryKey,
-      });
-    },
-  });
-};
-
-// 京天威HMIS (统型)
-export const fetchJtvHmisSqliteGet = (params: JtvBarcodeGetParams) =>
-  queryOptions({
-    queryKey: ["window.electronAPI.jtv_hmis_sqlite_get", params],
-    queryFn: async () => {
-      return await window.electronAPI.jtv_hmis_sqlite_get(params);
-    },
-  });
-
-export const useJtvHmisSqliteDelete = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      return await window.electronAPI.jtv_hmis_sqlite_delete(id);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisSqliteInsert = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: InsertRecordParams) => {
-      const data: JTVBarcode = await window.electron.ipcRenderer.invoke(
-        channel.jtv_hmis_sqlite_insert,
-        payload,
-      );
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisApiGet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      barcode,
-      isZhMode,
-    }: {
-      barcode: string;
-      isZhMode?: boolean;
-    }) => {
-      return await window.electron.ipcRenderer.invoke(
-        channel.jtv_hmis_api_get,
-        barcode,
-        isZhMode,
-      );
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisApiSet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      return await window.electronAPI.jtv_hmis_api_set(id);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const fetchJtvHmisSetting = () =>
-  queryOptions({
-    queryKey: ["window.electronAPI.jtv_hmis_setting"],
-    queryFn: async () => {
-      return await window.electronAPI.jtv_hmis_setting();
-    },
-  });
-
-export const useUpdateJtvHmisSetting = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (setting: JtvHmisSettingParams) => {
-      return await window.electronAPI.jtv_hmis_setting(setting);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisSetting().queryKey,
       });
     },
   });
@@ -473,9 +352,7 @@ export const fetchVersion = () =>
   queryOptions({
     queryKey: [channel.VERSION],
     queryFn: async () => {
-      const data: GetVersionResponse = await window.electron.ipcRenderer.invoke(
-        channel.VERSION,
-      );
+      const data: GetVersionResponse = await invoke(channel.VERSION);
       return data;
     },
   });
@@ -541,10 +418,7 @@ export const useXlsxSizeDelete = () => {
 export const useChr53aExport = () => {
   return useMutation({
     mutationFn: async (params: string[]) => {
-      const data = await window.electron.ipcRenderer.invoke(
-        channel.xlsx_chr_53a,
-        params,
-      );
+      const data = await invoke(channel.xlsx_chr_53a, params);
       return data;
     },
   });
@@ -558,10 +432,7 @@ type Result<TRow> = {
 export const useChr501Export = () => {
   return useMutation({
     async mutationFn(id: string) {
-      const result = await window.electron.ipcRenderer.invoke(
-        channel.XLSX_CHR501,
-        id,
-      );
+      const result = await invoke(channel.XLSX_CHR501, id);
       return result;
     },
   });
@@ -571,9 +442,7 @@ export const fetchProfile = () =>
   queryOptions({
     queryKey: [channel.PROFILE_GET],
     queryFn: async () => {
-      const profile: Profile = await window.electron.ipcRenderer.invoke(
-        channel.PROFILE_GET,
-      );
+      const profile: Profile = await invoke(channel.PROFILE_GET);
 
       return profile;
     },
@@ -583,10 +452,7 @@ export const useProfileUpdate = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<Profile>) => {
-      const updated: Profile = await window.electron.ipcRenderer.invoke(
-        channel.PROFILE_SET,
-        payload,
-      );
+      const updated: Profile = await invoke(channel.PROFILE_SET, payload);
       return updated;
     },
     onSuccess: async () => {
@@ -600,9 +466,7 @@ export const useProfileUpdate = () => {
 export const useSelectDirectory = () => {
   return useMutation({
     mutationFn: async () => {
-      const filePaths: string[] = await window.electron.ipcRenderer.invoke(
-        channel.SELECT_DIRECTORY,
-      );
+      const filePaths: string[] = await invoke(channel.SELECT_DIRECTORY);
       return filePaths;
     },
   });
@@ -611,10 +475,7 @@ export const useSelectDirectory = () => {
 export const useSelectFile = () => {
   return useMutation({
     mutationFn: async (filters: Electron.FileFilter[]) => {
-      const filePaths: string[] = await window.electron.ipcRenderer.invoke(
-        channel.SELECT_FILE,
-        filters,
-      );
+      const filePaths: string[] = await invoke(channel.SELECT_FILE, filters);
       return filePaths;
     },
   });
@@ -624,10 +485,7 @@ export const fetchDataFromRootDB = <TRow>(data: Payload) =>
   queryOptions({
     queryKey: [channel.MDB_ROOT_GET, data],
     queryFn: async () => {
-      const result: Result<TRow> = await window.electron.ipcRenderer.invoke(
-        channel.MDB_ROOT_GET,
-        data,
-      );
+      const result: Result<TRow> = await invoke(channel.MDB_ROOT_GET, data);
 
       return result;
     },
@@ -637,10 +495,7 @@ export const fetchDataFromAppDB = <TRow>(data: Payload) =>
   queryOptions({
     queryKey: [channel.MDB_APP_GET, data],
     queryFn: async () => {
-      const result: Result<TRow> = await window.electron.ipcRenderer.invoke(
-        channel.MDB_APP_GET,
-        data,
-      );
+      const result: Result<TRow> = await invoke(channel.MDB_APP_GET, data);
 
       return result;
     },
@@ -658,7 +513,7 @@ export type MDBUser = {
 export const useMD5BackupImage = () => {
   return useMutation({
     mutationFn: async (path: string) => {
-      await window.electron.ipcRenderer.invoke(channel.MD5_BACKUP_IMAGE, path);
+      await invoke(channel.MD5_BACKUP_IMAGE, path);
       return true;
     },
   });
@@ -667,8 +522,10 @@ export const useMD5BackupImage = () => {
 export const useMD5Compute = () => {
   return useMutation({
     mutationFn: async (path: string) => {
-      const result: Record<string, string> =
-        await window.electron.ipcRenderer.invoke(channel.MD5_COMPUTE, path);
+      const result: Record<string, string> = await invoke(
+        channel.MD5_COMPUTE,
+        path,
+      );
       return result;
     },
   });
@@ -677,7 +534,7 @@ export const useMD5Compute = () => {
 export const useXML = () => {
   return useMutation({
     mutationFn: async (xml: string) => {
-      const result = await window.electron.ipcRenderer.invoke(channel.XML, xml);
+      const result = await invoke(channel.XML, xml);
       return result;
     },
   });
@@ -686,10 +543,7 @@ export const useXML = () => {
 export const useLab = () => {
   return useMutation({
     mutationFn: async (path: string) => {
-      const result: string = await window.electron.ipcRenderer.invoke(
-        channel.LAB,
-        path,
-      );
+      const result: string = await invoke(channel.LAB, path);
       return result;
     },
   });
@@ -698,7 +552,7 @@ export const useLab = () => {
 export const useShowOpenDialog = () => {
   return useMutation({
     mutationFn: async (options: Electron.OpenDialogOptions) => {
-      const filePaths: string[] = await window.electron.ipcRenderer.invoke(
+      const filePaths: string[] = await invoke(
         channel.SHOW_OPEN_DIALOG,
         options,
       );
@@ -710,7 +564,7 @@ export const useShowOpenDialog = () => {
 export const useSelectXMLPDFFromFolder = () => {
   return useMutation({
     mutationFn: async (paths: string[]) => {
-      const filePaths: string[] = await window.electron.ipcRenderer.invoke(
+      const filePaths: string[] = await invoke(
         channel.SELECT_XML_PDF_FROM_FOLDER,
         paths,
       );
@@ -723,173 +577,11 @@ export const fetchXMLPDFCompute = (filePaths: string[]) => {
   return queryOptions({
     queryKey: [channel.XML_PDF_COMPUTE, filePaths],
     queryFn: async () => {
-      const result: Invoice[] = await window.electron.ipcRenderer.invoke(
+      const result: Invoice[] = await invoke(
         channel.XML_PDF_COMPUTE,
         filePaths,
       );
       return result;
-    },
-  });
-};
-
-type JTV_HMIS_Guangzhoubei = {
-  autoInput: boolean;
-  autoUpload: boolean;
-  autoUploadInterval: number;
-  unitCode: string;
-  get_host: string;
-  post_host: string;
-};
-
-export const fetchJtvHmisGuangzhoubeiSetting = () =>
-  queryOptions({
-    queryKey: ["window.electronAPI.jtv_hmis_guangzhoubei_setting"],
-    queryFn: async () => {
-      const data: JTV_HMIS_Guangzhoubei =
-        await window.electron.ipcRenderer.invoke(
-          channel.jtv_hmis_guangzhoubei_setting,
-        );
-
-      return data;
-    },
-  });
-
-export const useUpdateJtvHmisGuangzhoubeiSetting = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (setting: JTV_HMIS_Guangzhoubei) => {
-      const data: JTV_HMIS_Guangzhoubei =
-        await window.electron.ipcRenderer.invoke(
-          channel.jtv_hmis_guangzhoubei_setting,
-          setting,
-        );
-
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSetting().queryKey,
-      });
-    },
-  });
-};
-
-export const fetchJtvHmisGuangzhoubeiSqliteGet = (
-  params: JtvBarcodeGetParams,
-) =>
-  queryOptions({
-    queryKey: ["window.electronAPI.jtv_hmis_sqlite_get", params],
-    queryFn: async () => {
-      const data: {
-        rows: JTVGuangzhoubeiBarcode[];
-        count: number;
-      } = await window.electron.ipcRenderer.invoke(
-        channel.jtv_hmis_guangzhoubei_sqlite_get,
-        params,
-      );
-      return data;
-    },
-  });
-
-export const useJtvHmisGuangzhoubeiSqliteDelete = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      const data: JTVGuangzhoubeiBarcode =
-        await window.electron.ipcRenderer.invoke(
-          channel.jtv_hmis_guangzhoubei_sqlite_delete,
-          id,
-        );
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisGuangzhoubeiSqliteInsert = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: InsertRecordParams) => {
-      const data: JTVGuangzhoubeiBarcode =
-        await window.electron.ipcRenderer.invoke(
-          channel.jtv_hmis_guangzhoubei_sqlite_insert,
-          payload,
-        );
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisGuangzhoubeiApiGet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      barcode,
-      isZhMode,
-    }: {
-      barcode: string;
-      isZhMode?: boolean;
-    }) => {
-      const data: NormalizedResponse = await window.electron.ipcRenderer.invoke(
-        channel.jtv_hmis_guangzhoubei_api_get,
-        barcode,
-        isZhMode,
-      );
-
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisGuangzhoubeiApiSet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      const data: JTVGuangzhoubeiBarcode =
-        await window.electron.ipcRenderer.invoke(
-          channel.jtv_hmis_guangzhoubei_api_set,
-          id,
-        );
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
     },
   });
 };

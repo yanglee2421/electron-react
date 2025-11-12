@@ -74,6 +74,7 @@ export type JTV_HMIS = {
   autoUpload: boolean;
   autoUploadInterval: number;
   unitCode: string;
+  signature_prefix: string;
 };
 
 export const jtv_hmis = new Store<JTV_HMIS>({
@@ -98,6 +99,10 @@ export const jtv_hmis = new Store<JTV_HMIS>({
     unitCode: {
       type: "string",
       default: "",
+    },
+    signature_prefix: {
+      type: "string",
+      default: "W",
     },
   },
 });
@@ -153,6 +158,7 @@ export type JTV_HMIS_Guangzhoubei = {
   unitCode: string;
   get_host: string;
   post_host: string;
+  signature_prefix: string;
 };
 
 export const jtv_hmis_guangzhoubei = new Store<JTV_HMIS_Guangzhoubei>({
@@ -165,6 +171,10 @@ export const jtv_hmis_guangzhoubei = new Store<JTV_HMIS_Guangzhoubei>({
     post_host: {
       type: "string",
       default: "",
+    },
+    signature_prefix: {
+      type: "string",
+      default: "W",
     },
     autoInput: {
       type: "boolean",
