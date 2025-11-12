@@ -20,7 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   fetchJtvHmisSetting,
   useUpdateJtvHmisSetting,
-} from "#renderer/api/fetch_preload";
+} from "#renderer/api/jtv_hmis";
 import { SaveOutlined } from "@mui/icons-material";
 import { NumberField } from "#renderer/components/number";
 

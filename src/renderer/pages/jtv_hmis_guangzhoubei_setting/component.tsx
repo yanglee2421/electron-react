@@ -20,7 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   fetchJtvHmisGuangzhoubeiSetting,
   useUpdateJtvHmisGuangzhoubeiSetting,
-} from "#renderer/api/fetch_preload";
+} from "#renderer/api/jtv_hmis_guangzhoubei";
 import { SaveOutlined } from "@mui/icons-material";
 import { NumberField } from "#renderer/components/number";
 

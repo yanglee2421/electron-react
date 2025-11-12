@@ -1,20 +1,17 @@
-import {
-  createHashRouter,
-  type RouteObject,
-  RouterProvider,
-} from "react-router";
+import { createHashRouter, RouterProvider } from "react-router";
+import { Box, CircularProgress } from "@mui/material";
 import { QueryProvider } from "#renderer/components/query";
+import { fetchJtvHmisSetting } from "#renderer/api/jtv_hmis";
+import { fetchJtvHmisGuangzhoubeiSetting } from "#renderer/api/jtv_hmis_guangzhoubei";
 import {
   fetchHxzyHmisSetting,
-  fetchJtvHmisGuangzhoubeiSetting,
-  fetchJtvHmisSetting,
   fetchJtvHmisXuzhoubeiSetting,
   fetchKhHmisSetting,
   fetchProfile,
 } from "#renderer/api/fetch_preload";
-import { DashLayout, RootRoute } from "./layout";
 import { RootErrorBoundary } from "./error";
-import { Box, CircularProgress } from "@mui/material";
+import { DashLayout, RootRoute } from "./layout";
+import type { RouteObject } from "react-router";
 
 const hxzyLoader = async () => {
   const queryClient = QueryProvider.queryClient;
