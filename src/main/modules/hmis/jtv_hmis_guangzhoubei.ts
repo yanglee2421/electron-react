@@ -104,7 +104,8 @@ type ZH_Item = {
   SCZZDW: string;
   MCZZRQ: string;
   MCZZDW: string;
-  SRRQ: string;
+  ZTX: boolean;
+  YTX: boolean;
 
   LBZGZPH: string | null;
   CLLWKSRZ: number | null;
@@ -171,6 +172,8 @@ const normalizeZHResponse = (data: ZH_Response) => {
       MCZZRQ: record.MCZZRQ,
       SCZZDW: record.SCZZDW,
       SCZZRQ: record.SCZZRQ,
+      ZTX: record.ZTX,
+      YTX: record.YTX,
     };
   });
 };
@@ -185,7 +188,8 @@ type DH_Item = {
   MCZZRQ: string;
   SCZZDW: string;
   SCZZRQ: string;
-  SRRQ: string;
+  ZTX: boolean;
+  YTX: boolean;
 
   SRYY?: string | null;
   SRDW?: string | null;
@@ -235,6 +239,8 @@ const normalizeDHResponse = (data: DH_Response) => {
       MCZZRQ: record.MCZZRQ,
       SCZZDW: record.SCZZDW,
       SCZZRQ: record.SCZZRQ,
+      ZTX: record.ZTX,
+      YTX: record.YTX,
     };
   });
 };
