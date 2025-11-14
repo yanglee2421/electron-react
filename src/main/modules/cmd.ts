@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import { channel } from "#main/channel";
 import { getTempDir, ipcHandle } from "#main/lib";
 import { getProfile } from "#main/lib/profile";
-import { getDataFromAppDB, getDataFromRootDB as getDataFromMDB } from "./mdb";
+import { getDataFromAppDB, getDataFromRootDB } from "./mdb";
 
 const execFile = utils.promisify(childProcess.execFile);
 
@@ -68,6 +68,9 @@ export type Detection = {
   szIDs: string;
   szIDsFirst: string | null;
   szIDsLast: string | null;
+  /**
+   * @description 车轴制造单位
+   */
   szIDsMake: string | null;
   /**
    * @description 轴号
@@ -77,6 +80,9 @@ export type Detection = {
   szResult: string | null;
   szTMFirst: string | null;
   szTMLast: string | null;
+  /**
+   * @description 车轴制造时间
+   */
   szTMMake: string | null;
   szUsername: string | null;
   /**
@@ -114,7 +120,7 @@ export const getDetectionByZH = async (params: {
 
   const {
     rows: [detection],
-  } = await getDataFromMDB<Detection>({
+  } = await getDataFromRootDB<Detection>({
     tableName: "detections",
     filters: [
       {
@@ -139,7 +145,7 @@ export const getDetectionByZH = async (params: {
 };
 
 export const getDetectionDatasByOPID = async (opid: string) => {
-  const detectionDatas = await getDataFromMDB<DetectionData>({
+  const detectionDatas = await getDataFromRootDB<DetectionData>({
     tableName: "detections_data",
     filters: [
       {
@@ -151,6 +157,54 @@ export const getDetectionDatasByOPID = async (opid: string) => {
   });
 
   return detectionDatas.rows;
+};
+
+type GetDetectionForJTVParams = {
+  zh: string;
+  startDate: string;
+  endDate: string;
+  CZZZDW: string;
+  CZZZRQ: string;
+};
+
+export const getDetectionForJTV = async (params: GetDetectionForJTVParams) => {
+  const startDate = dayjs(params.startDate).toISOString();
+  const endDate = dayjs(params.endDate).toISOString();
+
+  const {
+    rows: [detection],
+  } = await getDataFromRootDB<Detection>({
+    tableName: "detections",
+    filters: [
+      {
+        type: "equal",
+        field: "szIDsWheel",
+        value: params.zh,
+      },
+      {
+        type: "equal",
+        field: "szIDsMake",
+        value: params.CZZZDW,
+      },
+      {
+        type: "equal",
+        field: "szTMMake",
+        value: params.CZZZRQ,
+      },
+      {
+        type: "date",
+        field: "tmnow",
+        startAt: startDate,
+        endAt: endDate,
+      },
+    ],
+  });
+
+  if (!detection) {
+    throw new Error(`未找到轴号[${params.zh}]的detections记录`);
+  }
+
+  return detection;
 };
 
 export type Corporation = {

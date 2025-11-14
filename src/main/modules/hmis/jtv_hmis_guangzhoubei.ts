@@ -9,11 +9,11 @@ import { channel } from "#main/channel";
 import { jtv_hmis_guangzhoubei } from "#main/lib/store";
 import {
   getCorporation,
-  getDetectionByZH,
   getDetectionDatasByOPID,
+  getDetectionForJTV,
 } from "#main/modules/cmd";
-import type { Detection, DetectionData } from "#main/modules/cmd";
 import type { JTV_HMIS_Guangzhoubei } from "#main/lib/store";
+import type { Detection, DetectionData } from "#main/modules/cmd";
 
 type SQLiteGetParams = {
   pageIndex: number;
@@ -66,6 +66,8 @@ const handleDeleteRecord = async (id: number) => {
 type InsertRecordParams = {
   DH: string;
   ZH: string;
+  CZZZDW: string;
+  CZZZRQ: string;
 };
 
 const handleInsertRecord = async (data: InsertRecordParams) => {
@@ -76,6 +78,8 @@ const handleInsertRecord = async (data: InsertRecordParams) => {
       zh: data.ZH,
       date: new Date(),
       isUploaded: false,
+      CZZZDW: data.CZZZDW,
+      CZZZRQ: data.CZZZRQ,
     })
     .returning();
 
@@ -415,10 +419,12 @@ const makeRequestBody = async (
   const startDate = dayjs(record.date).toISOString();
   const endDate = dayjs(record.date).endOf("day").toISOString();
 
-  const detection = await getDetectionByZH({
+  const detection = await getDetectionForJTV({
     zh: record.zh,
     startDate,
     endDate,
+    CZZZDW: record.CZZZDW || "",
+    CZZZRQ: record.CZZZRQ || "",
   });
 
   let detectionDatas: DetectionData[] = [];

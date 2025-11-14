@@ -12,6 +12,8 @@ export const jtvBarcodeTable = sqliteTable("jtv_barcode", {
   zh: text("zh"),
   date: int("date", { mode: "timestamp" }),
   isUploaded: int("isUploaded", { mode: "boolean" }),
+  CZZZDW: text("CZZZDW"),
+  CZZZRQ: text("CZZZRQ"),
 });
 
 export type JTVBarcode = typeof jtvBarcodeTable.$inferSelect;
@@ -78,6 +80,9 @@ export const jtvGuangzhoubeiBarcodeTable = sqliteTable("jtv_barcode", {
   zh: text("zh"),
   date: int("date", { mode: "timestamp" }),
   isUploaded: int("isUploaded", { mode: "boolean" }),
+  CZZZDW: text("CZZZDW"),
+  CZZZRQ: text("CZZZRQ"),
 });
 
-export type JTVGuangzhoubeiBarcode = typeof jtvBarcodeTable.$inferSelect;
+export type JTVGuangzhoubeiBarcode =
+  typeof jtvGuangzhoubeiBarcodeTable.$inferSelect;

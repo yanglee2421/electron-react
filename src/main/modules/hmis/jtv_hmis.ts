@@ -9,7 +9,7 @@ import { channel } from "#main/channel";
 import { jtv_hmis } from "#main/lib/store";
 import {
   getCorporation,
-  getDetectionByZH,
+  getDetectionForJTV,
   getDetectionDatasByOPID,
 } from "#main/modules/cmd";
 import type { JTV_HMIS } from "#main/lib/store";
@@ -104,7 +104,6 @@ type ZH_Item = {
   SCZZDW: string;
   MCZZRQ: string;
   MCZZDW: string;
-  SRRQ: string;
 
   LBZGZPH: string | null;
   CLLWKSRZ: number | null;
@@ -185,7 +184,6 @@ type DH_Item = {
   MCZZRQ: string;
   SCZZDW: string;
   SCZZRQ: string;
-  SRRQ: string;
 
   SRYY?: string | null;
   SRDW?: string | null;
@@ -415,10 +413,12 @@ const recordToBody = async (record: schema.JTVBarcode): Promise<PostItem[]> => {
   const startDate = dayjs(record.date).toISOString();
   const endDate = dayjs(record.date).endOf("day").toISOString();
 
-  const detection = await getDetectionByZH({
+  const detection = await getDetectionForJTV({
     zh: record.zh,
     startDate,
     endDate,
+    CZZZDW: record.CZZZDW || "",
+    CZZZRQ: record.CZZZRQ || "",
   });
 
   let detectionDatas: DetectionData[] = [];
