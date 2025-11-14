@@ -164,6 +164,15 @@ const columns = [
     header: "轴号",
     footer: "轴号",
   }),
+  columnHelper.accessor("CZZZRQ", {
+    header: "车轴制造",
+    footer: "车轴制造",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  columnHelper.accessor("CZZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
   columnHelper.accessor("date", {
     header: "时间",
     footer: "时间",

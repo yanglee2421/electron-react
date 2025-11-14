@@ -184,12 +184,12 @@ export const getDetectionForJTV = async (params: GetDetectionForJTVParams) => {
       {
         type: "equal",
         field: "szIDsMake",
-        value: params.CZZZDW,
+        value: dayjs(params.CZZZDW).format("YYYYMM"),
       },
       {
         type: "equal",
         field: "szTMMake",
-        value: params.CZZZRQ,
+        value: dayjs(params.CZZZRQ).format("YYYYMM"),
       },
       {
         type: "date",

@@ -74,15 +74,18 @@ export const xlsxSizeTable = sqliteTable(
 
 export type XlsxSize = typeof xlsxSizeTable.$inferSelect;
 
-export const jtvGuangzhoubeiBarcodeTable = sqliteTable("jtv_barcode", {
-  id: int("id").primaryKey({ autoIncrement: true }),
-  barCode: text("barCode"),
-  zh: text("zh"),
-  date: int("date", { mode: "timestamp" }),
-  isUploaded: int("isUploaded", { mode: "boolean" }),
-  CZZZDW: text("CZZZDW"),
-  CZZZRQ: text("CZZZRQ"),
-});
+export const jtvGuangzhoubeiBarcodeTable = sqliteTable(
+  "jtv_guangzhoubei_barcode",
+  {
+    id: int("id").primaryKey({ autoIncrement: true }),
+    barCode: text("barCode"),
+    zh: text("zh"),
+    date: int("date", { mode: "timestamp" }),
+    isUploaded: int("isUploaded", { mode: "boolean" }),
+    CZZZDW: text("CZZZDW"),
+    CZZZRQ: text("CZZZRQ"),
+  },
+);
 
 export type JTVGuangzhoubeiBarcode =
   typeof jtvGuangzhoubeiBarcodeTable.$inferSelect;

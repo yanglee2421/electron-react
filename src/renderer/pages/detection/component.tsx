@@ -82,6 +82,14 @@ const columns = [
   }),
   columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
+  columnHelper.accessor("szIDsMake", {
+    header: "制造单位",
+    footer: "制造单位",
+  }),
+  columnHelper.accessor("szTMMake", {
+    header: "制造时间",
+    footer: "制造时间",
+  }),
   columnHelper.accessor("szIDsFirst", {
     header: "首装单位",
     footer: "首装单位",
@@ -217,7 +225,7 @@ const DataGrid = ({
       </CardContent>
       {isFetching && <LinearProgress />}
       <TableContainer>
-        <Table sx={{ minWidth: 1024 }}>
+        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.lg }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -397,6 +405,7 @@ export const Component = () => {
                 fullWidth
                 select
               >
+                <MenuItem value={""}>未指定</MenuItem>
                 {usersQuery.data?.rows.map((user) => (
                   <MenuItem key={user.szUid} value={user.szUid}>
                     {user.szUid}
