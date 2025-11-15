@@ -33,14 +33,14 @@ import { z } from "zod";
 import React from "react";
 import openai from "openai";
 import { create } from "zustand";
-import { useLiveQuery } from "dexie-react-hooks";
 import { immer } from "zustand/middleware/immer";
+import { useLiveQuery } from "dexie-react-hooks";
+import { useNotifications } from "@toolpad/core";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 import { db } from "#renderer/lib/db";
-import type { MessageInAPI, Message } from "#renderer/lib/db";
-import { useNotifications } from "@toolpad/core";
 import { Markdown } from "#renderer/components/markdown";
+import type { MessageInAPI, Message } from "#renderer/lib/db";
 
 const schema = z.object({
   question: z.string().min(1),
@@ -84,48 +84,44 @@ type SendButtonStatus = "idle" | "loading" | "streaming";
 type SendButtonProps = {
   status: SendButtonStatus;
   onAbortChat?: (e: React.SyntheticEvent) => void;
+  form: string;
 };
 
 const SendButton = (props: SendButtonProps) => {
-  const { status: sendButtonStatus, onAbortChat: handleChatAbort } = props;
-
-  const renderSendButton = () => {
-    switch (sendButtonStatus) {
-      case "loading":
-        return (
-          <Fab type="button" size="small" disabled>
-            <CircularProgress size={20} color="inherit" />
-          </Fab>
-        );
-      case "streaming":
-        return (
-          <Fab
-            /*
-             * Solution 1:
-             * When onClick event changes the button's type from button to submit, the form would be submitted.
-             * But when using a key prop, the onClick event replaces the entire DOM node instead of just
-             * updating the type, so the form won't be submitted.
-             */
-            // key={"stop"}
-            type="button"
-            onClick={handleChatAbort}
-            size="small"
-            color="error"
-          >
-            <StopOutlined fontSize="small" />
-          </Fab>
-        );
-      case "idle":
-      default:
-        return (
-          <Fab type="submit" size="small" color="primary">
-            <ArrowUpwardOutlined fontSize="small" />
-          </Fab>
-        );
-    }
-  };
-
-  return renderSendButton();
+  switch (props.status) {
+    case "loading":
+      return (
+        <Fab type="button" size="small" form={props.form} disabled>
+          <CircularProgress size={20} color="inherit" />
+        </Fab>
+      );
+    case "streaming":
+      return (
+        <Fab
+          /*
+           * Solution 1:
+           * When onClick event changes the button's type from button to submit, the form would be submitted.
+           * But when using a key prop, the onClick event replaces the entire DOM node instead of just
+           * updating the type, so the form won't be submitted.
+           */
+          key={"stop"}
+          type="button"
+          onClick={props.onAbortChat}
+          size="small"
+          color="error"
+          form={props.form}
+        >
+          <StopOutlined fontSize="small" />
+        </Fab>
+      );
+    case "idle":
+    default:
+      return (
+        <Fab type="submit" size="small" form={props.form} color="primary">
+          <ArrowUpwardOutlined fontSize="small" />
+        </Fab>
+      );
+  }
 };
 
 type MarkdownContentProps = {
@@ -150,14 +146,30 @@ const MarkdownContent = (props: MarkdownContentProps) => {
 type ChatLogItemProps = {
   question: React.ReactNode;
   answer: React.ReactNode;
-  ref: React.Ref<HTMLDivElement>;
+  enableScroll?: boolean;
 };
 
-const ChatLogItem = ({ question, answer, ref }: ChatLogItemProps) => {
+const ChatLogItem = ({
+  question,
+  answer,
+
+  enableScroll,
+}: ChatLogItemProps) => {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!enableScroll) return;
+
+    scrollRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [enableScroll]);
+
   return (
     <>
       <Box
-        ref={ref}
+        ref={scrollRef}
         sx={{
           display: "flex",
           justifyContent: "flex-end",
@@ -178,6 +190,129 @@ const ChatLogItem = ({ question, answer, ref }: ChatLogItemProps) => {
   );
 };
 
+type ThumbButtonProps = {
+  message: Message;
+};
+
+const ThumbButton = (props: ThumbButtonProps) => {
+  const i = props.message;
+
+  switch (i.thumb) {
+    case "up":
+      return (
+        <IconButton size="small" disabled>
+          <ThumbUp />
+        </IconButton>
+      );
+    case "down":
+      return (
+        <IconButton size="small" disabled>
+          <ThumbDown />
+        </IconButton>
+      );
+    default:
+      return (
+        <>
+          <IconButton
+            size="small"
+            onClick={async () => {
+              await db.messages.update(i.id, {
+                thumb: "up",
+              });
+            }}
+          >
+            <ThumbUpOutlined />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={async () => {
+              await db.messages.update(i.id, {
+                thumb: "down",
+              });
+            }}
+          >
+            <ThumbDownOutlined />
+          </IconButton>
+        </>
+      );
+  }
+};
+
+type AnswerProps = {
+  message: Message;
+  sendButtonStatus: SendButtonStatus;
+  onRetry: (message: Message) => void;
+};
+
+const Answer = (props: AnswerProps) => {
+  const { sendButtonStatus, onRetry: runRetry, message: i } = props;
+
+  const snackbar = useNotifications();
+
+  switch (i.status) {
+    case "loading":
+      return (
+        <div>
+          <Skeleton />
+          <Skeleton animation="wave" />
+          <Skeleton animation={false} />
+        </div>
+      );
+    case "error":
+      return (
+        <>
+          <Alert severity="error" variant="filled">
+            <AlertTitle>Error</AlertTitle>
+            {i.answer}
+          </Alert>
+          <p>
+            <IconButton
+              size="small"
+              onClick={() => runRetry(i)}
+              disabled={sendButtonStatus !== "idle"}
+            >
+              <AutorenewOutlined />
+            </IconButton>
+          </p>
+        </>
+      );
+    case "success":
+      return (
+        <>
+          <MarkdownContent text={i.answer} />
+          <p>
+            <IconButton
+              onClick={async () => {
+                await navigator.clipboard.writeText(i.answer);
+                snackbar.show("Copied Successfully", {
+                  severity: "success",
+                });
+              }}
+              size="small"
+            >
+              <ContentCopyOutlined />
+            </IconButton>
+            <ThumbButton message={props.message} />
+            <IconButton
+              size="small"
+              onClick={() => runRetry(i)}
+              disabled={sendButtonStatus !== "idle"}
+            >
+              <AutorenewOutlined />
+            </IconButton>
+            <Typography variant="caption" color="text.secondary">
+              {new Date(i.answerDate!).toLocaleTimeString()}
+            </Typography>
+          </p>
+        </>
+      );
+    case "pending":
+      return <MarkdownContent text={i.answer} />;
+    default:
+      return null;
+  }
+};
+
 const useScrollToBottom = () => {
   const chatLogRef = React.useRef<HTMLDivElement>(null);
 
@@ -194,22 +329,7 @@ const useScrollToBottom = () => {
 };
 
 const useScrollToView = () => {
-  const [id, setId] = React.useState(0);
-
-  const scrollRef = React.useRef<Map<number, HTMLDivElement>>(new Map());
-
-  React.useEffect(() => {
-    if (!id) return;
-    const element = scrollRef.current.get(id);
-    if (!element) return;
-    element.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-    setId(0);
-  }, [id]);
-
-  return [scrollRef, setId] as const;
+  return React.useState(0);
 };
 
 export const Component = () => {
@@ -225,8 +345,7 @@ export const Component = () => {
   const completionId = useChatStore((store) => store.completionId);
   const setChatStore = useChatStore.setState;
   const chatLogRef = useScrollToBottom();
-  const [scrollRef, setScrollId] = useScrollToView();
-  const snackbar = useNotifications();
+  const [scrollId, setScrollId] = useScrollToView();
 
   const completions = useLiveQuery(() => {
     return db.completions.toArray();
@@ -240,6 +359,18 @@ export const Component = () => {
     if (!completion) return [];
     return db.messages.where("completionId").equals(completion.id).toArray();
   }, [completion]);
+
+  const form = useAppForm({
+    defaultValues: {
+      question: "",
+    },
+    validators: {
+      onChange: schema,
+    },
+    async onSubmit({ value }) {
+      await handleSubmit(value);
+    },
+  });
 
   const runFetch = async (id: number, messages: MessageInAPI[]) => {
     const stream = await client.chat.completions.create({
@@ -284,13 +415,15 @@ export const Component = () => {
     setSendButtonStatus("idle");
   };
 
-  const runRetry = async (log: Message) => {
+  const handleRetry = async (log: Message) => {
     setScrollId(log.id);
     await db.messages.update(log.id, { status: "loading", thumb: null });
     await runChat(log.id, log.messages);
   };
 
-  const handleMenuClose = () => setMenuAnchorEl(null);
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
 
   const handleSubmit = async (data: FormValues) => {
     if (sendButtonStatus !== "idle") return;
@@ -343,18 +476,6 @@ export const Component = () => {
     await runChat(id, messages);
   };
 
-  const form = useAppForm({
-    defaultValues: {
-      question: "",
-    },
-    validators: {
-      onChange: schema,
-    },
-    async onSubmit({ value }) {
-      await handleSubmit(value);
-    },
-  });
-
   const handleChatAbort = (e: React.SyntheticEvent) => {
     /*
      * Solution 2:
@@ -363,113 +484,6 @@ export const Component = () => {
      */
     e.preventDefault();
     controllerRef.current?.abort();
-  };
-
-  const renderThumb = (i: Message) => {
-    switch (i.thumb) {
-      case "up":
-        return (
-          <IconButton size="small" disabled>
-            <ThumbUp />
-          </IconButton>
-        );
-      case "down":
-        return (
-          <IconButton size="small" disabled>
-            <ThumbDown />
-          </IconButton>
-        );
-      default:
-        return (
-          <>
-            <IconButton
-              size="small"
-              onClick={async () => {
-                await db.messages.update(i.id, {
-                  thumb: "up",
-                });
-              }}
-            >
-              <ThumbUpOutlined />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={async () => {
-                await db.messages.update(i.id, {
-                  thumb: "down",
-                });
-              }}
-            >
-              <ThumbDownOutlined />
-            </IconButton>
-          </>
-        );
-    }
-  };
-
-  const renderAnswer = (i: Message) => {
-    switch (i.status) {
-      case "loading":
-        return (
-          <div>
-            <Skeleton />
-            <Skeleton animation="wave" />
-            <Skeleton animation={false} />
-          </div>
-        );
-      case "error":
-        return (
-          <>
-            <Alert severity="error" variant="filled">
-              <AlertTitle>Error</AlertTitle>
-              {i.answer}
-            </Alert>
-            <p>
-              <IconButton
-                size="small"
-                onClick={() => runRetry(i)}
-                disabled={sendButtonStatus !== "idle"}
-              >
-                <AutorenewOutlined />
-              </IconButton>
-            </p>
-          </>
-        );
-      case "success":
-        return (
-          <>
-            <MarkdownContent text={i.answer} />
-            <p>
-              <IconButton
-                onClick={async () => {
-                  await navigator.clipboard.writeText(i.answer);
-                  snackbar.show("Copied Successfully", {
-                    severity: "success",
-                  });
-                }}
-                size="small"
-              >
-                <ContentCopyOutlined />
-              </IconButton>
-              {renderThumb(i)}
-              <IconButton
-                size="small"
-                onClick={() => runRetry(i)}
-                disabled={sendButtonStatus !== "idle"}
-              >
-                <AutorenewOutlined />
-              </IconButton>
-              <Typography variant="caption" color="text.secondary">
-                {new Date(i.answerDate!).toLocaleTimeString()}
-              </Typography>
-            </p>
-          </>
-        );
-      case "pending":
-        return <MarkdownContent text={i.answer} />;
-      default:
-        return null;
-    }
   };
 
   return (
@@ -572,14 +586,14 @@ export const Component = () => {
               </Typography>
             </div>
           }
-          answer={renderAnswer(i)}
-          ref={(el) => {
-            if (!el) return;
-            scrollRef.current.set(i.id, el);
-            return () => {
-              scrollRef.current.delete(i.id);
-            };
-          }}
+          answer={
+            <Answer
+              message={i}
+              onRetry={handleRetry}
+              sendButtonStatus={sendButtonStatus}
+            />
+          }
+          enableScroll={Object.is(i.id, scrollId)}
         />
       ))}
       <div ref={chatLogRef} />
@@ -616,12 +630,11 @@ export const Component = () => {
                   input: {
                     endAdornment: (
                       <InputAdornment position="end">
-                        <IconButton type="submit" form={formId}>
-                          <SendButton
-                            status={sendButtonStatus}
-                            onAbortChat={handleChatAbort}
-                          />
-                        </IconButton>
+                        <SendButton
+                          status={sendButtonStatus}
+                          onAbortChat={handleChatAbort}
+                          form={formId}
+                        />
                       </InputAdornment>
                     ),
                   },
