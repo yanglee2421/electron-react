@@ -101,6 +101,10 @@ const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/md5_backup_image/component"),
           },
           {
+            path: "chat",
+            lazy: () => import("#renderer/pages/chat/component"),
+          },
+          {
             path: "xml",
             lazy: () => import("#renderer/pages/xml/component"),
           },

@@ -24,6 +24,7 @@ import {
   SportsEsportsOutlined,
   QrCodeOutlined,
   HelpOutlined,
+  ChatOutlined,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -448,10 +449,11 @@ const addLabRoutes = (shouldAdd: boolean) => {
       icon: <SportsEsportsOutlined />,
     },
     { segment: "qrcode", title: "QRCode", icon: <QrCodeOutlined /> },
+    { segment: "chat", title: "QRCode", icon: <ChatOutlined /> },
   );
 };
 
-addLabRoutes(false);
+addLabRoutes(true);
 
 export const RootRoute = () => {
   const theme = useTheme();

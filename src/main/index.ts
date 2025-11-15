@@ -30,6 +30,7 @@ const createWindow = async (alwaysOnTop: boolean) => {
       preload: path.join(__dirname, "../preload/index.mjs"),
       nodeIntegration: false,
       sandbox: false,
+      webSecurity: false,
     },
 
     autoHideMenuBar: false,
