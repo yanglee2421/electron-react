@@ -63,6 +63,8 @@ const xmlPathToInvoice = async (xmlPath: string) => {
       typeof jsonData.EInvoice.EInvoiceData.AdditionalInformation === "string"
         ? jsonData.EInvoice.EInvoiceData.AdditionalInformation
         : jsonData.EInvoice.EInvoiceData.AdditionalInformation.Remark,
+    xml: true,
+    pdf: false,
   };
 
   return result;
@@ -96,6 +98,8 @@ const pdfPathToInvoices = async (pdfPath: string) => {
           filePath: pdfPath,
           itemName: "运输服务",
           additionalInformation: "尚不支持从PDF中提取备注",
+          pdf: true,
+          xml: false,
         });
       }
     }
@@ -119,6 +123,13 @@ const collectXMLResult = async (
   result: Map<string, Invoice>,
 ) => {
   const data = await xmlPathToInvoice(filePath);
+  const prev = result.get(data.id);
+
+  if (prev) {
+    result.set(data.id, { ...prev, ...data, pdf: prev.pdf });
+    return;
+  }
+
   result.set(data.id, data);
 };
 
@@ -129,6 +140,13 @@ const collectPDFResult = async (
   const datas = await pdfPathToInvoices(filePath);
 
   for (const data of datas) {
+    const prev = result.get(data.id);
+
+    if (prev) {
+      result.set(data.id, { ...prev, ...data, xml: prev.xml });
+      return;
+    }
+
     result.set(data.id, data);
   }
 };
@@ -308,4 +326,6 @@ export type Invoice = {
   filePath: string;
   itemName?: string;
   additionalInformation?: string;
+  pdf: boolean;
+  xml: boolean;
 };

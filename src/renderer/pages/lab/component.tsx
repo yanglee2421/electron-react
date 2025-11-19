@@ -6,6 +6,8 @@ import {
   FindInPageOutlined,
   NavigateNextOutlined,
   NavigateBeforeOutlined,
+  CheckBoxOutlined,
+  CheckBoxOutlineBlankOutlined,
 } from "@mui/icons-material";
 import {
   Box,
@@ -371,6 +373,18 @@ const columnHelper = createColumnHelper<Invoice>();
 const columns = [
   columnHelper.accessor("id", {
     header: "发票号码",
+  }),
+  columnHelper.accessor("pdf", {
+    header: "PDF",
+    cell: ({ getValue }) => {
+      return <BooleanCell value={!!getValue()} />;
+    },
+  }),
+  columnHelper.accessor("xml", {
+    header: "XML",
+    cell: ({ getValue }) => {
+      return <BooleanCell value={!!getValue()} />;
+    },
   }),
   columnHelper.accessor("totalTaxIncludedAmount", {
     header: "价税合计",
@@ -754,4 +768,12 @@ const ItemNameCell = (props: ItemNameCellProps) => {
       {itemName || props.value}
     </span>
   );
+};
+
+type BooleanCellProps = {
+  value: boolean;
+};
+
+const BooleanCell = ({ value }: BooleanCellProps) => {
+  return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
 };
