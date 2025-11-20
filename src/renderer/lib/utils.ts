@@ -1,6 +1,6 @@
 export const mapGroupBy = <TElement, TKey>(
   items: TElement[],
-  callbackFn: (element: TElement, index: number) => TKey,
+  callbackFn: CallbackFn<[TElement, number], TKey>,
 ) => {
   const resultMap = new Map<TKey, TElement[]>();
 
@@ -46,9 +46,9 @@ export type CallbackFn<TArgs extends unknown[], TReturn> = (
 ) => TReturn;
 
 export const promiseTry = <TArgs extends unknown[], TReturn>(
-  callback: CallbackFn<TArgs, TReturn>,
+  callbackFn: CallbackFn<TArgs, TReturn>,
   ...args: TArgs
-) => new Promise<TReturn>((resolve) => resolve(callback(...args)));
+) => new Promise<TReturn>((resolve) => resolve(callbackFn(...args)));
 
 export const log: typeof console.log = (...args) => {
   if (import.meta.env.DEV) {
@@ -63,3 +63,18 @@ export type ElementOf<TList> = TList extends (infer TElement)[]
 export type ParamsOf<TFunc> = TFunc extends (...args: infer TParams) => void
   ? TParams
   : never;
+
+export const onAnimationFrame = (callbackFn: CallbackFn<[], void>) => {
+  let timer = 0;
+
+  const handleFrame = () => {
+    timer = requestAnimationFrame(handleFrame);
+    callbackFn();
+  };
+
+  handleFrame();
+
+  return () => {
+    cancelAnimationFrame(timer);
+  };
+};

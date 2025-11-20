@@ -1,15 +1,12 @@
-import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
+import React from "react";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import React from "react";
-import dayjs from "dayjs";
-import "dayjs/locale/zh";
+import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 import { db } from "./lib/db";
 import { RouterUI } from "./router/RouterUI";
+import { useIsDark } from "./hooks/dom/useIsDark";
 import { QueryProvider } from "./components/query";
 import type { Log } from "./lib/db";
-
-dayjs.locale("zh");
 
 const lightTheme = createTheme({
   palette: {},
@@ -30,22 +27,6 @@ const darkTheme = createTheme({
     },
   },
 });
-
-const useIsDark = () => {
-  const mediaQuery = matchMedia("(prefers-color-scheme: dark)");
-
-  return React.useSyncExternalStore(
-    (onStoreChange) => {
-      mediaQuery.addEventListener("change", onStoreChange);
-
-      return () => {
-        mediaQuery.removeEventListener("change", onStoreChange);
-      };
-    },
-    () => mediaQuery.matches,
-    () => false,
-  );
-};
 
 type Props = React.PropsWithChildren;
 

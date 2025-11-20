@@ -1,11 +1,9 @@
-import { onAnimationFrame } from "@/lib/utils";
+import { onAnimationFrame } from "#renderer/lib/utils";
 import React from "react";
 
 export const useLocaleTime = (locales?: Intl.LocalesArgument) => {
-  return React.useSyncExternalStore(
-    onAnimationFrame,
-    () => getTimeString(locales),
-    () => getTimeString(locales),
+  return React.useSyncExternalStore(onAnimationFrame, () =>
+    getTimeString(locales),
   );
 };
 

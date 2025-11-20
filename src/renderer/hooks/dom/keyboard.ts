@@ -1,7 +1,7 @@
 import React from "react";
 
-export const useVisualViewportHeight = () =>
-  React.useSyncExternalStore(
+export const useVisualViewportHeight = () => {
+  return React.useSyncExternalStore(
     (onStateChange) => {
       window.visualViewport?.addEventListener("resize", onStateChange);
       return () => {
@@ -9,11 +9,11 @@ export const useVisualViewportHeight = () =>
       };
     },
     () => window.visualViewport?.height || 0,
-    () => 0,
   );
+};
 
-export const useWindowInnerHeight = () =>
-  React.useSyncExternalStore(
+export const useWindowInnerHeight = () => {
+  return React.useSyncExternalStore(
     (onStateChange) => {
       window.addEventListener("resize", onStateChange);
       return () => {
@@ -21,12 +21,13 @@ export const useWindowInnerHeight = () =>
       };
     },
     () => window.innerHeight,
-    () => 0,
   );
+};
 
 export const useKeyboardHeight = () => {
   const visualViewportHeight = useVisualViewportHeight();
   const windowInnerHeight = useWindowInnerHeight();
   const keyboardHeight = windowInnerHeight - visualViewportHeight;
+
   return keyboardHeight;
 };
