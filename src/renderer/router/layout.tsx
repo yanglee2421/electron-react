@@ -1,9 +1,4 @@
 import {
-  useMobileMode,
-  fetchProfile,
-  useProfileUpdate,
-} from "#renderer/api/fetch_preload";
-import {
   LightModeOutlined,
   DarkModeOutlined,
   DesktopWindowsOutlined,
@@ -35,7 +30,6 @@ import {
   MenuItem,
   useTheme,
 } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useNotifications,
   DashboardLayout,
@@ -43,9 +37,15 @@ import {
   NotificationsProvider,
   DialogsProvider,
 } from "@toolpad/core";
-import { ReactRouterAppProvider } from "@toolpad/core/react-router";
 import React from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ReactRouterAppProvider } from "@toolpad/core/react-router";
 import { Outlet, ScrollRestoration, useLocation } from "react-router";
+import {
+  useMobileMode,
+  fetchProfile,
+  useProfileUpdate,
+} from "#renderer/api/fetch_preload";
 import { NprogressBar } from "./nprogress";
 import type { Navigation } from "@toolpad/core";
 

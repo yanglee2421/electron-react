@@ -2,13 +2,13 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { PDFParse } from "pdf-parse";
 import { XMLParser } from "fast-xml-parser";
-import { getWorkerPath } from "pdf-parse/worker";
+import { getPath } from "pdf-parse/worker";
 import { readBarcodes, prepareZXingModule } from "zxing-wasm";
 import { channel } from "#main/channel";
 import { ipcHandle, ls } from "#main/lib";
 import loaderWASM from "#resources/zxing_full.wasm?loader";
 
-PDFParse.setWorker(getWorkerPath());
+PDFParse.setWorker(getPath());
 
 prepareZXingModule({
   overrides: {
