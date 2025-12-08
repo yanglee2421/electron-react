@@ -12,10 +12,10 @@ PDFParse.setWorker(getPath());
 
 prepareZXingModule({
   overrides: {
-    async instantiateWasm(
+    instantiateWasm: async (
       imports: WebAssembly.Imports,
       successCallback: (instance: WebAssembly.Instance) => void,
-    ) {
+    ) => {
       const instance = await loaderWASM(imports);
       successCallback(instance);
       return {};
