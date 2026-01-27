@@ -9,7 +9,7 @@ import {
   protocol,
   net,
 } from "electron";
-import { is, optimizer, electronApp } from "@electron-toolkit/utils";
+import { is, optimizer, electronApp, platform } from "@electron-toolkit/utils";
 import { channel } from "#main/channel";
 import { ipcHandle } from "#main/lib";
 import * as profile from "#main/lib/profile";
@@ -36,9 +36,9 @@ const createWindow = async (alwaysOnTop: boolean) => {
     autoHideMenuBar: false,
     alwaysOnTop,
 
-    // width: 1024,
-    // height: 768,
-    // minWidth: 500,
+    width: 1024,
+    height: 768,
+    minWidth: 380,
     show: false,
   });
 
@@ -148,41 +148,40 @@ const bindIpcHandler = () => {
     v8Version: process.versions.v8,
   }));
 
-  ipcHandle(
-    channel.openAtLogin,
-    async (_, openAtLogin?: boolean): Promise<boolean> => {
-      if (typeof openAtLogin === "boolean") {
-        app.setLoginItemSettings({ openAtLogin });
-      }
-      return app.getLoginItemSettings().launchItems.some((i) => i.enabled);
-    },
-  );
+  ipcHandle(channel.openAtLogin, async (_, openAtLogin?: boolean) => {
+    if (platform.isLinux) {
+      return false;
+    }
 
-  ipcHandle(channel.openDevTools, async (): Promise<void> => {
+    if (typeof openAtLogin === "boolean") {
+      return electronApp.setAutoLaunch(openAtLogin);
+    }
+
+    return app.getLoginItemSettings().openAtLogin;
+  });
+
+  ipcHandle(channel.openDevTools, async () => {
     const win = BrowserWindow.getAllWindows().at(0);
     if (!win) return;
     win.webContents.openDevTools();
   });
 
-  ipcHandle(channel.openPath, async (_, path: string): Promise<string> => {
+  ipcHandle(channel.openPath, async (_, path: string) => {
     const data = await shell.openPath(path);
     return data;
   });
 
-  ipcHandle(
-    channel.mobileMode,
-    async (_, mobile: boolean): Promise<boolean> => {
-      BrowserWindow.getAllWindows().forEach((win) => {
-        if (mobile) {
-          win.setSize(500, 800);
-        } else {
-          win.setSize(1024, 768);
-        }
-        win.center();
-      });
-      return mobile;
-    },
-  );
+  ipcHandle(channel.mobileMode, async (_, mobile: boolean) => {
+    BrowserWindow.getAllWindows().forEach((win) => {
+      if (mobile) {
+        win.setSize(500, 800);
+      } else {
+        win.setSize(1024, 768);
+      }
+      win.center();
+    });
+    return mobile;
+  });
 
   ipcHandle(channel.SELECT_DIRECTORY, async () => {
     const win = BrowserWindow.getAllWindows().at(0);
