@@ -56,7 +56,6 @@ const RootHydrateFallback = () => {
 
 const routes: RouteObject[] = [
   {
-    id: "root",
     Component: RootRoute,
     ErrorBoundary: RootErrorBoundary,
     HydrateFallback: RootHydrateFallback,
@@ -65,7 +64,6 @@ const routes: RouteObject[] = [
     },
     children: [
       {
-        id: "404",
         path: "*",
         lazy: () => import("#renderer/pages/not-found/component"),
       },
@@ -259,9 +257,7 @@ const routes: RouteObject[] = [
                     id: "jtv_hmis_xuzhoubei_setting",
                     path: "setting",
                     lazy: () =>
-                      import(
-                        "#renderer/pages/jtv_hmis_xuzhoubei_setting/component"
-                      ),
+                      import("#renderer/pages/jtv_hmis_xuzhoubei_setting/component"),
                   },
                 ],
               },
@@ -277,9 +273,7 @@ const routes: RouteObject[] = [
                   {
                     path: "setting",
                     lazy: () =>
-                      import(
-                        "#renderer/pages/jtv_hmis_guangzhoubei_setting/component"
-                      ),
+                      import("#renderer/pages/jtv_hmis_guangzhoubei_setting/component"),
                   },
                 ],
               },

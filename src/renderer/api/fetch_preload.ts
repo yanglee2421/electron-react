@@ -582,3 +582,12 @@ export const fetchXMLPDFCompute = (filePaths: string[]) => {
     },
   });
 };
+
+export const usePLCTest = () => {
+  return useMutation({
+    mutationFn: async () => {
+      const data = await window.electron.ipcRenderer.invoke(channel.PLC.test);
+      return data;
+    },
+  });
+};

@@ -62,6 +62,8 @@ import {
 import { NumberField } from "#renderer/components/number";
 import { isWithinRange, mapGroupBy } from "#renderer/lib/utils";
 import { ScrollToTop } from "#renderer/components/scroll";
+import { useLocaleDate } from "#renderer/hooks/dom/useLocaleDate";
+import { useLocaleTime } from "#renderer/hooks/dom/useLocaleTime";
 import type { Invoice } from "#main/modules/xml";
 import type { CallbackFn } from "#renderer/lib/utils";
 
@@ -167,6 +169,9 @@ export const Component = () => {
       <div ref={anchorRef}></div>
       <ScrollToTop show={showScrollToTop} ref={anchorRef} />
       <Stack spacing={3}>
+        <div>
+          <Clock />
+        </div>
         <Card>
           <CardHeader
             title="文件"
@@ -776,4 +781,16 @@ type BooleanCellProps = {
 
 const BooleanCell = ({ value }: BooleanCellProps) => {
   return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
+};
+
+const Clock = () => {
+  const date = useLocaleDate();
+  const time = useLocaleTime();
+
+  return (
+    <>
+      <Typography variant="h2">{date}</Typography>
+      <Typography variant="h3">{time}</Typography>
+    </>
+  );
 };

@@ -23,6 +23,7 @@ import * as excel from "./modules/xlsx";
 import * as mdb from "./modules/mdb";
 import * as md5 from "./modules/image";
 import * as xml from "./modules/xml";
+import * as plc from "./modules/plc";
 
 const createWindow = async (alwaysOnTop: boolean) => {
   const win = new BrowserWindow({
@@ -251,6 +252,7 @@ const bootstrap = async () => {
   profile.bindIpcHandler();
   md5.bindIpcHandler();
   xml.bindIpcHandler();
+  plc.bindIpcHandler();
 
   await createWindow(profileInfo.alwaysOnTop);
 };

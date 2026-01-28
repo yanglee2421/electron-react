@@ -4,6 +4,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 import { db } from "./lib/db";
 import { RouterUI } from "./router/RouterUI";
+import { LabRouter } from "./router/lab";
 import { useIsDark } from "./hooks/dom/useIsDark";
 import { QueryProvider } from "./components/query";
 import type { Log } from "./lib/db";
@@ -57,13 +58,21 @@ const useLog = () => {
   }, []);
 };
 
+const AppRouter = () => {
+  if (import.meta.env.DEV) {
+    return <LabRouter />;
+  }
+
+  return <RouterUI />;
+};
+
 export const App = () => {
   useLog();
 
   return (
     <QueryProvider>
       <MuiProvider>
-        <RouterUI />
+        <AppRouter />
       </MuiProvider>
     </QueryProvider>
   );

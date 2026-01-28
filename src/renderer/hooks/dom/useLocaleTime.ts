@@ -9,7 +9,7 @@ export const useLocaleTime = (locales?: Intl.LocalesArgument) => {
 
 const getTimeString = (locales?: Intl.LocalesArgument) => {
   return new Date().toLocaleTimeString(locales, {
-    timeStyle: "short",
     hour12: false,
+    timeStyle: "long",
   });
 };
