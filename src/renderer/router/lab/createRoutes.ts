@@ -1,4 +1,5 @@
-import { RootComponent, RootErrorBoundary } from "../root";
+import { RootComponent } from "./root";
+import { RootErrorBoundary } from "../error";
 import type { RouteObject } from "react-router";
 
 export const createRoutes = (): RouteObject[] => {

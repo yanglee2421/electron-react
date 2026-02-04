@@ -123,30 +123,24 @@ const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/qrcode/component"),
           },
           {
-            id: "xlsx",
             path: "xlsx",
             children: [
               {
-                id: "xlsx_list",
                 index: true,
                 lazy: () => import("#renderer/pages/xlsx"),
               },
               {
-                id: "xlsx/new",
                 path: "new",
                 lazy: () => import("#renderer/pages/xlsx_new/component"),
               },
               {
-                id: "xlsx_show",
                 path: ":id",
                 children: [
                   {
-                    id: "xlsx/show",
                     index: true,
                     lazy: () => import("#renderer/pages/xlsx_show/component"),
                   },
                   {
-                    id: "xlsx/edit",
                     path: "edit",
                     lazy: () => import("#renderer/pages/xlsx_edit/component"),
                   },
@@ -157,71 +151,58 @@ const routes: RouteObject[] = [
           {
             children: [
               {
-                id: "detection",
                 path: "detection",
                 children: [
                   {
-                    id: "detection/list",
                     index: true,
                     lazy: () => import("#renderer/pages/detection"),
                   },
                   {
-                    id: "detection/show",
                     path: ":id",
                     lazy: () => import("#renderer/pages/detection_show"),
                   },
                 ],
               },
               {
-                id: "verify",
                 path: "verify",
                 children: [
                   {
-                    id: "verify/list",
                     index: true,
                     lazy: () => import("#renderer/pages/verify"),
                   },
                   {
-                    id: "verify/show",
                     path: ":id",
                     lazy: () => import("#renderer/pages/verify_show"),
                   },
                 ],
               },
               {
-                id: "quartors",
                 path: "quartors",
                 children: [
                   {
-                    id: "quartors/list",
                     index: true,
                     lazy: () => import("#renderer/pages/quartors"),
                   },
                   {
-                    id: "quartors/show",
                     path: ":id",
                     lazy: () => import("#renderer/pages/quartors_show"),
                   },
                 ],
               },
               {
-                id: "hxzy_layout",
                 loader: hxzyLoader,
                 path: "hxzy",
                 children: [
                   {
-                    id: "hxzy_hmis",
                     index: true,
                     lazy: () => import("#renderer/pages/hxzy_hmis/component"),
                   },
                   {
-                    id: "hxzy_hmis_setting",
                     path: "setting",
                     lazy: () =>
                       import("#renderer/pages/hxzy_hmis_setting/component"),
                   },
                   {
-                    id: "hxzy_verifies",
                     path: "verifies",
                     lazy: () =>
                       import("#renderer/pages/hxzy_verifies/component"),
@@ -229,17 +210,14 @@ const routes: RouteObject[] = [
                 ],
               },
               {
-                id: "jtv_layout",
                 loader: jtvLoader,
                 path: "jtv",
                 children: [
                   {
-                    id: "jtv_hmis",
                     index: true,
                     lazy: () => import("#renderer/pages/jtv_hmis/component"),
                   },
                   {
-                    id: "jtv_hmis_setting",
                     path: "setting",
                     lazy: () =>
                       import("#renderer/pages/jtv_hmis_setting/component"),
@@ -247,18 +225,15 @@ const routes: RouteObject[] = [
                 ],
               },
               {
-                id: "jtv_hmis_xuzhoubei_layout",
                 loader: jtvXuzhoubeiLoader,
                 path: "jtv_xuzhoubei",
                 children: [
                   {
-                    id: "jtv_hmis_xuzhoubei",
                     index: true,
                     lazy: () =>
                       import("#renderer/pages/jtv_hmis_xuzhoubei/component"),
                   },
                   {
-                    id: "jtv_hmis_xuzhoubei_setting",
                     path: "setting",
                     lazy: () =>
                       import("#renderer/pages/jtv_hmis_xuzhoubei_setting/component"),
@@ -282,17 +257,14 @@ const routes: RouteObject[] = [
                 ],
               },
               {
-                id: "kh_hmis_layout",
                 loader: khLoader,
                 path: "kh",
                 children: [
                   {
-                    id: "kh_hmis",
                     index: true,
                     lazy: () => import("#renderer/pages/kh_hmis/component"),
                   },
                   {
-                    id: "kh_hmis_setting",
                     path: "setting",
                     lazy: () =>
                       import("#renderer/pages/kh_hmis_setting/component"),
