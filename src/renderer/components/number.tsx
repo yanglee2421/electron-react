@@ -46,9 +46,11 @@ export const NumberField = (props: NumberFieldProps) => {
   const changeValue = (value: number) => {
     const nextValue = minmax(
       value,
-      props._min || Number.NEGATIVE_INFINITY,
-      props._max || Number.POSITIVE_INFINITY,
+      props._min ?? Number.NEGATIVE_INFINITY,
+      props._max ?? Number.POSITIVE_INFINITY,
     );
+    console.log(nextValue, props._min ?? Number.NEGATIVE_INFINITY);
+
     field.onChange(nextValue);
   };
 
@@ -77,14 +79,24 @@ export const NumberField = (props: NumberFieldProps) => {
             e.preventDefault();
             setFocusedValue((prev) => {
               const nextValue = (Number.parseFloat(prev) || 0) + _step;
-              return nextValue.toString();
+
+              return minmax(
+                nextValue,
+                props._min ?? Number.NEGATIVE_INFINITY,
+                props._max ?? Number.POSITIVE_INFINITY,
+              ).toString();
             });
             changeValue(field.value + _step);
             break;
           case "ArrowDown":
             setFocusedValue((prev) => {
               const nextValue = (Number.parseFloat(prev) || 0) - _step;
-              return nextValue.toString();
+
+              return minmax(
+                nextValue,
+                props._min ?? Number.NEGATIVE_INFINITY,
+                props._max ?? Number.POSITIVE_INFINITY,
+              ).toString();
             });
             changeValue(field.value - _step);
             break;

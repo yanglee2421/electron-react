@@ -72,6 +72,10 @@ const routes: RouteObject[] = [
         Component: DashLayout,
         children: [
           {
+            path: "plc",
+            lazy: () => import("#renderer/pages/plc/component"),
+          },
+          {
             id: "home",
             index: true,
             lazy: () => import("#renderer/pages/home/component"),

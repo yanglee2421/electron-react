@@ -108,7 +108,8 @@ export const channel = createEnum(
     },
 
     PLC: {
-      test: "",
+      read_test: "",
+      write_test: "",
     },
   },
   [],

@@ -59,7 +59,7 @@ const useLog = () => {
 };
 
 const AppRouter = () => {
-  if (import.meta.env.DEV) {
+  if (!import.meta.env.DEV) {
     return <LabRouter />;
   }
 

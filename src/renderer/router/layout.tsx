@@ -424,6 +424,11 @@ const addLabRoutes = (shouldAdd: boolean) => {
 
   NAVIGATION.push(
     {
+      segment: "PLC",
+      title: "PLC",
+      icon: <VpnKeyOutlined />,
+    },
+    {
       segment: "md5_compute",
       title: "MD5计算",
       icon: <VpnKeyOutlined />,

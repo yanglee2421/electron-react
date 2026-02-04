@@ -20,6 +20,7 @@ import type { AutoInputToVCParams } from "#main/modules/cmd";
 import type { Profile } from "#main/lib/profile";
 import type { Payload } from "#main/modules/mdb";
 import type { Invoice } from "#main/modules/xml";
+import type { PLCReadResult, PLCWritePayload } from "#main/modules/plc";
 
 const invoke = window.electron.ipcRenderer.invoke.bind(
   window.electron.ipcRenderer,
@@ -583,11 +584,33 @@ export const fetchXMLPDFCompute = (filePaths: string[]) => {
   });
 };
 
-export const usePLCTest = () => {
-  return useMutation({
-    mutationFn: async () => {
-      const data = await window.electron.ipcRenderer.invoke(channel.PLC.test);
+export const fetchPLCReadTest = () => {
+  return queryOptions({
+    queryKey: [channel.PLC.read_test],
+    queryFn: async () => {
+      const data: PLCReadResult = await window.electron.ipcRenderer.invoke(
+        channel.PLC.read_test,
+      );
       return data;
+    },
+  });
+};
+
+export const usePLCWriteTest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: PLCWritePayload) => {
+      const data: null = await window.electron.ipcRenderer.invoke(
+        channel.PLC.write_test,
+        payload,
+      );
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [...fetchPLCReadTest().queryKey],
+      });
     },
   });
 };
