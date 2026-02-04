@@ -1,6 +1,6 @@
 import rehypeShiki from "@shikijs/rehype";
 import { MarkdownHooks } from "react-markdown";
-import { useIsDark } from "#renderer/hooks/dom/useIsDark";
+import { useColorScheme } from "#renderer/hooks/dom/useColorScheme";
 import { Box, Skeleton } from "@mui/material";
 
 type MarkdownProps = {
@@ -8,7 +8,7 @@ type MarkdownProps = {
 };
 
 export const Markdown = (props: MarkdownProps) => {
-  const isDark = useIsDark();
+  const isDark = useColorScheme();
 
   return (
     <MarkdownHooks

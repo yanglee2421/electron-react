@@ -4,36 +4,44 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 import { db } from "./lib/db";
 import { RouterUI } from "./router/RouterUI";
-import { useIsDark } from "./hooks/dom/useIsDark";
+import { useColorScheme } from "./hooks/dom/useColorScheme";
 import { QueryProvider } from "./components/query";
 import type { Log } from "./lib/db";
 
-const lightTheme = createTheme({
-  palette: {},
-  components: {
-    MuiAlert: {
-      defaultProps: { variant: "filled" },
-    },
-  },
-});
+const calculateTheme = (isDark: boolean) => {
+  if (isDark) {
+    const lightTheme = createTheme({
+      palette: {},
+      components: {
+        MuiAlert: {
+          defaultProps: { variant: "filled" },
+        },
+      },
+    });
 
-const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-  },
-  components: {
-    MuiAlert: {
-      defaultProps: { variant: "filled" },
+    return lightTheme;
+  }
+
+  const darkTheme = createTheme({
+    palette: {
+      mode: "dark",
     },
-  },
-});
+    components: {
+      MuiAlert: {
+        defaultProps: { variant: "filled" },
+      },
+    },
+  });
+
+  return darkTheme;
+};
 
 type Props = React.PropsWithChildren;
 
 const MuiProvider = (props: Props) => {
-  const isDark = useIsDark();
+  const isDark = useColorScheme();
 
-  const theme = isDark ? darkTheme : lightTheme;
+  const theme = calculateTheme(isDark);
 
   return (
     <ThemeProvider theme={theme}>
