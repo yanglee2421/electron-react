@@ -20,6 +20,7 @@ import {
   QrCodeOutlined,
   HelpOutlined,
   ChatOutlined,
+  Memory,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -417,17 +418,17 @@ const NAVIGATION: Navigation = [
     title: "帮助",
     icon: <HelpOutlined />,
   },
+  {
+    segment: "PLC",
+    title: "PLC",
+    icon: <Memory />,
+  },
 ];
 
 const addLabRoutes = (shouldAdd: boolean) => {
   if (!shouldAdd) return;
 
   NAVIGATION.push(
-    {
-      segment: "PLC",
-      title: "PLC",
-      icon: <VpnKeyOutlined />,
-    },
     {
       segment: "md5_compute",
       title: "MD5计算",
@@ -458,7 +459,7 @@ const addLabRoutes = (shouldAdd: boolean) => {
   );
 };
 
-addLabRoutes(true);
+addLabRoutes(import.meta.env.DEV);
 
 export const RootRoute = () => {
   const theme = useTheme();
