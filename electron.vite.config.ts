@@ -1,5 +1,5 @@
 import * as url from "node:url";
-import { defineConfig,  } from "electron-vite";
+import { defineConfig } from "electron-vite";
 import react from "@vitejs/plugin-react";
 
 const alias = {
@@ -38,11 +38,11 @@ const htmlPlugin = (isBuild: boolean) => ({
 
 export default defineConfig((config) => ({
   main: {
-       resolve: { alias },
+    resolve: { alias },
     build: { watch: {} },
   },
   preload: {
-       resolve: { alias },
+    resolve: { alias },
   },
   renderer: {
     plugins: [

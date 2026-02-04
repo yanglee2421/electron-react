@@ -110,6 +110,7 @@ export const channel = createEnum(
     PLC: {
       read_test: "",
       write_test: "",
+      serialport_list: "",
     },
   },
   [],

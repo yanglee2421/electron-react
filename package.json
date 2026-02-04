@@ -25,6 +25,7 @@
     "mdb-reader": "^3.1.0",
     "node-fxplc": "^0.1.6",
     "pdf-parse": "^2.4.5",
+    "serialport": "^13.0.0",
     "zxing-wasm": "^2.2.4"
   },
   "devDependencies": {

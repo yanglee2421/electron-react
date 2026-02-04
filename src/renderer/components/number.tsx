@@ -49,7 +49,6 @@ export const NumberField = (props: NumberFieldProps) => {
       props._min ?? Number.NEGATIVE_INFINITY,
       props._max ?? Number.POSITIVE_INFINITY,
     );
-    console.log(nextValue, props._min ?? Number.NEGATIVE_INFINITY);
 
     field.onChange(nextValue);
   };

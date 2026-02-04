@@ -1,6 +1,7 @@
+import { SerialPort } from "serialport";
+import { FXPLCClient, TransportSerial } from "node-fxplc";
 import { channel } from "#main/channel";
 import { ipcHandle } from "#main/lib";
-import { FXPLCClient, TransportSerial } from "node-fxplc";
 
 export type PLCReadResult = {
   D20: number;
@@ -16,6 +17,8 @@ export type PLCReadResult = {
 };
 
 export type PLCWritePayload = {
+  path: string;
+
   D300: number;
   D301: number;
   D302: number;
@@ -51,8 +54,8 @@ const registers = [
   "D309",
 ];
 
-const handleReadState = async (): Promise<PLCReadResult> => {
-  const plc = createPLCClient();
+const handleReadState = async (path: string): Promise<PLCReadResult> => {
+  const plc = createPLCClient(path);
   let err = null;
   let result: PLCReadResult | null = null;
 
@@ -84,11 +87,18 @@ const handleReadState = async (): Promise<PLCReadResult> => {
   }
 };
 
+const handleSerialPortList = async () => {
+  const result = await SerialPort.list();
+
+  return result;
+};
+
 const handleWriteState = async (payload: PLCWritePayload) => {
-  const plc = createPLCClient();
+  const { path, ...restPayload } = payload;
+  const plc = createPLCClient(path);
   let err = null;
 
-  const { registers, values } = Object.entries(payload).reduce(
+  const { registers, values } = Object.entries(restPayload).reduce(
     (result, [key, value], index) => {
       result.registers[index] = key;
       result.values[index] = value;
@@ -114,8 +124,9 @@ const handleWriteState = async (payload: PLCWritePayload) => {
 };
 
 export const bindIpcHandler = () => {
-  ipcHandle(channel.PLC.read_test, handleReadState);
+  ipcHandle(channel.PLC.read_test, (_, path) => handleReadState(path));
   ipcHandle(channel.PLC.write_test, async (_, payload: PLCWritePayload) => {
     await handleWriteState(payload);
   });
+  ipcHandle(channel.PLC.serialport_list, handleSerialPortList);
 };

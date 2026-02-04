@@ -584,12 +584,13 @@ export const fetchXMLPDFCompute = (filePaths: string[]) => {
   });
 };
 
-export const fetchPLCReadTest = () => {
+export const fetchPLCReadTest = (path: string) => {
   return queryOptions({
-    queryKey: [channel.PLC.read_test],
+    queryKey: [channel.PLC.read_test, path],
     queryFn: async () => {
       const data: PLCReadResult = await window.electron.ipcRenderer.invoke(
         channel.PLC.read_test,
+        path,
       );
       return data;
     },
@@ -609,8 +610,20 @@ export const usePLCWriteTest = () => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: [...fetchPLCReadTest().queryKey],
+        queryKey: [fetchPLCReadTest("").queryKey.slice(0, 1)],
       });
+    },
+  });
+};
+
+export const fetchSerialPortList = () => {
+  return queryOptions({
+    queryKey: [channel.PLC.serialport_list],
+    queryFn: async () => {
+      const data: Array<{ path: string }> =
+        await window.electron.ipcRenderer.invoke(channel.PLC.serialport_list);
+
+      return data;
     },
   });
 };
