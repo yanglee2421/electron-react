@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as url from "node:url";
 import * as path from "node:path";
+import pLimit from "p-limit";
 import Database from "better-sqlite3";
 import { app, ipcMain, BrowserWindow } from "electron";
 import { drizzle } from "drizzle-orm/better-sqlite3";
@@ -176,21 +177,27 @@ const createDB = () => {
 };
 export const db = createDB();
 
-export const ls = async (basePath: string, set: Set<string>) => {
-  const basePathStat = await fs.promises.stat(basePath);
-  const isFile = basePathStat.isFile();
-  const isDirectory = basePathStat.isDirectory();
+export const ls = async (basePath: string): Promise<string[]> => {
+  const stats = await fs.promises.stat(basePath);
 
-  if (isFile) {
-    set.add(basePath);
+  if (stats.isFile()) {
+    return [basePath];
   }
 
-  if (isDirectory) {
+  if (stats.isDirectory()) {
     const basenames = await fs.promises.readdir(basePath);
+    const limit = pLimit(1000);
 
-    for (const basename of basenames) {
-      const fullPath = path.resolve(basePath, basename);
-      await ls(fullPath, set);
-    }
+    const results = await Promise.all(
+      basenames.map((basename) => {
+        const subPath = path.resolve(basePath, basename);
+
+        return limit(() => ls(subPath));
+      }),
+    );
+
+    return results.flat();
   }
+
+  return [];
 };

@@ -1,9 +1,11 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { chunk } from "#main/utils";
 import { channel } from "#main/channel";
 import { ipcHandle, ls } from "#main/lib";
 import createImageWorker from "./image.worker?nodeWorker";
+import pLimit from "p-limit";
 
 const computeMD5 = (files: string[]) => {
   const worker = createImageWorker({
@@ -22,11 +24,6 @@ const computeMD5 = (files: string[]) => {
   });
 };
 
-const createMD5ToFile = () => {
-  const md5ToFilePath = new Map<string, string>();
-  return md5ToFilePath;
-};
-
 const getOutputDirectory = async (source: string) => {
   const parentDirectory = path.resolve(source, "..");
   const basename = path.basename(source);
@@ -39,21 +36,25 @@ const getOutputDirectory = async (source: string) => {
   return destination;
 };
 
-const deduplicate = async (
-  pathSet: Set<string>,
-  md5ToFilePath: Map<string, string>,
-) => {
-  const tasks = Array.from(chunk([...pathSet], 1000), async (files) => {
-    const record = await computeMD5(files);
-    return record;
-  });
+const deduplicate = async (pathSet: string[]) => {
+  const md5ToFilePath = new Map<string, string>();
+  const limit = pLimit(os.cpus().length);
 
-  const result = await Promise.all(tasks);
+  const result = await Promise.all(
+    chunk(pathSet, 1000).map((files) =>
+      limit(async () => {
+        const record = await computeMD5(files);
+        return record;
+      }),
+    ),
+  );
   result.forEach((record) => {
     Object.entries(record).forEach(([key, value]) => {
       md5ToFilePath.set(key, value);
     });
   });
+
+  return md5ToFilePath;
 };
 
 const copyFile = async (
@@ -68,11 +69,8 @@ const copyFile = async (
 };
 
 const bootstrap = async (source: string) => {
-  const md5ToFilePath = createMD5ToFile();
-  const pathSet = new Set<string>();
-
-  await ls(source, pathSet);
-  await deduplicate(pathSet, md5ToFilePath);
+  const paths = await ls(source);
+  const md5ToFilePath = await deduplicate(paths);
 
   const outputDirectory = await getOutputDirectory(source);
   await copyFile(md5ToFilePath, outputDirectory);

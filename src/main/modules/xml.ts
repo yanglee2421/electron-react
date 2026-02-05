@@ -109,13 +109,14 @@ const pdfPathToInvoices = async (pdfPath: string) => {
 };
 
 const collectAllFilePaths = async (paths: string[]) => {
-  const set = new Set<string>();
+  let result: string[] = [];
 
-  for (const p of paths) {
-    await ls(p, set);
+  for (const path of paths) {
+    const subPaths = await ls(path);
+    result = result.concat(subPaths);
   }
 
-  return set;
+  return result;
 };
 
 const collectXMLResult = async (

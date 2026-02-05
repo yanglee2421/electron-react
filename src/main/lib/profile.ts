@@ -75,9 +75,7 @@ export const setProfile = async (callback: ProfileCallback) => {
   const previous = await getProfile();
   const data = produce(previous, callback);
 
-  await fs.promises.writeFile(filePath, JSON.stringify(data), {
-    encoding: "utf-8",
-  });
+  await fs.promises.writeFile(filePath, JSON.stringify(data), "utf-8");
 
   diffMode(previous.mode, data.mode);
   diffAlwaysOnTop(previous.alwaysOnTop, data.alwaysOnTop);
