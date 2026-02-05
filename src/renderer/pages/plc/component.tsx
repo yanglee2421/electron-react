@@ -422,6 +422,24 @@ export const Component = () => {
       );
     }
 
+    if (serialPort.length === 0) {
+      return (
+        <Alert>
+          <AlertTitle>警告</AlertTitle>
+          <Typography>当前设备无串口可用</Typography>
+          <Button
+            onClick={() => {
+              serialPorts.refetch();
+            }}
+            disabled={serialPorts.isRefetching}
+            startIcon={<Replay />}
+          >
+            重试
+          </Button>
+        </Alert>
+      );
+    }
+
     return (
       <>
         <Card>

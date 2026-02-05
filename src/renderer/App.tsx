@@ -10,8 +10,10 @@ import type { Log } from "./lib/db";
 
 const calculateTheme = (isDark: boolean) => {
   if (isDark) {
-    const lightTheme = createTheme({
-      palette: {},
+    const darkTheme = createTheme({
+      palette: {
+        mode: "dark",
+      },
       components: {
         MuiAlert: {
           defaultProps: { variant: "filled" },
@@ -19,13 +21,11 @@ const calculateTheme = (isDark: boolean) => {
       },
     });
 
-    return lightTheme;
+    return darkTheme;
   }
 
-  const darkTheme = createTheme({
-    palette: {
-      mode: "dark",
-    },
+  const lightTheme = createTheme({
+    palette: {},
     components: {
       MuiAlert: {
         defaultProps: { variant: "filled" },
@@ -33,7 +33,7 @@ const calculateTheme = (isDark: boolean) => {
     },
   });
 
-  return darkTheme;
+  return lightTheme;
 };
 
 type Props = React.PropsWithChildren;
