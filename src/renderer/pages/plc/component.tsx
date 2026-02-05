@@ -424,8 +424,8 @@ export const Component = () => {
 
     if (serialPort.length === 0) {
       return (
-        <Alert>
-          <AlertTitle>警告</AlertTitle>
+        <Alert severity="info" variant="outlined">
+          <AlertTitle>提示</AlertTitle>
           <Typography>当前设备无串口可用</Typography>
           <Button
             onClick={() => {
@@ -433,6 +433,7 @@ export const Component = () => {
             }}
             disabled={serialPorts.isRefetching}
             startIcon={<Replay />}
+            variant="contained"
           >
             重试
           </Button>
