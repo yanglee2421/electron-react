@@ -117,16 +117,6 @@ const bindAppHandler = () => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  /**
-   * @description true: No other instances exist
-   * @description false: Other instances exist
-   */
-  const gotTheLock = app.requestSingleInstanceLock();
-  if (!gotTheLock) {
-    app.quit();
-    return;
-  }
-
   app.on("second-instance", () => {
     const win = BrowserWindow.getAllWindows().at(0);
     if (!win) return;
@@ -224,14 +214,37 @@ const bindProtocol = () => {
 };
 
 const bootstrap = async () => {
+  if (import.meta.env.DEV) {
+    app.setPath(
+      "userData",
+      path.resolve(app.getPath("appData"), `./${app.getName()}-dev`),
+    );
+  }
+
+  /**
+   * @description true: No other instances exist
+   * @description false: Other instances exist
+   */
+  const gotTheLock = app.requestSingleInstanceLock();
+  if (!gotTheLock) {
+    if (import.meta.env.DEV) {
+      console.warn("Other instances exist");
+    }
+
+    app.quit();
+    return;
+  }
+
   /**
    * Performace optimization
    * @link https://www.electronjs.org/docs/latest/tutorial/performance#8-call-menusetapplicationmenunull-when-you-do-not-need-a-default-menu
    */
   Menu.setApplicationMenu(null);
 
-  // Set app user model id for windows
-  electronApp.setAppUserModelId("com.electron");
+  if (platform.isWindows) {
+    // Set app user model id for windows
+    electronApp.setAppUserModelId("com.electron");
+  }
 
   // Set app theme mode
   const profileInfo = await profile.getProfile();
