@@ -422,7 +422,7 @@ export const Component = () => {
       );
     }
 
-    if (serialPort.length === 0) {
+    if (serialPorts.data.length === 0) {
       return (
         <Alert severity="info" variant="outlined">
           <AlertTitle>提示</AlertTitle>
