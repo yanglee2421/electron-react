@@ -9,17 +9,9 @@ import { ipcHandle } from "#main/lib";
 import { channel } from "#main/channel";
 import type { WritableDraft } from "immer";
 
-const modeSchema = z.enum(["system", "light", "dark"]).default("system");
-
 type Mode = z.infer<typeof modeSchema>;
-
-const profileSchema = z.object({
-  appPath: z.string().default(""),
-  encoding: z.string().default("gbk"),
-  driverPath: z.string().default(""),
-  alwaysOnTop: z.boolean().default(false),
-  mode: modeSchema,
-});
+type ProfileCallback = (profile: WritableDraft<Profile>) => void;
+export type Profile = z.infer<typeof profileSchema>;
 
 // Shared Logic
 const getFilePath = () => path.resolve(app.getPath("userData"), "profile.json");
@@ -51,8 +43,6 @@ export const getRootDBPath = async () => {
   return path.resolve(rootPath, "local.mdb");
 };
 
-export type Profile = z.infer<typeof profileSchema>;
-
 export const getProfile = async () => {
   const filePath = getFilePath();
   try {
@@ -79,8 +69,6 @@ const diffAlwaysOnTop = (prev: boolean, next: boolean) => {
     win.setAlwaysOnTop(next);
   });
 };
-
-type ProfileCallback = (profile: WritableDraft<Profile>) => void;
 
 export const setProfile = async (callback: ProfileCallback) => {
   const filePath = getFilePath();
@@ -109,3 +97,13 @@ export const bindIpcHandler = () => {
     return updated;
   });
 };
+
+const modeSchema = z.enum(["system", "light", "dark"]).default("system");
+
+const profileSchema = z.object({
+  appPath: z.string().default(""),
+  encoding: z.string().default("gbk"),
+  driverPath: z.string().default(""),
+  alwaysOnTop: z.boolean().default(false),
+  mode: modeSchema,
+});

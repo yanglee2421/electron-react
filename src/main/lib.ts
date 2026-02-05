@@ -8,7 +8,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "#main/schema";
 import { channel } from "#main/channel";
-import { devError, promiseTry } from "#main/utils";
+import { promiseTry } from "#main/utils";
 import type { Callback } from "#main/utils";
 
 export const getIP = () => {
@@ -127,7 +127,8 @@ export const withLog = <TArgs extends unknown[], TReturn = void>(
       const result = await promiseTry(callback, ...args);
       return result;
     } catch (error) {
-      devError(error);
+      console.error(error);
+
       // Log the error message
       const message = errorToMessage(error);
       log(message, "error");

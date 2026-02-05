@@ -1,14 +1,8 @@
 import type Excel from "@yanglee2421/exceljs";
 
-export const devLog: typeof console.log = (...args) => {
-  if (!import.meta.env.DEV) return;
-  console.log(...args);
-};
-
-export const devError: typeof console.error = (...args) => {
-  if (!import.meta.env.DEV) return;
-  console.error(...args);
-};
+export type Callback<TArgs extends unknown[], TReturn> = (
+  ...args: TArgs
+) => TReturn;
 
 export const debounce = <TArgs extends unknown[]>(
   fn: (...args: TArgs) => void,
@@ -20,10 +14,6 @@ export const debounce = <TArgs extends unknown[]>(
     timer = setTimeout(() => fn(...args), delay);
   };
 };
-
-export type Callback<TArgs extends unknown[], TReturn> = (
-  ...args: TArgs
-) => TReturn;
 
 export const promiseTry = <TArgs extends unknown[], TReturn>(
   callback: Callback<TArgs, TReturn>,
