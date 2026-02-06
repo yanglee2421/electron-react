@@ -3,7 +3,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 import { db } from "./lib/db";
-import { RouterUI } from "./router/RouterUI";
+import { AppRouter } from "./router";
 import { useColorScheme } from "./hooks/dom/useColorScheme";
 import { QueryProvider } from "./components/query";
 import type { Log } from "./lib/db";
@@ -36,23 +36,6 @@ const calculateTheme = (isDark: boolean) => {
   return lightTheme;
 };
 
-type Props = React.PropsWithChildren;
-
-const MuiProvider = (props: Props) => {
-  const isDark = useColorScheme();
-
-  const theme = calculateTheme(isDark);
-
-  return (
-    <ThemeProvider theme={theme}>
-      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="zh">
-        {props.children}
-      </LocalizationProvider>
-      <CssBaseline />
-    </ThemeProvider>
-  );
-};
-
 const useLog = () => {
   React.useEffect(() => {
     const listener = (data: Log) => {
@@ -65,8 +48,21 @@ const useLog = () => {
   }, []);
 };
 
-const AppRouter = () => {
-  return <RouterUI />;
+type MuiProviderProps = React.PropsWithChildren;
+
+const MuiProvider = (props: MuiProviderProps) => {
+  const isDark = useColorScheme();
+
+  const theme = calculateTheme(isDark);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="zh">
+        {props.children}
+      </LocalizationProvider>
+      <CssBaseline />
+    </ThemeProvider>
+  );
 };
 
 export const App = () => {

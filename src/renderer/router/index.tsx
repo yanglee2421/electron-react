@@ -1,6 +1,5 @@
-import { createHashRouter, RouterProvider } from "react-router";
-import { Box, CircularProgress } from "@mui/material";
 import { QueryProvider } from "#renderer/components/query";
+import { createHashRouter, RouterProvider } from "react-router";
 import { fetchJtvHmisSetting } from "#renderer/api/jtv_hmis";
 import { fetchJtvHmisGuangzhoubeiSetting } from "#renderer/api/jtv_hmis_guangzhoubei";
 import {
@@ -9,7 +8,7 @@ import {
   fetchKhHmisSetting,
   fetchProfile,
 } from "#renderer/api/fetch_preload";
-import { RootErrorBoundary } from "./error";
+import { RootHydrateFallback, RootErrorBoundary } from "./root";
 import { DashLayout, RootRoute } from "./layout";
 import type { RouteObject } from "react-router";
 
@@ -36,22 +35,6 @@ const jtvGuangzhoubeiLoader = async () => {
 const khLoader = async () => {
   const queryClient = QueryProvider.queryClient;
   return await queryClient.ensureQueryData(fetchKhHmisSetting());
-};
-
-const RootHydrateFallback = () => {
-  return (
-    <Box
-      sx={{
-        position: "fixed",
-        inset: 0,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <CircularProgress size={64} />
-    </Box>
-  );
 };
 
 const routes: RouteObject[] = [
@@ -280,4 +263,4 @@ const routes: RouteObject[] = [
 ];
 
 const router = createHashRouter(routes);
-export const RouterUI = () => <RouterProvider router={router} />;
+export const AppRouter = () => <RouterProvider router={router} />;

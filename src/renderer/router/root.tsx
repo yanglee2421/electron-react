@@ -1,5 +1,12 @@
+import {
+  Alert,
+  AlertTitle,
+  Typography,
+  Button,
+  Box,
+  CircularProgress,
+} from "@mui/material";
 import { HomeOutlined } from "@mui/icons-material";
-import { Alert, AlertTitle, Typography, Button, Box } from "@mui/material";
 import { isRouteErrorResponse, Link, useRouteError } from "react-router";
 
 type ErrorAlertContentProps = {
@@ -55,6 +62,22 @@ export const RootErrorBoundary = () => {
       <Alert severity="error" variant="outlined">
         <ErrorAlertContent error={error} />
       </Alert>
+    </Box>
+  );
+};
+
+export const RootHydrateFallback = () => {
+  return (
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <CircularProgress size={64} />
     </Box>
   );
 };

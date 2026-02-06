@@ -1,4 +1,4 @@
-import { minmax } from "#renderer/lib/utils";
+import { clamp } from "#renderer/lib/utils";
 import { type TextFieldProps, TextField } from "@mui/material";
 import React from "react";
 
@@ -44,7 +44,7 @@ export const NumberField = (props: NumberFieldProps) => {
   const [focusedValue, setFocusedValue] = React.useState("");
 
   const changeValue = (value: number) => {
-    const nextValue = minmax(
+    const nextValue = clamp(
       value,
       props._min ?? Number.NEGATIVE_INFINITY,
       props._max ?? Number.POSITIVE_INFINITY,
@@ -79,7 +79,7 @@ export const NumberField = (props: NumberFieldProps) => {
             setFocusedValue((prev) => {
               const nextValue = (Number.parseFloat(prev) || 0) + _step;
 
-              return minmax(
+              return clamp(
                 nextValue,
                 props._min ?? Number.NEGATIVE_INFINITY,
                 props._max ?? Number.POSITIVE_INFINITY,
@@ -91,7 +91,7 @@ export const NumberField = (props: NumberFieldProps) => {
             setFocusedValue((prev) => {
               const nextValue = (Number.parseFloat(prev) || 0) - _step;
 
-              return minmax(
+              return clamp(
                 nextValue,
                 props._min ?? Number.NEGATIVE_INFINITY,
                 props._max ?? Number.POSITIVE_INFINITY,
