@@ -1,4 +1,3 @@
-import { QRCodeSVG } from "qrcode.react";
 import {
   Box,
   Card,
@@ -13,9 +12,10 @@ import {
   Typography,
 } from "@mui/material";
 import React from "react";
-import * as consts from "#renderer/lib/constants";
-import { LinkOutlined, QrCode2Outlined } from "@mui/icons-material";
+import { QRCodeSVG } from "qrcode.react";
 import { useQueries } from "@tanstack/react-query";
+import { LinkOutlined, QrCode2Outlined } from "@mui/icons-material";
+import * as consts from "#renderer/lib/constants";
 import type { ElementOf } from "#renderer/lib/utils";
 import { fetchBarcodeTextFromImage } from "#renderer/api/pdf";
 

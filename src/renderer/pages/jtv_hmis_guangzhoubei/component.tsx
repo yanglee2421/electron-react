@@ -51,7 +51,6 @@ import { useDialogs, useNotifications } from "@toolpad/core";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
   fetchJtvHmisGuangzhoubeiSetting,
   fetchJtvHmisGuangzhoubeiSqliteGet,
@@ -59,27 +58,129 @@ import {
   useJtvHmisGuangzhoubeiApiSet,
   useJtvHmisGuangzhoubeiSqliteDelete,
   useJtvHmisGuangzhoubeiSqliteInsert,
-} from "#renderer/api/jtv_hmis_guangzhoubei";
+  useAutoInputToVC,
+} from "#renderer/api/fetch_preload";
+import type { NormalizeResponse } from "#main/lib/ipc";
 import type { JTVGuangzhoubeiBarcode } from "#main/schema";
-import type { Record } from "#renderer/api/jtv_hmis_guangzhoubei";
+import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
+import { useSubscribe } from "#renderer/hooks/useSubscribe";
 
-const initialSessionState = () => {
+const storeInitializer = () => {
   return {
     isZhMode: true,
     showFilter: false,
     pageIndex: 0,
     pageSize: 100,
     date: new Date().toISOString(),
-    selectOptions: [] as Record[],
+    selectOptions: [] as NormalizeResponse[],
   };
 };
 
-const useSessionStore = create<ReturnType<typeof initialSessionState>>()(
-  persist(immer(initialSessionState), {
+const rowSelectColumnHelper = createColumnHelper<NormalizeResponse>();
+const columnHelper = createColumnHelper<JTVGuangzhoubeiBarcode>();
+
+const columns = [
+  columnHelper.accessor("id", {
+    header: "ID",
+    footer: "ID",
+    cell: ({ getValue }) => <Link underline="none">#{getValue()}</Link>,
+  }),
+  columnHelper.accessor("barCode", {
+    header: "单号",
+    footer: "单号",
+  }),
+  columnHelper.accessor("zh", {
+    header: "轴号",
+    footer: "轴号",
+  }),
+  columnHelper.accessor("CZZZRQ", {
+    header: "车轴制造",
+    footer: "车轴制造",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  columnHelper.accessor("CZZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  columnHelper.accessor("date", {
+    header: "时间",
+    footer: "时间",
+    cell: ({ getValue }) => getValue()?.toLocaleString(),
+  }),
+  columnHelper.accessor("isUploaded", {
+    header: "已上传",
+    footer: "已上传",
+    cell: ({ getValue }) =>
+      getValue() ? <CheckOutlined color="success" /> : <ClearOutlined />,
+  }),
+  columnHelper.display({
+    id: "action",
+    header: "操作",
+    cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
+  }),
+];
+
+const rowSelectColumns = [
+  rowSelectColumnHelper.accessor("ZH", {
+    header: "轴号",
+    footer: "轴号",
+  }),
+  rowSelectColumnHelper.accessor("ZX", {
+    header: "轴型",
+    footer: "轴型",
+  }),
+  rowSelectColumnHelper.accessor("CZZZRQ", {
+    header: "车轴制造",
+    footer: "车轴制造",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  rowSelectColumnHelper.accessor("CZZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  rowSelectColumnHelper.accessor("SCZZRQ", {
+    header: "首次组装日期",
+    footer: "首次组装日期",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  rowSelectColumnHelper.accessor("SCZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  rowSelectColumnHelper.accessor("MCZZRQ", {
+    header: "末次组装日期",
+    footer: "末次组装日期",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  rowSelectColumnHelper.accessor("MCZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  rowSelectColumnHelper.accessor("DH", {
+    header: "单号",
+    footer: "单号",
+  }),
+];
+
+const schema = z.object({
+  barCode: z.string().min(1),
+});
+
+const useSessionStore = create<ReturnType<typeof storeInitializer>>()(
+  persist(immer(storeInitializer), {
     name: "useSessionStore:jtv_guangzhoubei",
     storage: createJSONStorage(() => sessionStorage),
   }),
 );
+
+const useScanerForm = () => {
+  return useForm({
+    defaultValues: {
+      barCode: "",
+    },
+    resolver: zodResolver(schema),
+  });
+};
 
 type ActionCellProps = {
   id: number;
@@ -135,62 +236,6 @@ const ActionCell = (props: ActionCellProps) => {
     </>
   );
 };
-
-const schema = z.object({
-  barCode: z.string().min(1),
-});
-
-const useScanerForm = () => {
-  return useForm({
-    defaultValues: {
-      barCode: "",
-    },
-    resolver: zodResolver(schema),
-  });
-};
-
-const columnHelper = createColumnHelper<JTVGuangzhoubeiBarcode>();
-
-const columns = [
-  columnHelper.accessor("id", {
-    header: "ID",
-    footer: "ID",
-    cell: ({ getValue }) => <Link underline="none">#{getValue()}</Link>,
-  }),
-  columnHelper.accessor("barCode", {
-    header: "单号",
-    footer: "单号",
-  }),
-  columnHelper.accessor("zh", {
-    header: "轴号",
-    footer: "轴号",
-  }),
-  columnHelper.accessor("CZZZRQ", {
-    header: "车轴制造",
-    footer: "车轴制造",
-    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
-  }),
-  columnHelper.accessor("CZZZDW", {
-    header: "单位",
-    footer: "单位",
-  }),
-  columnHelper.accessor("date", {
-    header: "时间",
-    footer: "时间",
-    cell: ({ getValue }) => getValue()?.toLocaleString(),
-  }),
-  columnHelper.accessor("isUploaded", {
-    header: "已上传",
-    footer: "已上传",
-    cell: ({ getValue }) =>
-      getValue() ? <CheckOutlined color="success" /> : <ClearOutlined />,
-  }),
-  columnHelper.display({
-    id: "action",
-    header: "操作",
-    cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
-  }),
-];
 
 type DataGridProps = {
   rows?: JTVGuangzhoubeiBarcode[];
@@ -300,6 +345,115 @@ const DataGrid = (props: DataGridProps) => {
   );
 };
 
+type RowSelectGridProps = {
+  data?: NormalizeResponse[];
+  onRowSelect?: (record: NormalizeResponse) => void;
+};
+
+const RowSelectGrid = (props: RowSelectGridProps) => {
+  "use no memo";
+
+  const rows = React.useMemo(() => props.data || [], [props.data]);
+
+  const table = useReactTable({
+    getCoreRowModel: getCoreRowModel(),
+    columns: rowSelectColumns,
+    data: rows,
+    getRowId(row) {
+      return row.DH;
+    },
+
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  const renderRow = () => {
+    if (!table.getRowCount()) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
+            暂无数据
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return table.getRowModel().rows.map((row) => (
+      <TableRow
+        key={row.id}
+        hover
+        onClick={async () => {
+          props.onRowSelect?.(row.original);
+        }}
+        sx={{ cursor: "pointer" }}
+      >
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    ));
+  };
+
+  return (
+    <>
+      <TableContainer>
+        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
+          <TableHead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableHead>
+          <TableBody>{renderRow()}</TableBody>
+          <TableFooter>
+            {table.getFooterGroups().map((footerGroup) => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.footer,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableFooter>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        component={"div"}
+        page={table.getState().pagination.pageIndex}
+        onPageChange={(_, page) => {
+          table.setPageIndex(page);
+        }}
+        rowsPerPage={table.getState().pagination.pageSize}
+        onRowsPerPageChange={(e) => {
+          table.setPageSize(Number.parseInt(e.target.value));
+        }}
+        rowsPerPageOptions={[10, 20]}
+        count={table.getRowCount()}
+        labelRowsPerPage="每页行数"
+      />
+    </>
+  );
+};
+
 export const Component = () => {
   const zhMode = useSessionStore((store) => store.isZhMode);
   const pageIndex = useSessionStore((store) => store.pageIndex);
@@ -330,21 +484,11 @@ export const Component = () => {
   const { data: hmis } = useQuery(fetchJtvHmisGuangzhoubeiSetting());
   const barcode = useQuery(fetchJtvHmisGuangzhoubeiSqliteGet(params));
 
-  const refetchBarcode = React.useEffectEvent(() => {
+  useSubscribe("api_set", () => {
     barcode.refetch();
   });
 
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeJtvHmisAPISet(() => {
-      refetchBarcode();
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  const sendDataItemToWindow = async (dataItem: Record) => {
+  const sendDataItemToWindow = async (dataItem: NormalizeResponse) => {
     if (!hmis) return;
     if (!hmis.autoInput) return;
 
@@ -371,7 +515,7 @@ export const Component = () => {
     );
   };
 
-  const inserDataItemToDB = async (dataItem: Record) => {
+  const inserDataItemToDB = async (dataItem: NormalizeResponse) => {
     await insertBarcode.mutateAsync(dataItem, {
       onError(error) {
         snackbar.show(error.message, {
@@ -405,7 +549,7 @@ export const Component = () => {
     });
   };
 
-  const handleRowSelect = async (dataItem: Record) => {
+  const handleRowSelect = async (dataItem: NormalizeResponse) => {
     await inserDataItemToDB(dataItem);
     await sendDataItemToWindow(dataItem);
   };
@@ -573,201 +717,6 @@ export const Component = () => {
           />
         </Card>
       </Stack>
-    </>
-  );
-};
-
-const useAutoFocusInputRef = () => {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-
-  const setInputFocus = React.useEffectEvent(() => {
-    inputRef.current?.focus();
-  });
-
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeWindowFocus(setInputFocus);
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeWindowBlur(setInputFocus);
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const controller = new AbortController();
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (document.visibilityState !== "visible") return;
-        setInputFocus();
-      },
-      controller,
-    );
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
-  return inputRef;
-};
-
-const rowSelectColumnHelper = createColumnHelper<Record>();
-
-const rowSelectColumns = [
-  rowSelectColumnHelper.accessor("ZH", {
-    header: "轴号",
-    footer: "轴号",
-  }),
-  rowSelectColumnHelper.accessor("ZX", {
-    header: "轴型",
-    footer: "轴型",
-  }),
-  rowSelectColumnHelper.accessor("CZZZRQ", {
-    header: "车轴制造",
-    footer: "车轴制造",
-    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
-  }),
-  rowSelectColumnHelper.accessor("CZZZDW", {
-    header: "单位",
-    footer: "单位",
-  }),
-  rowSelectColumnHelper.accessor("SCZZRQ", {
-    header: "首次组装日期",
-    footer: "首次组装日期",
-    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
-  }),
-  rowSelectColumnHelper.accessor("SCZZDW", {
-    header: "单位",
-    footer: "单位",
-  }),
-  rowSelectColumnHelper.accessor("MCZZRQ", {
-    header: "末次组装日期",
-    footer: "末次组装日期",
-    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
-  }),
-  rowSelectColumnHelper.accessor("MCZZDW", {
-    header: "单位",
-    footer: "单位",
-  }),
-  rowSelectColumnHelper.accessor("DH", {
-    header: "单号",
-    footer: "单号",
-  }),
-];
-
-type RowSelectGridProps = {
-  data?: Record[];
-  onRowSelect?: (record: Record) => void;
-};
-
-const RowSelectGrid = (props: RowSelectGridProps) => {
-  "use no memo";
-
-  const rows = React.useMemo(() => props.data || [], [props.data]);
-
-  const table = useReactTable({
-    getCoreRowModel: getCoreRowModel(),
-    columns: rowSelectColumns,
-    data: rows,
-    getRowId(row) {
-      return row.DH;
-    },
-
-    getPaginationRowModel: getPaginationRowModel(),
-  });
-
-  const renderRow = () => {
-    if (!table.getRowCount()) {
-      return (
-        <TableRow>
-          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            暂无数据
-          </TableCell>
-        </TableRow>
-      );
-    }
-
-    return table.getRowModel().rows.map((row) => (
-      <TableRow
-        key={row.id}
-        hover
-        onClick={async () => {
-          props.onRowSelect?.(row.original);
-        }}
-        sx={{ cursor: "pointer" }}
-      >
-        {row.getVisibleCells().map((cell) => (
-          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </TableCell>
-        ))}
-      </TableRow>
-    ));
-  };
-
-  return (
-    <>
-      <TableContainer>
-        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
-          <TableHead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>{renderRow()}</TableBody>
-          <TableFooter>
-            {table.getFooterGroups().map((footerGroup) => (
-              <TableRow key={footerGroup.id}>
-                {footerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.footer,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableFooter>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        component={"div"}
-        page={table.getState().pagination.pageIndex}
-        onPageChange={(_, page) => {
-          table.setPageIndex(page);
-        }}
-        rowsPerPage={table.getState().pagination.pageSize}
-        onRowsPerPageChange={(e) => {
-          table.setPageSize(Number.parseInt(e.target.value));
-        }}
-        rowsPerPageOptions={[10, 20]}
-        count={table.getRowCount()}
-        labelRowsPerPage="每页行数"
-      />
     </>
   );
 };

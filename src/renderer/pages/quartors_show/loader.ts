@@ -1,7 +1,7 @@
-import type { QuartorData } from "#main/modules/cmd";
 import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
 import { QueryProvider } from "#renderer/components/query";
 import type { LoaderFunction } from "react-router";
+import type { QuartorData } from "#main/modules/mdb";
 
 export const loader: LoaderFunction = async (ctx) => {
   await QueryProvider.queryClient.ensureQueryData(

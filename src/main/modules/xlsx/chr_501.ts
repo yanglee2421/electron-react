@@ -1,12 +1,11 @@
 import { app, shell } from "electron";
 import * as path from "node:path";
 import Excel from "@yanglee2421/exceljs";
-import { db } from "#main/lib";
 import * as schema from "#main/schema";
 import * as sql from "drizzle-orm";
 import { createCellHelper, createRowHelper, pageSetup } from "#main/utils";
-import { getDataFromRootDB as getDataFromMDB } from "#main/modules/mdb";
-import type { Verify } from "#main/modules/cmd";
+import type { Verify } from "#main/modules/mdb";
+import type { AppContext } from "#main/index";
 
 const columnWidths = new Map([
   ["A", 4.1],
@@ -52,7 +51,8 @@ const rowHeights = new Map([
   [7, 18],
 ]);
 
-export const chr_501 = async (id: string) => {
+export const chr_501 = async (appContext: AppContext, id: string) => {
+  const { sqliteDB: db, mdbDB } = appContext;
   const workbook = new Excel.Workbook();
   const sheet = workbook.addWorksheet("Sheet1");
   sheet.properties.defaultColWidth = 10;
@@ -73,7 +73,7 @@ export const chr_501 = async (id: string) => {
     td(`A${index}:N${index}`);
   });
 
-  const data = await getDataFromMDB<Verify>({
+  const data = await mdbDB.getDataFromRootDB<Verify>({
     tableName: "verifies",
     filters: [{ type: "equal", field: "szIDs", value: id }],
   });

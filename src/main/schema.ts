@@ -6,6 +6,14 @@ import {
   unique,
 } from "drizzle-orm/sqlite-core";
 
+export type XlsxSize = typeof xlsxSizeTable.$inferSelect;
+export type KhBarcode = typeof khBarcodeTable.$inferSelect;
+export type HxzyBarcode = typeof hxzyBarcodeTable.$inferSelect;
+export type JTVBarcode = typeof jtvBarcodeTable.$inferSelect;
+export type JtvXuzhoubeiBarcode = typeof jtvXuzhoubeiBarcodeTable.$inferSelect;
+export type JTVGuangzhoubeiBarcode =
+  typeof jtvGuangzhoubeiBarcodeTable.$inferSelect;
+
 export const jtvBarcodeTable = sqliteTable("jtv_barcode", {
   id: int("id").primaryKey({ autoIncrement: true }),
   barCode: text("barCode"),
@@ -16,8 +24,6 @@ export const jtvBarcodeTable = sqliteTable("jtv_barcode", {
   CZZZRQ: text("CZZZRQ"),
 });
 
-export type JTVBarcode = typeof jtvBarcodeTable.$inferSelect;
-
 export const hxzyBarcodeTable = sqliteTable("hxzy_barcode", {
   id: int("id").primaryKey({ autoIncrement: true }),
   barCode: text("barCode"),
@@ -25,8 +31,6 @@ export const hxzyBarcodeTable = sqliteTable("hxzy_barcode", {
   date: int("date", { mode: "timestamp" }),
   isUploaded: int("isUploaded", { mode: "boolean" }),
 });
-
-export type HxzyBarcode = typeof hxzyBarcodeTable.$inferSelect;
 
 export const jtvXuzhoubeiBarcodeTable = sqliteTable("jtv_xuzhoubei_barcode", {
   id: int("id").primaryKey({ autoIncrement: true }),
@@ -42,8 +46,6 @@ export const jtvXuzhoubeiBarcodeTable = sqliteTable("jtv_xuzhoubei_barcode", {
   PJ_MCZZDW: text("PJ_MCZZDW"),
 });
 
-export type JtvXuzhoubeiBarcode = typeof jtvXuzhoubeiBarcodeTable.$inferSelect;
-
 export const khBarcodeTable = sqliteTable("kh_barcode", {
   id: int("id").primaryKey({ autoIncrement: true }),
   barCode: text("barCode"),
@@ -51,8 +53,6 @@ export const khBarcodeTable = sqliteTable("kh_barcode", {
   date: int("date", { mode: "timestamp" }),
   isUploaded: int("isUploaded", { mode: "boolean" }),
 });
-
-export type KhBarcode = typeof khBarcodeTable.$inferSelect;
 
 export const xlsxSizeTable = sqliteTable(
   "xlsxSize",
@@ -72,8 +72,6 @@ export const xlsxSizeTable = sqliteTable(
   ],
 );
 
-export type XlsxSize = typeof xlsxSizeTable.$inferSelect;
-
 export const jtvGuangzhoubeiBarcodeTable = sqliteTable(
   "jtv_guangzhoubei_barcode",
   {
@@ -86,6 +84,3 @@ export const jtvGuangzhoubeiBarcodeTable = sqliteTable(
     CZZZRQ: text("CZZZRQ"),
   },
 );
-
-export type JTVGuangzhoubeiBarcode =
-  typeof jtvGuangzhoubeiBarcodeTable.$inferSelect;

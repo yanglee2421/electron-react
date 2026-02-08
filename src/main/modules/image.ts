@@ -2,10 +2,11 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { chunk } from "#main/utils";
-import { channel } from "#main/channel";
-import { ipcHandle, ls } from "#main/lib";
+import { ipcHandle } from "#main/lib/ipc";
+import { ls } from "#main/lib/fs";
 import createImageWorker from "./image.worker?nodeWorker";
 import pLimit from "p-limit";
+import type { AppContext } from "..";
 
 const computeMD5 = (files: string[]) => {
   const worker = createImageWorker({
@@ -76,11 +77,12 @@ const bootstrap = async (source: string) => {
   await copyFile(md5ToFilePath, outputDirectory);
 };
 
-export const bindIpcHandler = () => {
-  ipcHandle(channel.MD5_BACKUP_IMAGE, async (_, payload: string) => {
+export const bindIpcHandlers = (appContext: AppContext) => {
+  void appContext;
+  ipcHandle("MD5/MD5_BACKUP_IMAGE", async (_, payload: string) => {
     await bootstrap(payload);
   });
-  ipcHandle(channel.MD5_COMPUTE, async (_, payload: string) => {
+  ipcHandle("MD5/MD5_COMPUTE", async (_, payload: string) => {
     const record = await computeMD5([payload]);
     return record;
   });

@@ -4,138 +4,10 @@ import dayjs from "dayjs";
 import { net } from "electron";
 import * as sql from "drizzle-orm";
 import * as schema from "#main/schema";
-import { channel } from "#main/channel";
-import { kh_hmis } from "#main/lib/store";
-import { createEmit, log, withLog, ipcHandle, db } from "#main/lib";
-import { getCorporation, getDetectionByZH } from "#main/modules/cmd";
-import type * as PRELOAD from "#preload/index";
-
-/**
- * Sqlite barcode
- */
-const sqlite_get = async (
-  params: PRELOAD.KhBarcodeGetParams,
-): Promise<PRELOAD.KhBarcodeGetResult> => {
-  const [{ count }] = await db
-    .select({ count: sql.count() })
-    .from(schema.khBarcodeTable)
-    .where(
-      sql.between(
-        schema.khBarcodeTable.date,
-        new Date(params.startDate),
-        new Date(params.endDate),
-      ),
-    )
-    .limit(1);
-  const rows = await db.query.khBarcodeTable.findMany({
-    where: sql.between(
-      schema.khBarcodeTable.date,
-      new Date(params.startDate),
-      new Date(params.endDate),
-    ),
-    offset: params.pageIndex * params.pageSize,
-    limit: params.pageSize,
-  });
-  return { rows, count };
-};
-
-const sqlite_delete = async (id: number): Promise<schema.KhBarcode> => {
-  const [result] = await db
-    .delete(schema.khBarcodeTable)
-    .where(sql.eq(schema.khBarcodeTable.id, id))
-    .returning();
-  return result;
-};
-
-/**
- * HMIS API
- */
-export type GetResponse = {
-  data: {
-    mesureId: "A23051641563052";
-    zh: "10911";
-    zx: "RE2B";
-    clbjLeft: "HEZD Ⅱ 18264";
-    clbjRight: "HEZD Ⅱ 32744";
-    czzzrq: "2003-01-16";
-    czzzdw: "673";
-    ldszrq: "2014-06-22";
-    ldszdw: "673";
-    ldmzrq: "2018-04-13";
-    ldmzdw: "623";
-  };
-  code: 200;
-  msg: "success";
-};
-
-const fetch_get = async (barCode: string) => {
-  const host = kh_hmis.get("host");
-  const url = new URL(`http://${host}/api/lzdx_csbtsj_get/get`);
-  const body = JSON.stringify({
-    mesureId: barCode,
-  });
-  log(`请求数据[${url.href}]:${body}`);
-  const res = await net.fetch(url.href, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body,
-  });
-  if (!res.ok) {
-    throw `接口异常[${res.status}]:${res.statusText}`;
-  }
-  const data: GetResponse = await res.json();
-  log(`返回数据:${JSON.stringify(data)}`);
-  if (data.code !== 200) {
-    throw `接口异常[${data.code}]:${data.msg}`;
-  }
-  return data;
-};
-
-type PostRequestItem = {
-  mesureId?: string;
-  ZH: string;
-  ZCTJG: string;
-  ZZJJG: string;
-  ZLZJG: string;
-  YCTJG: string;
-  YZJJG: string;
-  YLZJG: string;
-  JCJG: string;
-  BZ?: string;
-  TSRY: string;
-  JCSJ: string;
-  sbbh: string;
-};
-
-type PostResponse = {
-  code: 200;
-  msg: "success";
-};
-
-const fetch_set = async (params: PostRequestItem) => {
-  const host = kh_hmis.get("host");
-  const url = new URL(`http://${host}/api/lzdx_csbtsj_tsjg/save`);
-  const body = JSON.stringify(params);
-  log(`请求数据[${url.href}]:${body}`);
-  const res = await net.fetch(url.href, {
-    method: "POST",
-    body,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) {
-    throw `接口异常[${res.status}]:${res.statusText}`;
-  }
-  const data: PostResponse = await res.json();
-  log(`返回数据:${JSON.stringify(data)}`);
-  if (data.code !== 200) {
-    throw `接口异常[${data.code}]:${data.msg}`;
-  }
-  return data;
-};
+import { createEmit } from "#main/lib";
+import { log, withLog, ipcHandle } from "#main/lib/ipc";
+import type { AppContext } from "#main/index";
+import type { KHGetResponse, SQLiteGetParams } from "#main/lib/ipc";
 
 type QXDataParams = {
   mesureid: string;
@@ -180,7 +52,115 @@ type QXDataParams = {
   bz: "";
 };
 
-const saveQXData = async (params: QXDataParams) => {
+type PostRequestItem = {
+  mesureId?: string;
+  ZH: string;
+  ZCTJG: string;
+  ZZJJG: string;
+  ZLZJG: string;
+  YCTJG: string;
+  YZJJG: string;
+  YLZJG: string;
+  JCJG: string;
+  BZ?: string;
+  TSRY: string;
+  JCSJ: string;
+  sbbh: string;
+};
+
+type PostResponse = {
+  code: 200;
+  msg: "success";
+};
+
+const sqlite_get = async (appContext: AppContext, params: SQLiteGetParams) => {
+  const { sqliteDB: db } = appContext;
+
+  const [{ count }] = await db
+    .select({ count: sql.count() })
+    .from(schema.khBarcodeTable)
+    .where(
+      sql.between(
+        schema.khBarcodeTable.date,
+        new Date(params.startDate),
+        new Date(params.endDate),
+      ),
+    )
+    .limit(1);
+  const rows = await db.query.khBarcodeTable.findMany({
+    where: sql.between(
+      schema.khBarcodeTable.date,
+      new Date(params.startDate),
+      new Date(params.endDate),
+    ),
+    offset: params.pageIndex * params.pageSize,
+    limit: params.pageSize,
+  });
+  return { rows, count };
+};
+
+const sqlite_delete = async (appContext: AppContext, id: number) => {
+  const { sqliteDB: db } = appContext;
+
+  const [result] = await db
+    .delete(schema.khBarcodeTable)
+    .where(sql.eq(schema.khBarcodeTable.id, id))
+    .returning();
+  return result;
+};
+
+const fetch_get = async (appContext: AppContext, barCode: string) => {
+  const { kh_hmis } = appContext;
+  const host = kh_hmis.get("host");
+  const url = new URL(`http://${host}/api/lzdx_csbtsj_get/get`);
+  const body = JSON.stringify({
+    mesureId: barCode,
+  });
+  log(`请求数据[${url.href}]:${body}`);
+  const res = await net.fetch(url.href, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body,
+  });
+  if (!res.ok) {
+    throw `接口异常[${res.status}]:${res.statusText}`;
+  }
+  const data: KHGetResponse = await res.json();
+  log(`返回数据:${JSON.stringify(data)}`);
+  if (data.code !== 200) {
+    throw `接口异常[${data.code}]:${data.msg}`;
+  }
+  return data;
+};
+
+const fetch_set = async (appContext: AppContext, params: PostRequestItem) => {
+  const { kh_hmis } = appContext;
+  const host = kh_hmis.get("host");
+  const url = new URL(`http://${host}/api/lzdx_csbtsj_tsjg/save`);
+  const body = JSON.stringify(params);
+  log(`请求数据[${url.href}]:${body}`);
+  const res = await net.fetch(url.href, {
+    method: "POST",
+    body,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    throw `接口异常[${res.status}]:${res.statusText}`;
+  }
+  const data: PostResponse = await res.json();
+  log(`返回数据:${JSON.stringify(data)}`);
+  if (data.code !== 200) {
+    throw `接口异常[${data.code}]:${data.msg}`;
+  }
+  return data;
+};
+
+const saveQXData = async (appContext: AppContext, params: QXDataParams) => {
+  const { kh_hmis } = appContext;
   const host = kh_hmis.get("host");
   const url = new URL(`http://${host}/api/lzdx_csbtsj_whzy_tsjgqx/save`);
   const body = JSON.stringify(params);
@@ -206,8 +186,12 @@ const saveQXData = async (params: QXDataParams) => {
 /**
  * Ipc handlers
  */
-const api_get = async (barCode: string): Promise<GetResponse> => {
-  const data = await fetch_get(barCode);
+const api_get = async (
+  appContext: AppContext,
+  barCode: string,
+): Promise<KHGetResponse> => {
+  const { sqliteDB: db } = appContext;
+  const data = await fetch_get(appContext, barCode);
 
   // 仍然保存到数据库，但不返回数据库记录
   await db
@@ -223,7 +207,10 @@ const api_get = async (barCode: string): Promise<GetResponse> => {
   return data;
 };
 
-const recordToBody = async (record: schema.KhBarcode) => {
+const recordToBody = async (
+  appContext: AppContext,
+  record: schema.KhBarcode,
+) => {
   const id = record.id;
 
   if (!record) {
@@ -238,11 +225,13 @@ const recordToBody = async (record: schema.KhBarcode) => {
     throw new Error(`记录#${id}条形码不存在`);
   }
 
+  const { kh_hmis, mdbDB } = appContext;
+
   const startDate = dayjs(record.date).toISOString();
   const endDate = dayjs(record.date).endOf("day").toISOString();
-  const corporation = await getCorporation();
+  const corporation = await mdbDB.getCorporation();
 
-  const detection = await getDetectionByZH({
+  const detection = await mdbDB.getDetectionByZH({
     zh: record.zh,
     startDate,
     endDate,
@@ -288,9 +277,10 @@ const recordToBody = async (record: schema.KhBarcode) => {
   };
 };
 
-const emit = createEmit(channel.kh_hmis_api_set);
+const emit = createEmit("api_set");
 
-const api_set = async (id: number) => {
+const api_set = async (appContext: AppContext, id: number) => {
+  const { sqliteDB: db } = appContext;
   const record = await db.query.khBarcodeTable.findFirst({
     where: sql.eq(schema.khBarcodeTable.id, id),
   });
@@ -299,11 +289,11 @@ const api_set = async (id: number) => {
     throw new Error(`记录#${id}不存在`);
   }
 
-  const data = await recordToBody(record);
-  await fetch_set(data.basicBody);
+  const data = await recordToBody(appContext, record);
+  await fetch_set(appContext, data.basicBody);
 
   if (!data.isQualified) {
-    await saveQXData(data.qxBody);
+    await saveQXData(appContext, data.qxBody);
   }
 
   const [result] = await db
@@ -320,9 +310,10 @@ const api_set = async (id: number) => {
  * Auto upload
  */
 const doTask = withLog(api_set);
-let timer: NodeJS.Timeout | null = null;
+let timer: number | null = null;
 
-const autoUploadHandler = async () => {
+const autoUploadHandler = async (appContext: AppContext) => {
+  const { kh_hmis, sqliteDB: db } = appContext;
   const delay = kh_hmis.get("autoUploadInterval") * 1000;
   timer = setTimeout(autoUploadHandler, delay);
 
@@ -338,18 +329,20 @@ const autoUploadHandler = async () => {
   });
 
   for (const barcode of barcodes) {
-    await doTask(barcode.id).catch(Boolean);
+    await doTask(appContext, barcode.id).catch(Boolean);
   }
 };
 
-const initAutoUpload = () => {
+const initAutoUpload = (appContext: AppContext) => {
+  const { kh_hmis } = appContext;
+
   if (kh_hmis.get("autoUpload")) {
-    autoUploadHandler();
+    autoUploadHandler(appContext);
   }
 
   kh_hmis.onDidChange("autoUpload", (value) => {
     if (value) {
-      autoUploadHandler();
+      autoUploadHandler(appContext);
       return;
     }
 
@@ -358,34 +351,26 @@ const initAutoUpload = () => {
   });
 };
 
-/**
- * Initialize
- */
-const initIpc = () => {
-  ipcHandle(
-    channel.kh_hmis_sqlite_get,
-    (_, params: PRELOAD.KhBarcodeGetParams) => sqlite_get(params),
+export const bindIpcHandlers = (appContext: AppContext) => {
+  ipcHandle("HMIS/kh_hmis_sqlite_get", (_, params) =>
+    sqlite_get(appContext, params),
   );
-
-  ipcHandle(channel.kh_hmis_sqlite_delete, (_, id: number) =>
-    sqlite_delete(id),
+  ipcHandle("HMIS/kh_hmis_sqlite_delete", (_, id) =>
+    sqlite_delete(appContext, id),
   );
-
-  ipcHandle(channel.kh_hmis_api_get, (_, barcode: string) => api_get(barcode));
-  ipcHandle(channel.kh_hmis_api_set, (_, id: number) => api_set(id));
-
-  ipcHandle(
-    channel.kh_hmis_setting,
-    (_, data?: PRELOAD.KhHmisSettingParams) => {
-      if (data) {
-        kh_hmis.set(data);
-      }
-      return kh_hmis.store;
-    },
+  ipcHandle("HMIS/kh_hmis_api_get", (_, barcode) =>
+    api_get(appContext, barcode),
   );
-};
+  ipcHandle("HMIS/kh_hmis_api_set", (_, id) => api_set(appContext, id));
+  ipcHandle("HMIS/kh_hmis_setting", async (_, data) => {
+    const { kh_hmis } = appContext;
 
-export const init = () => {
-  initIpc();
-  initAutoUpload();
+    if (data) {
+      kh_hmis.set(data);
+    }
+
+    return kh_hmis.store;
+  });
+
+  initAutoUpload(appContext);
 };

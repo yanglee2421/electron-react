@@ -1,12 +1,12 @@
-import { QueryProvider } from "#renderer/components/query";
+import dayjs from "dayjs";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
   type MDBUser,
 } from "#renderer/api/fetch_preload";
+import { QueryProvider } from "#renderer/components/query";
 import { useSessionStore } from "./hooks";
 import type { Filter } from "#main/modules/mdb.worker";
-import dayjs from "dayjs";
 
 export const loader = async () => {
   const queryClient = QueryProvider.queryClient;

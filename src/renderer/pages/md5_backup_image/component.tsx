@@ -20,6 +20,10 @@ import { useNotifications } from "@toolpad/core";
 import React from "react";
 import { z } from "zod";
 
+const schema = z.object({
+  directory: z.string().min(1),
+});
+
 const { fieldContext, formContext } = createFormHookContexts();
 const { useAppForm } = createFormHook({
   fieldContext,
@@ -32,9 +36,21 @@ const { useAppForm } = createFormHook({
   },
 });
 
-const schema = z.object({
-  directory: z.string().min(1),
-});
+type PendingIconProps = React.PropsWithChildren<{
+  isPending?: boolean;
+  size?: number;
+  color?: React.ComponentProps<typeof CircularProgress>["color"];
+}>;
+
+const PendingIcon = (props: PendingIconProps) => {
+  const { size = 16, color } = props;
+
+  if (props.isPending) {
+    return <CircularProgress size={size} color={color} />;
+  }
+
+  return props.children;
+};
 
 export const Component = () => {
   const formId = React.useId();
@@ -141,20 +157,4 @@ export const Component = () => {
       </CardActions>
     </Card>
   );
-};
-
-type PendingIconProps = React.PropsWithChildren<{
-  isPending?: boolean;
-  size?: number;
-  color?: React.ComponentProps<typeof CircularProgress>["color"];
-}>;
-
-const PendingIcon = (props: PendingIconProps) => {
-  const { size = 16, color } = props;
-
-  if (props.isPending) {
-    return <CircularProgress size={size} color={color} />;
-  }
-
-  return props.children;
 };

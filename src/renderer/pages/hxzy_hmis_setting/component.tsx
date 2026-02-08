@@ -24,6 +24,8 @@ import {
 import { SaveOutlined } from "@mui/icons-material";
 import { NumberField } from "#renderer/components/number";
 
+type FormValues = z.infer<typeof schema>;
+
 const schema = z.object({
   ip: z.ipv4(),
   port: z.number().int().min(1).max(65535),
@@ -32,8 +34,6 @@ const schema = z.object({
   autoUploadInterval: z.number().int().min(10),
   gd: z.string(),
 });
-
-type FormValues = z.infer<typeof schema>;
 
 const useSettingForm = () => {
   const hmisSetting = useQuery(fetchHxzyHmisSetting());

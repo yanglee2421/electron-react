@@ -1,6 +1,3 @@
-import type { DetectionData } from "#main/modules/cmd";
-import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
-import { Loading } from "#renderer/components/Loading";
 import {
   Alert,
   AlertTitle,
@@ -22,8 +19,6 @@ import {
   Typography,
   CardActionArea,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
 import {
   createColumnHelper,
   flexRender,
@@ -32,7 +27,12 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React from "react";
+import { useParams } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Loading } from "#renderer/components/Loading";
+import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import type { DetectionData } from "#main/modules/mdb";
 
 const getDirection = (nBoard: number) => {
   //board(板卡)：0.左 1.右

@@ -1,18 +1,8 @@
 import * as path from "node:path";
-import {
-  BrowserWindow,
-  nativeTheme,
-  app,
-  Menu,
-  dialog,
-  shell,
-  protocol,
-  net,
-} from "electron";
+import { BrowserWindow, nativeTheme, app, Menu, dialog, shell } from "electron";
 import { is, optimizer, electronApp, platform } from "@electron-toolkit/utils";
-import { channel } from "#main/channel";
-import { ipcHandle } from "#main/lib";
-import * as profile from "#main/lib/profile";
+import { createSQLiteDB } from "#main/lib";
+import { ipcHandle } from "#main/lib/ipc";
 import * as hxzyHmis from "./modules/hmis/hxzy_hmis";
 import * as jtvHmis from "./modules/hmis/jtv_hmis";
 import * as jtvHmisGuangzhoubei from "./modules/hmis/jtv_hmis_guangzhoubei";
@@ -20,12 +10,33 @@ import * as jtvHmisXuzhoubei from "./modules/hmis/jtv_hmis_xuzhoubei";
 import * as khHmis from "./modules/hmis/kh_hmis";
 import * as cmd from "./modules/cmd";
 import * as excel from "./modules/xlsx";
-import * as mdb from "./modules/mdb";
+import { MDBDB } from "#main/modules/mdb";
+import { ProfileStore } from "#main/lib/profile";
 import * as md5 from "./modules/image";
 import * as xml from "./modules/xml";
 import * as plc from "./modules/plc";
+import { createStores } from "./lib/store";
 
-const createWindow = async (alwaysOnTop: boolean) => {
+export type AppContext = {
+  profile: ProfileStore;
+  mdbDB: MDBDB;
+  sqliteDB: ReturnType<typeof createSQLiteDB>;
+
+  kh_hmis: ReturnType<typeof createStores>["kh_hmis"];
+  hxzy_hmis: ReturnType<typeof createStores>["hxzy_hmis"];
+  jtv_hmis: ReturnType<typeof createStores>["jtv_hmis"];
+  jtv_hmis_xuzhoubei: ReturnType<typeof createStores>["jtv_hmis_xuzhoubei"];
+  jtv_hmis_guangzhoubei: ReturnType<
+    typeof createStores
+  >["jtv_hmis_guangzhoubei"];
+};
+
+const createWindow = async (appContext: AppContext) => {
+  const { profile } = appContext;
+
+  const profileInfo = await profile.getState();
+  const alwaysOnTop = profileInfo.alwaysOnTop;
+
   const win = new BrowserWindow({
     webPreferences: {
       preload: path.join(__dirname, "../preload/index.mjs"),
@@ -46,22 +57,22 @@ const createWindow = async (alwaysOnTop: boolean) => {
   win.menuBarVisible = false;
 
   win.on("focus", () => {
-    win.webContents.send(channel.windowFocus);
+    win.webContents.send("windowFocus");
   });
   win.on("blur", () => {
-    win.webContents.send(channel.windowBlur);
+    win.webContents.send("windowBlur");
   });
   // Only fire when the win.show is called on Windows
   win.on("show", () => {
-    win.webContents.send(channel.windowShow);
+    win.webContents.send("windowShow");
   });
   // Only fire when the win.hide is called on Windows
   win.on("hide", () => {
-    win.webContents.send(channel.windowHide);
+    win.webContents.send("windowHide");
   });
 
   win.webContents.on("did-finish-load", () => {
-    win.webContents.send(channel.windowShow);
+    win.webContents.send("windowShow");
   });
   win.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
@@ -91,7 +102,7 @@ const createWindow = async (alwaysOnTop: boolean) => {
   await win.loadURL(ELECTRON_RENDERER_URL);
 };
 
-const bindAppHandler = () => {
+const bindAppEventListeners = (appContext: AppContext) => {
   // Quit when all windows are closed, except on macOS. There, it's common
   // for applications and their menu bar to stay active until the user quits
   // explicitly with Cmd + Q.
@@ -104,9 +115,8 @@ const bindAppHandler = () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   app.on("activate", async () => {
-    const profileInfo = await profile.getProfile();
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow(profileInfo.alwaysOnTop);
+      createWindow(appContext);
     }
   });
 
@@ -130,8 +140,10 @@ const bindAppHandler = () => {
   });
 };
 
-const bindIpcHandler = () => {
-  ipcHandle(channel.VERSION, async () => ({
+const bindIpcHandles = (_: AppContext) => {
+  void _;
+
+  ipcHandle("VERSION/GET", async () => ({
     version: app.getVersion(),
     electronVersion: process.versions.electron,
     chromeVersion: process.versions.chrome,
@@ -139,7 +151,7 @@ const bindIpcHandler = () => {
     v8Version: process.versions.v8,
   }));
 
-  ipcHandle(channel.openAtLogin, async (_, openAtLogin?: boolean) => {
+  ipcHandle("APP/OPEN_AT_LOGIN", async (_, openAtLogin?: boolean) => {
     if (platform.isLinux) {
       return false;
     }
@@ -151,18 +163,18 @@ const bindIpcHandler = () => {
     return app.getLoginItemSettings().openAtLogin;
   });
 
-  ipcHandle(channel.openDevTools, async () => {
+  ipcHandle("APP/OPEN_DEV_TOOLS", async () => {
     const win = BrowserWindow.getAllWindows().at(0);
     if (!win) return;
     win.webContents.openDevTools();
   });
 
-  ipcHandle(channel.openPath, async (_, path: string) => {
+  ipcHandle("APP/OPEN_PATH", async (_, path: string) => {
     const data = await shell.openPath(path);
     return data;
   });
 
-  ipcHandle(channel.mobileMode, async (_, mobile: boolean) => {
+  ipcHandle("APP/MOBILE_MODE", async (_, mobile: boolean) => {
     BrowserWindow.getAllWindows().forEach((win) => {
       if (mobile) {
         win.setSize(500, 800);
@@ -174,7 +186,7 @@ const bindIpcHandler = () => {
     return mobile;
   });
 
-  ipcHandle(channel.SELECT_DIRECTORY, async () => {
+  ipcHandle("APP/SELECT_DIRECTORY", async () => {
     const win = BrowserWindow.getAllWindows().at(0);
     if (!win) throw new Error("No active window");
     const result = await dialog.showOpenDialog(win, {
@@ -183,7 +195,7 @@ const bindIpcHandler = () => {
     return result.filePaths;
   });
 
-  ipcHandle(channel.SELECT_FILE, async (_, filters: Electron.FileFilter[]) => {
+  ipcHandle("APP/SELECT_FILE", async (_, filters: Electron.FileFilter[]) => {
     const win = BrowserWindow.getAllWindows().at(0);
     if (!win) throw new Error("No active window");
     const result = await dialog.showOpenDialog(win, {
@@ -194,7 +206,7 @@ const bindIpcHandler = () => {
   });
 
   ipcHandle(
-    channel.SHOW_OPEN_DIALOG,
+    "APP/SHOW_OPEN_DIALOG",
     async (_, options: Electron.OpenDialogOptions) => {
       const win = BrowserWindow.getAllWindows().at(0);
       if (!win) throw new Error("No active window");
@@ -204,22 +216,13 @@ const bindIpcHandler = () => {
   );
 };
 
-const bindProtocol = () => {
-  protocol.handle("atom", async (request) => {
-    const fileName = request.url.replace(/^atom:\/\//, "");
-    const profileInfo = await profile.getRootPath();
-    const fetchURL = path.join(profileInfo, "_data", fileName);
-    return net.fetch(`file://${fetchURL}`);
-  });
-};
-
 const bootstrap = async () => {
-  // if (import.meta.env.DEV) {
-  //   app.setPath(
-  //     "userData",
-  //     path.resolve(app.getPath("appData"), `./${app.getName()}-dev`),
-  //   );
-  // }
+  if (import.meta.env.DEV) {
+    app.setPath(
+      "userData",
+      path.resolve(app.getPath("appData"), `./${app.getName()}-dev`),
+    );
+  }
 
   /**
    * @description true: No other instances exist
@@ -246,28 +249,54 @@ const bootstrap = async () => {
     electronApp.setAppUserModelId("com.electron");
   }
 
-  // Set app theme mode
-  const profileInfo = await profile.getProfile();
-  nativeTheme.themeSource = profileInfo.mode;
   await app.whenReady();
 
-  bindAppHandler();
-  bindIpcHandler();
-  bindProtocol();
-  hxzyHmis.init();
-  jtvHmisXuzhoubei.init();
-  jtvHmis.init();
-  jtvHmisGuangzhoubei.init();
-  khHmis.init();
-  cmd.initIpc();
-  excel.initIpc();
-  mdb.init();
-  profile.bindIpcHandler();
-  md5.bindIpcHandler();
-  xml.bindIpcHandler();
-  plc.bindIpcHandler();
+  const profileFilePath = path.resolve(app.getPath("userData"), "profile.json");
+  const profile = new ProfileStore(profileFilePath);
+  const mdbDB = new MDBDB(profile);
+  const sqliteDB = createSQLiteDB();
+  const {
+    kh_hmis,
+    hxzy_hmis,
+    jtv_hmis,
+    jtv_hmis_xuzhoubei,
+    jtv_hmis_guangzhoubei,
+  } = createStores();
 
-  await createWindow(profileInfo.alwaysOnTop);
+  const appContext = {
+    profile,
+    mdbDB,
+    sqliteDB,
+    kh_hmis,
+    hxzy_hmis,
+    jtv_hmis,
+    jtv_hmis_xuzhoubei,
+    jtv_hmis_guangzhoubei,
+  };
+
+  const profileInfo = await profile.getState();
+
+  nativeTheme.themeSource = profileInfo.mode;
+
+  bindAppEventListeners(appContext);
+  bindIpcHandles(appContext);
+
+  profile.bindIpcHandlers(appContext);
+  mdbDB.bindIpcHandlers();
+
+  hxzyHmis.bindIPCHandlers(appContext);
+  jtvHmisXuzhoubei.bindIpcHandlers(appContext);
+  jtvHmis.bindIpcHandlers(appContext);
+  jtvHmisGuangzhoubei.bindIpcHandlers(appContext);
+  khHmis.bindIpcHandlers(appContext);
+
+  cmd.bindIpcHandlers(appContext);
+  excel.bindIpcHandlers(appContext);
+  md5.bindIpcHandlers(appContext);
+  xml.bindIpcHandlers(appContext);
+  plc.bindIpcHandlers(appContext);
+
+  await createWindow(appContext);
 };
 
 bootstrap();

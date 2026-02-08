@@ -4,8 +4,9 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
 import { db } from "./lib/db";
 import { AppRouter } from "./router";
-import { useColorScheme } from "./hooks/dom/useColorScheme";
 import { QueryProvider } from "./components/query";
+import { useSubscribe } from "./hooks/useSubscribe";
+import { useColorScheme } from "./hooks/dom/useColorScheme";
 import type { Log } from "./lib/db";
 
 const calculateTheme = (isDark: boolean) => {
@@ -37,15 +38,9 @@ const calculateTheme = (isDark: boolean) => {
 };
 
 const useLog = () => {
-  React.useEffect(() => {
-    const listener = (data: Log) => {
-      db.log.add({ type: data.type, message: data.message, date: data.date });
-    };
-
-    const unsubscribe = window.electronAPI.subscribeLog(listener);
-
-    return () => unsubscribe();
-  }, []);
+  useSubscribe("LOG", (data: Log) => {
+    db.log.add({ type: data.type, message: data.message, date: data.date });
+  });
 };
 
 type MuiProviderProps = React.PropsWithChildren;

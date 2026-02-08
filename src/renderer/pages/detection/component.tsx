@@ -56,7 +56,7 @@ import {
   fetchDataFromAppDB,
 } from "#renderer/api/fetch_preload";
 import { ScrollToTopButton } from "#renderer/components/scroll";
-import type { Detection } from "#main/modules/cmd";
+import type { Detection } from "#main/modules/mdb";
 import type { Filter } from "#main/modules/mdb.worker";
 import type { MDBUser } from "#renderer/api/fetch_preload";
 

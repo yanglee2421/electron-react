@@ -2,13 +2,12 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import dayjs from "dayjs";
 import Excel from "@yanglee2421/exceljs";
-import { shell } from "electron";
+import { app, shell } from "electron";
 import * as sql from "drizzle-orm";
 import * as schema from "#main/schema";
-import { db, getTempDir } from "#main/lib";
-import { getDataFromRootDB as getDataFromMDB } from "#main/modules/mdb";
 import { createCellHelper, createRowHelper, pageSetup } from "#main/utils";
-import type { Detection } from "#main/modules/cmd";
+import type { Detection } from "#main/modules/mdb";
+import type { AppContext } from "#main/index";
 
 const columnWidths = new Map([
   ["A", 7],
@@ -41,7 +40,8 @@ const inspectionItems = [
   "新制车轴探伤时，在轮对首次组装栏填写车轴制造时间及单位",
 ];
 
-export const chr_53a = async (rowIds: string[]) => {
+export const chr_53a = async (appContext: AppContext, rowIds: string[]) => {
+  const { sqliteDB: db, mdbDB } = appContext;
   const workbook = new Excel.Workbook();
   const sheet = workbook.addWorksheet("Sheet1");
   sheet.properties.defaultColWidth = 10;
@@ -202,7 +202,7 @@ export const chr_53a = async (rowIds: string[]) => {
     });
   });
 
-  const data = await getDataFromMDB<Detection>({
+  const data = await mdbDB.getDataFromRootDB<Detection>({
     tableName: "detections",
     filters: [
       {
@@ -355,7 +355,7 @@ export const chr_53a = async (rowIds: string[]) => {
     await sheet.protect("123456", { formatColumns: true, formatRows: true });
   }
 
-  const outputPath = getTempDir();
+  const outputPath = app.getPath("temp");
   const filePath = path.join(outputPath, `output${Date.now()}.xlsx`);
   await fs.promises.mkdir(outputPath, { recursive: true });
   await workbook.xlsx.writeFile(filePath);

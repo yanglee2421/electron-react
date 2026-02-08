@@ -1,9 +1,9 @@
 import { app, shell } from "electron";
 import * as path from "node:path";
 import Excel from "@yanglee2421/exceljs";
-import { db } from "#main/lib";
 import * as schema from "#main/schema";
 import * as sql from "drizzle-orm";
+import type { AppContext } from "#main/index";
 
 const columnWidths = new Map([
   ["A", 8],
@@ -86,7 +86,8 @@ const typography = {
   underline: false,
 } as const;
 
-export const chr_502 = async () => {
+export const chr_502 = async (appContext: AppContext) => {
+  const { sqliteDB: db } = appContext;
   const workbook = new Excel.Workbook();
   const sheet = workbook.addWorksheet("Sheet1");
   sheet.properties.defaultColWidth = 10;

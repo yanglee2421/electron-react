@@ -4,104 +4,149 @@ import ini from "ini";
 import { z } from "zod";
 import iconv from "iconv-lite";
 import { produce } from "immer";
-import { app, BrowserWindow, nativeTheme } from "electron";
-import { ipcHandle } from "#main/lib";
-import { channel } from "#main/channel";
-import type { WritableDraft } from "immer";
+import { BrowserWindow, nativeTheme, net, protocol } from "electron";
+import { ipcHandle } from "#main/lib/ipc";
+import type { AppContext } from "#main/index";
 
-type Mode = z.infer<typeof modeSchema>;
-type ProfileCallback = (profile: WritableDraft<Profile>) => void;
-export type Profile = z.infer<typeof profileSchema>;
+type Mode = "system" | "light" | "dark";
+type CallbackFn<TArgs extends unknown[], TReturn> = (...args: TArgs) => TReturn;
+export type Profile = z.infer<typeof ProfileStore.profileSchema>;
 
-// Shared Logic
-const getFilePath = () => path.resolve(app.getPath("userData"), "profile.json");
+export class ProfileStore {
+  static modeSchema = z.enum(["system", "light", "dark"]).default("system");
+  static profileSchema = z.object({
+    appPath: z.string().default(""),
+    encoding: z.string().default("gbk"),
+    driverPath: z.string().default(""),
+    alwaysOnTop: z.boolean().default(false),
+    mode: this.modeSchema,
+  });
 
-const getAppPath = async () => {
-  const profile = await getProfile();
-  return [profile.appPath, profile] as const;
-};
+  #listeners = new Set<CallbackFn<[Profile, Profile], void>>();
+  #cache: Profile | null = null;
+  #filePath: string;
 
-export const getAppDBPath = async () => {
-  const [appPath] = await getAppPath();
-  return path.resolve(appPath, "Data", "local.mdb");
-};
-
-export const getRootPath = async () => {
-  const [appPath, profile] = await getAppPath();
-  const iniPath = path.resolve(appPath, "usprofile.ini");
-  const iniBuffer = await fs.promises.readFile(iniPath);
-  const iniText = iconv.decode(iniBuffer, profile.encoding);
-  const userProfile = ini.parse(iniText);
-  const rootPath = userProfile.FileSystem.Root as string;
-
-  return rootPath;
-};
-
-export const getRootDBPath = async () => {
-  const rootPath = await getRootPath();
-
-  return path.resolve(rootPath, "local.mdb");
-};
-
-export const getProfile = async () => {
-  const filePath = getFilePath();
-  try {
-    const text = await fs.promises.readFile(filePath, "utf-8");
-    const raw = JSON.parse(text);
-    const parsed = profileSchema.parse(raw);
-    return parsed;
-  } catch {
-    const fallbackProfile = profileSchema.parse({});
-    return fallbackProfile;
+  constructor(filePath: string) {
+    this.#filePath = filePath;
   }
-};
 
-const diffMode = (prev: Mode, next: Mode) => {
-  if (Object.is(prev, next)) return;
+  async getState() {
+    if (this.#cache) {
+      return this.#cache;
+    }
 
-  nativeTheme.themeSource = next;
-};
+    try {
+      const json = await fs.promises.readFile(this.#filePath, "utf-8");
+      this.#cache = ProfileStore.profileSchema.parse(JSON.parse(json));
+    } catch (error) {
+      this.#cache = ProfileStore.profileSchema.parse({});
 
-const diffAlwaysOnTop = (prev: boolean, next: boolean) => {
-  if (Object.is(prev, next)) return;
+      if (import.meta.env.DEV) {
+        console.error(error);
+      }
+    }
 
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.setAlwaysOnTop(next);
-  });
-};
+    return this.#cache;
+  }
+  async setState(callback: CallbackFn<[Profile], void>) {
+    const previous = await this.getState();
+    const next = produce(previous, callback);
+    await fs.promises.writeFile(this.#filePath, JSON.stringify(next), "utf-8");
+    this.#cache = next;
 
-export const setProfile = async (callback: ProfileCallback) => {
-  const filePath = getFilePath();
-  const previous = await getProfile();
-  const data = produce(previous, callback);
-
-  await fs.promises.writeFile(filePath, JSON.stringify(data), "utf-8");
-
-  diffMode(previous.mode, data.mode);
-  diffAlwaysOnTop(previous.alwaysOnTop, data.alwaysOnTop);
-
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send(channel.PROFILE_SET, data);
-  });
-};
-
-export const bindIpcHandler = () => {
-  ipcHandle(channel.PROFILE_GET, getProfile);
-  ipcHandle(channel.PROFILE_SET, async (_, payload: Partial<Profile>) => {
-    await setProfile((profile) => {
-      Object.assign(profile, payload);
+    this.#listeners.forEach((callbackFn) => {
+      try {
+        callbackFn(previous, next);
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error(error);
+        }
+      }
     });
-    const updated = await getProfile();
-    return updated;
-  });
-};
+  }
+  subscribe(listener: CallbackFn<[Profile, Profile], void>) {
+    this.#listeners.add(listener);
 
-const modeSchema = z.enum(["system", "light", "dark"]).default("system");
+    return () => {
+      this.unsubscribe(listener);
+    };
+  }
+  unsubscribe(listener: CallbackFn<[Profile, Profile], void>) {
+    this.#listeners.delete(listener);
+  }
 
-const profileSchema = z.object({
-  appPath: z.string().default(""),
-  encoding: z.string().default("gbk"),
-  driverPath: z.string().default(""),
-  alwaysOnTop: z.boolean().default(false),
-  mode: modeSchema,
-});
+  async getRootPath() {
+    const profileInfo = await this.getState();
+    const appPath = profileInfo.appPath;
+    const iniPath = path.resolve(appPath, "usprofile.ini");
+    const iniBuffer = await fs.promises.readFile(iniPath);
+    const iniText = iconv.decode(iniBuffer, profileInfo.encoding);
+    const userProfile = ini.parse(iniText);
+    const rootPath = userProfile.FileSystem.Root as string;
+
+    return rootPath;
+  }
+  async getRootDBPath() {
+    const rootPath = await this.getRootPath();
+
+    return path.resolve(rootPath, "local.mdb");
+  }
+  async getAppDBPath() {
+    const state = await this.getState();
+    const appPath = state.appPath;
+
+    return path.resolve(appPath, "Data", "local.mdb");
+  }
+
+  bindIpcHandlers(appContext: AppContext) {
+    void appContext;
+
+    const diffMode = (prev: Mode, next: Mode) => {
+      if (Object.is(prev, next)) return;
+
+      nativeTheme.themeSource = next;
+    };
+
+    const diffAlwaysOnTop = (prev: boolean, next: boolean) => {
+      if (Object.is(prev, next)) return;
+
+      BrowserWindow.getAllWindows().forEach((win) => {
+        win.setAlwaysOnTop(next);
+      });
+    };
+
+    const diffAppPath = (prev: string, next: string) => {
+      if (Object.is(prev, next)) return;
+
+      protocol.unhandle("atom");
+      protocol.handle("atom", async (request) => {
+        const fileName = request.url.replace(/^atom:\/\//, "");
+        const rootPath = await this.getRootPath();
+        const fetchURL = path.join(rootPath, "_data", fileName);
+
+        return net.fetch(`file://${fetchURL}`);
+      });
+    };
+
+    this.subscribe((prev, next) => {
+      diffMode(prev.mode, next.mode);
+      diffAlwaysOnTop(prev.alwaysOnTop, next.alwaysOnTop);
+      diffAppPath(prev.appPath, next.appPath);
+    });
+
+    ipcHandle("PROFILE/GET", async () => {
+      const profile = await this.getState();
+
+      return profile;
+    });
+    ipcHandle("PROFILE/SET", async (_, payload: Partial<Profile>) => {
+      await this.setState((profile) => {
+        Object.assign(profile, payload);
+      });
+
+      const updated = await this.getState();
+
+      return updated;
+    });
+  }
+}

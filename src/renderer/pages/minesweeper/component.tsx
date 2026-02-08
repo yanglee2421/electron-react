@@ -28,7 +28,6 @@ import {
 import React from "react";
 import { useSize } from "#renderer/hooks/dom/useSize";
 import { MinesweeperGame } from "./MinesweeperGame";
-import { log } from "#renderer/lib/utils";
 
 const map = new Map<number, string>();
 
@@ -215,13 +214,9 @@ const reducer = ({ game }: ReducerState, args?: ReducerArgs) => ({
 
 export const Component = () => {
   "use no memo";
-  const handleTimeStart = () => {
-    log("started");
-  };
+  const handleTimeStart = () => {};
 
-  const handleTimeEnd = () => {
-    log("end");
-  };
+  const handleTimeEnd = () => {};
 
   const [{ game }, dispatch] = React.useReducer(reducer, null, () => ({
     game: new MinesweeperGame(8, 8, 10, handleTimeEnd, handleTimeStart),

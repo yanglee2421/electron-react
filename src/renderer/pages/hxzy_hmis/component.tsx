@@ -51,7 +51,58 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useDialogs, useNotifications } from "@toolpad/core";
+import { useSubscribe } from "#renderer/hooks/useSubscribe";
+import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import type { HxzyBarcode } from "#main/schema";
+
+const dateInitializer = () => dayjs();
+
+const schema = z.object({
+  barCode: z.string().min(1),
+});
+
+const columnHelper = createColumnHelper<HxzyBarcode>();
+
+const columns = [
+  columnHelper.accessor("id", {
+    header: "ID",
+    footer: "ID",
+    cell: ({ getValue }) => <Link underline="none">#{getValue()}</Link>,
+  }),
+  columnHelper.accessor("barCode", {
+    header: "单号",
+    footer: "单号",
+  }),
+  columnHelper.accessor("zh", {
+    header: "轴号",
+    footer: "轴号",
+  }),
+  columnHelper.accessor("date", {
+    header: "时间",
+    footer: "时间",
+    cell: ({ getValue }) => getValue()?.toLocaleString(),
+  }),
+  columnHelper.accessor("isUploaded", {
+    header: "已上传",
+    footer: "已上传",
+    cell: ({ getValue }) =>
+      getValue() ? <CheckOutlined color="success" /> : <ClearOutlined />,
+  }),
+  columnHelper.display({
+    id: "action",
+    header: "操作",
+    cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
+  }),
+];
+
+const useScanerForm = () => {
+  return useForm({
+    defaultValues: {
+      barCode: "",
+    },
+    resolver: zodResolver(schema),
+  });
+};
 
 type ActionCellProps = {
   id: number;
@@ -109,63 +160,14 @@ const ActionCell = (props: ActionCellProps) => {
   );
 };
 
-const schema = z.object({
-  barCode: z.string().min(1),
-});
-
-const useScanerForm = () =>
-  useForm({
-    defaultValues: {
-      barCode: "",
-    },
-    resolver: zodResolver(schema),
-  });
-
-const columnHelper = createColumnHelper<HxzyBarcode>();
-
-const columns = [
-  columnHelper.accessor("id", {
-    header: "ID",
-    footer: "ID",
-    cell: ({ getValue }) => <Link underline="none">#{getValue()}</Link>,
-  }),
-  columnHelper.accessor("barCode", {
-    header: "单号",
-    footer: "单号",
-  }),
-  columnHelper.accessor("zh", {
-    header: "轴号",
-    footer: "轴号",
-  }),
-  columnHelper.accessor("date", {
-    header: "时间",
-    footer: "时间",
-    cell: ({ getValue }) => getValue()?.toLocaleString(),
-  }),
-  columnHelper.accessor("isUploaded", {
-    header: "已上传",
-    footer: "已上传",
-    cell: ({ getValue }) =>
-      getValue() ? <CheckOutlined color="success" /> : <ClearOutlined />,
-  }),
-  columnHelper.display({
-    id: "action",
-    header: "操作",
-    cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
-  }),
-];
-
-const initDate = () => dayjs();
-
 export const Component = () => {
   "use no memo";
-  const [date, setDate] = React.useState(initDate);
+  const [date, setDate] = React.useState(dateInitializer);
   const [pageIndex, setPageIndex] = React.useState(0);
   const [pageSize, setPageSize] = React.useState(100);
   const [showFilter, setShowFilter] = React.useState(false);
 
   const formRef = React.useRef<HTMLFormElement>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
   const formId = React.useId();
 
   const params = {
@@ -181,10 +183,7 @@ export const Component = () => {
   const barcode = useQuery(fetchHxzyHmisSqliteGet(params));
   const { data: hmis } = useQuery(fetchHxzyHmisSetting());
   const autoInput = useAutoInputToVC();
-
-  const setInputFocus = React.useEffectEvent(() => {
-    inputRef.current?.focus();
-  });
+  const inputRef = useAutoFocusInputRef();
 
   const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
 
@@ -197,49 +196,9 @@ export const Component = () => {
     manualPagination: true,
   });
 
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeWindowFocus(setInputFocus);
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeWindowBlur(setInputFocus);
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const controller = new AbortController();
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (document.visibilityState !== "visible") return;
-        setInputFocus();
-      },
-      controller,
-    );
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
-  const refetchBarcode = React.useEffectEvent(() => {
+  useSubscribe("api_set", () => {
     barcode.refetch();
   });
-
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeHxzyHmisAPISet(() => {
-      refetchBarcode();
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const renderRow = () => {
     if (!table.getRowCount()) {

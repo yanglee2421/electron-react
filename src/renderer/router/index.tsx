@@ -1,7 +1,9 @@
 import { QueryProvider } from "#renderer/components/query";
 import { createHashRouter, RouterProvider } from "react-router";
-import { fetchJtvHmisSetting } from "#renderer/api/jtv_hmis";
-import { fetchJtvHmisGuangzhoubeiSetting } from "#renderer/api/jtv_hmis_guangzhoubei";
+import {
+  fetchJtvHmisGuangzhoubeiSetting,
+  fetchJtvHmisSetting,
+} from "#renderer/api/fetch_preload";
 import {
   fetchHxzyHmisSetting,
   fetchJtvHmisXuzhoubeiSetting,

@@ -1,16 +1,10 @@
-import { ipcHandle } from "#main/lib";
-import { channel } from "#main/channel";
+import * as sql from "drizzle-orm";
+import * as schema from "#main/schema";
+import { ipcHandle } from "#main/lib/ipc";
 import { chr_502 } from "./chr_502";
 import { chr_53a } from "./chr_53a";
 import { chr_501 } from "./chr_501";
-import { db } from "#main/lib";
-import * as sql from "drizzle-orm";
-import * as schema from "#main/schema";
-import type * as PRELOAD from "#preload/index";
-
-type DeleteParams = {
-  id: number;
-};
+import type { AppContext } from "#main/index";
 
 /**
  * CHR53A Work Records
@@ -18,27 +12,23 @@ type DeleteParams = {
  * CHR502 Quartor Validate
  * CHR503 Yearly Validate
  */
-export const initIpc = () => {
-  ipcHandle(channel.XLSX_CHR501, (_, id: string) => chr_501(id));
-  ipcHandle(channel.xlsx_chr_502, chr_502);
-  ipcHandle(channel.xlsx_chr_53a, (_, data) => chr_53a(data));
-  ipcHandle(
-    channel.sqlite_xlsx_size_c,
-    async (_, params: PRELOAD.SqliteXlsxSizeCParams) => {
-      const data = await db
-        .insert(schema.xlsxSizeTable)
-        .values(params)
-        .returning();
+export const bindIpcHandlers = (appContext: AppContext) => {
+  const { sqliteDB: db } = appContext;
 
-      return data;
-    },
-  );
+  ipcHandle("XLSX/XLSX_CHR501", (_, id: string) => chr_501(appContext, id));
+  ipcHandle("XLSX/xlsx_chr_502", () => chr_502(appContext));
+  ipcHandle("XLSX/xlsx_chr_53a", (_, data) => chr_53a(appContext, data));
+  ipcHandle("XLSX/sqlite_xlsx_size_c", async (_, params) => {
+    const data = await db
+      .insert(schema.xlsxSizeTable)
+      .values(params)
+      .returning();
+
+    return data;
+  });
   ipcHandle(
-    channel.sqlite_xlsx_size_u,
-    async (
-      _,
-      { id, xlsxName, type, index, size }: PRELOAD.SqliteXlsxSizeUParams,
-    ) => {
+    "XLSX/sqlite_xlsx_size_u",
+    async (_, { id, xlsxName, type, index, size }) => {
       const data = await db
         .update(schema.xlsxSizeTable)
         .set({ xlsxName, type, index, size })
@@ -48,17 +38,8 @@ export const initIpc = () => {
     },
   );
   ipcHandle(
-    channel.sqlite_xlsx_size_r,
-    async (
-      _,
-      {
-        id,
-        xlsxName,
-        type,
-        pageIndex = 0,
-        pageSize = 10,
-      }: PRELOAD.SqliteXlsxSizeRParams = {},
-    ) => {
+    "XLSX/sqlite_xlsx_size_r",
+    async (_, { id, xlsxName, type, pageIndex = 0, pageSize = 10 } = {}) => {
       const wheres = [
         id && sql.eq(schema.xlsxSizeTable.id, id),
         xlsxName && sql.like(schema.xlsxSizeTable.xlsxName, `%${xlsxName}%`),
@@ -81,7 +62,7 @@ export const initIpc = () => {
       return { count, rows };
     },
   );
-  ipcHandle(channel.sqlite_xlsx_size_d, async (_, { id }: DeleteParams) => {
+  ipcHandle("XLSX/sqlite_xlsx_size_d", async (_, id: number) => {
     const data = await db
       .delete(schema.xlsxSizeTable)
       .where(sql.eq(schema.xlsxSizeTable.id, id))

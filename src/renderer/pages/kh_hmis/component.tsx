@@ -1,4 +1,3 @@
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CheckOutlined,
   ClearOutlined,
@@ -29,17 +28,20 @@ import {
   TableContainer,
   LinearProgress,
 } from "@mui/material";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
-import React from "react";
-import { useDialogs, useNotifications } from "@toolpad/core";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import { z } from "zod";
+import dayjs from "dayjs";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { DatePicker } from "@mui/x-date-pickers";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import { useDialogs, useNotifications } from "@toolpad/core";
 import {
   useAutoInputToVC,
   useKhHmisApiGet,
@@ -48,10 +50,59 @@ import {
   fetchKhHmisSqliteGet,
   fetchHxzyHmisSetting,
 } from "#renderer/api/fetch_preload";
+import { useSubscribe } from "#renderer/hooks/useSubscribe";
+import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import type { KhBarcode } from "#main/schema";
-import { useQuery } from "@tanstack/react-query";
-import dayjs from "dayjs";
-import { DatePicker } from "@mui/x-date-pickers";
+
+const dateInitializer = () => dayjs();
+
+const columnHelper = createColumnHelper<KhBarcode>();
+
+const columns = [
+  columnHelper.accessor("id", {
+    header: "ID",
+    footer: "ID",
+    cell: ({ getValue }) => <Link underline="none">#{getValue()}</Link>,
+  }),
+  columnHelper.accessor("barCode", {
+    header: "单号",
+    footer: "单号",
+  }),
+  columnHelper.accessor("zh", {
+    header: "轴号",
+    footer: "轴号",
+  }),
+  columnHelper.accessor("date", {
+    header: "时间",
+    footer: "时间",
+    cell: ({ getValue }) => getValue()?.toLocaleString(),
+  }),
+  columnHelper.accessor("isUploaded", {
+    header: "已上传",
+    footer: "已上传",
+    cell: ({ getValue }) =>
+      getValue() ? <CheckOutlined color="success" /> : <ClearOutlined />,
+  }),
+  columnHelper.display({
+    id: "action",
+    header: "操作",
+    cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
+  }),
+];
+
+const schema = z.object({
+  barCode: z.string().min(1),
+});
+
+const useScanerForm = () => {
+  return useForm({
+    defaultValues: {
+      barCode: "",
+    },
+    resolver: zodResolver(schema),
+  });
+};
 
 type ActionCellProps = {
   id: number;
@@ -107,63 +158,15 @@ const ActionCell = (props: ActionCellProps) => {
   );
 };
 
-const schema = z.object({
-  barCode: z.string().min(1),
-});
-
-const useScanerForm = () =>
-  useForm({
-    defaultValues: {
-      barCode: "",
-    },
-    resolver: zodResolver(schema),
-  });
-
-const columnHelper = createColumnHelper<KhBarcode>();
-
-const columns = [
-  columnHelper.accessor("id", {
-    header: "ID",
-    footer: "ID",
-    cell: ({ getValue }) => <Link underline="none">#{getValue()}</Link>,
-  }),
-  columnHelper.accessor("barCode", {
-    header: "单号",
-    footer: "单号",
-  }),
-  columnHelper.accessor("zh", {
-    header: "轴号",
-    footer: "轴号",
-  }),
-  columnHelper.accessor("date", {
-    header: "时间",
-    footer: "时间",
-    cell: ({ getValue }) => getValue()?.toLocaleString(),
-  }),
-  columnHelper.accessor("isUploaded", {
-    header: "已上传",
-    footer: "已上传",
-    cell: ({ getValue }) =>
-      getValue() ? <CheckOutlined color="success" /> : <ClearOutlined />,
-  }),
-  columnHelper.display({
-    id: "action",
-    header: "操作",
-    cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
-  }),
-];
-
-const initDate = () => dayjs();
-
 export const Component = () => {
   "use no memo";
-  const [date, setDate] = React.useState(initDate);
+  const [date, setDate] = React.useState(dateInitializer);
   const [pageIndex, setPageIndex] = React.useState(0);
   const [pageSize, setPageSize] = React.useState(10);
   const [showFilter, setShowFilter] = React.useState(false);
 
   const formRef = React.useRef<HTMLFormElement>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+
   const formId = React.useId();
 
   const params = {
@@ -173,16 +176,13 @@ export const Component = () => {
     endDate: date.endOf("day").toISOString(),
   };
 
+  const inputRef = useAutoFocusInputRef();
   const form = useScanerForm();
   const getData = useKhHmisApiGet();
   const snackbar = useNotifications();
   const autoInput = useAutoInputToVC();
   const { data: hmis } = useQuery(fetchHxzyHmisSetting());
   const barcode = useQuery(fetchKhHmisSqliteGet(params));
-
-  const setInputFocus = React.useEffectEvent(() => {
-    inputRef.current?.focus();
-  });
 
   const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
 
@@ -196,51 +196,9 @@ export const Component = () => {
     rowCount: barcode.data?.count || 0,
   });
 
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeWindowFocus(setInputFocus);
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeWindowBlur(setInputFocus);
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const controller = new AbortController();
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (document.visibilityState !== "visible") return;
-        setInputFocus();
-      },
-      controller,
-    );
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
-  const refetchBarcode = React.useEffectEvent(() => {
+  useSubscribe("api_set", () => {
     barcode.refetch();
   });
-
-  React.useEffect(() => {
-    const unsubscribe = window.electronAPI.subscribeKhHmisAPISet(() => {
-      refetchBarcode();
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
 
   const renderRow = () => {
     if (!table.getRowCount()) {

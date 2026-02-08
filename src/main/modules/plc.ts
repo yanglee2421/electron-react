@@ -1,31 +1,8 @@
 import { SerialPort } from "serialport";
 import { FXPLCClient, TransportSerial } from "node-fxplc";
-import { channel } from "#main/channel";
-import { ipcHandle } from "#main/lib";
-
-export type PLCReadResult = {
-  D20: number;
-  D21: number;
-  D22: number;
-  D23: number;
-  D300: number;
-  D301: number;
-  D302: number;
-  D303: number;
-  D308: number;
-  D309: number;
-};
-
-export type PLCWritePayload = {
-  path: string;
-
-  D300: number;
-  D301: number;
-  D302: number;
-  D303: number;
-  D308: number;
-  D309: number;
-};
+import { ipcHandle } from "#main/lib/ipc";
+import type { AppContext } from "..";
+import type { PLCReadResult, PLCWritePayload } from "#main/lib/ipc";
 
 const createPLCClient = (path: string = DEFAULT_PATH) => {
   const port = new TransportSerial({
@@ -123,10 +100,12 @@ const handleWriteState = async (payload: PLCWritePayload) => {
   return null;
 };
 
-export const bindIpcHandler = () => {
-  ipcHandle(channel.PLC.read_test, (_, path) => handleReadState(path));
-  ipcHandle(channel.PLC.write_test, async (_, payload: PLCWritePayload) => {
+export const bindIpcHandlers = (appContext: AppContext) => {
+  void appContext;
+
+  ipcHandle("PLC/read_test", (_, path) => handleReadState(path));
+  ipcHandle("PLC/write_test", async (_, payload) => {
     await handleWriteState(payload);
   });
-  ipcHandle(channel.PLC.serialport_list, handleSerialPortList);
+  ipcHandle("PLC/serialport_list", handleSerialPortList);
 };

@@ -20,9 +20,11 @@ import { useQuery } from "@tanstack/react-query";
 import {
   fetchJtvHmisGuangzhoubeiSetting,
   useUpdateJtvHmisGuangzhoubeiSetting,
-} from "#renderer/api/jtv_hmis_guangzhoubei";
+} from "#renderer/api/fetch_preload";
 import { SaveOutlined } from "@mui/icons-material";
 import { NumberField } from "#renderer/components/number";
+
+type FormValues = z.infer<typeof schema>;
 
 const schema = z.object({
   get_ip: z.ipv4(),
@@ -35,8 +37,6 @@ const schema = z.object({
   unitCode: z.string(),
   signature_prefix: z.string(),
 });
-
-type FormValues = z.infer<typeof schema>;
 
 const useSettingForm = () => {
   const { data: hmis } = useQuery(fetchJtvHmisGuangzhoubeiSetting());

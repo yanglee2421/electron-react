@@ -21,10 +21,6 @@ import {
   DeleteOutlined,
   RemoveOutlined,
 } from "@mui/icons-material";
-import React from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "#renderer/lib/db";
-import type { Log } from "#renderer/lib/db";
 import {
   createColumnHelper,
   flexRender,
@@ -32,10 +28,16 @@ import {
   getExpandedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import React from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { DatePicker } from "@mui/x-date-pickers";
+import { db } from "#renderer/lib/db";
 import { ScrollToTop } from "#renderer/components/scroll";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import type { Log } from "#renderer/lib/db";
+
+const initDayjs = () => dayjs();
 
 const columnHelper = createColumnHelper<Log>();
 
@@ -183,8 +185,6 @@ const DataGrid = (props: DataGridProps) => {
     </>
   );
 };
-
-const initDayjs = () => dayjs();
 
 export const Component = () => {
   const [pageIndex, setPageIndex] = React.useState(0);

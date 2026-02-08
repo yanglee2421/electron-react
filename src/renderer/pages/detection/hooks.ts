@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 type State = {
   date: string | null;
@@ -12,7 +12,7 @@ type State = {
   result: string;
 };
 
-const initialState = (): State => ({
+const storeInitializer = (): State => ({
   date: new Date().toISOString(),
   pageIndex: 0,
   pageSize: 100,
@@ -23,7 +23,7 @@ const initialState = (): State => ({
 });
 
 export const useSessionStore = create<State>()(
-  persist(immer(initialState), {
+  persist(immer(storeInitializer), {
     storage: createJSONStorage(() => sessionStorage),
     name: "useSessionStore:detections",
   }),

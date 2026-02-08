@@ -4,9 +4,11 @@ import { PDFParse } from "pdf-parse";
 import { XMLParser } from "fast-xml-parser";
 import { getPath } from "pdf-parse/worker";
 import { readBarcodes, prepareZXingModule } from "zxing-wasm";
-import { channel } from "#main/channel";
-import { ipcHandle, ls } from "#main/lib";
+import { ipcHandle } from "#main/lib/ipc";
+import { ls } from "#main/lib/fs";
 import loaderWASM from "#resources/zxing_full.wasm?loader";
+import type { AppContext } from "..";
+import type { Invoice, IssuItemInformation, XMLJSONData } from "#main/lib/ipc";
 
 PDFParse.setWorker(getPath());
 
@@ -174,8 +176,9 @@ const mapGroupBy = <TElement, TKey>(
   return groupMap;
 };
 
-export const bindIpcHandler = () => {
-  ipcHandle(channel.XML, async (_, payload: string) => {
+export const bindIpcHandlers = (appContext: AppContext) => {
+  void appContext;
+  ipcHandle("XML/XML", async (_, payload: string) => {
     const xmlPath = payload;
     const data = await xmlPathToJSONData(xmlPath);
     return data;
@@ -186,7 +189,7 @@ export const bindIpcHandler = () => {
    * @returns All .pdf & .xml
    */
   ipcHandle(
-    channel.SELECT_XML_PDF_FROM_FOLDER,
+    "XML/SELECT_XML_PDF_FROM_FOLDER",
     async (_, filePaths: string[]) => {
       const allFilePaths = await collectAllFilePaths(filePaths);
       const fileteredFilePaths = [...allFilePaths].filter((filePath) => {
@@ -202,7 +205,7 @@ export const bindIpcHandler = () => {
       return fileteredFilePaths;
     },
   );
-  ipcHandle(channel.XML_PDF_COMPUTE, async (_, filePaths: string[]) => {
+  ipcHandle("XML/XML_PDF_COMPUTE", async (_, filePaths: string[]) => {
     const resultMap = new Map<string, Invoice>();
     const fileGroup = mapGroupBy(filePaths, (filePath) =>
       path.extname(filePath),
@@ -220,113 +223,4 @@ export const bindIpcHandler = () => {
 
     return [...resultMap.values()];
   });
-};
-
-type IssuItemInformation = {
-  ItemName: string;
-  SpecMod: string;
-  MeaUnits: string;
-  Quantity: number;
-  UnPrice: number;
-  Amount: number;
-  TaxRate: number;
-  ComTaxAm: number;
-  TotaltaxIncludedAmount: number;
-  TaxClassificationCode: string | number;
-};
-
-type XMLJSONData = {
-  "?xml": string;
-  EInvoice: {
-    Header: {
-      EIid: string;
-      EInvoiceTag: string;
-      Version: number;
-      InherentLabel: {
-        InIssuType: {
-          LabelCode: string;
-          LabelName: string;
-        };
-        EInvoiceType: {
-          LabelCode: number | string;
-          LabelName: string;
-        };
-        GeneralOrSpecialVAT: {
-          LabelCode: number | string;
-          LabelName: string;
-        };
-      };
-      UndefinedLabel: {
-        Label: {
-          LabelType: string;
-          LabelCode: number | string;
-          LabelName: string;
-        };
-      };
-    };
-    EInvoiceData: {
-      SellerInformation: {
-        SellerIdNum: string;
-        SellerName: string;
-        SellerAddr: string;
-        SellerTelNum: string;
-        SellerBankName: string;
-        SellerBankAccNum: string | number;
-      };
-      BuyerInformation: {
-        BuyerIdNum: string;
-        BuyerName: string;
-        BuyerBankName: string;
-        BuyerBankAccNum: string | number;
-        BuyerAddr: string;
-        BuyerTelNum: string;
-      };
-      BasicInformation: {
-        TotalAmWithoutTax: number;
-        TotalTaxAm: number;
-        "TotalTax-includedAmount": number;
-        "TotalTax-includedAmountInChinese": string;
-        Drawer: string;
-        RequestTime: string;
-      };
-      IssuItemInformation: IssuItemInformation[] | IssuItemInformation;
-      SpecificInformation: {
-        PassengerTransportation: Array<{
-          Departure: string;
-          Destination: string;
-          Traveler: string;
-          ValidIDNumber: string;
-          TravelDate: string;
-          Grade: string;
-          TypeOfPassengerDocument: string;
-          Vehicletype: string;
-        }>;
-      };
-      AdditionalInformation:
-        | string
-        | {
-            Remark: string;
-          };
-    };
-    SellerAuthentication: {
-      AuthenticationMethods: number | string;
-    };
-    TaxSupervisionInfo: {
-      InvoiceNumber: string;
-      IssueTime: string;
-      TaxBureauCode: string | number;
-      TaxBureauName: string;
-    };
-  };
-};
-
-export type Invoice = {
-  id: string;
-  totalTaxIncludedAmount: string;
-  requestTime: string;
-  filePath: string;
-  itemName?: string;
-  additionalInformation?: string;
-  pdf: boolean;
-  xml: boolean;
 };

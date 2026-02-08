@@ -15,11 +15,6 @@ export const debounce = <TArgs extends unknown[]>(
   };
 };
 
-export const promiseTry = <TArgs extends unknown[], TReturn>(
-  callback: Callback<TArgs, TReturn>,
-  ...args: TArgs
-) => new Promise<TReturn>((resolve) => resolve(callback(...args)));
-
 export const chunk = <TElement>(
   array: TElement[],
   size: number,

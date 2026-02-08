@@ -40,8 +40,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers";
-import { useQuery } from "@tanstack/react-query";
 import {
   flexRender,
   useReactTable,
@@ -53,6 +51,8 @@ import React from "react";
 import dayjs from "dayjs";
 import * as mathjs from "mathjs";
 import { useImmer } from "use-immer";
+import { DatePicker } from "@mui/x-date-pickers";
+import { useQuery } from "@tanstack/react-query";
 import {
   useOpenPath,
   useShowOpenDialog,
@@ -64,18 +64,8 @@ import { isWithinRange, mapGroupBy } from "#renderer/lib/utils";
 import { ScrollToTop } from "#renderer/components/scroll";
 import { useLocaleDate } from "#renderer/hooks/dom/useLocaleDate";
 import { useLocaleTime } from "#renderer/hooks/dom/useLocaleTime";
-import type { Invoice } from "#main/modules/xml";
+import type { Invoice } from "#main/lib/ipc";
 import type { CallbackFn } from "#renderer/lib/utils";
-
-const fileListToPaths = (fileList: FileList) => {
-  return Array.from(fileList, (file) =>
-    window.electron.webUtils.getPathForFile(file),
-  );
-};
-
-const initFiles = () => new Set<string>();
-const initIdToItemName = () => new Map<string, string>();
-const initIdToDenominator = () => new Map<string, number>();
 
 type IdToDenominatorContextType = [
   Map<string, number>,
@@ -87,15 +77,51 @@ type IdToItemNameContextType = [
   CallbackFn<[string, string], void>,
 ];
 
-const IdToDenominatorContext = React.createContext<IdToDenominatorContextType>([
-  initIdToDenominator(),
-  Boolean,
-]);
+const computeTotal = (
+  invoices: Invoice[],
+  denominatorMap: Map<string, number>,
+) => {
+  const total = invoices.reduce((latestResult, invoice) => {
+    return mathjs
+      .add(
+        mathjs.bignumber(latestResult),
+        mathjs.divide(
+          mathjs.bignumber(invoice.totalTaxIncludedAmount),
+          mathjs.bignumber(denominatorMap.get(invoice.id) || 1),
+        ),
+      )
+      .toString();
+  }, "0");
 
-const IdToItemNameContext = React.createContext<IdToItemNameContextType>([
-  initIdToItemName(),
-  Boolean,
-]);
+  return total;
+};
+
+const getMonthCalendar = (date: dayjs.Dayjs) => {
+  const startOfMonth = date.startOf("month");
+  const endOfMonth = date.endOf("month");
+  const startWeekday = startOfMonth.day();
+  const endWeekday = endOfMonth.day();
+  const calendarStart = startOfMonth.subtract(startWeekday, "day");
+  const calendarEnd = endOfMonth.add(6 - endWeekday, "day");
+  const totalDays = calendarEnd.diff(calendarStart, "day") + 1;
+
+  const days = Array.from({ length: totalDays }, (_, i) =>
+    calendarStart.add(i, "day"),
+  );
+
+  const weeks = [];
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7));
+  }
+
+  return weeks;
+};
+
+const fileListToPaths = (fileList: FileList) => {
+  return Array.from(fileList, (file) =>
+    window.electron.webUtils.getPathForFile(file),
+  );
+};
 
 const getTotalDays = (
   rangeStart: dayjs.Dayjs | null,
@@ -122,6 +148,423 @@ const mathjsAdd = (invoiceTotal: string, subsidy: string) => {
   return mathjs
     .add(mathjs.bignumber(invoiceTotal), mathjs.bignumber(subsidy))
     .toString();
+};
+
+const initDayjs = () => dayjs();
+const initFiles = () => new Set<string>();
+const initIdToItemName = () => new Map<string, string>();
+const initIdToDenominator = () => new Map<string, number>();
+
+const columnHelper = createColumnHelper<Invoice>();
+
+const columns = [
+  columnHelper.accessor("id", {
+    header: "发票号码",
+  }),
+  columnHelper.accessor("pdf", {
+    header: "PDF",
+    cell: ({ getValue }) => {
+      return <BooleanCell value={!!getValue()} />;
+    },
+  }),
+  columnHelper.accessor("xml", {
+    header: "XML",
+    cell: ({ getValue }) => {
+      return <BooleanCell value={!!getValue()} />;
+    },
+  }),
+  columnHelper.accessor("totalTaxIncludedAmount", {
+    header: "价税合计",
+  }),
+  columnHelper.accessor("requestTime", {
+    header: "开票日期",
+  }),
+  columnHelper.accessor("itemName", {
+    header: "项目名称",
+    cell(props) {
+      return <ItemNameCell id={props.row.id} value={props.getValue() || ""} />;
+    },
+  }),
+  columnHelper.accessor("additionalInformation", {
+    header: "备注",
+  }),
+  columnHelper.display({
+    id: "denominator",
+    header: "拆票",
+    cell: ({ row }) => {
+      return <DenominatorCell id={row.id} />;
+    },
+  }),
+];
+
+const IdToDenominatorContext = React.createContext<IdToDenominatorContextType>([
+  initIdToDenominator(),
+  Boolean,
+]);
+
+const IdToItemNameContext = React.createContext<IdToItemNameContextType>([
+  initIdToItemName(),
+  Boolean,
+]);
+
+type BooleanCellProps = {
+  value: boolean;
+};
+
+const BooleanCell = ({ value }: BooleanCellProps) => {
+  return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
+};
+
+const Clock = () => {
+  const date = useLocaleDate();
+  const time = useLocaleTime();
+
+  return (
+    <>
+      <Typography variant="h2">{date}</Typography>
+      <Typography variant="h3">{time}</Typography>
+    </>
+  );
+};
+
+type ItemNameCellProps = {
+  id: string;
+  value: string;
+};
+
+const ItemNameCell = (props: ItemNameCellProps) => {
+  const [editable, setEditable] = React.useState(false);
+
+  const [idToItemName, setIdToItemName] = React.use(IdToItemNameContext);
+
+  const itemName = idToItemName.get(props.id) || props.value;
+
+  if (editable) {
+    return (
+      <TextField
+        value={itemName}
+        onChange={(e) => {
+          setIdToItemName(props.id, e.target.value);
+        }}
+        onBlur={() => {
+          setEditable(false);
+        }}
+        size="small"
+        autoFocus
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={() => {
+        setEditable(true);
+      }}
+      style={{ whiteSpace: "nowrap" }}
+    >
+      {itemName || props.value}
+    </span>
+  );
+};
+
+type CalendarProps = {
+  rangeStart: dayjs.Dayjs | null;
+  rangeEnd: dayjs.Dayjs | null;
+  setRangeStart: React.Dispatch<React.SetStateAction<dayjs.Dayjs | null>>;
+  setRangeEnd: React.Dispatch<React.SetStateAction<dayjs.Dayjs | null>>;
+  subsidyPerDay: string;
+  onSubsidyPerDayChange: (value: string) => void;
+};
+
+const Calendar = (props: CalendarProps) => {
+  const { rangeStart, rangeEnd, setRangeStart, setRangeEnd } = props;
+
+  const [selectDate, setSelectDate] = React.useState(initDayjs);
+
+  const monthCalendar = getMonthCalendar(selectDate);
+
+  return (
+    <Card>
+      <CardHeader
+        title="日期"
+        subheader={`共${getTotalDays(rangeStart, rangeEnd)}天`}
+        action={
+          <>
+            <IconButton
+              onClick={() => {
+                setSelectDate((prev) => prev.month(prev.month() - 1));
+              }}
+            >
+              <NavigateBeforeOutlined />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setSelectDate((prev) => prev.month(prev.month() + 1));
+              }}
+            >
+              <NavigateNextOutlined />
+            </IconButton>
+          </>
+        }
+      />
+      <CardContent>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <DatePicker
+              value={selectDate}
+              onChange={(e) => {
+                if (!e) return;
+                setSelectDate(e);
+              }}
+              slotProps={{
+                textField: { fullWidth: true },
+              }}
+              views={["month", "year"]}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              value={props.subsidyPerDay}
+              onChange={(e) => {
+                props.onSubsidyPerDayChange(e.target.value);
+              }}
+              select
+              fullWidth
+              label="餐补/天"
+            >
+              <MenuItem value="50">50</MenuItem>
+              <MenuItem value="100">100</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <DatePicker
+              value={rangeStart}
+              onChange={(e) => {
+                setRangeStart(e);
+              }}
+              maxDate={rangeEnd || void 0}
+              slotProps={{
+                textField: { fullWidth: true },
+                field: { clearable: true },
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <DatePicker
+              value={rangeEnd}
+              onChange={(e) => {
+                setRangeEnd(e);
+              }}
+              minDate={rangeStart || void 0}
+              slotProps={{
+                textField: { fullWidth: true },
+                field: { clearable: true },
+              }}
+            />
+          </Grid>
+        </Grid>
+      </CardContent>
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {Array.from({ length: 7 }, (_, index) => {
+                const day = dayjs().day(index).format("dddd");
+
+                return <TableCell key={day}>{day}</TableCell>;
+              })}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {monthCalendar.map((dates, index) => (
+              <TableRow key={index}>
+                {dates.map((date) => {
+                  const dateText = date.date();
+                  return (
+                    <TableCell key={dateText}>
+                      <Badge
+                        color="primary"
+                        badgeContent={
+                          isWithinRange(
+                            date.valueOf(),
+                            rangeStart?.valueOf() || Number.POSITIVE_INFINITY,
+                            rangeEnd?.valueOf() || Number.NEGATIVE_INFINITY,
+                          )
+                            ? date.diff(rangeStart, "day") + 1
+                            : null
+                        }
+                      >
+                        {dateText}
+                      </Badge>
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow></TableRow>
+          </TableFooter>
+        </Table>
+      </TableContainer>
+    </Card>
+  );
+};
+
+type OpenPathLinkProps = {
+  children?: React.ReactNode;
+  filePath: string;
+};
+
+const OpenPathLink = (props: OpenPathLinkProps) => {
+  const openPath = useOpenPath();
+
+  return (
+    <Link
+      onClick={() => {
+        openPath.mutate(props.filePath);
+      }}
+      sx={{ cursor: "pointer" }}
+    >
+      {props.children}
+    </Link>
+  );
+};
+
+type DenominatorCellProps = {
+  id: string;
+};
+
+const DenominatorCell = (props: DenominatorCellProps) => {
+  const [IdToDenominator, handleChange] = React.use(IdToDenominatorContext);
+
+  return (
+    <NumberField
+      field={{
+        value: IdToDenominator.get(props.id) || 1,
+        onChange(value) {
+          handleChange(props.id, value);
+        },
+        onBlur() {},
+      }}
+      size="small"
+      _min={1}
+    />
+  );
+};
+
+type DataGridProps = {
+  data: Invoice[];
+  isFetching?: boolean;
+};
+
+const DataGrid = (props: DataGridProps) => {
+  "use no memo";
+
+  const table = useReactTable({
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    columns,
+    data: props.data,
+    getRowId: (row) => row.id,
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 50,
+      },
+    },
+  });
+
+  const renderRows = () => {
+    const rows = table.getRowModel().rows;
+
+    if (!rows.length) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length}>
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <Typography variant="overline">No data</Typography>
+            </Box>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return rows.map((row) => (
+      <React.Fragment key={row.id}>
+        <TableRow>
+          {row.getVisibleCells().map((cell) => (
+            <TableCell key={cell.id}>
+              {cell.getIsPlaceholder() ||
+                flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </TableCell>
+          ))}
+        </TableRow>
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length}>
+            <OpenPathLink filePath={row.original.filePath}>
+              <Typography variant="overline" color="textSecondary">
+                {row.original.filePath}
+              </Typography>
+            </OpenPathLink>
+          </TableCell>
+        </TableRow>
+      </React.Fragment>
+    ));
+  };
+
+  return (
+    <>
+      <TableContainer>
+        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
+          <TableHead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableCell key={header.id}>
+                    {header.isPlaceholder ||
+                      flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableHead>
+          <TableBody>{renderRows()}</TableBody>
+          <TableFooter>
+            {table.getFooterGroups().map((footerGroup) => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <TableCell key={header.id}>
+                    {header.isPlaceholder ||
+                      flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableFooter>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        component={"div"}
+        count={table.getRowCount()}
+        page={table.getState().pagination.pageIndex}
+        rowsPerPage={table.getState().pagination.pageSize}
+        rowsPerPageOptions={[50, 100]}
+        onPageChange={(_, page) => {
+          table.setPageIndex(page);
+        }}
+        onRowsPerPageChange={(e) => {
+          table.setPageSize(Number.parseInt(e.target.value));
+        }}
+      />
+    </>
+  );
 };
 
 export const Component = () => {
@@ -347,450 +790,6 @@ export const Component = () => {
           </CardContent>
         </Card>
       </Stack>
-    </>
-  );
-};
-
-type DenominatorCellProps = {
-  id: string;
-};
-
-const DenominatorCell = (props: DenominatorCellProps) => {
-  const [IdToDenominator, handleChange] = React.use(IdToDenominatorContext);
-
-  return (
-    <NumberField
-      field={{
-        value: IdToDenominator.get(props.id) || 1,
-        onChange(value) {
-          handleChange(props.id, value);
-        },
-        onBlur() {},
-      }}
-      size="small"
-      _min={1}
-    />
-  );
-};
-
-const columnHelper = createColumnHelper<Invoice>();
-
-const columns = [
-  columnHelper.accessor("id", {
-    header: "发票号码",
-  }),
-  columnHelper.accessor("pdf", {
-    header: "PDF",
-    cell: ({ getValue }) => {
-      return <BooleanCell value={!!getValue()} />;
-    },
-  }),
-  columnHelper.accessor("xml", {
-    header: "XML",
-    cell: ({ getValue }) => {
-      return <BooleanCell value={!!getValue()} />;
-    },
-  }),
-  columnHelper.accessor("totalTaxIncludedAmount", {
-    header: "价税合计",
-  }),
-  columnHelper.accessor("requestTime", {
-    header: "开票日期",
-  }),
-  columnHelper.accessor("itemName", {
-    header: "项目名称",
-    cell(props) {
-      return <ItemNameCell id={props.row.id} value={props.getValue() || ""} />;
-    },
-  }),
-  columnHelper.accessor("additionalInformation", {
-    header: "备注",
-  }),
-  columnHelper.display({
-    id: "denominator",
-    header: "拆票",
-    cell: ({ row }) => {
-      return <DenominatorCell id={row.id} />;
-    },
-  }),
-];
-
-type DataGridProps = {
-  data: Invoice[];
-  isFetching?: boolean;
-};
-
-const DataGrid = (props: DataGridProps) => {
-  "use no memo";
-
-  const table = useReactTable({
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    columns,
-    data: props.data,
-    getRowId: (row) => row.id,
-    initialState: {
-      pagination: {
-        pageIndex: 0,
-        pageSize: 50,
-      },
-    },
-  });
-
-  const renderRows = () => {
-    const rows = table.getRowModel().rows;
-
-    if (!rows.length) {
-      return (
-        <TableRow>
-          <TableCell colSpan={table.getAllLeafColumns().length}>
-            <Box sx={{ display: "flex", justifyContent: "center" }}>
-              <Typography variant="overline">No data</Typography>
-            </Box>
-          </TableCell>
-        </TableRow>
-      );
-    }
-
-    return rows.map((row) => (
-      <React.Fragment key={row.id}>
-        <TableRow>
-          {row.getVisibleCells().map((cell) => (
-            <TableCell key={cell.id}>
-              {cell.getIsPlaceholder() ||
-                flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </TableCell>
-          ))}
-        </TableRow>
-        <TableRow>
-          <TableCell colSpan={table.getAllLeafColumns().length}>
-            <OpenPathLink filePath={row.original.filePath}>
-              <Typography variant="overline" color="textSecondary">
-                {row.original.filePath}
-              </Typography>
-            </OpenPathLink>
-          </TableCell>
-        </TableRow>
-      </React.Fragment>
-    ));
-  };
-
-  return (
-    <>
-      <TableContainer>
-        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
-          <TableHead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableCell key={header.id}>
-                    {header.isPlaceholder ||
-                      flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>{renderRows()}</TableBody>
-          <TableFooter>
-            {table.getFooterGroups().map((footerGroup) => (
-              <TableRow key={footerGroup.id}>
-                {footerGroup.headers.map((header) => (
-                  <TableCell key={header.id}>
-                    {header.isPlaceholder ||
-                      flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableFooter>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        component={"div"}
-        count={table.getRowCount()}
-        page={table.getState().pagination.pageIndex}
-        rowsPerPage={table.getState().pagination.pageSize}
-        rowsPerPageOptions={[50, 100]}
-        onPageChange={(_, page) => {
-          table.setPageIndex(page);
-        }}
-        onRowsPerPageChange={(e) => {
-          table.setPageSize(Number.parseInt(e.target.value));
-        }}
-      />
-    </>
-  );
-};
-
-const computeTotal = (
-  invoices: Invoice[],
-  denominatorMap: Map<string, number>,
-) => {
-  const total = invoices.reduce((latestResult, invoice) => {
-    return mathjs
-      .add(
-        mathjs.bignumber(latestResult),
-        mathjs.divide(
-          mathjs.bignumber(invoice.totalTaxIncludedAmount),
-          mathjs.bignumber(denominatorMap.get(invoice.id) || 1),
-        ),
-      )
-      .toString();
-  }, "0");
-
-  return total;
-};
-
-type OpenPathLinkProps = {
-  children?: React.ReactNode;
-  filePath: string;
-};
-
-const OpenPathLink = (props: OpenPathLinkProps) => {
-  const openPath = useOpenPath();
-
-  return (
-    <Link
-      onClick={() => {
-        openPath.mutate(props.filePath);
-      }}
-      sx={{ cursor: "pointer" }}
-    >
-      {props.children}
-    </Link>
-  );
-};
-
-const getMonthCalendar = (date: dayjs.Dayjs) => {
-  const startOfMonth = date.startOf("month");
-  const endOfMonth = date.endOf("month");
-  const startWeekday = startOfMonth.day();
-  const endWeekday = endOfMonth.day();
-  const calendarStart = startOfMonth.subtract(startWeekday, "day");
-  const calendarEnd = endOfMonth.add(6 - endWeekday, "day");
-  const totalDays = calendarEnd.diff(calendarStart, "day") + 1;
-
-  const days = Array.from({ length: totalDays }, (_, i) =>
-    calendarStart.add(i, "day"),
-  );
-
-  const weeks = [];
-  for (let i = 0; i < days.length; i += 7) {
-    weeks.push(days.slice(i, i + 7));
-  }
-
-  return weeks;
-};
-
-const initDayjs = () => dayjs();
-
-type CalendarProps = {
-  rangeStart: dayjs.Dayjs | null;
-  rangeEnd: dayjs.Dayjs | null;
-  setRangeStart: React.Dispatch<React.SetStateAction<dayjs.Dayjs | null>>;
-  setRangeEnd: React.Dispatch<React.SetStateAction<dayjs.Dayjs | null>>;
-  subsidyPerDay: string;
-  onSubsidyPerDayChange: (value: string) => void;
-};
-
-const Calendar = (props: CalendarProps) => {
-  const { rangeStart, rangeEnd, setRangeStart, setRangeEnd } = props;
-
-  const [selectDate, setSelectDate] = React.useState(initDayjs);
-
-  const monthCalendar = getMonthCalendar(selectDate);
-
-  return (
-    <Card>
-      <CardHeader
-        title="日期"
-        subheader={`共${getTotalDays(rangeStart, rangeEnd)}天`}
-        action={
-          <>
-            <IconButton
-              onClick={() => {
-                setSelectDate((prev) => prev.month(prev.month() - 1));
-              }}
-            >
-              <NavigateBeforeOutlined />
-            </IconButton>
-            <IconButton
-              onClick={() => {
-                setSelectDate((prev) => prev.month(prev.month() + 1));
-              }}
-            >
-              <NavigateNextOutlined />
-            </IconButton>
-          </>
-        }
-      />
-      <CardContent>
-        <Grid container spacing={1.5}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <DatePicker
-              value={selectDate}
-              onChange={(e) => {
-                if (!e) return;
-                setSelectDate(e);
-              }}
-              slotProps={{
-                textField: { fullWidth: true },
-              }}
-              views={["month", "year"]}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              value={props.subsidyPerDay}
-              onChange={(e) => {
-                props.onSubsidyPerDayChange(e.target.value);
-              }}
-              select
-              fullWidth
-              label="餐补/天"
-            >
-              <MenuItem value="50">50</MenuItem>
-              <MenuItem value="100">100</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <DatePicker
-              value={rangeStart}
-              onChange={(e) => {
-                setRangeStart(e);
-              }}
-              maxDate={rangeEnd || void 0}
-              slotProps={{
-                textField: { fullWidth: true },
-                field: { clearable: true },
-              }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <DatePicker
-              value={rangeEnd}
-              onChange={(e) => {
-                setRangeEnd(e);
-              }}
-              minDate={rangeStart || void 0}
-              slotProps={{
-                textField: { fullWidth: true },
-                field: { clearable: true },
-              }}
-            />
-          </Grid>
-        </Grid>
-      </CardContent>
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {Array.from({ length: 7 }, (_, index) => {
-                const day = dayjs().day(index).format("dddd");
-
-                return <TableCell key={day}>{day}</TableCell>;
-              })}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {monthCalendar.map((dates, index) => (
-              <TableRow key={index}>
-                {dates.map((date) => {
-                  const dateText = date.date();
-                  return (
-                    <TableCell key={dateText}>
-                      <Badge
-                        color="primary"
-                        badgeContent={
-                          isWithinRange(
-                            date.valueOf(),
-                            rangeStart?.valueOf() || Number.POSITIVE_INFINITY,
-                            rangeEnd?.valueOf() || Number.NEGATIVE_INFINITY,
-                          )
-                            ? date.diff(rangeStart, "day") + 1
-                            : null
-                        }
-                      >
-                        {dateText}
-                      </Badge>
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow></TableRow>
-          </TableFooter>
-        </Table>
-      </TableContainer>
-    </Card>
-  );
-};
-
-type ItemNameCellProps = {
-  id: string;
-  value: string;
-};
-
-const ItemNameCell = (props: ItemNameCellProps) => {
-  const [editable, setEditable] = React.useState(false);
-
-  const [idToItemName, setIdToItemName] = React.use(IdToItemNameContext);
-
-  const itemName = idToItemName.get(props.id) || props.value;
-
-  if (editable) {
-    return (
-      <TextField
-        value={itemName}
-        onChange={(e) => {
-          setIdToItemName(props.id, e.target.value);
-        }}
-        onBlur={() => {
-          setEditable(false);
-        }}
-        size="small"
-        autoFocus
-      />
-    );
-  }
-
-  return (
-    <span
-      onClick={() => {
-        setEditable(true);
-      }}
-      style={{ whiteSpace: "nowrap" }}
-    >
-      {itemName || props.value}
-    </span>
-  );
-};
-
-type BooleanCellProps = {
-  value: boolean;
-};
-
-const BooleanCell = ({ value }: BooleanCellProps) => {
-  return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
-};
-
-const Clock = () => {
-  const date = useLocaleDate();
-  const time = useLocaleTime();
-
-  return (
-    <>
-      <Typography variant="h2">{date}</Typography>
-      <Typography variant="h3">{time}</Typography>
     </>
   );
 };

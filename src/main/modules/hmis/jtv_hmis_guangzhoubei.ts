@@ -3,100 +3,18 @@
 import dayjs from "dayjs";
 import { net } from "electron";
 import * as sql from "drizzle-orm";
-import { log, withLog, ipcHandle, db, getIP, createEmit } from "#main/lib";
+import { getIP, createEmit } from "#main/lib";
+import { log, withLog, ipcHandle } from "#main/lib/ipc";
+import { calculateDirection, calculatePlace } from "#main/utils/flawDetection";
 import * as schema from "#main/schema";
-import { channel } from "#main/channel";
-import { jtv_hmis_guangzhoubei } from "#main/lib/store";
-import {
-  getCorporation,
-  getDetectionDatasByOPID,
-  getDetectionForJTV,
-} from "#main/modules/cmd";
+import type Store from "electron-store";
+import type { SQLiteDBType } from "#main/lib";
 import type { JTV_HMIS_Guangzhoubei } from "#main/lib/store";
-import type { Detection, DetectionData } from "#main/modules/cmd";
+import type { Detection, DetectionData } from "#main/modules/mdb";
+import type { AppContext } from "#main/index";
+import type { SQLiteGetParams, InsertRecordParams } from "#main/lib/ipc";
 
-type SQLiteGetParams = {
-  pageIndex: number;
-  pageSize: number;
-  startDate: string;
-  endDate: string;
-};
-
-/**
- * Sqlite barcode
- */
-const handleReadRecords = async (params: SQLiteGetParams) => {
-  const [{ count }] = await db
-    .select({ count: sql.count() })
-    .from(schema.jtvGuangzhoubeiBarcodeTable)
-    .where(
-      sql.between(
-        schema.jtvGuangzhoubeiBarcodeTable.date,
-        new Date(params.startDate),
-        new Date(params.endDate),
-      ),
-    )
-    .limit(1);
-
-  const rows = await db.query.jtvGuangzhoubeiBarcodeTable.findMany({
-    where: sql.between(
-      schema.jtvGuangzhoubeiBarcodeTable.date,
-      new Date(params.startDate),
-      new Date(params.endDate),
-    ),
-    offset: params.pageIndex * params.pageSize,
-    limit: params.pageSize,
-    orderBy: sql.desc(schema.jtvGuangzhoubeiBarcodeTable.date),
-  });
-
-  return { rows, count };
-};
-
-const handleDeleteRecord = async (id: number) => {
-  const [result] = await db
-    .delete(schema.jtvGuangzhoubeiBarcodeTable)
-    .where(sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id))
-    .returning();
-
-  emit();
-
-  return result;
-};
-
-type InsertRecordParams = {
-  DH: string;
-  ZH: string;
-  CZZZDW: string;
-  CZZZRQ: string;
-};
-
-const handleInsertRecord = async (data: InsertRecordParams) => {
-  const [result] = await db
-    .insert(schema.jtvGuangzhoubeiBarcodeTable)
-    .values({
-      barCode: data.DH,
-      zh: data.ZH,
-      date: new Date(),
-      isUploaded: false,
-      CZZZDW: data.CZZZDW,
-      CZZZRQ: data.CZZZRQ,
-    })
-    .returning();
-
-  emit();
-
-  return result;
-};
-
-const makeDataRequestURL = (dh: string) => {
-  const host = jtv_hmis_guangzhoubei.get("get_host");
-  const unitCode = jtv_hmis_guangzhoubei.get("unitCode");
-  const url = new URL(`http://${host}/api/getData`);
-
-  url.searchParams.set("param", [dh, unitCode].join(","));
-
-  return url;
-};
+type StoreType = Store<JTV_HMIS_Guangzhoubei>;
 
 type ZH_Item = {
   DH: string;
@@ -138,8 +56,134 @@ type ZH_Response = {
   data: ZH_Item[];
 };
 
-const fetchAxleInfoByZH = async (zh: string) => {
-  const url = makeDataRequestURL(zh);
+type PostItem = {
+  eq_ip: string; // 设备IP
+  eq_bh: string; // 设备编号
+  dh: string; // 扫码单号
+  zx: string; // RE2B
+  zh: string; // 03684
+  TSFF: string;
+  TSSJ: string;
+  TFLAW_PLACE: string; // 缺陷部位
+  TFLAW_TYPE: string; // 缺陷类型
+  TVIEW: string; // 处理意见
+  CZCTZ: string; // 左穿透签章
+  CZCTY: string; // 右穿透签章
+  LZXRBZ: string; // 左轮座签章
+  LZXRBY: string; // 右轮座签章
+  XHCZ: string; // 左轴颈签章
+  XHCY: string; // 右轴颈签章
+  TSZ: string; // 探伤者左
+  TSZY: string; // 探伤者右
+  CT_RESULT: string; // 合格
+};
+
+type DH_Item = {
+  DH: string;
+  ZH: string;
+  ZX: string;
+  CZZZDW: string;
+  CZZZRQ: string;
+  MCZZDW: string;
+  MCZZRQ: string;
+  SCZZDW: string;
+  SCZZRQ: string;
+  ZTX: boolean;
+  YTX: boolean;
+
+  SRYY?: string | null;
+  SRDW?: string | null;
+};
+
+type DH_Response = {
+  code: string;
+  msg: string;
+  data: DH_Item[];
+};
+
+/**
+ * Sqlite barcode
+ */
+const handleReadRecords = async (
+  appContext: AppContext,
+  params: SQLiteGetParams,
+) => {
+  const { sqliteDB: db } = appContext;
+
+  const [{ count }] = await db
+    .select({ count: sql.count() })
+    .from(schema.jtvGuangzhoubeiBarcodeTable)
+    .where(
+      sql.between(
+        schema.jtvGuangzhoubeiBarcodeTable.date,
+        new Date(params.startDate),
+        new Date(params.endDate),
+      ),
+    )
+    .limit(1);
+
+  const rows = await db.query.jtvGuangzhoubeiBarcodeTable.findMany({
+    where: sql.between(
+      schema.jtvGuangzhoubeiBarcodeTable.date,
+      new Date(params.startDate),
+      new Date(params.endDate),
+    ),
+    offset: params.pageIndex * params.pageSize,
+    limit: params.pageSize,
+    orderBy: sql.desc(schema.jtvGuangzhoubeiBarcodeTable.date),
+  });
+
+  return { rows, count };
+};
+
+const handleDeleteRecord = async (id: number, appContext: AppContext) => {
+  const { sqliteDB: db } = appContext;
+
+  const [result] = await db
+    .delete(schema.jtvGuangzhoubeiBarcodeTable)
+    .where(sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id))
+    .returning();
+
+  emit();
+
+  return result;
+};
+
+const handleInsertRecord = async (
+  data: InsertRecordParams,
+  appContext: AppContext,
+) => {
+  const { sqliteDB: db } = appContext;
+  const [result] = await db
+    .insert(schema.jtvGuangzhoubeiBarcodeTable)
+    .values({
+      barCode: data.DH,
+      zh: data.ZH,
+      date: new Date(),
+      isUploaded: false,
+      CZZZDW: data.CZZZDW,
+      CZZZRQ: data.CZZZRQ,
+    })
+    .returning();
+
+  emit();
+
+  return result;
+};
+
+const makeDataRequestURL = (dh: string, appContext: AppContext) => {
+  const { jtv_hmis_guangzhoubei } = appContext;
+  const host = jtv_hmis_guangzhoubei.get("get_host");
+  const unitCode = jtv_hmis_guangzhoubei.get("unitCode");
+  const url = new URL(`http://${host}/api/getData`);
+
+  url.searchParams.set("param", [dh, unitCode].join(","));
+
+  return url;
+};
+
+const fetchAxleInfoByZH = async (zh: string, appContext: AppContext) => {
+  const url = makeDataRequestURL(zh, appContext);
 
   url.searchParams.set("type", "csbtszh");
   log(`请求轴号数据:${url.href}`);
@@ -182,31 +226,8 @@ const normalizeZHResponse = (data: ZH_Response) => {
   });
 };
 
-type DH_Item = {
-  DH: string;
-  ZH: string;
-  ZX: string;
-  CZZZDW: string;
-  CZZZRQ: string;
-  MCZZDW: string;
-  MCZZRQ: string;
-  SCZZDW: string;
-  SCZZRQ: string;
-  ZTX: boolean;
-  YTX: boolean;
-
-  SRYY?: string | null;
-  SRDW?: string | null;
-};
-
-type DH_Response = {
-  code: string;
-  msg: string;
-  data: DH_Item[];
-};
-
-const fetchAxleInfoByDH = async (dh: string) => {
-  const url = makeDataRequestURL(dh);
+const fetchAxleInfoByDH = async (dh: string, appContext: AppContext) => {
+  const url = makeDataRequestURL(dh, appContext);
 
   url.searchParams.set("type", "csbts");
   log(`请求单号数据:${url.href}`);
@@ -249,84 +270,37 @@ const normalizeDHResponse = (data: DH_Response) => {
   });
 };
 
-const normalizeResponse = async (barCode: string, isZhMode?: boolean) => {
+const normalizeResponse = async (
+  appContext: AppContext,
+  barCode: string,
+  isZhMode?: boolean,
+) => {
   if (isZhMode) {
-    const data = await fetchAxleInfoByZH(barCode);
+    const data = await fetchAxleInfoByZH(barCode, appContext);
     const result = normalizeZHResponse(data);
 
     return result;
   } else {
-    const data = await fetchAxleInfoByDH(barCode);
+    const data = await fetchAxleInfoByDH(barCode, appContext);
     const result = normalizeDHResponse(data);
 
     return result;
   }
 };
 
-const handleFetchRecord = async (barcode: string, isZhMode?: boolean) => {
-  const data = await normalizeResponse(barcode, isZhMode);
+const handleFetchRecord = async (
+  appContext: AppContext,
+  barcode: string,
+  isZhMode?: boolean,
+) => {
+  const data = await normalizeResponse(appContext, barcode, isZhMode);
 
   return data;
 };
 
-type PostItem = {
-  eq_ip: string; // 设备IP
-  eq_bh: string; // 设备编号
-  dh: string; // 扫码单号
-  zx: string; // RE2B
-  zh: string; // 03684
-  TSFF: string;
-  TSSJ: string;
-  TFLAW_PLACE: string; // 缺陷部位
-  TFLAW_TYPE: string; // 缺陷类型
-  TVIEW: string; // 处理意见
-  CZCTZ: string; // 左穿透签章
-  CZCTY: string; // 右穿透签章
-  LZXRBZ: string; // 左轮座签章
-  LZXRBY: string; // 右轮座签章
-  XHCZ: string; // 左轴颈签章
-  XHCY: string; // 右轴颈签章
-  TSZ: string; // 探伤者左
-  TSZY: string; // 探伤者右
-  CT_RESULT: string; // 合格
-};
-
-const nBoardToDirection = (nBoard: number) => {
-  //board(板卡)：0.左 1.右
-  switch (nBoard) {
-    case 1:
-      return "右";
-    case 0:
-      return "左";
-    default:
-      return "";
-  }
-};
-
-const nChannelToPlace = (nChannel: number) => {
-  switch (nChannel) {
-    case 0:
-      return "穿透";
-    case 1:
-    case 2:
-      return "卸荷槽";
-    case 3:
-      return "外";
-    case 4:
-      return "内";
-    case 5:
-    case 6:
-    case 7:
-    case 8:
-      return "轮座";
-    default:
-      return "车轴";
-  }
-};
-
 const detectionDataToTPlace = (detectionData: DetectionData) => {
-  const direction = nBoardToDirection(detectionData.nBoard);
-  const place = nChannelToPlace(detectionData.nChannel);
+  const direction = calculateDirection(detectionData.nBoard);
+  const place = calculatePlace(detectionData.nChannel);
 
   return direction + place;
 };
@@ -336,12 +310,14 @@ const tmnowToTSSJ = (tmnow: string) => {
 };
 
 const makePostItem = (
+  appContext: AppContext,
   eq_ip: string,
   eq_bh: string,
   record: schema.JTVGuangzhoubeiBarcode,
   detection: Detection,
   detectionData?: DetectionData,
 ): PostItem => {
+  const { jtv_hmis_guangzhoubei } = appContext;
   const user = detection.szUsername || "";
   const signature_prefix = jtv_hmis_guangzhoubei.get("signature_prefix");
   const signature = signature_prefix + user;
@@ -369,7 +345,8 @@ const makePostItem = (
   };
 };
 
-const sendPostRequest = async (request: PostItem[]) => {
+const sendPostRequest = async (appContext: AppContext, request: PostItem[]) => {
+  const { jtv_hmis_guangzhoubei } = appContext;
   const host = jtv_hmis_guangzhoubei.get("post_host");
   const url = new URL(`http://${host}/pmss/example.do`);
   const body = JSON.stringify(request);
@@ -397,8 +374,10 @@ const sendPostRequest = async (request: PostItem[]) => {
 };
 
 const makeRequestBody = async (
+  appContext: AppContext,
   record: schema.JTVGuangzhoubeiBarcode,
 ): Promise<PostItem[]> => {
+  const { mdbDB } = appContext;
   const id = record.id;
 
   if (!record) {
@@ -413,13 +392,13 @@ const makeRequestBody = async (
     throw new Error(`记录#${id}条形码不存在`);
   }
 
-  const corporation = await getCorporation();
+  const corporation = await mdbDB.getCorporation();
   const eq_bh = corporation.DeviceNO || "";
   const eq_ip = getIP();
   const startDate = dayjs(record.date).toISOString();
   const endDate = dayjs(record.date).endOf("day").toISOString();
 
-  const detection = await getDetectionForJTV({
+  const detection = await mdbDB.getDetectionForJTV({
     zh: record.zh,
     startDate,
     endDate,
@@ -433,23 +412,34 @@ const makeRequestBody = async (
     case "故障":
     case "有故障":
     case "疑似故障":
-      detectionDatas = await getDetectionDatasByOPID(detection.szIDs);
+      detectionDatas = await mdbDB.getDetectionDatasByOPID(detection.szIDs);
       break;
     default:
   }
 
   if (detectionDatas.length === 0) {
-    return [makePostItem(eq_ip, eq_bh, record, detection)];
+    return [makePostItem(appContext, eq_ip, eq_bh, record, detection)];
   }
 
   return detectionDatas.map((detectionData) => {
-    return makePostItem(eq_ip, eq_bh, record, detection, detectionData);
+    return makePostItem(
+      appContext,
+      eq_ip,
+      eq_bh,
+      record,
+      detection,
+      detectionData,
+    );
   });
 };
 
-const emit = createEmit(channel.jtv_hmis_api_set);
+const emit = createEmit("api_set");
+const handleSendData = async (
+  id: number,
+  appContext: AppContext,
+): Promise<schema.JTVBarcode> => {
+  const { sqliteDB: db } = appContext;
 
-const handleSendData = async (id: number): Promise<schema.JTVBarcode> => {
   const record = await db.query.jtvGuangzhoubeiBarcodeTable.findFirst({
     where: sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id),
   });
@@ -458,8 +448,8 @@ const handleSendData = async (id: number): Promise<schema.JTVBarcode> => {
     throw new Error(`记录#${id}不存在`);
   }
 
-  const body = await makeRequestBody(record);
-  await sendPostRequest(body);
+  const body = await makeRequestBody(appContext, record);
+  await sendPostRequest(appContext, body);
 
   const [result] = await db
     .update(schema.jtvGuangzhoubeiBarcodeTable)
@@ -472,10 +462,16 @@ const handleSendData = async (id: number): Promise<schema.JTVBarcode> => {
   return result;
 };
 
-const handleHMISSetting = async (data?: Partial<JTV_HMIS_Guangzhoubei>) => {
+const handleHMISSetting = async (
+  appContext: AppContext,
+  data?: Partial<JTV_HMIS_Guangzhoubei>,
+) => {
+  const { jtv_hmis_guangzhoubei } = appContext;
+
   if (data) {
     jtv_hmis_guangzhoubei.set(data);
   }
+
   return jtv_hmis_guangzhoubei.store;
 };
 
@@ -483,9 +479,13 @@ const handleHMISSetting = async (data?: Partial<JTV_HMIS_Guangzhoubei>) => {
  * Auto upload
  */
 const doTask = withLog(handleSendData);
-let timer: NodeJS.Timeout | null = null;
+let timer: number | null = null;
 
-const autoUploadHandler = async () => {
+const autoUploadHandler = async (
+  appContext: AppContext,
+  jtv_hmis_guangzhoubei: StoreType,
+  db: SQLiteDBType,
+) => {
   const delay = jtv_hmis_guangzhoubei.get("autoUploadInterval") * 1000;
   timer = setTimeout(autoUploadHandler, delay);
 
@@ -501,18 +501,20 @@ const autoUploadHandler = async () => {
   });
 
   for (const barcode of barcodes) {
-    await doTask(barcode.id).catch(Boolean);
+    await doTask(barcode.id, appContext).catch(Boolean);
   }
 };
 
-const initAutoUpload = () => {
+const initAutoUpload = (appContext: AppContext) => {
+  const { jtv_hmis_guangzhoubei, sqliteDB: db } = appContext;
+
   if (jtv_hmis_guangzhoubei.get("autoUpload")) {
-    autoUploadHandler();
+    autoUploadHandler(appContext, jtv_hmis_guangzhoubei, db);
   }
 
   jtv_hmis_guangzhoubei.onDidChange("autoUpload", (value) => {
     if (value) {
-      autoUploadHandler();
+      autoUploadHandler(appContext, jtv_hmis_guangzhoubei, db);
       return;
     }
 
@@ -521,56 +523,25 @@ const initAutoUpload = () => {
   });
 };
 
-/**
- * Initialize
- */
-const initIpc = () => {
-  ipcHandle(
-    channel.jtv_hmis_guangzhoubei_sqlite_get,
-    (_, ...args: Parameters<typeof handleReadRecords>) => {
-      return handleReadRecords(...args);
-    },
-  );
-  ipcHandle(
-    channel.jtv_hmis_guangzhoubei_sqlite_delete,
-    (_, ...args: Parameters<typeof handleDeleteRecord>) => {
-      return handleDeleteRecord(...args);
-    },
-  );
-  ipcHandle(
-    channel.jtv_hmis_guangzhoubei_sqlite_insert,
-    (_, ...args: Parameters<typeof handleInsertRecord>) => {
-      return handleInsertRecord(...args);
-    },
-  );
-  ipcHandle(
-    channel.jtv_hmis_guangzhoubei_api_get,
-    (_, ...args: Parameters<typeof handleFetchRecord>) => {
-      return handleFetchRecord(...args);
-    },
-  );
-  ipcHandle(
-    channel.jtv_hmis_guangzhoubei_api_set,
-    (_, ...args: Parameters<typeof handleSendData>) => {
-      return handleSendData(...args);
-    },
-  );
-  ipcHandle(
-    channel.jtv_hmis_guangzhoubei_setting,
-    (_, ...args: Parameters<typeof handleHMISSetting>) => {
-      return handleHMISSetting(...args);
-    },
-  );
-};
+export const bindIpcHandlers = (appContext: AppContext) => {
+  ipcHandle("HMIS/jtv_hmis_guangzhoubei_sqlite_get", (_, params) => {
+    return handleReadRecords(appContext, params);
+  });
+  ipcHandle("HMIS/jtv_hmis_guangzhoubei_sqlite_delete", (_, id) => {
+    return handleDeleteRecord(id, appContext);
+  });
+  ipcHandle("HMIS/jtv_hmis_guangzhoubei_sqlite_insert", (_, data) => {
+    return handleInsertRecord(data, appContext);
+  });
+  ipcHandle("HMIS/jtv_hmis_guangzhoubei_api_get", (_, barcode, isZhMode) => {
+    return handleFetchRecord(appContext, barcode, isZhMode);
+  });
+  ipcHandle("HMIS/jtv_hmis_guangzhoubei_api_set", (_, id) => {
+    return handleSendData(id, appContext);
+  });
+  ipcHandle("HMIS/jtv_hmis_guangzhoubei_setting", (_, data) => {
+    return handleHMISSetting(appContext, data);
+  });
 
-export type HandleReadRecords = typeof handleReadRecords;
-export type HandleDeleteRecord = typeof handleDeleteRecord;
-export type HandleInsertRecord = typeof handleInsertRecord;
-export type HandleFetchRecord = typeof handleFetchRecord;
-export type HandleSendData = typeof handleSendData;
-export type HandleHMISSetting = typeof handleHMISSetting;
-
-export const init = () => {
-  initIpc();
-  initAutoUpload();
+  initAutoUpload(appContext);
 };

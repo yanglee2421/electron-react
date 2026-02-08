@@ -3,96 +3,13 @@
 import dayjs from "dayjs";
 import { net } from "electron";
 import * as sql from "drizzle-orm";
-import { log, withLog, ipcHandle, db, getIP, createEmit } from "#main/lib";
+import { getIP, createEmit } from "#main/lib";
+import { log, withLog, ipcHandle } from "#main/lib/ipc";
 import * as schema from "#main/schema";
-import { channel } from "#main/channel";
-import { jtv_hmis } from "#main/lib/store";
-import {
-  getCorporation,
-  getDetectionForJTV,
-  getDetectionDatasByOPID,
-} from "#main/modules/cmd";
 import type { JTV_HMIS } from "#main/lib/store";
-import type { Detection, DetectionData } from "#main/modules/cmd";
-
-/**
- * Sqlite barcode
- */
-type SQLiteGetParams = {
-  pageIndex: number;
-  pageSize: number;
-  startDate: string;
-  endDate: string;
-};
-
-const handleReadRecords = async (params: SQLiteGetParams) => {
-  const [{ count }] = await db
-    .select({ count: sql.count() })
-    .from(schema.jtvBarcodeTable)
-    .where(
-      sql.between(
-        schema.jtvBarcodeTable.date,
-        new Date(params.startDate),
-        new Date(params.endDate),
-      ),
-    )
-    .limit(1);
-
-  const rows = await db.query.jtvBarcodeTable.findMany({
-    where: sql.between(
-      schema.jtvBarcodeTable.date,
-      new Date(params.startDate),
-      new Date(params.endDate),
-    ),
-    offset: params.pageIndex * params.pageSize,
-    limit: params.pageSize,
-    orderBy: sql.desc(schema.jtvBarcodeTable.date),
-  });
-
-  return { rows, count };
-};
-
-const handleDeleteRecord = async (id: number) => {
-  const [result] = await db
-    .delete(schema.jtvBarcodeTable)
-    .where(sql.eq(schema.jtvBarcodeTable.id, id))
-    .returning();
-
-  emit();
-
-  return result;
-};
-
-type InsertRecordParams = {
-  DH: string;
-  ZH: string;
-};
-
-const handleInsertRecord = async (data: InsertRecordParams) => {
-  const [result] = await db
-    .insert(schema.jtvBarcodeTable)
-    .values({
-      barCode: data.DH,
-      zh: data.ZH,
-      date: new Date(),
-      isUploaded: false,
-    })
-    .returning();
-
-  emit();
-
-  return result;
-};
-
-const makeDataRequestURL = (dh: string) => {
-  const host = jtv_hmis.get("host");
-  const unitCode = jtv_hmis.get("unitCode");
-  const url = new URL(`http://${host}/api/getData`);
-
-  url.searchParams.set("param", [dh, unitCode].join(","));
-
-  return url;
-};
+import type { Detection, DetectionData } from "#main/modules/mdb";
+import type { AppContext } from "#main/index";
+import type { SQLiteGetParams, InsertRecordParams } from "#main/lib/ipc";
 
 type ZH_Item = {
   DH: string;
@@ -132,8 +49,131 @@ type ZH_Response = {
   data: ZH_Item[];
 };
 
-const fetchAxleInfoByZH = async (zh: string) => {
-  const url = makeDataRequestURL(zh);
+type DH_Item = {
+  DH: string;
+  ZH: string;
+  ZX: string;
+  CZZZDW: string;
+  CZZZRQ: string;
+  MCZZDW: string;
+  MCZZRQ: string;
+  SCZZDW: string;
+  SCZZRQ: string;
+
+  SRYY?: string | null;
+  SRDW?: string | null;
+};
+
+type DH_Response = {
+  code: string;
+  msg: string;
+  data: DH_Item[];
+};
+
+type PostItem = {
+  eq_ip: string; // 设备IP
+  eq_bh: string; // 设备编号
+  dh: string; // 扫码单号
+  zx: string; // RE2B
+  zh: string; // 03684
+  TSFF: string;
+  TSSJ: string;
+  TFLAW_PLACE: string; // 缺陷部位
+  TFLAW_TYPE: string; // 缺陷类型
+  TVIEW: string; // 处理意见
+  CZCTZ: string; // 左穿透签章
+  CZCTY: string; // 右穿透签章
+  LZXRBZ: string; // 左轮座签章
+  LZXRBY: string; // 右轮座签章
+  XHCZ: string; // 左轴颈签章
+  XHCY: string; // 右轴颈签章
+  TSZ: string; // 探伤者左
+  TSZY: string; // 探伤者右
+  CT_RESULT: string; // 合格
+};
+
+type PostResponse = {
+  code: "200";
+  msg: "数据上传成功";
+};
+
+const handleReadRecords = async (
+  appContext: AppContext,
+  params: SQLiteGetParams,
+) => {
+  const { sqliteDB: db } = appContext;
+
+  const [{ count }] = await db
+    .select({ count: sql.count() })
+    .from(schema.jtvBarcodeTable)
+    .where(
+      sql.between(
+        schema.jtvBarcodeTable.date,
+        new Date(params.startDate),
+        new Date(params.endDate),
+      ),
+    )
+    .limit(1);
+
+  const rows = await db.query.jtvBarcodeTable.findMany({
+    where: sql.between(
+      schema.jtvBarcodeTable.date,
+      new Date(params.startDate),
+      new Date(params.endDate),
+    ),
+    offset: params.pageIndex * params.pageSize,
+    limit: params.pageSize,
+    orderBy: sql.desc(schema.jtvBarcodeTable.date),
+  });
+
+  return { rows, count };
+};
+
+const handleDeleteRecord = async (appContext: AppContext, id: number) => {
+  const { sqliteDB: db } = appContext;
+  const [result] = await db
+    .delete(schema.jtvBarcodeTable)
+    .where(sql.eq(schema.jtvBarcodeTable.id, id))
+    .returning();
+
+  emit();
+
+  return result;
+};
+
+const handleInsertRecord = async (
+  appContext: AppContext,
+  data: InsertRecordParams,
+) => {
+  const { sqliteDB: db } = appContext;
+  const [result] = await db
+    .insert(schema.jtvBarcodeTable)
+    .values({
+      barCode: data.DH,
+      zh: data.ZH,
+      date: new Date(),
+      isUploaded: false,
+    })
+    .returning();
+
+  emit();
+
+  return result;
+};
+
+const makeDataRequestURL = (appContext: AppContext, dh: string) => {
+  const { jtv_hmis } = appContext;
+  const host = jtv_hmis.get("host");
+  const unitCode = jtv_hmis.get("unitCode");
+  const url = new URL(`http://${host}/api/getData`);
+
+  url.searchParams.set("param", [dh, unitCode].join(","));
+
+  return url;
+};
+
+const fetchAxleInfoByZH = async (appContext: AppContext, zh: string) => {
+  const url = makeDataRequestURL(appContext, zh);
 
   url.searchParams.set("type", "csbtszh");
   log(`请求轴号数据:${url.href}`);
@@ -174,29 +214,8 @@ const normalizeZHResponse = (data: ZH_Response) => {
   });
 };
 
-type DH_Item = {
-  DH: string;
-  ZH: string;
-  ZX: string;
-  CZZZDW: string;
-  CZZZRQ: string;
-  MCZZDW: string;
-  MCZZRQ: string;
-  SCZZDW: string;
-  SCZZRQ: string;
-
-  SRYY?: string | null;
-  SRDW?: string | null;
-};
-
-type DH_Response = {
-  code: string;
-  msg: string;
-  data: DH_Item[];
-};
-
-const fetchAxleInfoByDH = async (dh: string) => {
-  const url = makeDataRequestURL(dh);
+const fetchAxleInfoByDH = async (appContext: AppContext, dh: string) => {
+  const url = makeDataRequestURL(appContext, dh);
 
   url.searchParams.set("type", "csbts");
   log(`请求单号数据:${url.href}`);
@@ -237,54 +256,36 @@ const normalizeDHResponse = (data: DH_Response) => {
   });
 };
 
-const normalizeResponse = async (barCode: string, isZhMode?: boolean) => {
+const normalizeResponse = async (
+  appContext: AppContext,
+  barCode: string,
+  isZhMode?: boolean,
+) => {
   if (isZhMode) {
-    const data = await fetchAxleInfoByZH(barCode);
+    const data = await fetchAxleInfoByZH(appContext, barCode);
     const result = normalizeZHResponse(data);
 
     return result;
   } else {
-    const data = await fetchAxleInfoByDH(barCode);
+    const data = await fetchAxleInfoByDH(appContext, barCode);
     const result = normalizeDHResponse(data);
 
     return result;
   }
 };
 
-const handleFetchRecord = async (barcode: string, isZhMode?: boolean) => {
-  const data = await normalizeResponse(barcode, isZhMode);
+const handleFetchRecord = async (
+  appContext: AppContext,
+  barcode: string,
+  isZhMode?: boolean,
+) => {
+  const data = await normalizeResponse(appContext, barcode, isZhMode);
 
   return data;
 };
 
-type PostItem = {
-  eq_ip: string; // 设备IP
-  eq_bh: string; // 设备编号
-  dh: string; // 扫码单号
-  zx: string; // RE2B
-  zh: string; // 03684
-  TSFF: string;
-  TSSJ: string;
-  TFLAW_PLACE: string; // 缺陷部位
-  TFLAW_TYPE: string; // 缺陷类型
-  TVIEW: string; // 处理意见
-  CZCTZ: string; // 左穿透签章
-  CZCTY: string; // 右穿透签章
-  LZXRBZ: string; // 左轮座签章
-  LZXRBY: string; // 右轮座签章
-  XHCZ: string; // 左轴颈签章
-  XHCY: string; // 右轴颈签章
-  TSZ: string; // 探伤者左
-  TSZY: string; // 探伤者右
-  CT_RESULT: string; // 合格
-};
-
-type PostResponse = {
-  code: "200";
-  msg: "数据上传成功";
-};
-
-const sendPostRequest = async (request: PostItem[]) => {
+const sendPostRequest = async (appContext: AppContext, request: PostItem[]) => {
+  const { jtv_hmis } = appContext;
   const host = jtv_hmis.get("host");
   const url = new URL(`http://${host}/api/saveData`);
   const body = JSON.stringify(request);
@@ -359,12 +360,14 @@ const tmnowToTSSJ = (tmnow: string) => {
 };
 
 const makePostItem = (
+  appContext: AppContext,
   eq_ip: string,
   eq_bh: string,
   record: schema.JTVBarcode,
   detection: Detection,
   detectionData?: DetectionData,
 ): PostItem => {
+  const { jtv_hmis } = appContext;
   const user = detection.szUsername || "";
   const signature_prefix = jtv_hmis.get("signature_prefix");
   const signature = signature_prefix + user;
@@ -392,7 +395,10 @@ const makePostItem = (
   };
 };
 
-const recordToBody = async (record: schema.JTVBarcode): Promise<PostItem[]> => {
+const recordToBody = async (
+  appContext: AppContext,
+  record: schema.JTVBarcode,
+): Promise<PostItem[]> => {
   const id = record.id;
 
   if (!record) {
@@ -407,13 +413,15 @@ const recordToBody = async (record: schema.JTVBarcode): Promise<PostItem[]> => {
     throw new Error(`记录#${id}条形码不存在`);
   }
 
-  const corporation = await getCorporation();
+  const { mdbDB } = appContext;
+
+  const corporation = await mdbDB.getCorporation();
   const eq_bh = corporation.DeviceNO || "";
   const eq_ip = getIP();
   const startDate = dayjs(record.date).toISOString();
   const endDate = dayjs(record.date).endOf("day").toISOString();
 
-  const detection = await getDetectionForJTV({
+  const detection = await mdbDB.getDetectionForJTV({
     zh: record.zh,
     startDate,
     endDate,
@@ -427,23 +435,34 @@ const recordToBody = async (record: schema.JTVBarcode): Promise<PostItem[]> => {
     case "故障":
     case "有故障":
     case "疑似故障":
-      detectionDatas = await getDetectionDatasByOPID(detection.szIDs);
+      detectionDatas = await mdbDB.getDetectionDatasByOPID(detection.szIDs);
       break;
     default:
   }
 
   if (detectionDatas.length === 0) {
-    return [makePostItem(eq_ip, eq_bh, record, detection)];
+    return [makePostItem(appContext, eq_ip, eq_bh, record, detection)];
   }
 
   return detectionDatas.map((detectionData) => {
-    return makePostItem(eq_ip, eq_bh, record, detection, detectionData);
+    return makePostItem(
+      appContext,
+      eq_ip,
+      eq_bh,
+      record,
+      detection,
+      detectionData,
+    );
   });
 };
 
-const emit = createEmit(channel.jtv_hmis_api_set);
+const emit = createEmit("api_set");
 
-const handleSendData = async (id: number): Promise<schema.JTVBarcode> => {
+const handleSendData = async (
+  appContext: AppContext,
+  id: number,
+): Promise<schema.JTVBarcode> => {
+  const { sqliteDB: db } = appContext;
   const record = await db.query.jtvBarcodeTable.findFirst({
     where: sql.eq(schema.jtvBarcodeTable.id, id),
   });
@@ -452,8 +471,8 @@ const handleSendData = async (id: number): Promise<schema.JTVBarcode> => {
     throw new Error(`记录#${id}不存在`);
   }
 
-  const body = await recordToBody(record);
-  await sendPostRequest(body);
+  const body = await recordToBody(appContext, record);
+  await sendPostRequest(appContext, body);
 
   const [result] = await db
     .update(schema.jtvBarcodeTable)
@@ -469,9 +488,10 @@ const handleSendData = async (id: number): Promise<schema.JTVBarcode> => {
  * Auto upload
  */
 const doTask = withLog(handleSendData);
-let timer: NodeJS.Timeout | null = null;
+let timer: number | null = null;
 
-const autoUploadHandler = async () => {
+const autoUploadHandler = async (appContext: AppContext) => {
+  const { jtv_hmis, sqliteDB: db } = appContext;
   const delay = jtv_hmis.get("autoUploadInterval") * 1000;
   timer = setTimeout(autoUploadHandler, delay);
 
@@ -487,18 +507,20 @@ const autoUploadHandler = async () => {
   });
 
   for (const barcode of barcodes) {
-    await doTask(barcode.id).catch(Boolean);
+    await doTask(appContext, barcode.id).catch(Boolean);
   }
 };
 
-const initAutoUpload = () => {
+const initAutoUpload = (appContext: AppContext) => {
+  const { jtv_hmis } = appContext;
+
   if (jtv_hmis.get("autoUpload")) {
-    autoUploadHandler();
+    autoUploadHandler(appContext);
   }
 
   jtv_hmis.onDidChange("autoUpload", (value) => {
     if (value) {
-      autoUploadHandler();
+      autoUploadHandler(appContext);
       return;
     }
 
@@ -507,65 +529,36 @@ const initAutoUpload = () => {
   });
 };
 
-type JTV_HMIS_setting_payload = Partial<JTV_HMIS>;
+const handleHMISSetting = async (
+  appContext: AppContext,
+  data?: Partial<JTV_HMIS>,
+) => {
+  const { jtv_hmis } = appContext;
 
-const handleHMISSetting = async (data?: JTV_HMIS_setting_payload) => {
   if (data) {
     jtv_hmis.set(data);
   }
   return jtv_hmis.store;
 };
 
-/**
- * Initialize
- */
-const initIpc = () => {
-  ipcHandle(
-    channel.jtv_hmis_sqlite_get,
-    (_, ...args: Parameters<typeof handleReadRecords>) => {
-      return handleReadRecords(...args);
-    },
-  );
-  ipcHandle(
-    channel.jtv_hmis_sqlite_delete,
-    (_, ...args: Parameters<typeof handleDeleteRecord>) => {
-      return handleDeleteRecord(...args);
-    },
-  );
-  ipcHandle(
-    channel.jtv_hmis_sqlite_insert,
-    (_, ...args: Parameters<typeof handleInsertRecord>) => {
-      return handleInsertRecord(...args);
-    },
-  );
-  ipcHandle(
-    channel.jtv_hmis_api_get,
-    (_, ...args: Parameters<typeof handleFetchRecord>) => {
-      return handleFetchRecord(...args);
-    },
-  );
-  ipcHandle(
-    channel.jtv_hmis_api_set,
-    (_, ...args: Parameters<typeof handleSendData>) => {
-      return handleSendData(...args);
-    },
-  );
-  ipcHandle(
-    channel.jtv_hmis_setting,
-    (_, ...args: Parameters<typeof handleHMISSetting>) => {
-      return handleHMISSetting(...args);
-    },
-  );
-};
-
-export type HandleReadRecords = typeof handleReadRecords;
-export type HandleDeleteRecord = typeof handleDeleteRecord;
-export type HandleInsertRecord = typeof handleInsertRecord;
-export type HandleFetchRecord = typeof handleFetchRecord;
-export type HandleSendData = typeof handleSendData;
-export type HandleHMISSetting = typeof handleHMISSetting;
-
-export const init = () => {
-  initIpc();
-  initAutoUpload();
+export const bindIpcHandlers = (appContext: AppContext) => {
+  ipcHandle("HMIS/jtv_hmis_sqlite_get", (_, params) => {
+    return handleReadRecords(appContext, params);
+  });
+  ipcHandle("HMIS/jtv_hmis_sqlite_delete", (_, id) => {
+    return handleDeleteRecord(appContext, id);
+  });
+  ipcHandle("HMIS/jtv_hmis_sqlite_insert", (_, data) => {
+    return handleInsertRecord(appContext, data);
+  });
+  ipcHandle("HMIS/jtv_hmis_api_get", (_, dh, isZhMode) => {
+    return handleFetchRecord(appContext, dh, isZhMode);
+  });
+  ipcHandle("HMIS/jtv_hmis_api_set", (_, id) => {
+    return handleSendData(appContext, id);
+  });
+  ipcHandle("HMIS/jtv_hmis_setting", (_, data) => {
+    return handleHMISSetting(appContext, data);
+  });
+  initAutoUpload(appContext);
 };

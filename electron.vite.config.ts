@@ -57,43 +57,6 @@ export default defineConfig((config) => ({
       htmlPlugin(config.command === "build"),
     ],
     resolve: { alias },
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks: (id) => {
-            if (
-              id.includes("node_modules/react/") ||
-              id.includes("node_modules/react-dom/")
-            ) {
-              return "react-dom";
-            }
-            if (
-              id.includes("node_modules/@tanstack/react-query/") ||
-              id.includes(
-                "node_modules/@tanstack/@tanstack/react-query-devtools/",
-              )
-            ) {
-              return "tanstack-react-query";
-            }
-            if (
-              id.includes("node_modules/react-hook-form/") ||
-              id.includes("node_modules/@hookform/resolvers/") ||
-              id.includes("node_modules/zod/")
-            ) {
-              return "react-hook-form";
-            }
-            if (id.includes("node_modules/zustand/")) {
-              return "zustand";
-            }
-            if (id.includes("node_modules/notistack/")) {
-              return "notistack";
-            }
-            if (id.includes("node_modules/qrcode.react/")) {
-              return "qrcode.react";
-            }
-          },
-        },
-      },
-    },
+    build: {},
   },
 }));

@@ -27,11 +27,10 @@ import {
   useReactTable,
   flexRender,
 } from "@tanstack/react-table";
-
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import type { Verify } from "#main/modules/cmd";
 import { Loading } from "#renderer/components/Loading";
 import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
+import type { Verify } from "#main/modules/mdb";
 
 const initDate = () => dayjs();
 

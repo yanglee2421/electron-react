@@ -1,6 +1,3 @@
-import type { QuartorData } from "#main/modules/cmd";
-import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
-import { Loading } from "#renderer/components/Loading";
 import {
   Alert,
   AlertTitle,
@@ -22,8 +19,6 @@ import {
   Typography,
   CardActionArea,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
 import {
   createColumnHelper,
   flexRender,
@@ -32,50 +27,28 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React from "react";
+import { useParams } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Loading } from "#renderer/components/Loading";
+import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import { calculateDirection, calculatePlace } from "#main/utils/flawDetection";
+import type { QuartorData } from "#main/modules/mdb";
 
-const getDirection = (nBoard: number) => {
-  //board(板卡)：0.左 1.右
-  switch (nBoard) {
-    case 1:
-      return "右";
-    case 0:
-      return "左";
-    default:
-      return "";
-  }
-};
-
-const getPlace = (nChannel: number) => {
-  switch (nChannel) {
-    case 0:
-      return "穿透";
-    case 1:
-    case 2:
-      return "卸荷槽";
-    case 3:
-      return "外";
-    case 4:
-      return "内";
-    case 5:
-    case 6:
-    case 7:
-    case 8:
-      return "轮座";
-    default:
-      return "车轴";
-  }
+const check = (current: string, excepted: string) => {
+  if (!excepted) return true;
+  return Object.is(excepted, current);
 };
 
 const columnHelper = createColumnHelper<QuartorData>();
 const columns = [
   columnHelper.accessor("nBoard", {
     header: "方向",
-    cell: ({ getValue }) => getDirection(getValue()),
+    cell: ({ getValue }) => calculateDirection(getValue()),
   }),
   columnHelper.accessor("nChannel", {
     header: "位置",
-    cell: ({ getValue }) => getPlace(getValue()),
+    cell: ({ getValue }) => calculatePlace(getValue()),
   }),
   columnHelper.accessor("fltValueX", {
     header: "横距",
@@ -90,10 +63,6 @@ const columns = [
     footer: "灵敏度",
   }),
 ];
-const check = (current: string, excepted: string) => {
-  if (!excepted) return true;
-  return Object.is(excepted, current);
-};
 
 export const Component = () => {
   "use no memo";
@@ -118,8 +87,8 @@ export const Component = () => {
     const rows = query.data?.rows || [];
     return rows.filter(
       (row) =>
-        check(getDirection(row.nBoard), direction) &&
-        check(getPlace(row.nChannel), place),
+        check(calculateDirection(row.nBoard), direction) &&
+        check(calculatePlace(row.nChannel), place),
     );
   }, [query.data, direction, place]);
 
@@ -132,8 +101,8 @@ export const Component = () => {
   });
 
   const map = (query.data?.rows || []).reduce((result, row) => {
-    const direction = getDirection(row.nBoard);
-    const place = getPlace(row.nChannel);
+    const direction = calculateDirection(row.nBoard);
+    const place = calculatePlace(row.nChannel);
     const key = direction + place;
     const prev = result.get(key) || new Set();
     result.set(key, prev.add(row));

@@ -1,16 +1,13 @@
-import * as fs from "node:fs";
 import * as os from "node:os";
 import * as url from "node:url";
 import * as path from "node:path";
-import pLimit from "p-limit";
 import Database from "better-sqlite3";
-import { app, ipcMain, BrowserWindow } from "electron";
+import { app, BrowserWindow } from "electron";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "#main/schema";
-import { channel } from "#main/channel";
-import { promiseTry } from "#main/utils";
-import type { Callback } from "#main/utils";
+
+export type SQLiteDBType = ReturnType<typeof createSQLiteDB>;
 
 export const getIP = () => {
   const interfaces = os.networkInterfaces();
@@ -32,118 +29,12 @@ export const getIP = () => {
   return IP || "";
 };
 
-export const getDirection = (nBoard: number) => {
-  //board(板卡)：0.左 1.右
-  switch (nBoard) {
-    case 1:
-      return "右";
-    case 0:
-      return "左";
-    default:
-      return "";
-  }
-};
-
-export const getPlace = (nChannel: number) => {
-  switch (nChannel) {
-    case 0:
-      return "穿透";
-    case 1:
-    case 2:
-      return "卸荷槽";
-    case 3:
-      return "外";
-    case 4:
-      return "内";
-    case 5:
-    case 6:
-    case 7:
-    case 8:
-      return "轮座";
-    default:
-      return "车轴";
-  }
-};
-
 export const createEmit = <TData = void>(channel: string) => {
   return (data: TData) => {
     BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.send(channel, data);
     });
   };
-};
-
-export const getTempDir = () =>
-  path.join(app.getPath("temp"), "wtxy_tookit_cmd");
-
-export const removeTempDir = async () => {
-  const tempDir = getTempDir();
-  await fs.promises.rm(tempDir, { recursive: true, force: true });
-};
-
-export const makeTempDir = async () => {
-  const tempDir = getTempDir();
-  const result = await fs.promises.mkdir(tempDir, { recursive: true });
-  return result;
-};
-
-type Log = {
-  id: number;
-  type: string;
-  message: string;
-  date: string;
-};
-
-export const log = (message: string, type = "info") => {
-  const data: Log = {
-    id: 0,
-    date: new Date().toISOString(),
-    message,
-    type,
-  };
-
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send(channel.log, data);
-  });
-};
-
-const errorToMessage = (error: unknown) => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === "string") {
-    return error;
-  }
-
-  return String(error);
-};
-
-export const withLog = <TArgs extends unknown[], TReturn = void>(
-  callback: Callback<TArgs, TReturn>,
-) => {
-  const resultFn = async (...args: TArgs) => {
-    try {
-      // Ensure an error is thrown when the promise is rejected
-      const result = await promiseTry(callback, ...args);
-      return result;
-    } catch (error) {
-      console.error(error);
-
-      // Log the error message
-      const message = errorToMessage(error);
-      log(message, "error");
-      // Throw message instead of error to avoid electron issue #24427
-      throw message;
-    }
-  };
-
-  return resultFn;
-};
-
-export const ipcHandle = (...args: Parameters<typeof ipcMain.handle>) => {
-  const [channel, listener] = args;
-  return ipcMain.handle(channel, withLog(listener));
 };
 
 /**
@@ -165,7 +56,7 @@ export const ipcHandle = (...args: Parameters<typeof ipcMain.handle>) => {
 // import { createRequire } from "node:module";
 // const require = createRequire(import.meta.url);
 // const Database: typeof import("better-sqlite3") = require("better-sqlite3");
-const createDB = () => {
+export const createSQLiteDB = () => {
   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
   const dbPath = path.resolve(app.getPath("userData"), "db.db");
   const sqliteDb = new Database(dbPath);
@@ -174,30 +65,4 @@ const createDB = () => {
   migrate(db, { migrationsFolder: path.join(__dirname, "../../drizzle") });
 
   return db;
-};
-export const db = createDB();
-
-export const ls = async (basePath: string): Promise<string[]> => {
-  const stats = await fs.promises.stat(basePath);
-
-  if (stats.isFile()) {
-    return [basePath];
-  }
-
-  if (stats.isDirectory()) {
-    const basenames = await fs.promises.readdir(basePath);
-    const limit = pLimit(1000);
-
-    const results = await Promise.all(
-      basenames.map((basename) => {
-        const subPath = path.resolve(basePath, basename);
-
-        return limit(() => ls(subPath));
-      }),
-    );
-
-    return results.flat();
-  }
-
-  return [];
 };
