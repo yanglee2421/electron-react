@@ -26,9 +26,10 @@ import {
   Box,
 } from "@mui/material";
 import z from "zod";
-import { useNotifications } from "@toolpad/core";
 import React from "react";
+import { useNotifications } from "@toolpad/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 import {
   fetchVersion,
   fetchOpenAtLogin,
@@ -37,9 +38,74 @@ import {
   useProfileUpdate,
   useSelectDirectory,
   fetchProfile,
-  useSelectFile,
 } from "#renderer/api/fetch_preload";
-import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
+
+const profileSchema = z.object({
+  appPath: z.string().min(1),
+  encoding: z.string().min(1),
+});
+
+const { fieldContext, formContext } = createFormHookContexts();
+const { useAppForm } = createFormHook({
+  fieldContext,
+  formContext,
+  fieldComponents: {
+    TextField,
+  },
+  formComponents: {
+    Button,
+  },
+});
+
+const useProfileForm = () => {
+  const profileUpdate = useProfileUpdate();
+  const notifications = useNotifications();
+  const profileQuery = useQuery(fetchProfile());
+
+  const form = useAppForm({
+    defaultValues: {
+      appPath: profileQuery.data?.appPath || "",
+      encoding: profileQuery.data?.encoding || "",
+    },
+    async onSubmit(props) {
+      await profileUpdate.mutateAsync(
+        {
+          appPath: props.value.appPath,
+          encoding: props.value.encoding,
+        },
+        {
+          onError: (error) => {
+            notifications.show(error.message, { severity: "error" });
+          },
+          onSuccess: () => {
+            notifications.show("保存成功", { severity: "success" });
+          },
+        },
+      );
+    },
+    validators: {
+      onChange: profileSchema,
+    },
+  });
+
+  return [form, profileQuery, profileUpdate] as const;
+};
+
+type PendingIconProps = React.PropsWithChildren<{
+  isPending?: boolean;
+  size?: number;
+  color?: React.ComponentProps<typeof CircularProgress>["color"];
+}>;
+
+const PendingIcon = (props: PendingIconProps) => {
+  const { size = 16, color } = props;
+
+  if (props.isPending) {
+    return <CircularProgress size={size} color={color} />;
+  }
+
+  return props.children;
+};
 
 export const Component = () => {
   const profileFormId = React.useId();
@@ -51,7 +117,6 @@ export const Component = () => {
   const openDevTools = useOpenDevTools();
   const selectDirectory = useSelectDirectory();
   const [profileForm, profileQuery] = useProfileForm();
-  const selectFile = useSelectFile();
 
   const handleDirectoryChange = () => {
     selectDirectory.mutate(void 0, {
@@ -62,26 +127,6 @@ export const Component = () => {
         profileForm.validateField("appPath", "change");
       },
     });
-  };
-
-  const handleFileChange = () => {
-    selectFile.mutate(
-      [
-        {
-          name: "可执行文件[exe]",
-          extensions: ["exe"],
-        },
-        { name: "所有文件", extensions: ["*"] },
-      ],
-      {
-        onSuccess(paths) {
-          const path = paths?.[0];
-          if (!path) return;
-          profileForm.setFieldValue("driverPath", path);
-          profileForm.validateField("driverPath", "change");
-        },
-      },
-    );
   };
 
   const renderForm = () => {
@@ -182,43 +227,6 @@ export const Component = () => {
                   )}
                 </profileForm.AppField>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <profileForm.AppField name="driverPath">
-                  {(driverPathField) => (
-                    <driverPathField.TextField
-                      value={driverPathField.state.value}
-                      onChange={(e) =>
-                        driverPathField.handleChange(e.target.value)
-                      }
-                      onBlur={driverPathField.handleBlur}
-                      fullWidth
-                      label="驱动路径"
-                      helperText={
-                        driverPathField.getMeta().errors.length
-                          ? driverPathField.getMeta().errors.at(0)?.message
-                          : "与系统原生交互所需的命令行工具"
-                      }
-                      error={driverPathField.getMeta().errors.length > 0}
-                      slotProps={{
-                        input: {
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                onClick={handleFileChange}
-                                disabled={selectFile.isPending}
-                              >
-                                <PendingIcon isPending={selectFile.isPending}>
-                                  <FindInPageOutlined />
-                                </PendingIcon>
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                    />
-                  )}
-                </profileForm.AppField>
-              </Grid>
             </Grid>
           </form>
         </CardContent>
@@ -308,74 +316,4 @@ export const Component = () => {
       </Card>
     </Stack>
   );
-};
-
-const { fieldContext, formContext } = createFormHookContexts();
-const { useAppForm } = createFormHook({
-  fieldContext,
-  formContext,
-  fieldComponents: {
-    TextField,
-  },
-  formComponents: {
-    Button,
-  },
-});
-
-const profileSchema = z.object({
-  appPath: z.string().min(1),
-  encoding: z.string().min(1),
-  driverPath: z.string().min(1),
-});
-
-const useProfileForm = () => {
-  const profileUpdate = useProfileUpdate();
-  const notifications = useNotifications();
-  const profileQuery = useQuery(fetchProfile());
-
-  const form = useAppForm({
-    defaultValues: {
-      appPath: profileQuery.data?.appPath || "",
-      encoding: profileQuery.data?.encoding || "",
-      driverPath: profileQuery.data?.driverPath || "",
-    },
-    async onSubmit(props) {
-      await profileUpdate.mutateAsync(
-        {
-          appPath: props.value.appPath,
-          encoding: props.value.encoding,
-          driverPath: props.value.driverPath,
-        },
-        {
-          onError: (error) => {
-            notifications.show(error.message, { severity: "error" });
-          },
-          onSuccess: () => {
-            notifications.show("保存成功", { severity: "success" });
-          },
-        },
-      );
-    },
-    validators: {
-      onChange: profileSchema,
-    },
-  });
-
-  return [form, profileQuery, profileUpdate] as const;
-};
-
-type PendingIconProps = React.PropsWithChildren<{
-  isPending?: boolean;
-  size?: number;
-  color?: React.ComponentProps<typeof CircularProgress>["color"];
-}>;
-
-const PendingIcon = (props: PendingIconProps) => {
-  const { size = 16, color } = props;
-
-  if (props.isPending) {
-    return <CircularProgress size={size} color={color} />;
-  }
-
-  return props.children;
 };

@@ -17,7 +17,6 @@ export class ProfileStore {
   static profileSchema = z.object({
     appPath: z.string().default(""),
     encoding: z.string().default("gbk"),
-    driverPath: z.string().default(""),
     alwaysOnTop: z.boolean().default(false),
     mode: this.modeSchema,
   });
