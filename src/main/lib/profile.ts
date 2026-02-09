@@ -117,7 +117,10 @@ export class ProfileStore {
     const diffAppPath = (prev: string, next: string) => {
       if (Object.is(prev, next)) return;
 
-      protocol.unhandle("atom");
+      if (protocol.isProtocolHandled("atom")) {
+        protocol.unhandle("atom");
+      }
+
       protocol.handle("atom", async (request) => {
         const fileName = request.url.replace(/^atom:\/\//, "");
         const rootPath = await this.getRootPath();

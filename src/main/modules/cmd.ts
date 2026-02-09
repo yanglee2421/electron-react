@@ -51,4 +51,8 @@ export const bindIpcHandlers = (appContext: AppContext) => {
 
     return "";
   });
+
+  ipcHandle("WIN/isRunAsAdmin", async () => {
+    return addon.isRunAsAdmin();
+  });
 };

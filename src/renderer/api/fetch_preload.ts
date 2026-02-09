@@ -827,3 +827,13 @@ export const useUpdateJtvHmisSetting = () => {
     },
   });
 };
+
+export const fetchIsRunAsAdmin = () => {
+  return queryOptions({
+    queryKey: ["WIN/isRunAsAdmin"],
+    queryFn: async () => {
+      const data = await invoke("WIN/isRunAsAdmin");
+      return data;
+    },
+  });
+};

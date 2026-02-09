@@ -115,6 +115,10 @@ export interface IpcContract {
     args: [AutoInputToVCParams];
     return: string;
   };
+  "WIN/isRunAsAdmin": {
+    args: [];
+    return: boolean;
+  };
   "PLC/read_test": {
     args: [string];
     return: PLCReadResult;

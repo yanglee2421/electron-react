@@ -1,6 +1,8 @@
 import {
+  AdminPanelSettings,
   BugReportOutlined,
   FindInPageOutlined,
+  People,
   SaveOutlined,
 } from "@mui/icons-material";
 import {
@@ -38,6 +40,7 @@ import {
   useProfileUpdate,
   useSelectDirectory,
   fetchProfile,
+  fetchIsRunAsAdmin,
 } from "#renderer/api/fetch_preload";
 
 const profileSchema = z.object({
@@ -114,6 +117,7 @@ export const Component = () => {
   const updateOpenAtLogin = useOpenAtLogin();
   const version = useQuery(fetchVersion());
   const openAtLogin = useQuery(fetchOpenAtLogin());
+  const isRunAsAdmin = useQuery(fetchIsRunAsAdmin());
   const openDevTools = useOpenDevTools();
   const selectDirectory = useSelectDirectory();
   const [profileForm, profileQuery] = useProfileForm();
@@ -295,7 +299,18 @@ export const Component = () => {
       <Card>
         <CardHeader title="关于" />
         <CardContent>
-          <List>
+          <List disablePadding>
+            <ListItem
+              secondaryAction={
+                isRunAsAdmin.data ? (
+                  <AdminPanelSettings color="success" />
+                ) : (
+                  <People color="error" />
+                )
+              }
+            >
+              <ListItemText primary="管理员权限" />
+            </ListItem>
             <ListItem secondaryAction={version.data?.version}>
               <ListItemText primary="版本" />
             </ListItem>
