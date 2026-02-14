@@ -54,6 +54,27 @@ import { useImmer } from "use-immer";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import {
+  defaultAnimateLayoutChanges,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import {
+  DndContext,
+  pointerWithin,
+  rectIntersection,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  MeasuringStrategy,
+} from "@dnd-kit/core";
+import {
+  snapCenterToCursor,
+  restrictToWindowEdges,
+  restrictToFirstScrollableAncestor,
+} from "@dnd-kit/modifiers";
+import {
   useOpenPath,
   useShowOpenDialog,
   fetchXMLPDFCompute,
@@ -66,6 +87,7 @@ import { useLocaleDate } from "#renderer/hooks/dom/useLocaleDate";
 import { useLocaleTime } from "#renderer/hooks/dom/useLocaleTime";
 import type { Invoice } from "#main/lib/ipc";
 import type { CallbackFn } from "#renderer/lib/utils";
+import type { CollisionDetection } from "@dnd-kit/core";
 
 type IdToDenominatorContextType = [
   Map<string, number>,
@@ -76,6 +98,14 @@ type IdToItemNameContextType = [
   Map<string, string>,
   CallbackFn<[string, string], void>,
 ];
+
+const collisionDetection: CollisionDetection = (args) => {
+  if (args.pointerCoordinates) {
+    return pointerWithin(args);
+  }
+
+  return rectIntersection(args);
+};
 
 const computeTotal = (
   invoices: Invoice[],
@@ -206,6 +236,53 @@ const IdToItemNameContext = React.createContext<IdToItemNameContextType>([
   initIdToItemName(),
   Boolean,
 ]);
+
+const SortableCell = () => {
+  const sortable = useSortable({
+    id: "1",
+    animateLayoutChanges: defaultAnimateLayoutChanges,
+  });
+
+  return <Box></Box>;
+};
+
+const DropableContainer = () => {
+  const droppable = useDroppable({
+    id: "1",
+  });
+
+  return <Box></Box>;
+};
+
+const DndPanel = () => {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisionDetection}
+      measuring={{
+        droppable: {
+          strategy: MeasuringStrategy.Always,
+        },
+      }}
+      modifiers={[
+        snapCenterToCursor,
+        restrictToWindowEdges,
+        restrictToFirstScrollableAncestor,
+      ]}
+      onDragStart={() => {}}
+      onDragOver={() => {}}
+      onDragEnd={() => {}}
+      onDragCancel={() => {}}
+    ></DndContext>
+  );
+};
 
 type BooleanCellProps = {
   value: boolean;
