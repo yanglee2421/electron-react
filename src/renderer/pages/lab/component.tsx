@@ -55,6 +55,8 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import {
   defaultAnimateLayoutChanges,
+  rectSortingStrategy,
+  SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
 } from "@dnd-kit/sortable";
@@ -68,12 +70,14 @@ import {
   useSensors,
   useDroppable,
   MeasuringStrategy,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
   snapCenterToCursor,
   restrictToWindowEdges,
   restrictToFirstScrollableAncestor,
 } from "@dnd-kit/modifiers";
+import { CSS } from "@dnd-kit/utilities";
 import {
   useOpenPath,
   useShowOpenDialog,
@@ -83,8 +87,10 @@ import {
 import { NumberField } from "#renderer/components/number";
 import { isWithinRange, mapGroupBy } from "#renderer/lib/utils";
 import { ScrollToTop } from "#renderer/components/scroll";
-import { useLocaleDate } from "#renderer/hooks/dom/useLocaleDate";
-import { useLocaleTime } from "#renderer/hooks/dom/useLocaleTime";
+import {
+  useLocaleDate,
+  useLocaleTime,
+} from "#renderer/hooks/dom/useLocaleDate";
 import type { Invoice } from "#main/lib/ipc";
 import type { CallbackFn } from "#renderer/lib/utils";
 import type { CollisionDetection } from "@dnd-kit/core";
@@ -98,6 +104,10 @@ type IdToItemNameContextType = [
   Map<string, string>,
   CallbackFn<[string, string], void>,
 ];
+
+const calculateIsHTMLElement = (el: unknown): el is HTMLElement => {
+  return el instanceof HTMLElement;
+};
 
 const collisionDetection: CollisionDetection = (args) => {
   if (args.pointerCoordinates) {
@@ -237,21 +247,74 @@ const IdToItemNameContext = React.createContext<IdToItemNameContextType>([
   Boolean,
 ]);
 
-const SortableCell = () => {
+type SortableCellProps = React.PropsWithChildren<{
+  id: string;
+}>;
+
+const SortableCell = (props: SortableCellProps) => {
   const sortable = useSortable({
-    id: "1",
+    id: props.id,
     animateLayoutChanges: defaultAnimateLayoutChanges,
   });
 
-  return <Box></Box>;
+  return (
+    <Box
+      ref={(el) => {
+        const isHTMLEl = calculateIsHTMLElement(el);
+        if (!isHTMLEl) return;
+
+        sortable.setNodeRef(el);
+
+        return () => {
+          sortable.setNodeRef(null);
+        };
+      }}
+      {...sortable.attributes}
+      {...sortable.listeners}
+      component={"div"}
+      style={{
+        transform: CSS.Transform.toString(sortable.transform),
+        transition: sortable.transition,
+      }}
+      sx={{
+        touchAction: "none",
+        transformOrigin: "0 0",
+
+        aspectRatio: "1 / 1",
+        backgroundColor: "primary.main",
+        borderRadius: 1,
+      }}
+    >
+      {props.children}
+    </Box>
+  );
 };
 
-const DropableContainer = () => {
+type DroppableContainerProps = React.PropsWithChildren<{
+  id: string;
+}>;
+
+const DropableContainer = (props: DroppableContainerProps) => {
   const droppable = useDroppable({
-    id: "1",
+    id: props.id,
   });
 
-  return <Box></Box>;
+  return (
+    <Box
+      ref={(el) => {
+        const isHTMLEl = calculateIsHTMLElement(el);
+        if (!isHTMLEl) return;
+
+        droppable.setNodeRef(el);
+
+        return () => {
+          droppable.setNodeRef(null);
+        };
+      }}
+    >
+      {props.children}
+    </Box>
+  );
 };
 
 const DndPanel = () => {
@@ -280,7 +343,29 @@ const DndPanel = () => {
       onDragOver={() => {}}
       onDragEnd={() => {}}
       onDragCancel={() => {}}
-    ></DndContext>
+    >
+      <DropableContainer id="droppable-1">
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+            gap: 2,
+
+            minBlockSize: 300,
+          }}
+        >
+          <SortableContext
+            items={["item-1", "item-2"]}
+            strategy={rectSortingStrategy}
+          >
+            <SortableCell id="item-1">item one</SortableCell>
+
+            <SortableCell id="item-2">item two</SortableCell>
+          </SortableContext>
+        </Box>
+      </DropableContainer>
+      <DragOverlay></DragOverlay>
+    </DndContext>
   );
 };
 
@@ -298,8 +383,12 @@ const Clock = () => {
 
   return (
     <>
-      <Typography variant="h2">{date}</Typography>
-      <Typography variant="h3">{time}</Typography>
+      <Typography variant="h2" component={"time"} dateTime={date}>
+        {date}
+      </Typography>
+      <Typography variant="h3" component={"time"} dateTime={time}>
+        {time}
+      </Typography>
     </>
   );
 };
@@ -845,6 +934,7 @@ export const Component = () => {
           subsidyPerDay={subsidyPerDay}
           onSubsidyPerDayChange={setSubsidyPerDay}
         />
+        <DndPanel />
         <Card>
           <CardHeader title="结果" />
           <CardContent>
