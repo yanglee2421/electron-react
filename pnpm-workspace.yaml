@@ -1,6 +1,6 @@
 packages:
-  - "apps/*"
   - "packages/*"
+
 onlyBuiltDependencies:
   - "@serialport/bindings-cpp"
   - better-sqlite3

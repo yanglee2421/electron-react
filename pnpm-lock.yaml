@@ -8,11 +8,29 @@ importers:
 
   .:
     devDependencies:
+      '@types/node':
+        specifier: ^25.3.0
+        version: 25.3.0
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
-  apps/electron-app:
+  packages/cpp-addon:
+    dependencies:
+      '@electron/rebuild':
+        specifier: ^4.0.3
+        version: 4.0.3
+      node-addon-api:
+        specifier: ^8.5.0
+        version: 8.5.0
+      node-gyp:
+        specifier: ^12.2.0
+        version: 12.2.0
+
+  packages/electron-app:
     dependencies:
       '@electron-toolkit/preload':
         specifier: ^3.0.2
@@ -117,9 +135,6 @@ importers:
       '@types/ini':
         specifier: ^4.1.1
         version: 4.1.1
-      '@types/node':
-        specifier: ^25.0.2
-        version: 25.3.0
       '@types/nprogress':
         specifier: ^0.2.3
         version: 0.2.3
@@ -201,9 +216,6 @@ importers:
       shiki:
         specifier: ^3.20.0
         version: 3.22.0
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
       typescript-eslint:
         specifier: ^8.49.0
         version: 8.56.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
@@ -219,18 +231,6 @@ importers:
       zustand:
         specifier: ^5.0.9
         version: 5.0.11(@types/react@19.2.14)(immer@11.1.4)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
-
-  packages/cpp-addon:
-    dependencies:
-      '@electron/rebuild':
-        specifier: ^4.0.3
-        version: 4.0.3
-      node-addon-api:
-        specifier: ^8.5.0
-        version: 8.5.0
-      node-gyp:
-        specifier: ^12.2.0
-        version: 12.2.0
 
 packages:
 
@@ -5568,7 +5568,7 @@ snapshots:
   '@serialport/binding-mock@10.2.2':
     dependencies:
       '@serialport/bindings-interface': 1.2.2
-      debug: 4.4.0
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
 

@@ -1,5 +1,5 @@
 {
-  "name": "cpp-addon",
+  "name": "@yanglee2421/cpp-addon",
   "version": "0.0.2",
   "description": "Example projects based on node-addon-api and node-gyp",
   "main": "index.js",
