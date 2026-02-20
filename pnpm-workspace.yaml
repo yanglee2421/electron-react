@@ -1,5 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
 onlyBuiltDependencies:
-  - '@serialport/bindings-cpp'
+  - "@serialport/bindings-cpp"
   - better-sqlite3
   - electron
   - electron-winstaller
