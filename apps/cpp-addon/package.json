@@ -1,0 +1,24 @@
+{
+  "name": "cpp-addon",
+  "version": "0.0.2",
+  "description": "Example projects based on node-addon-api and node-gyp",
+  "main": "index.js",
+  "types": "./index.d.ts",
+  "scripts": {
+    "configure": "node-gyp configure",
+    "build": "node-gyp build",
+    "rebuild": "node-gyp rebuild",
+    "rebuild:electron": "electron-rebuild"
+  },
+  "keywords": [
+    "node-addon-api",
+    "node-gyp",
+    "electron-rebuild",
+    "cpp-addon"
+  ],
+  "dependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "node-addon-api": "^8.5.0",
+    "node-gyp": "^12.2.0"
+  }
+}
