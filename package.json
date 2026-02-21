@@ -1,9 +1,7 @@
 {
-  "name": "electron-react",
-  "private": true,
-  "type": "module",
+  "name": "@yanglee2421/electron-react",
   "version": "0.0.0",
-  "description": "",
+  "description": "An Electron app built with React and TypeScript",
   "keywords": [
     "electron",
     "react",
@@ -12,9 +10,35 @@
     "node-gyp",
     "electron-rebuild"
   ],
-  "author": "",
+  "author": "yanglee2421",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yanglee2421/electron-react.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/yanglee2421/electron-react/issues",
+    "email": "yanglee2421@outlook.com"
+  },
+  "homepage": "https://github.com/yanglee2421/electron-react/blob/main/README.md",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.cjs"
+  },
   "packageManager": "pnpm@10.30.1+sha512.3590e550d5384caa39bd5c7c739f72270234b2f6059e13018f975c313b1eb9fefcc09714048765d4d9efe961382c312e624572c0420762bdc5d5940cdf9be73a",
+  "scripts": {
+    "dev": "pnpm -F electron-app dev",
+    "build": "pnpm -F electron-app build",
+    "rebuild": "pnpm -F cpp-addon rebuild",
+    "rebuild:electron": "pnpm -F cpp-addon rebuild:electron -v 38.7.2"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/node": "^25.3.0",

@@ -2,23 +2,48 @@
   "name": "@yanglee2421/cpp-addon",
   "version": "0.0.2",
   "description": "Example projects based on node-addon-api and node-gyp",
-  "main": "index.js",
-  "types": "./index.d.ts",
-  "scripts": {
-    "configure": "node-gyp configure",
-    "build": "node-gyp build",
-    "rebuild": "node-gyp rebuild",
-    "rebuild:electron": "electron-rebuild"
-  },
   "keywords": [
     "node-addon-api",
     "node-gyp",
     "electron-rebuild",
     "cpp-addon"
   ],
+  "author": "yanglee2421",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yanglee2421/electron-react.git",
+    "directory": "/packages/cpp-addon"
+  },
+  "bugs": {
+    "url": "https://github.com/yanglee2421/electron-react/issues",
+    "email": "yanglee2421@outlook.com"
+  },
+  "homepage": "https://github.com/yanglee2421/electron-react/blob/main/README.md",
+  "private": false,
+  "files": [
+    "build/Release/hello_addon.node",
+    "index.d.ts",
+    "index.mjs",
+    "index.cjs"
+  ],
+  "type": "module",
+  "exports": {
+    "types": "./index.d.ts",
+    "import": "./index.mjs",
+    "require": "./index.cjs"
+  },
+  "scripts": {
+    "configure": "node-gyp configure",
+    "build": "node-gyp build",
+    "rebuild": "node-gyp rebuild",
+    "rebuild:electron": "electron-rebuild"
+  },
   "dependencies": {
+    "node-addon-api": "^8.5.0"
+  },
+  "devDependencies": {
     "@electron/rebuild": "^4.0.3",
-    "node-addon-api": "^8.5.0",
     "node-gyp": "^12.2.0"
   }
 }
