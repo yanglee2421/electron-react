@@ -8,12 +8,12 @@
     "react",
     "typescript"
   ],
+  "license": "MIT",
   "author": {
     "name": "yanglee2421",
     "email": "yanglee2421@outlook.com",
     "url": "https://yanglee2421.vercel.app"
   },
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/yanglee2421/electron-react.git",

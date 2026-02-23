@@ -10,8 +10,8 @@
     "node-gyp",
     "electron-rebuild"
   ],
-  "author": "yanglee2421",
   "license": "MIT",
+  "author": "yanglee2421",
   "repository": {
     "type": "git",
     "url": "https://github.com/yanglee2421/electron-react.git",

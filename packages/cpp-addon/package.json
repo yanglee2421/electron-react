@@ -8,8 +8,8 @@
     "electron-rebuild",
     "cpp-addon"
   ],
-  "author": "yanglee2421",
   "license": "MIT",
+  "author": "yanglee2421",
   "repository": {
     "type": "git",
     "url": "https://github.com/yanglee2421/electron-react.git",
@@ -25,7 +25,8 @@
     "build/Release/hello_addon.node",
     "index.d.ts",
     "index.mjs",
-    "index.cjs"
+    "index.cjs",
+    "binding.gyp"
   ],
   "type": "module",
   "exports": {
