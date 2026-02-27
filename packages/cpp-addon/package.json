@@ -35,10 +35,10 @@
     "require": "./index.cjs"
   },
   "scripts": {
-    "configure": "node-gyp configure",
-    "build": "node-gyp build",
-    "rebuild": "node-gyp rebuild",
-    "rebuild:electron": "electron-rebuild"
+    "build": "electron-rebuild",
+    "build:node": "node-gyp rebuild",
+    "gyp:configure": "node-gyp configure",
+    "gyp:build": "node-gyp build"
   },
   "dependencies": {
     "node-addon-api": "^8.5.0"

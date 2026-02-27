@@ -42,6 +42,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@yanglee2421/cpp-addon": "workspace:*",
     "@yanglee2421/exceljs": "^4.4.0",
     "better-sqlite3": "^12.5.0",
     "drizzle-orm": "^0.45.1",

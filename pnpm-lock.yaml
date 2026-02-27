@@ -57,6 +57,9 @@ importers:
       '@electron-toolkit/utils':
         specifier: ^4.0.0
         version: 4.0.0(electron@38.8.2)
+      '@yanglee2421/cpp-addon':
+        specifier: workspace:*
+        version: link:../cpp-addon
       '@yanglee2421/exceljs':
         specifier: ^4.4.0
         version: 4.4.0
