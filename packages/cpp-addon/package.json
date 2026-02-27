@@ -23,20 +23,19 @@
   "private": false,
   "files": [
     "build/Release/hello_addon.node",
-    "index.d.ts",
-    "index.mjs",
-    "index.cjs",
+    "dist",
     "binding.gyp"
   ],
   "type": "module",
   "exports": {
-    "types": "./index.d.ts",
-    "import": "./index.mjs",
-    "require": "./index.cjs"
+    "types": "./dist/main.d.ts",
+    "import": "./dist/main.mjs",
+    "require": "./dist/main.cjs"
   },
   "scripts": {
-    "build": "electron-rebuild",
+    "build": "tsdown",
     "build:node": "node-gyp rebuild",
+    "build:electron": "electron-rebuild",
     "gyp:configure": "node-gyp configure",
     "gyp:build": "node-gyp build"
   },
@@ -45,6 +44,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",
-    "node-gyp": "^12.2.0"
+    "node-gyp": "^12.2.0",
+    "tsdown": "0.21.0-beta.2"
   }
 }

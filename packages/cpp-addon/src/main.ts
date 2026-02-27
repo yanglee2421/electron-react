@@ -1,7 +1,6 @@
-/**
- * Type definitions for native addon
- */
-interface NativeAddon {
+import module from "node:module";
+
+type NativeAddon = {
   add(a: number, b: number): number;
   showAlert(message: string, title: string): Promise<number>;
   isRunAsAdmin(): boolean;
@@ -17,6 +16,8 @@ interface NativeAddon {
     ztx: number,
     ytx: number,
   ): Promise<boolean>;
-}
+};
 
-export default NativeAddon;
+const require = module.createRequire(import.meta.url);
+const addon: NativeAddon = require("../build/Release/hello_addon.node");
+export default addon;
