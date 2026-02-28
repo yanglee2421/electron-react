@@ -60,7 +60,7 @@ export const createSQLiteDB = () => {
   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
   const dbPath = path.resolve(app.getPath("userData"), "db.db");
   const sqliteDb = new Database(dbPath);
-  const db = drizzle(sqliteDb, { schema });
+  const db = drizzle({ schema, client: sqliteDb });
 
   migrate(db, { migrationsFolder: path.join(__dirname, "../../drizzle") });
 
