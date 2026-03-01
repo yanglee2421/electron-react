@@ -1,4 +1,5 @@
-import * as path from "node:path";
+import url from "node:url";
+import path from "node:path";
 import { BrowserWindow, nativeTheme, app, Menu, dialog, shell } from "electron";
 import { is, optimizer, electronApp, platform } from "@electron-toolkit/utils";
 import { createSQLiteDB } from "#main/lib";
@@ -217,13 +218,6 @@ const bindIpcHandles = (_: AppContext) => {
 };
 
 const bootstrap = async () => {
-  if (import.meta.env.DEV) {
-    app.setPath(
-      "userData",
-      path.resolve(app.getPath("appData"), `./${app.getName()}-dev`),
-    );
-  }
-
   /**
    * @description true: No other instances exist
    * @description false: Other instances exist
@@ -236,6 +230,13 @@ const bootstrap = async () => {
 
     app.quit();
     return;
+  }
+
+  if (import.meta.env.DEV) {
+    app.setPath(
+      "userData",
+      path.resolve(app.getPath("appData"), `./${app.getName()}-dev`),
+    );
   }
 
   /**
@@ -251,10 +252,14 @@ const bootstrap = async () => {
 
   await app.whenReady();
 
+  const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
   const profileFilePath = path.resolve(app.getPath("userData"), "profile.json");
   const profile = new ProfileStore(profileFilePath);
   const mdbDB = new MDBDB(profile);
-  const sqliteDB = createSQLiteDB();
+  const sqliteDB = createSQLiteDB({
+    databasePath: path.resolve(app.getPath("userData"), "db.db"),
+    migrationsFolder: path.resolve(__dirname, "../../drizzle"),
+  });
   const {
     kh_hmis,
     hxzy_hmis,

@@ -1,8 +1,6 @@
-import * as os from "node:os";
-import * as url from "node:url";
-import * as path from "node:path";
+import os from "node:os";
 import Database from "better-sqlite3";
-import { app, BrowserWindow } from "electron";
+import { BrowserWindow } from "electron";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "#main/schema";
@@ -56,13 +54,19 @@ export const createEmit = <TData = void>(channel: string) => {
 // import { createRequire } from "node:module";
 // const require = createRequire(import.meta.url);
 // const Database: typeof import("better-sqlite3") = require("better-sqlite3");
-export const createSQLiteDB = () => {
-  const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-  const dbPath = path.resolve(app.getPath("userData"), "db.db");
-  const sqliteDb = new Database(dbPath);
+
+type CreateSQLiteDBOptions = {
+  databasePath: string;
+  migrationsFolder: string;
+};
+
+export const createSQLiteDB = (options: CreateSQLiteDBOptions) => {
+  const { databasePath, migrationsFolder } = options;
+
+  const sqliteDb = new Database(databasePath);
   const db = drizzle({ schema, client: sqliteDb });
 
-  migrate(db, { migrationsFolder: path.join(__dirname, "../../drizzle") });
+  migrate(db, { migrationsFolder });
 
   return db;
 };
