@@ -1,13 +1,13 @@
-import React from "react";
+import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
+import React from "react";
+import { QueryProvider } from "./components/query";
+import { useColorScheme } from "./hooks/dom/useColorScheme";
+import { useSubscribe } from "./hooks/useSubscribe";
+import type { Log } from "./lib/db";
 import { db } from "./lib/db";
 import { AppRouter } from "./router";
-import { QueryProvider } from "./components/query";
-import { useSubscribe } from "./hooks/useSubscribe";
-import { useColorScheme } from "./hooks/dom/useColorScheme";
-import type { Log } from "./lib/db";
 
 const calculateTheme = (isDark: boolean) => {
   if (isDark) {

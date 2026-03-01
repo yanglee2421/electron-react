@@ -1,9 +1,9 @@
-import os from "node:os";
+import * as schema from "#main/schema";
 import Database from "better-sqlite3";
-import { BrowserWindow } from "electron";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import * as schema from "#main/schema";
+import { BrowserWindow } from "electron";
+import os from "node:os";
 
 export type SQLiteDBType = ReturnType<typeof createSQLiteDB>;
 
