@@ -1,23 +1,63 @@
+import type { Invoice } from "#main/lib/ipc";
 import {
-  DeleteOutlined,
-  FolderOutlined,
+  fetchXMLPDFCompute,
+  useOpenPath,
+  useSelectXMLPDFFromFolder,
+  useShowOpenDialog,
+} from "#renderer/api/fetch_preload";
+import { NumberField } from "#renderer/components/number";
+import { ScrollToTop } from "#renderer/components/scroll";
+import {
+  useLocaleDate,
+  useLocaleTime,
+} from "#renderer/hooks/dom/useLocaleDate";
+import type { CallbackFn } from "#renderer/lib/utils";
+import type { CollisionDetection } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  MeasuringStrategy,
+  PointerSensor,
+  pointerWithin,
+  rectIntersection,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  restrictToFirstScrollableAncestor,
+  restrictToWindowEdges,
+  snapCenterToCursor,
+} from "@dnd-kit/modifiers";
+import {
+  defaultAnimateLayoutChanges,
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  CheckBoxOutlineBlankOutlined,
+  CheckBoxOutlined,
   ClearAllOutlined,
+  DeleteOutlined,
   FileOpenOutlined,
   FindInPageOutlined,
-  NavigateNextOutlined,
+  FolderOutlined,
   NavigateBeforeOutlined,
-  CheckBoxOutlined,
-  CheckBoxOutlineBlankOutlined,
+  NavigateNextOutlined,
 } from "@mui/icons-material";
 import {
-  Box,
-  Card,
-  Grid,
   Badge,
+  Box,
   Button,
-  Divider,
-  CardHeader,
+  Card,
   CardContent,
+  CardHeader,
+  Divider,
+  Grid,
   IconButton,
   InputAdornment,
   LinearProgress,
@@ -40,60 +80,20 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import {
-  flexRender,
-  useReactTable,
-  getCoreRowModel,
-  createColumnHelper,
-  getPaginationRowModel,
-} from "@tanstack/react-table";
-import React from "react";
-import dayjs from "dayjs";
-import * as mathjs from "mathjs";
-import { useImmer } from "use-immer";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import {
-  defaultAnimateLayoutChanges,
-  rectSortingStrategy,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from "@dnd-kit/sortable";
-import {
-  DndContext,
-  pointerWithin,
-  rectIntersection,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  useDroppable,
-  MeasuringStrategy,
-  DragOverlay,
-} from "@dnd-kit/core";
-import {
-  snapCenterToCursor,
-  restrictToWindowEdges,
-  restrictToFirstScrollableAncestor,
-} from "@dnd-kit/modifiers";
-import { CSS } from "@dnd-kit/utilities";
-import {
-  useOpenPath,
-  useShowOpenDialog,
-  fetchXMLPDFCompute,
-  useSelectXMLPDFFromFolder,
-} from "#renderer/api/fetch_preload";
-import { NumberField } from "#renderer/components/number";
-import { isWithinRange, mapGroupBy } from "#renderer/lib/utils";
-import { ScrollToTop } from "#renderer/components/scroll";
-import {
-  useLocaleDate,
-  useLocaleTime,
-} from "#renderer/hooks/dom/useLocaleDate";
-import type { Invoice } from "#main/lib/ipc";
-import type { CallbackFn } from "#renderer/lib/utils";
-import type { CollisionDetection } from "@dnd-kit/core";
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { isClamped, mapGroupBy } from "@yotulee/run";
+import dayjs from "dayjs";
+import * as mathjs from "mathjs";
+import React from "react";
+import { useImmer } from "use-immer";
 
 type IdToDenominatorContextType = [
   Map<string, number>,
@@ -551,7 +551,7 @@ const Calendar = (props: CalendarProps) => {
                       <Badge
                         color="primary"
                         badgeContent={
-                          isWithinRange(
+                          isClamped(
                             date.valueOf(),
                             rangeStart?.valueOf() || Number.POSITIVE_INFINITY,
                             rangeEnd?.valueOf() || Number.NEGATIVE_INFINITY,

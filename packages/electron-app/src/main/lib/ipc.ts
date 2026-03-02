@@ -1,7 +1,12 @@
-import { ipcMain, BrowserWindow } from "electron";
-import { promiseTry } from "#main/lib/polyfill";
-import { calculateErrorMessage } from "#main/utils/error";
 import type { Profile } from "#main/lib/profile";
+import type {
+  HXZY_HMIS,
+  JTV_HMIS,
+  JTV_HMIS_Guangzhoubei,
+  JTV_HMIS_XUZHOUBEI,
+  KH_HMIS,
+} from "#main/lib/store";
+import type { MDBPayload, Verify, VerifyData } from "#main/modules/mdb";
 import type {
   HxzyBarcode,
   JTVBarcode,
@@ -10,14 +15,9 @@ import type {
   KhBarcode,
   XlsxSize,
 } from "#main/schema";
-import type { MDBPayload, Verify, VerifyData } from "#main/modules/mdb";
-import type {
-  HXZY_HMIS,
-  JTV_HMIS,
-  JTV_HMIS_Guangzhoubei,
-  JTV_HMIS_XUZHOUBEI,
-  KH_HMIS,
-} from "#main/lib/store";
+import { calculateErrorMessage } from "#main/utils/error";
+import { promiseTry } from "@yotulee/run";
+import { BrowserWindow, ipcMain } from "electron";
 
 export interface IpcContract {
   "PROFILE/GET": {

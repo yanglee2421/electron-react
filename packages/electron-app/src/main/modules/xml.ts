@@ -1,14 +1,15 @@
+import { ls } from "#main/lib/fs";
+import type { Invoice, IssuItemInformation, XMLJSONData } from "#main/lib/ipc";
+import { ipcHandle } from "#main/lib/ipc";
+import loaderWASM from "#resources/zxing_full.wasm?loader";
+import { mapGroupBy } from "@yotulee/run";
+import { XMLParser } from "fast-xml-parser";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { PDFParse } from "pdf-parse";
-import { XMLParser } from "fast-xml-parser";
 import { getPath } from "pdf-parse/worker";
-import { readBarcodes, prepareZXingModule } from "zxing-wasm";
-import { ipcHandle } from "#main/lib/ipc";
-import { ls } from "#main/lib/fs";
-import loaderWASM from "#resources/zxing_full.wasm?loader";
+import { prepareZXingModule, readBarcodes } from "zxing-wasm";
 import type { AppContext } from "..";
-import type { Invoice, IssuItemInformation, XMLJSONData } from "#main/lib/ipc";
 
 PDFParse.setWorker(getPath());
 
@@ -152,28 +153,6 @@ const collectPDFResult = async (
 
     result.set(data.id, data);
   }
-};
-
-const mapGroupBy = <TElement, TKey>(
-  array: TElement[],
-  getGroupKey: (element: TElement, index: number) => TKey,
-) => {
-  const groupMap = new Map<TKey, TElement[]>();
-
-  array.reduce((groupMap, element, index) => {
-    const groupKey = getGroupKey(element, index);
-    const group = groupMap.get(groupKey);
-
-    if (Array.isArray(group)) {
-      group.push(element);
-    } else {
-      groupMap.set(groupKey, [element]);
-    }
-
-    return groupMap;
-  }, groupMap);
-
-  return groupMap;
 };
 
 export const bindIpcHandlers = (appContext: AppContext) => {

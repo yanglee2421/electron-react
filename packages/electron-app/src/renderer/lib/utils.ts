@@ -16,41 +16,6 @@ interface Node {
   children?: Node[];
 }
 
-export const promiseTry = <TArgs extends unknown[], TReturn>(
-  callbackFn: CallbackFn<TArgs, TReturn>,
-  ...args: TArgs
-) => new Promise<TReturn>((resolve) => resolve(callbackFn(...args)));
-
-export const mapGroupBy = <TElement, TKey>(
-  items: TElement[],
-  callbackFn: CallbackFn<[TElement, number], TKey>,
-) => {
-  const resultMap = new Map<TKey, TElement[]>();
-
-  items.reduce((latestResult, item, index) => {
-    const mapKey = callbackFn(item, index);
-    const mapValue = latestResult.get(mapKey);
-
-    if (Array.isArray(mapValue)) {
-      mapValue.push(item);
-    } else {
-      latestResult.set(mapKey, [item]);
-    }
-
-    return latestResult;
-  }, resultMap);
-
-  return resultMap;
-};
-
-export const clamp = (value: number, min: number, max: number) => {
-  return Math.min(Math.max(value, min), max);
-};
-
-export const isWithinRange = (value: number, min: number, max: number) => {
-  return Object.is(value, clamp(value, min, max));
-};
-
 export const chunk = <TElement>(
   array: TElement[],
   size: number,

@@ -1,5 +1,5 @@
-import { clamp } from "#renderer/lib/utils";
 import { type TextFieldProps, TextField } from "@mui/material";
+import { clamp } from "@yotulee/run";
 import React from "react";
 
 const renderNumberValue = (
