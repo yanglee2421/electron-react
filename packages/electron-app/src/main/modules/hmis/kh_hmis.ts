@@ -1,13 +1,13 @@
 // 康华 安康
 
-import dayjs from "dayjs";
-import { net } from "electron";
-import * as sql from "drizzle-orm";
-import * as schema from "#main/schema";
+import * as schema from "#main/db/schema";
+import type { AppContext } from "#main/index";
 import { createEmit } from "#main/lib";
 import { log, withLog, ipcHandle } from "#main/lib/ipc";
-import type { AppContext } from "#main/index";
-import type { KHGetResponse, SQLiteGetParams } from "#main/lib/ipc";
+import { type KHGetResponse, type SQLiteGetParams } from "#main/lib/ipc";
+import dayjs from "dayjs";
+import * as sql from "drizzle-orm";
+import { net } from "electron";
 
 type QXDataParams = {
   mesureid: string;
@@ -87,7 +87,7 @@ const sqlite_get = async (appContext: AppContext, params: SQLiteGetParams) => {
       ),
     )
     .limit(1);
-  const rows = await db.query.khBarcodeTable.findMany({
+  const rows = await db._query.khBarcodeTable.findMany({
     where: sql.between(
       schema.khBarcodeTable.date,
       new Date(params.startDate),
@@ -281,7 +281,7 @@ const emit = createEmit("api_set");
 
 const api_set = async (appContext: AppContext, id: number) => {
   const { sqliteDB: db } = appContext;
-  const record = await db.query.khBarcodeTable.findFirst({
+  const record = await db._query.khBarcodeTable.findFirst({
     where: sql.eq(schema.khBarcodeTable.id, id),
   });
 
@@ -317,7 +317,7 @@ const autoUploadHandler = async (appContext: AppContext) => {
   const delay = kh_hmis.get("autoUploadInterval") * 1000;
   timer = setTimeout(autoUploadHandler, delay);
 
-  const barcodes = await db.query.khBarcodeTable.findMany({
+  const barcodes = await db._query.khBarcodeTable.findMany({
     where: sql.and(
       sql.eq(schema.khBarcodeTable.isUploaded, false),
       sql.between(

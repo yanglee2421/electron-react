@@ -5,7 +5,7 @@ import { net } from "electron";
 import * as sql from "drizzle-orm";
 import { ipcHandle, log, withLog } from "#main/lib/ipc";
 import { createEmit } from "#main/lib";
-import * as schema from "#main/schema";
+import * as schema from "#main/db/schema";
 import { calculateDirection, calculatePlace } from "#main/utils/flawDetection";
 import type { AppContext } from "#main/index";
 import type { XZBGetResponse, SQLiteGetParams } from "#main/lib/ipc";
@@ -58,7 +58,7 @@ const sqlite_get = async (appContext: AppContext, params: SQLiteGetParams) => {
       ),
     )
     .limit(1);
-  const rows = await db.query.jtvXuzhoubeiBarcodeTable.findMany({
+  const rows = await db._query.jtvXuzhoubeiBarcodeTable.findMany({
     where: sql.between(
       schema.jtvXuzhoubeiBarcodeTable.date,
       new Date(params.startDate),
@@ -247,7 +247,7 @@ const api_set = async (
   id: number,
 ): Promise<schema.JtvXuzhoubeiBarcode> => {
   const { sqliteDB: db } = appContext;
-  const record = await db.query.jtvXuzhoubeiBarcodeTable.findFirst({
+  const record = await db._query.jtvXuzhoubeiBarcodeTable.findFirst({
     where: sql.eq(schema.jtvXuzhoubeiBarcodeTable.id, id),
   });
 
@@ -286,7 +286,7 @@ const autoUploadHandler = async (appContext: AppContext) => {
   const delay = jtv_hmis_xuzhoubei.get("autoUploadInterval") * 1000;
   timer = setTimeout(autoUploadHandler, delay);
 
-  const barcodes = await db.query.jtvXuzhoubeiBarcodeTable.findMany({
+  const barcodes = await db._query.jtvXuzhoubeiBarcodeTable.findMany({
     where: sql.and(
       sql.eq(schema.jtvXuzhoubeiBarcodeTable.isUploaded, false),
       sql.between(

@@ -1,3 +1,11 @@
+import type {
+  HxzyBarcode,
+  JTVBarcode,
+  JTVGuangzhoubeiBarcode,
+  JtvXuzhoubeiBarcode,
+  KhBarcode,
+  XlsxSize,
+} from "#main/db/schema";
 import type { Profile } from "#main/lib/profile";
 import type {
   HXZY_HMIS,
@@ -6,20 +14,14 @@ import type {
   JTV_HMIS_XUZHOUBEI,
   KH_HMIS,
 } from "#main/lib/store";
+import { type IpcContract as guangzhoujibaoduanIPC } from "#main/modules/hmis/jtv_hmis_guangzhoujibaoduan";
+import { type IpcContract as KVIpcContract } from "#main/modules/kv";
 import type { MDBPayload, Verify, VerifyData } from "#main/modules/mdb";
-import type {
-  HxzyBarcode,
-  JTVBarcode,
-  JTVGuangzhoubeiBarcode,
-  JtvXuzhoubeiBarcode,
-  KhBarcode,
-  XlsxSize,
-} from "#main/schema";
 import { calculateErrorMessage } from "#main/utils/error";
 import { promiseTry } from "@yotulee/run";
 import { BrowserWindow, ipcMain } from "electron";
 
-export interface IpcContract {
+export interface IpcContract extends KVIpcContract, guangzhoujibaoduanIPC {
   "PROFILE/GET": {
     args: [];
     return: Profile;
@@ -532,7 +534,7 @@ type HandlerFn<K extends keyof IpcContract> = IpcContract[K] extends {
 }
   ? CallbackFn<
       A extends unknown[] ? [Electron.IpcMainInvokeEvent, ...A] : [],
-      Promise<R>
+      Promise<Awaited<R>>
     >
   : never;
 

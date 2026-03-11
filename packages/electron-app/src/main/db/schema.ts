@@ -1,8 +1,8 @@
 import {
   int,
+  numeric,
   sqliteTable,
   text,
-  numeric,
   unique,
 } from "drizzle-orm/sqlite-core";
 
@@ -13,6 +13,8 @@ export type JTVBarcode = typeof jtvBarcodeTable.$inferSelect;
 export type JtvXuzhoubeiBarcode = typeof jtvXuzhoubeiBarcodeTable.$inferSelect;
 export type JTVGuangzhoubeiBarcode =
   typeof jtvGuangzhoubeiBarcodeTable.$inferSelect;
+export type JTVGuangzhoujibaoduanBarcode =
+  typeof jtvGuangzhoujibaoduanBarcodeTable.$inferSelect;
 
 export const jtvBarcodeTable = sqliteTable("jtv_barcode", {
   id: int("id").primaryKey({ autoIncrement: true }),
@@ -84,3 +86,21 @@ export const jtvGuangzhoubeiBarcodeTable = sqliteTable(
     CZZZRQ: text("CZZZRQ"),
   },
 );
+
+export const jtvGuangzhoujibaoduanBarcodeTable = sqliteTable(
+  "jtv_guangzhoujibaoduan_barcode",
+  {
+    id: int("id").primaryKey({ autoIncrement: true }),
+    barCode: text("barCode"),
+    zh: text("zh"),
+    date: int("date", { mode: "timestamp" }),
+    isUploaded: int("isUploaded", { mode: "boolean" }),
+    CZZZDW: text("CZZZDW"),
+    CZZZRQ: text("CZZZRQ"),
+  },
+);
+
+export const kvTable = sqliteTable("kv", {
+  key: text("key").primaryKey(),
+  value: text("value"),
+});

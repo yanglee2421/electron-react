@@ -15,19 +15,6 @@ export const debounce = <TArgs extends unknown[]>(
   };
 };
 
-export const chunk = <TElement>(
-  array: TElement[],
-  size: number,
-): TElement[][] => {
-  const result: TElement[][] = [];
-
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size));
-  }
-
-  return result;
-};
-
 export const pageSetup = (sheet: Excel.Worksheet) => {
   // A4
   sheet.pageSetup.paperSize = 9;

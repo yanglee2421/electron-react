@@ -28,7 +28,8 @@
       "#main/*": ["./src/main/*"],
       "#preload/*": ["./src/preload/*"],
       "#renderer/*": ["./src/renderer/*"],
-      "#resources/*": ["./resources/*"]
+      "#resources/*": ["./resources/*"],
+      "#shared/*": ["./src/shared/*"]
     }
   },
   "include": ["src"]

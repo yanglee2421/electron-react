@@ -1,7 +1,7 @@
 import { app, shell } from "electron";
 import * as path from "node:path";
 import Excel from "@yanglee2421/exceljs";
-import * as schema from "#main/schema";
+import * as schema from "#main/db/schema";
 import * as sql from "drizzle-orm";
 import type { AppContext } from "#main/index";
 

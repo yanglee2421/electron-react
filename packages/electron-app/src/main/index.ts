@@ -1,6 +1,8 @@
-import { createSQLiteDB } from "#main/lib";
+import { createSQLiteDB } from "#main/db";
 import { ipcHandle } from "#main/lib/ipc";
 import { ProfileStore } from "#main/lib/profile";
+import { JTV_HMIS_Guangzhoujibaoduan } from "#main/modules/hmis/jtv_hmis_guangzhoujibaoduan";
+import { KV } from "#main/modules/kv";
 import { MDBDB } from "#main/modules/mdb";
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import { app, BrowserWindow, dialog, Menu, nativeTheme, shell } from "electron";
@@ -267,6 +269,12 @@ const bootstrap = async () => {
     jtv_hmis_xuzhoubei,
     jtv_hmis_guangzhoubei,
   } = createStores();
+  const kv = new KV(sqliteDB);
+  const jtv_hmis_guangzhoujibaoduan = new JTV_HMIS_Guangzhoujibaoduan(
+    sqliteDB,
+    kv,
+    mdbDB,
+  );
 
   const appContext = {
     profile,
@@ -300,6 +308,14 @@ const bootstrap = async () => {
   md5.bindIpcHandlers(appContext);
   xml.bindIpcHandlers(appContext);
   plc.bindIpcHandlers(appContext);
+  kv.bindIpc();
+  jtv_hmis_guangzhoujibaoduan.bindIPCHandlers();
+
+  kv.on((key) => {
+    if (key === jtv_hmis_guangzhoujibaoduan.storeKey) {
+      jtv_hmis_guangzhoujibaoduan.updateStore();
+    }
+  });
 
   await createWindow(appContext);
 };

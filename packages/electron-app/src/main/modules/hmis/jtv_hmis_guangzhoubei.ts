@@ -1,18 +1,18 @@
 // 京天威 广州北
 
-import dayjs from "dayjs";
-import { net } from "electron";
-import * as sql from "drizzle-orm";
+import type { SQLiteDBType } from "#main/db";
+import * as schema from "#main/db/schema";
+import type { AppContext } from "#main/index";
 import { getIP, createEmit } from "#main/lib";
 import { log, withLog, ipcHandle } from "#main/lib/ipc";
-import { calculateDirection, calculatePlace } from "#main/utils/flawDetection";
-import * as schema from "#main/schema";
-import type Store from "electron-store";
-import type { SQLiteDBType } from "#main/lib";
+import type { SQLiteGetParams, InsertRecordParams } from "#main/lib/ipc";
 import type { JTV_HMIS_Guangzhoubei } from "#main/lib/store";
 import type { Detection, DetectionData } from "#main/modules/mdb";
-import type { AppContext } from "#main/index";
-import type { SQLiteGetParams, InsertRecordParams } from "#main/lib/ipc";
+import { calculateDirection, calculatePlace } from "#main/utils/flawDetection";
+import dayjs from "dayjs";
+import * as sql from "drizzle-orm";
+import { net } from "electron";
+import type Store from "electron-store";
 
 type StoreType = Store<JTV_HMIS_Guangzhoubei>;
 
@@ -122,7 +122,7 @@ const handleReadRecords = async (
     )
     .limit(1);
 
-  const rows = await db.query.jtvGuangzhoubeiBarcodeTable.findMany({
+  const rows = await db._query.jtvGuangzhoubeiBarcodeTable.findMany({
     where: sql.between(
       schema.jtvGuangzhoubeiBarcodeTable.date,
       new Date(params.startDate),
@@ -440,7 +440,7 @@ const handleSendData = async (
 ): Promise<schema.JTVBarcode> => {
   const { sqliteDB: db } = appContext;
 
-  const record = await db.query.jtvGuangzhoubeiBarcodeTable.findFirst({
+  const record = await db._query.jtvGuangzhoubeiBarcodeTable.findFirst({
     where: sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id),
   });
 
@@ -489,7 +489,7 @@ const autoUploadHandler = async (
   const delay = jtv_hmis_guangzhoubei.get("autoUploadInterval") * 1000;
   timer = setTimeout(autoUploadHandler, delay);
 
-  const barcodes = await db.query.jtvGuangzhoubeiBarcodeTable.findMany({
+  const barcodes = await db._query.jtvGuangzhoubeiBarcodeTable.findMany({
     where: sql.and(
       sql.eq(schema.jtvGuangzhoubeiBarcodeTable.isUploaded, false),
       sql.between(

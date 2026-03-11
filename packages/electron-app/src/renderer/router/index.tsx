@@ -1,5 +1,3 @@
-import { QueryProvider } from "#renderer/components/query";
-import { createHashRouter, RouterProvider } from "react-router";
 import {
   fetchJtvHmisGuangzhoubeiSetting,
   fetchJtvHmisSetting,
@@ -10,8 +8,10 @@ import {
   fetchKhHmisSetting,
   fetchProfile,
 } from "#renderer/api/fetch_preload";
-import { RootHydrateFallback, RootErrorBoundary } from "./root";
+import { QueryProvider } from "#renderer/components/query";
 import { DashLayout, RootRoute } from "./layout";
+import { RootHydrateFallback, RootErrorBoundary } from "./root";
+import { createHashRouter, RouterProvider } from "react-router";
 import type { RouteObject } from "react-router";
 
 const hxzyLoader = async () => {
@@ -41,20 +41,12 @@ const khLoader = async () => {
 
 const routes: RouteObject[] = [
   {
-    Component: RootRoute,
-    ErrorBoundary: RootErrorBoundary,
-    HydrateFallback: RootHydrateFallback,
-    loader: async () => {
-      await QueryProvider.queryClient.ensureQueryData(fetchProfile());
-    },
     children: [
       {
         path: "*",
         lazy: () => import("#renderer/pages/not-found/component"),
       },
       {
-        id: "auth_layout",
-        Component: DashLayout,
         children: [
           {
             path: "plc",
@@ -175,7 +167,6 @@ const routes: RouteObject[] = [
                 ],
               },
               {
-                loader: hxzyLoader,
                 path: "hxzy",
                 children: [
                   {
@@ -193,9 +184,9 @@ const routes: RouteObject[] = [
                       import("#renderer/pages/hxzy_verifies/component"),
                   },
                 ],
+                loader: hxzyLoader,
               },
               {
-                loader: jtvLoader,
                 path: "jtv",
                 children: [
                   {
@@ -208,9 +199,9 @@ const routes: RouteObject[] = [
                       import("#renderer/pages/jtv_hmis_setting/component"),
                   },
                 ],
+                loader: jtvLoader,
               },
               {
-                loader: jtvXuzhoubeiLoader,
                 path: "jtv_xuzhoubei",
                 children: [
                   {
@@ -224,9 +215,9 @@ const routes: RouteObject[] = [
                       import("#renderer/pages/jtv_hmis_xuzhoubei_setting/component"),
                   },
                 ],
+                loader: jtvXuzhoubeiLoader,
               },
               {
-                loader: jtvGuangzhoubeiLoader,
                 path: "jtv_guangzhoubei",
                 children: [
                   {
@@ -240,9 +231,25 @@ const routes: RouteObject[] = [
                       import("#renderer/pages/jtv_hmis_guangzhoubei_setting/component"),
                   },
                 ],
+                loader: jtvGuangzhoubeiLoader,
               },
               {
-                loader: khLoader,
+                path: "jtv_guangzhoujibaoduan",
+                children: [
+                  {
+                    index: true,
+                    lazy: () =>
+                      import("#renderer/pages/jtv_hmis_guangzhoujibaoduan/component"),
+                  },
+                  {
+                    path: "setting",
+                    lazy: () =>
+                      import("#renderer/pages/jtv_hmis_guangzhoujibaoduan_setting/component"),
+                  },
+                ],
+                loader: async () => {},
+              },
+              {
                 path: "kh",
                 children: [
                   {
@@ -255,12 +262,20 @@ const routes: RouteObject[] = [
                       import("#renderer/pages/kh_hmis_setting/component"),
                   },
                 ],
+                loader: khLoader,
               },
             ],
           },
         ],
+        Component: DashLayout,
       },
     ],
+    Component: RootRoute,
+    ErrorBoundary: RootErrorBoundary,
+    HydrateFallback: RootHydrateFallback,
+    loader: async () => {
+      await QueryProvider.queryClient.ensureQueryData(fetchProfile());
+    },
   },
 ];
 

@@ -1,19 +1,24 @@
 // 成都北 华兴致远
 
-import dayjs from "dayjs";
-import { net } from "electron";
-import * as sql from "drizzle-orm";
-import * as schema from "#main/schema";
-import { getIP, createEmit } from "#main/lib";
-import { withLog, ipcHandle, log } from "#main/lib/ipc";
-import type { SQLiteGetParams, HxzyGetResponse } from "#main/lib/ipc";
+import * as schema from "#main/db/schema";
 import type { AppContext } from "#main/index";
+import { createEmit, getIP } from "#main/lib";
+import {
+  ipcHandle,
+  log,
+  withLog,
+  type HxzyGetResponse,
+  type SQLiteGetParams,
+} from "#main/lib/ipc";
 import type {
   DetectionData,
   MDBDB,
   Verify,
   VerifyData,
 } from "#main/modules/mdb";
+import dayjs from "dayjs";
+import * as sql from "drizzle-orm";
+import { net } from "electron";
 
 type PostRequestItem = {
   EQ_IP: string; // 设备IP
@@ -56,7 +61,7 @@ const sqlite_get = async (params: SQLiteGetParams, appContext: AppContext) => {
       ),
     )
     .limit(1);
-  const rows = await db.query.hxzyBarcodeTable.findMany({
+  const rows = await db._query.hxzyBarcodeTable.findMany({
     where: sql.between(
       schema.hxzyBarcodeTable.date,
       new Date(params.startDate),
@@ -247,7 +252,7 @@ const emit = createEmit("api_set");
 const api_set = async (id: number, appContext: AppContext) => {
   const { sqliteDB: db } = appContext;
 
-  const record = await db.query.hxzyBarcodeTable.findFirst({
+  const record = await db._query.hxzyBarcodeTable.findFirst({
     where: sql.eq(schema.hxzyBarcodeTable.id, id),
   });
 
@@ -318,7 +323,7 @@ const autoUploadHandler = async (appContext: AppContext) => {
   const delay = hxzy_hmis.get("autoUploadInterval") * 1000;
   timer = setTimeout(() => autoUploadHandler(appContext), delay);
 
-  const barcodes = await db.query.hxzyBarcodeTable.findMany({
+  const barcodes = await db._query.hxzyBarcodeTable.findMany({
     where: sql.and(
       sql.eq(schema.hxzyBarcodeTable.isUploaded, false),
       sql.between(

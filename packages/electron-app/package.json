@@ -48,7 +48,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@yanglee2421/cpp-addon": "workspace:*",
     "@yanglee2421/exceljs": "^4.4.0",
-    "@yotulee/run": "npm:@jsr/yotulee__run@^0.0.11",
+    "@yotulee/run": "npm:@jsr/yotulee__run@^0.0.15",
     "better-sqlite3": "^12.5.0",
     "drizzle-orm": "1.0.0-beta.15-859cf75",
     "electron-store": "^11.0.2",

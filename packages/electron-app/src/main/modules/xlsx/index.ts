@@ -1,5 +1,5 @@
 import * as sql from "drizzle-orm";
-import * as schema from "#main/schema";
+import * as schema from "#main/db/schema";
 import { ipcHandle } from "#main/lib/ipc";
 import { chr_502 } from "./chr_502";
 import { chr_53a } from "./chr_53a";

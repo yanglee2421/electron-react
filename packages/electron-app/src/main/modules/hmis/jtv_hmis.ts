@@ -5,7 +5,7 @@ import { net } from "electron";
 import * as sql from "drizzle-orm";
 import { getIP, createEmit } from "#main/lib";
 import { log, withLog, ipcHandle } from "#main/lib/ipc";
-import * as schema from "#main/schema";
+import * as schema from "#main/db/schema";
 import type { JTV_HMIS } from "#main/lib/store";
 import type { Detection, DetectionData } from "#main/modules/mdb";
 import type { AppContext } from "#main/index";
@@ -115,7 +115,7 @@ const handleReadRecords = async (
     )
     .limit(1);
 
-  const rows = await db.query.jtvBarcodeTable.findMany({
+  const rows = await db._query.jtvBarcodeTable.findMany({
     where: sql.between(
       schema.jtvBarcodeTable.date,
       new Date(params.startDate),
@@ -463,7 +463,7 @@ const handleSendData = async (
   id: number,
 ): Promise<schema.JTVBarcode> => {
   const { sqliteDB: db } = appContext;
-  const record = await db.query.jtvBarcodeTable.findFirst({
+  const record = await db._query.jtvBarcodeTable.findFirst({
     where: sql.eq(schema.jtvBarcodeTable.id, id),
   });
 
@@ -495,7 +495,7 @@ const autoUploadHandler = async (appContext: AppContext) => {
   const delay = jtv_hmis.get("autoUploadInterval") * 1000;
   timer = setTimeout(autoUploadHandler, delay);
 
-  const barcodes = await db.query.jtvBarcodeTable.findMany({
+  const barcodes = await db._query.jtvBarcodeTable.findMany({
     where: sql.and(
       sql.eq(schema.jtvBarcodeTable.isUploaded, false),
       sql.between(

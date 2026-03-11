@@ -1,4 +1,10 @@
 import {
+  useMobileMode,
+  fetchProfile,
+  useProfileUpdate,
+} from "#renderer/api/fetch_preload";
+import { NprogressBar } from "./nprogress";
+import {
   LightModeOutlined,
   DarkModeOutlined,
   DesktopWindowsOutlined,
@@ -31,6 +37,7 @@ import {
   MenuItem,
   useTheme,
 } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import {
   useNotifications,
   DashboardLayout,
@@ -38,17 +45,10 @@ import {
   NotificationsProvider,
   DialogsProvider,
 } from "@toolpad/core";
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ReactRouterAppProvider } from "@toolpad/core/react-router";
-import { Outlet, ScrollRestoration, useLocation } from "react-router";
-import {
-  useMobileMode,
-  fetchProfile,
-  useProfileUpdate,
-} from "#renderer/api/fetch_preload";
-import { NprogressBar } from "./nprogress";
 import type { Navigation } from "@toolpad/core";
+import { ReactRouterAppProvider } from "@toolpad/core/react-router";
+import React from "react";
+import { Outlet, ScrollRestoration, useLocation } from "react-router";
 
 const createSegmentAlias = () => {
   const segmentAlias = new Map([
@@ -56,6 +56,7 @@ const createSegmentAlias = () => {
     ["jtv", "京天威"],
     ["jtv_xuzhoubei", "京天威(徐州北)"],
     ["jtv_guangzhoubei", "京天威(广州北)"],
+    ["jtv_guangzhoujibaoduan", "京天威(广州机保段)"],
     ["kh", "康华"],
     ["verifies", "日常校验"],
     ["setting", "设置"],
@@ -197,6 +198,21 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
         },
         {
           segment: calculateSegment("jtv_guangzhoubei", "setting"),
+          title: "设置",
+          icon: <TuneOutlined />,
+        },
+      ],
+    },
+    {
+      title: "京天威(广州机保段)",
+      children: [
+        {
+          segment: calculateSegment("jtv_guangzhoujibaoduan"),
+          title: "HMIS",
+          icon: <QrCodeScannerOutlined />,
+        },
+        {
+          segment: calculateSegment("jtv_guangzhoujibaoduan", "setting"),
           title: "设置",
           icon: <TuneOutlined />,
         },

@@ -1,9 +1,5 @@
-import {
-  fetchJtvHmisGuangzhoubeiSetting,
-  useUpdateJtvHmisGuangzhoubeiSetting,
-} from "#renderer/api/fetch_preload";
 import { NumberField } from "#renderer/components/number";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useGuangzhoujibaoduan } from "#renderer/hooks/useGuangzhoujibaoduan";
 import { SaveOutlined } from "@mui/icons-material";
 import {
   Button,
@@ -11,67 +7,37 @@ import {
   CardActions,
   CardContent,
   CardHeader,
-  FormControlLabel,
-  Grid,
   Checkbox,
-  TextField,
-  FormGroup,
   CircularProgress,
+  FormControlLabel,
+  FormGroup,
+  Grid,
+  TextField,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 import { useNotifications } from "@toolpad/core";
 import React from "react";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
-
-type FormValues = z.infer<typeof schema>;
-
-const schema = z.object({
-  get_ip: z.ipv4(),
-  get_port: z.number().int().min(1).max(65535),
-  post_ip: z.ipv4(),
-  post_port: z.number().int().min(1).max(65535),
-  autoInput: z.boolean(),
-  autoUpload: z.boolean(),
-  autoUploadInterval: z.number().int().min(10),
-  unitCode: z.string(),
-  signature_prefix: z.string(),
-});
-
-const useSettingForm = () => {
-  const { data: hmis } = useQuery(fetchJtvHmisGuangzhoubeiSetting());
-
-  if (!hmis) {
-    throw new Error("fetchJtvHmisSetting data not found");
-  }
-
-  return useForm<FormValues>({
-    defaultValues: {
-      get_ip: hmis.get_host.split(":")[0],
-      get_port: Number.parseInt(hmis.get_host.split(":")[1]),
-      post_ip: hmis.post_host.split(":")[0],
-      post_port: Number.parseInt(hmis.post_host.split(":")[1]),
-      autoInput: hmis.autoInput,
-      autoUpload: hmis.autoUpload,
-      autoUploadInterval: hmis.autoUploadInterval,
-      unitCode: hmis.unitCode,
-      signature_prefix: hmis.signature_prefix,
-    },
-
-    resolver: zodResolver(schema),
-  });
-};
+import { Controller } from "react-hook-form";
 
 export const Component = () => {
   const formId = React.useId();
 
   const snackbar = useNotifications();
-  const form = useSettingForm();
-  const updateSettings = useUpdateJtvHmisGuangzhoubeiSetting();
+  const value = useGuangzhoujibaoduan((store) => store.signature_prefix);
+
+  return (
+    <TextField
+      value={value}
+      onChange={(e) => {
+        useGuangzhoujibaoduan.setState((draft) => {
+          draft.signature_prefix = e.target.value;
+        });
+      }}
+    />
+  );
 
   return (
     <Card>
-      <CardHeader title="京天威HMIS设置" subheader="广州北" />
+      <CardHeader title="京天威HMIS设置" subheader="广州机保段" />
       <CardContent>
         <form
           id={formId}

@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import Excel from "@yanglee2421/exceljs";
 import { app, shell } from "electron";
 import * as sql from "drizzle-orm";
-import * as schema from "#main/schema";
+import * as schema from "#main/db/schema";
 import { createCellHelper, createRowHelper, pageSetup } from "#main/utils";
 import type { Detection } from "#main/modules/mdb";
 import type { AppContext } from "#main/index";

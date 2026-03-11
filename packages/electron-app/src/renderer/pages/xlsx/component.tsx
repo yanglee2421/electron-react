@@ -1,3 +1,16 @@
+import type { XlsxSize } from "#main/db/schema";
+import {
+  fetchSqliteXlsxSize,
+  useXlsxSizeDelete,
+} from "#renderer/api/fetch_preload";
+import { Loading } from "#renderer/components/Loading";
+import * as consts from "#renderer/lib/constants";
+import {
+  AddOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  RefreshOutlined,
+} from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -21,28 +34,15 @@ import {
   TextField,
   Link as MuiLink,
 } from "@mui/material";
-import * as consts from "#renderer/lib/constants";
-import type { XlsxSize } from "#main/schema";
+import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useQuery } from "@tanstack/react-query";
-import { Loading } from "#renderer/components/Loading";
-import { Link } from "react-router";
-import {
-  AddOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  RefreshOutlined,
-} from "@mui/icons-material";
 import React from "react";
-import {
-  fetchSqliteXlsxSize,
-  useXlsxSizeDelete,
-} from "#renderer/api/fetch_preload";
+import { Link } from "react-router";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";

@@ -1,12 +1,13 @@
-import * as url from "node:url";
-import { defineConfig } from "electron-vite";
 import react from "@vitejs/plugin-react";
+import { defineConfig } from "electron-vite";
+import * as url from "node:url";
 
 const alias = {
   "#main": url.fileURLToPath(new URL("./src/main", import.meta.url)),
   "#preload": url.fileURLToPath(new URL("./src/preload", import.meta.url)),
   "#renderer": url.fileURLToPath(new URL("./src/renderer", import.meta.url)),
   "#resources": url.fileURLToPath(new URL("./resources", import.meta.url)),
+  "#shared": url.fileURLToPath(new URL("./src/shared", import.meta.url)),
 };
 
 const ReactCompilerConfig = {

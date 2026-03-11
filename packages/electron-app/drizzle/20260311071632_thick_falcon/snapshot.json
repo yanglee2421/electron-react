@@ -1,0 +1,616 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "3d1045fe-aaed-4fa6-b35a-ff5e461962e9",
+  "prevIds": [
+    "d435f319-b62a-4a64-8b6d-156ebdb22a0d"
+  ],
+  "ddl": [
+    {
+      "name": "hxzy_barcode",
+      "entityType": "tables"
+    },
+    {
+      "name": "jtv_barcode",
+      "entityType": "tables"
+    },
+    {
+      "name": "jtv_guangzhoubei_barcode",
+      "entityType": "tables"
+    },
+    {
+      "name": "jtv_guangzhoujibaoduan_barcode",
+      "entityType": "tables"
+    },
+    {
+      "name": "jtv_xuzhoubei_barcode",
+      "entityType": "tables"
+    },
+    {
+      "name": "kh_barcode",
+      "entityType": "tables"
+    },
+    {
+      "name": "kv",
+      "entityType": "tables"
+    },
+    {
+      "name": "xlsxSize",
+      "entityType": "tables"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "hxzy_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "barCode",
+      "entityType": "columns",
+      "table": "hxzy_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "zh",
+      "entityType": "columns",
+      "table": "hxzy_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "date",
+      "entityType": "columns",
+      "table": "hxzy_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "isUploaded",
+      "entityType": "columns",
+      "table": "hxzy_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "jtv_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "barCode",
+      "entityType": "columns",
+      "table": "jtv_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "zh",
+      "entityType": "columns",
+      "table": "jtv_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "date",
+      "entityType": "columns",
+      "table": "jtv_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "isUploaded",
+      "entityType": "columns",
+      "table": "jtv_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "CZZZDW",
+      "entityType": "columns",
+      "table": "jtv_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "CZZZRQ",
+      "entityType": "columns",
+      "table": "jtv_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "jtv_guangzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "barCode",
+      "entityType": "columns",
+      "table": "jtv_guangzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "zh",
+      "entityType": "columns",
+      "table": "jtv_guangzhoubei_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "date",
+      "entityType": "columns",
+      "table": "jtv_guangzhoubei_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "isUploaded",
+      "entityType": "columns",
+      "table": "jtv_guangzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "CZZZDW",
+      "entityType": "columns",
+      "table": "jtv_guangzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "CZZZRQ",
+      "entityType": "columns",
+      "table": "jtv_guangzhoubei_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "jtv_guangzhoujibaoduan_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "barCode",
+      "entityType": "columns",
+      "table": "jtv_guangzhoujibaoduan_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "zh",
+      "entityType": "columns",
+      "table": "jtv_guangzhoujibaoduan_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "date",
+      "entityType": "columns",
+      "table": "jtv_guangzhoujibaoduan_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "isUploaded",
+      "entityType": "columns",
+      "table": "jtv_guangzhoujibaoduan_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "CZZZDW",
+      "entityType": "columns",
+      "table": "jtv_guangzhoujibaoduan_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "CZZZRQ",
+      "entityType": "columns",
+      "table": "jtv_guangzhoujibaoduan_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "barCode",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "zh",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "date",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "isUploaded",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "PJ_ZZRQ",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "PJ_ZZDW",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "PJ_SCZZRQ",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "PJ_SCZZDW",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "PJ_MCZZRQ",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "PJ_MCZZDW",
+      "entityType": "columns",
+      "table": "jtv_xuzhoubei_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "kh_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "barCode",
+      "entityType": "columns",
+      "table": "kh_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "zh",
+      "entityType": "columns",
+      "table": "kh_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "date",
+      "entityType": "columns",
+      "table": "kh_barcode"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "isUploaded",
+      "entityType": "columns",
+      "table": "kh_barcode"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "key",
+      "entityType": "columns",
+      "table": "kv"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "value",
+      "entityType": "columns",
+      "table": "kv"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "xlsxSize"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "type",
+      "entityType": "columns",
+      "table": "xlsxSize"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "index",
+      "entityType": "columns",
+      "table": "xlsxSize"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "size",
+      "entityType": "columns",
+      "table": "xlsxSize"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "xlsxName",
+      "entityType": "columns",
+      "table": "xlsxSize"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "hxzy_barcode_pk",
+      "table": "hxzy_barcode",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "jtv_barcode_pk",
+      "table": "jtv_barcode",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "jtv_guangzhoubei_barcode_pk",
+      "table": "jtv_guangzhoubei_barcode",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "jtv_guangzhoujibaoduan_barcode_pk",
+      "table": "jtv_guangzhoujibaoduan_barcode",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "jtv_xuzhoubei_barcode_pk",
+      "table": "jtv_xuzhoubei_barcode",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "kh_barcode_pk",
+      "table": "kh_barcode",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "key"
+      ],
+      "nameExplicit": false,
+      "name": "kv_pk",
+      "table": "kv",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "xlsxSize_pk",
+      "table": "xlsxSize",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "xlsxName",
+        "type",
+        "index"
+      ],
+      "nameExplicit": true,
+      "name": "xlsxName_position_unique",
+      "entityType": "uniques",
+      "table": "xlsxSize"
+    }
+  ],
+  "renames": []
+}

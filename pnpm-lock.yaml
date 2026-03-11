@@ -67,8 +67,8 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0
       '@yotulee/run':
-        specifier: npm:@jsr/yotulee__run@^0.0.11
-        version: '@jsr/yotulee__run@0.0.11'
+        specifier: npm:@jsr/yotulee__run@^0.0.15
+        version: '@jsr/yotulee__run@0.0.15'
       better-sqlite3:
         specifier: ^12.5.0
         version: 12.6.2
@@ -988,8 +988,8 @@ packages:
     resolution: {integrity: sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ==}
     engines: {node: '>=12'}
 
-  '@jsr/yotulee__run@0.0.11':
-    resolution: {integrity: sha512-otzO5Fk8gVaO/Q3j3CzsG/I5QXPbkUFHP/BjfhKsr6jCOVbczeUmvCegrWHRIUxxeBMMTQFAARe0+9mYo5nqpA==, tarball: https://npm.jsr.io/~/11/@jsr/yotulee__run/0.0.11.tgz}
+  '@jsr/yotulee__run@0.0.15':
+    resolution: {integrity: sha512-2+4eFM4zpA2haY9VpmfrCgFic8vpek5CS1qILMwv0qoAGsc0dKyDnKxf+1DxX7cMBvig/W491QE7ewv8t6tMZA==, tarball: https://npm.jsr.io/~/11/@jsr/yotulee__run/0.0.15.tgz}
 
   '@malept/cross-spawn-promise@2.0.0':
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
@@ -5672,7 +5672,7 @@ snapshots:
     dependencies:
       jsbi: 4.3.2
 
-  '@jsr/yotulee__run@0.0.11': {}
+  '@jsr/yotulee__run@0.0.15': {}
 
   '@malept/cross-spawn-promise@2.0.0':
     dependencies:
