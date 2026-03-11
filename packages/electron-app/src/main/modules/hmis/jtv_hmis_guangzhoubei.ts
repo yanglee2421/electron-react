@@ -3,12 +3,15 @@
 import type { SQLiteDBType } from "#main/db";
 import * as schema from "#main/db/schema";
 import type { AppContext } from "#main/index";
-import { getIP, createEmit } from "#main/lib";
-import { log, withLog, ipcHandle } from "#main/lib/ipc";
-import type { SQLiteGetParams, InsertRecordParams } from "#main/lib/ipc";
+import { createEmit, getIP } from "#main/lib";
+import type { InsertRecordParams, SQLiteGetParams } from "#main/lib/ipc";
+import { ipcHandle, log, withLog } from "#main/lib/ipc";
 import type { JTV_HMIS_Guangzhoubei } from "#main/lib/store";
 import type { Detection, DetectionData } from "#main/modules/mdb";
-import { calculateDirection, calculatePlace } from "#main/utils/flawDetection";
+import {
+  calculateDirection,
+  calculatePlace,
+} from "#shared/factories/flawDetection";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
@@ -462,19 +465,6 @@ const handleSendData = async (
   return result;
 };
 
-const handleHMISSetting = async (
-  appContext: AppContext,
-  data?: Partial<JTV_HMIS_Guangzhoubei>,
-) => {
-  const { jtv_hmis_guangzhoubei } = appContext;
-
-  if (data) {
-    jtv_hmis_guangzhoubei.set(data);
-  }
-
-  return jtv_hmis_guangzhoubei.store;
-};
-
 /**
  * Auto upload
  */
@@ -538,9 +528,6 @@ export const bindIpcHandlers = (appContext: AppContext) => {
   });
   ipcHandle("HMIS/jtv_hmis_guangzhoubei_api_set", (_, id) => {
     return handleSendData(id, appContext);
-  });
-  ipcHandle("HMIS/jtv_hmis_guangzhoubei_setting", (_, data) => {
-    return handleHMISSetting(appContext, data);
   });
 
   initAutoUpload(appContext);

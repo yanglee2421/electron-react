@@ -1,0 +1,80 @@
+import type { SQLiteDBType } from "#main/db";
+import * as schema from "#main/db/schema";
+import { PROFILE_STORAGE_KEY } from "#shared/instances/constants";
+import { profile, type Profile as ProfileType } from "#shared/instances/schema";
+import * as sql from "drizzle-orm";
+import iconv from "iconv-lite";
+import ini from "ini";
+import fs from "node:fs";
+import path from "node:path";
+
+export class Profile {
+  private state = Object.freeze(profile.parse({}));
+  private handles = new Set<
+    (state: ProfileType, previous: ProfileType) => void
+  >();
+  db: SQLiteDBType;
+
+  constructor(db: SQLiteDBType) {
+    this.db = db;
+  }
+
+  async hydrate() {
+    const [row] = await this.db
+      .select()
+      .from(schema.kvTable)
+      .where(sql.eq(schema.kvTable.key, PROFILE_STORAGE_KEY))
+      .limit(1);
+
+    if (!row?.value) return;
+
+    const previous = this.state;
+    const data = JSON.parse(row.value);
+
+    this.state = Object.freeze(profile.parse(data.state));
+    this.emit(this.state, previous);
+  }
+
+  getState() {
+    return this.state;
+  }
+
+  async getRootPath() {
+    const profileInfo = this.getState();
+    const appPath = profileInfo.appPath;
+    const iniPath = path.resolve(appPath, "usprofile.ini");
+    const iniBuffer = await fs.promises.readFile(iniPath);
+    const iniText = iconv.decode(iniBuffer, profileInfo.encoding);
+    const userProfile = ini.parse(iniText);
+    const rootPath = userProfile.FileSystem.Root as string;
+
+    return rootPath;
+  }
+  async getRootDBPath() {
+    const rootPath = await this.getRootPath();
+
+    return path.resolve(rootPath, "local.mdb");
+  }
+  async getAppDBPath() {
+    const state = this.getState();
+    const appPath = state.appPath;
+
+    return path.resolve(appPath, "Data", "local.mdb");
+  }
+
+  on(handle: (state: ProfileType, previous: ProfileType) => void) {
+    this.handles.add(handle);
+
+    return () => {
+      this.off(handle);
+    };
+  }
+  off(handle: (state: ProfileType, previous: ProfileType) => void) {
+    this.handles.delete(handle);
+  }
+  emit(state: ProfileType, previous: ProfileType) {
+    this.handles.forEach((handle) => {
+      handle(state, previous);
+    });
+  }
+}

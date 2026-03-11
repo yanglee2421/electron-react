@@ -1,8 +1,8 @@
-import dayjs from "dayjs";
 import { ipcHandle } from "#main/lib/ipc";
-import createMDBWorker from "./mdb.worker?nodeWorker";
+import type { Profile } from "#main/shared/factories/Profile";
+import dayjs from "dayjs";
 import type { MDBWorkerData } from "./mdb.worker";
-import type { ProfileStore } from "#main/lib/profile";
+import createMDBWorker from "./mdb.worker?nodeWorker";
 
 export type Detection = {
   bFlaws: boolean | null;
@@ -156,8 +156,8 @@ type GetDetectionForJTVParams = {
 export type MDBPayload = Omit<MDBWorkerData, "databasePath">;
 
 export class MDBDB {
-  #profile: ProfileStore;
-  constructor(profile: ProfileStore) {
+  #profile: Profile;
+  constructor(profile: Profile) {
     this.#profile = profile;
   }
 

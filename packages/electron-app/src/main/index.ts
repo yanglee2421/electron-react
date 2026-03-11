@@ -1,14 +1,24 @@
 import { createSQLiteDB } from "#main/db";
 import { ipcHandle } from "#main/lib/ipc";
-import { ProfileStore } from "#main/lib/profile";
 import { JTV_HMIS_Guangzhoujibaoduan } from "#main/modules/hmis/jtv_hmis_guangzhoujibaoduan";
-import { KV } from "#main/modules/kv";
 import { MDBDB } from "#main/modules/mdb";
+import { bindIpc, KV } from "#main/shared/factories/KV";
+import { Profile } from "#main/shared/factories/Profile";
+import { PROFILE_STORAGE_KEY } from "#shared/instances/constants";
+import type { ThemeMode } from "#shared/instances/schema";
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
-import { app, BrowserWindow, dialog, Menu, nativeTheme, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  Menu,
+  nativeTheme,
+  net,
+  protocol,
+  shell,
+} from "electron";
 import path from "node:path";
 import url from "node:url";
-import { createStores } from "./lib/store";
 import * as cmd from "./modules/cmd";
 import * as hxzyHmis from "./modules/hmis/hxzy_hmis";
 import * as jtvHmis from "./modules/hmis/jtv_hmis";
@@ -21,25 +31,11 @@ import * as excel from "./modules/xlsx";
 import * as xml from "./modules/xml";
 
 export type AppContext = {
-  profile: ProfileStore;
   mdbDB: MDBDB;
   sqliteDB: ReturnType<typeof createSQLiteDB>;
-
-  kh_hmis: ReturnType<typeof createStores>["kh_hmis"];
-  hxzy_hmis: ReturnType<typeof createStores>["hxzy_hmis"];
-  jtv_hmis: ReturnType<typeof createStores>["jtv_hmis"];
-  jtv_hmis_xuzhoubei: ReturnType<typeof createStores>["jtv_hmis_xuzhoubei"];
-  jtv_hmis_guangzhoubei: ReturnType<
-    typeof createStores
-  >["jtv_hmis_guangzhoubei"];
 };
 
-const createWindow = async (appContext: AppContext) => {
-  const { profile } = appContext;
-
-  const profileInfo = await profile.getState();
-  const alwaysOnTop = profileInfo.alwaysOnTop;
-
+const createWindow = async (alwaysOnTop: boolean) => {
   const win = new BrowserWindow({
     webPreferences: {
       preload: path.join(__dirname, "../preload/index.mjs"),
@@ -105,7 +101,7 @@ const createWindow = async (appContext: AppContext) => {
   await win.loadURL(ELECTRON_RENDERER_URL);
 };
 
-const bindAppEventListeners = (appContext: AppContext) => {
+const bindAppEventListeners = (profile: Profile) => {
   // Quit when all windows are closed, except on macOS. There, it's common
   // for applications and their menu bar to stay active until the user quits
   // explicitly with Cmd + Q.
@@ -119,7 +115,7 @@ const bindAppEventListeners = (appContext: AppContext) => {
   // dock icon is clicked and there are no other windows open.
   app.on("activate", async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow(appContext);
+      createWindow(profile.getState().alwaysOnTop);
     }
   });
 
@@ -143,9 +139,7 @@ const bindAppEventListeners = (appContext: AppContext) => {
   });
 };
 
-const bindIpcHandles = (_: AppContext) => {
-  void _;
-
+const bindIpcHandles = () => {
   ipcHandle("VERSION/GET", async () => ({
     version: app.getVersion(),
     electronVersion: process.versions.electron,
@@ -255,21 +249,14 @@ const bootstrap = async () => {
   await app.whenReady();
 
   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-  const profileFilePath = path.resolve(app.getPath("userData"), "profile.json");
-  const profile = new ProfileStore(profileFilePath);
-  const mdbDB = new MDBDB(profile);
   const sqliteDB = createSQLiteDB({
     databasePath: path.resolve(app.getPath("userData"), "db.db"),
     migrationsFolder: path.resolve(__dirname, "../../drizzle"),
   });
-  const {
-    kh_hmis,
-    hxzy_hmis,
-    jtv_hmis,
-    jtv_hmis_xuzhoubei,
-    jtv_hmis_guangzhoubei,
-  } = createStores();
   const kv = new KV(sqliteDB);
+  const profile = new Profile(sqliteDB);
+  const mdbDB = new MDBDB(profile);
+
   const jtv_hmis_guangzhoujibaoduan = new JTV_HMIS_Guangzhoujibaoduan(
     sqliteDB,
     kv,
@@ -277,24 +264,17 @@ const bootstrap = async () => {
   );
 
   const appContext = {
-    profile,
     mdbDB,
     sqliteDB,
-    kh_hmis,
-    hxzy_hmis,
-    jtv_hmis,
-    jtv_hmis_xuzhoubei,
-    jtv_hmis_guangzhoubei,
   };
 
-  const profileInfo = await profile.getState();
+  await profile.hydrate();
 
-  nativeTheme.themeSource = profileInfo.mode;
+  nativeTheme.themeSource = profile.getState().mode;
 
-  bindAppEventListeners(appContext);
-  bindIpcHandles(appContext);
+  bindAppEventListeners(profile);
+  bindIpcHandles();
 
-  profile.bindIpcHandlers(appContext);
   mdbDB.bindIpcHandlers();
 
   hxzyHmis.bindIPCHandlers(appContext);
@@ -303,21 +283,62 @@ const bootstrap = async () => {
   jtvHmisGuangzhoubei.bindIpcHandlers(appContext);
   khHmis.bindIpcHandlers(appContext);
 
-  cmd.bindIpcHandlers(appContext);
+  cmd.bindIpcHandlers(ipcHandle);
   excel.bindIpcHandlers(appContext);
   md5.bindIpcHandlers(appContext);
   xml.bindIpcHandlers(appContext);
-  plc.bindIpcHandlers(appContext);
-  kv.bindIpc();
+  plc.bindIpcHandlers(ipcHandle);
+  bindIpc(kv, ipcHandle);
+
   jtv_hmis_guangzhoujibaoduan.bindIPCHandlers();
 
   kv.on((key) => {
     if (key === jtv_hmis_guangzhoujibaoduan.storeKey) {
       jtv_hmis_guangzhoujibaoduan.updateStore();
     }
+
+    if (key === PROFILE_STORAGE_KEY) {
+      profile.hydrate();
+    }
   });
 
-  await createWindow(appContext);
+  profile.on((state, previous) => {
+    diffMode(previous.mode, state.mode);
+    diffAlwaysOnTop(previous.alwaysOnTop, state.alwaysOnTop);
+    diffAppPath(previous.appPath, state.appPath, profile);
+  });
+
+  await createWindow(profile.getState().alwaysOnTop);
 };
 
 bootstrap();
+
+const diffMode = (prev: ThemeMode, next: ThemeMode) => {
+  if (Object.is(prev, next)) return;
+
+  nativeTheme.themeSource = next;
+};
+
+const diffAlwaysOnTop = (prev: boolean, next: boolean) => {
+  if (Object.is(prev, next)) return;
+
+  BrowserWindow.getAllWindows().forEach((win) => {
+    win.setAlwaysOnTop(next);
+  });
+};
+
+const diffAppPath = (prev: string, next: string, profile: Profile) => {
+  if (Object.is(prev, next)) return;
+
+  if (protocol.isProtocolHandled("atom")) {
+    protocol.unhandle("atom");
+  }
+
+  protocol.handle("atom", async (request) => {
+    const fileName = request.url.replace(/^atom:\/\//, "");
+    const rootPath = await profile.getRootPath();
+    const fetchURL = path.join(rootPath, "_data", fileName);
+
+    return net.fetch(`file://${fetchURL}`);
+  });
+};

@@ -1,6 +1,6 @@
 import { type SQLiteDBType } from "#main/db";
 import * as schema from "#main/db/schema";
-import { ipcHandle } from "#main/lib/ipc";
+import type { IpcHandle } from "#main/lib/ipc";
 import * as sql from "drizzle-orm";
 
 export interface IpcContract {
@@ -20,7 +20,6 @@ export interface IpcContract {
 
 export class KV {
   #handles: Set<(key: string) => void> = new Set();
-  timer: NodeJS.Timeout | null = null;
   db: SQLiteDBType;
 
   constructor(db: SQLiteDBType) {
@@ -37,6 +36,9 @@ export class KV {
   off(fn: (key: string) => void) {
     this.#handles.delete(fn);
   }
+  emit(key: string) {
+    this.#handles.forEach((fn) => fn(key));
+  }
 
   async getItem(key: string): Promise<string | null> {
     const rows = await this.db
@@ -48,7 +50,6 @@ export class KV {
 
     return value;
   }
-
   async setItem(key: string, value: string) {
     await this.db
       .insert(schema.kvTable)
@@ -58,42 +59,23 @@ export class KV {
         set: { value },
       });
 
-    this.onUpdate(key);
+    this.emit(key);
   }
-
   async removeItem(key: string) {
     await this.db.delete(schema.kvTable).where(sql.eq(schema.kvTable.key, key));
 
-    this.onUpdate(key);
-  }
-
-  onUpdate(key: string) {
-    if (this.timer) {
-      clearTimeout(this.timer);
-    }
-
-    this.timer = setTimeout(() => {
-      this.#handles.forEach((fn) => fn(key));
-
-      // Single source of truth is in main process,
-      // so we only notify other windows to update their cache after a change happens.
-      // Renderer processes should actively listen to the change and update their cache accordingly.
-
-      // BrowserWindow.getAllWindows().forEach((win) => {
-      //   win.webContents.send("kv/set", key);
-      // });
-    }, 500);
-  }
-
-  bindIpc() {
-    ipcHandle("kv/get", async (_, key: string) => {
-      return await this.getItem(key);
-    });
-    ipcHandle("kv/set", async (_, key: string, value: string) => {
-      await this.setItem(key, value);
-    });
-    ipcHandle("kv/remove", async (_, key: string) => {
-      await this.removeItem(key);
-    });
+    this.emit(key);
   }
 }
+
+export const bindIpc = (kv: KV, ipcHandle: IpcHandle) => {
+  ipcHandle("kv/get", async (_, key: string) => {
+    return await kv.getItem(key);
+  });
+  ipcHandle("kv/set", async (_, key: string, value: string) => {
+    await kv.setItem(key, value);
+  });
+  ipcHandle("kv/remove", async (_, key: string) => {
+    await kv.removeItem(key);
+  });
+};

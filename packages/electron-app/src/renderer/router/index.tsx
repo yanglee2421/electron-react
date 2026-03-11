@@ -1,43 +1,8 @@
-import {
-  fetchJtvHmisGuangzhoubeiSetting,
-  fetchJtvHmisSetting,
-} from "#renderer/api/fetch_preload";
-import {
-  fetchHxzyHmisSetting,
-  fetchJtvHmisXuzhoubeiSetting,
-  fetchKhHmisSetting,
-  fetchProfile,
-} from "#renderer/api/fetch_preload";
-import { QueryProvider } from "#renderer/components/query";
-import { DashLayout, RootRoute } from "./layout";
-import { RootHydrateFallback, RootErrorBoundary } from "./root";
-import { createHashRouter, RouterProvider } from "react-router";
+import { useProfileStore } from "#renderer/shared/hooks/ui/useProfileStore";
 import type { RouteObject } from "react-router";
-
-const hxzyLoader = async () => {
-  const queryClient = QueryProvider.queryClient;
-  return await queryClient.ensureQueryData(fetchHxzyHmisSetting());
-};
-
-const jtvXuzhoubeiLoader = async () => {
-  const queryClient = QueryProvider.queryClient;
-  return await queryClient.ensureQueryData(fetchJtvHmisXuzhoubeiSetting());
-};
-
-const jtvLoader = async () => {
-  const queryClient = QueryProvider.queryClient;
-  return await queryClient.ensureQueryData(fetchJtvHmisSetting());
-};
-
-const jtvGuangzhoubeiLoader = async () => {
-  const queryClient = QueryProvider.queryClient;
-  return await queryClient.ensureQueryData(fetchJtvHmisGuangzhoubeiSetting());
-};
-
-const khLoader = async () => {
-  const queryClient = QueryProvider.queryClient;
-  return await queryClient.ensureQueryData(fetchKhHmisSetting());
-};
+import { createHashRouter, RouterProvider } from "react-router";
+import { DashLayout, RootRoute } from "./layout";
+import { RootErrorBoundary, RootHydrateFallback } from "./root";
 
 const routes: RouteObject[] = [
   {
@@ -184,7 +149,7 @@ const routes: RouteObject[] = [
                       import("#renderer/pages/hxzy_verifies/component"),
                   },
                 ],
-                loader: hxzyLoader,
+                loader: async () => {},
               },
               {
                 path: "jtv",
@@ -199,7 +164,7 @@ const routes: RouteObject[] = [
                       import("#renderer/pages/jtv_hmis_setting/component"),
                   },
                 ],
-                loader: jtvLoader,
+                loader: async () => {},
               },
               {
                 path: "jtv_xuzhoubei",
@@ -215,7 +180,7 @@ const routes: RouteObject[] = [
                       import("#renderer/pages/jtv_hmis_xuzhoubei_setting/component"),
                   },
                 ],
-                loader: jtvXuzhoubeiLoader,
+                loader: async () => {},
               },
               {
                 path: "jtv_guangzhoubei",
@@ -231,7 +196,7 @@ const routes: RouteObject[] = [
                       import("#renderer/pages/jtv_hmis_guangzhoubei_setting/component"),
                   },
                 ],
-                loader: jtvGuangzhoubeiLoader,
+                loader: async () => {},
               },
               {
                 path: "jtv_guangzhoujibaoduan",
@@ -262,7 +227,7 @@ const routes: RouteObject[] = [
                       import("#renderer/pages/kh_hmis_setting/component"),
                   },
                 ],
-                loader: khLoader,
+                loader: async () => {},
               },
             ],
           },
@@ -274,7 +239,11 @@ const routes: RouteObject[] = [
     ErrorBoundary: RootErrorBoundary,
     HydrateFallback: RootHydrateFallback,
     loader: async () => {
-      await QueryProvider.queryClient.ensureQueryData(fetchProfile());
+      await new Promise<void>((resolve) => {
+        useProfileStore.persist.onFinishHydration(() => {
+          resolve();
+        });
+      });
     },
   },
 ];

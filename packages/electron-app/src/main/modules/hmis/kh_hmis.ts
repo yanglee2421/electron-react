@@ -3,8 +3,13 @@
 import * as schema from "#main/db/schema";
 import type { AppContext } from "#main/index";
 import { createEmit } from "#main/lib";
-import { log, withLog, ipcHandle } from "#main/lib/ipc";
-import { type KHGetResponse, type SQLiteGetParams } from "#main/lib/ipc";
+import {
+  ipcHandle,
+  log,
+  withLog,
+  type KHGetResponse,
+  type SQLiteGetParams,
+} from "#main/lib/ipc";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
@@ -362,15 +367,6 @@ export const bindIpcHandlers = (appContext: AppContext) => {
     api_get(appContext, barcode),
   );
   ipcHandle("HMIS/kh_hmis_api_set", (_, id) => api_set(appContext, id));
-  ipcHandle("HMIS/kh_hmis_setting", async (_, data) => {
-    const { kh_hmis } = appContext;
-
-    if (data) {
-      kh_hmis.set(data);
-    }
-
-    return kh_hmis.store;
-  });
 
   initAutoUpload(appContext);
 };

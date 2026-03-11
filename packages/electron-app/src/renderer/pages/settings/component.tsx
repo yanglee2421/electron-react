@@ -1,4 +1,13 @@
 import {
+  fetchIsRunAsAdmin,
+  fetchOpenAtLogin,
+  fetchVersion,
+  useOpenAtLogin,
+  useOpenDevTools,
+  useSelectDirectory,
+} from "#renderer/api/fetch_preload";
+import { useProfileStore } from "#renderer/shared/hooks/ui/useProfileStore";
+import {
   AdminPanelSettings,
   BugReportOutlined,
   FindInPageOutlined,
@@ -6,42 +15,29 @@ import {
   SaveOutlined,
 } from "@mui/icons-material";
 import {
+  Button,
   Card,
+  CardActions,
   CardContent,
   CardHeader,
+  CircularProgress,
   Grid,
-  TextField,
-  InputAdornment,
   IconButton,
-  CardActions,
-  Button,
-  Stack,
-  Switch,
-  Paper,
+  InputAdornment,
   List,
   ListItem,
   ListItemText,
-  CircularProgress,
   MenuItem,
-  Alert,
-  AlertTitle,
-  Box,
+  Paper,
+  Stack,
+  Switch,
+  TextField,
 } from "@mui/material";
-import z from "zod";
-import React from "react";
-import { useNotifications } from "@toolpad/core";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
-import {
-  fetchVersion,
-  fetchOpenAtLogin,
-  useOpenAtLogin,
-  useOpenDevTools,
-  useProfileUpdate,
-  useSelectDirectory,
-  fetchProfile,
-  fetchIsRunAsAdmin,
-} from "#renderer/api/fetch_preload";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNotifications } from "@toolpad/core";
+import React from "react";
+import z from "zod";
 
 const profileSchema = z.object({
   appPath: z.string().min(1),
@@ -61,37 +57,28 @@ const { useAppForm } = createFormHook({
 });
 
 const useProfileForm = () => {
-  const profileUpdate = useProfileUpdate();
   const notifications = useNotifications();
-  const profileQuery = useQuery(fetchProfile());
+  const appPath = useProfileStore((state) => state.appPath);
+  const encoding = useProfileStore((state) => state.encoding);
 
   const form = useAppForm({
     defaultValues: {
-      appPath: profileQuery.data?.appPath || "",
-      encoding: profileQuery.data?.encoding || "",
+      appPath,
+      encoding,
     },
-    async onSubmit(props) {
-      await profileUpdate.mutateAsync(
-        {
-          appPath: props.value.appPath,
-          encoding: props.value.encoding,
-        },
-        {
-          onError: (error) => {
-            notifications.show(error.message, { severity: "error" });
-          },
-          onSuccess: () => {
-            notifications.show("保存成功", { severity: "success" });
-          },
-        },
-      );
+    async onSubmit({ value }) {
+      useProfileStore.setState({
+        appPath: value.appPath,
+        encoding: value.encoding,
+      });
+      notifications.show("保存成功", { severity: "success" });
     },
     validators: {
       onChange: profileSchema,
     },
   });
 
-  return [form, profileQuery, profileUpdate] as const;
+  return form;
 };
 
 type PendingIconProps = React.PropsWithChildren<{
@@ -120,7 +107,7 @@ export const Component = () => {
   const isRunAsAdmin = useQuery(fetchIsRunAsAdmin());
   const openDevTools = useOpenDevTools();
   const selectDirectory = useSelectDirectory();
-  const [profileForm, profileQuery] = useProfileForm();
+  const profileForm = useProfileForm();
 
   const handleDirectoryChange = () => {
     selectDirectory.mutate(void 0, {
@@ -134,23 +121,6 @@ export const Component = () => {
   };
 
   const renderForm = () => {
-    if (profileQuery.isPending) {
-      return (
-        <Box display="flex" justifyContent="center" padding={2}>
-          <CircularProgress />
-        </Box>
-      );
-    }
-
-    if (profileQuery.isError) {
-      return (
-        <Alert security="error">
-          <AlertTitle>错误</AlertTitle>
-          无法加载配置文件: {profileQuery.error?.message}
-        </Alert>
-      );
-    }
-
     return (
       <>
         <CardContent>

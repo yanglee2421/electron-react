@@ -6,30 +6,14 @@ import type {
   KhBarcode,
   XlsxSize,
 } from "#main/db/schema";
-import type { Profile } from "#main/lib/profile";
-import type {
-  HXZY_HMIS,
-  JTV_HMIS,
-  JTV_HMIS_Guangzhoubei,
-  JTV_HMIS_XUZHOUBEI,
-  KH_HMIS,
-} from "#main/lib/store";
 import { type IpcContract as guangzhoujibaoduanIPC } from "#main/modules/hmis/jtv_hmis_guangzhoujibaoduan";
-import { type IpcContract as KVIpcContract } from "#main/modules/kv";
 import type { MDBPayload, Verify, VerifyData } from "#main/modules/mdb";
+import type * as kv from "#main/shared/factories/KV";
 import { calculateErrorMessage } from "#main/utils/error";
 import { promiseTry } from "@yotulee/run";
 import { BrowserWindow, ipcMain } from "electron";
 
-export interface IpcContract extends KVIpcContract, guangzhoujibaoduanIPC {
-  "PROFILE/GET": {
-    args: [];
-    return: Profile;
-  };
-  "PROFILE/SET": {
-    args: [Partial<Profile>];
-    return: Profile;
-  };
+export interface IpcContract extends kv.IpcContract, guangzhoujibaoduanIPC {
   "VERSION/GET": {
     args: [];
     return: Version;
@@ -85,10 +69,6 @@ export interface IpcContract extends KVIpcContract, guangzhoujibaoduanIPC {
     args: [SQLiteGetParams];
     return: RowsResult<HxzyBarcode>;
   };
-  "HMIS/hxzy_hmis_setting": {
-    args: [Partial<HXZY_HMIS>?];
-    return: HXZY_HMIS;
-  };
   "HMIS/jtv_hmis_guangzhoubei_api_set": {
     args: [number];
     return: JTVGuangzhoubeiBarcode;
@@ -108,10 +88,6 @@ export interface IpcContract extends KVIpcContract, guangzhoujibaoduanIPC {
   "HMIS/jtv_hmis_guangzhoubei_api_get": {
     args: [string, boolean?];
     return: NormalizeResponse[];
-  };
-  "HMIS/jtv_hmis_guangzhoubei_setting": {
-    args: [Partial<JTV_HMIS_Guangzhoubei>?];
-    return: JTV_HMIS_Guangzhoubei;
   };
   "WIN/autoInputToVC": {
     args: [AutoInputToVCParams];
@@ -149,10 +125,6 @@ export interface IpcContract extends KVIpcContract, guangzhoujibaoduanIPC {
     args: [number];
     return: JtvXuzhoubeiBarcode;
   };
-  "HMIS/jtv_hmis_xuzhoubei_setting": {
-    args: [Partial<JTV_HMIS_XUZHOUBEI>?];
-    return: JTV_HMIS_XUZHOUBEI;
-  };
   "MDB/MDB_ROOT_GET": {
     args: [MDBPayload];
     return: { total: number; rows: unknown[] };
@@ -181,10 +153,6 @@ export interface IpcContract extends KVIpcContract, guangzhoujibaoduanIPC {
     args: [number];
     return: JTVBarcode;
   };
-  "HMIS/jtv_hmis_setting": {
-    args: [Partial<JTV_HMIS>?];
-    return: JTV_HMIS;
-  };
   "HMIS/kh_hmis_sqlite_get": {
     args: [SQLiteGetParams];
     return: RowsResult<KhBarcode>;
@@ -200,10 +168,6 @@ export interface IpcContract extends KVIpcContract, guangzhoujibaoduanIPC {
   "HMIS/kh_hmis_api_set": {
     args: [number];
     return: KhBarcode;
-  };
-  "HMIS/kh_hmis_setting": {
-    args: [Partial<KH_HMIS>?];
-    return: KH_HMIS;
   };
   "XML/XML": {
     args: [string];
@@ -599,3 +563,5 @@ export const ipcHandle = <TKey extends keyof IpcContract>(
 ) => {
   return ipcMain.handle(key, withLog(listener));
 };
+
+export type IpcHandle = typeof ipcHandle;

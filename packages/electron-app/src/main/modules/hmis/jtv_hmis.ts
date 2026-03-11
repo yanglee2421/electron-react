@@ -1,15 +1,14 @@
 // 京天威 统型
 
-import dayjs from "dayjs";
-import { net } from "electron";
-import * as sql from "drizzle-orm";
-import { getIP, createEmit } from "#main/lib";
-import { log, withLog, ipcHandle } from "#main/lib/ipc";
 import * as schema from "#main/db/schema";
-import type { JTV_HMIS } from "#main/lib/store";
-import type { Detection, DetectionData } from "#main/modules/mdb";
 import type { AppContext } from "#main/index";
-import type { SQLiteGetParams, InsertRecordParams } from "#main/lib/ipc";
+import { createEmit, getIP } from "#main/lib";
+import type { InsertRecordParams, SQLiteGetParams } from "#main/lib/ipc";
+import { ipcHandle, log, withLog } from "#main/lib/ipc";
+import type { Detection, DetectionData } from "#main/modules/mdb";
+import dayjs from "dayjs";
+import * as sql from "drizzle-orm";
+import { net } from "electron";
 
 type ZH_Item = {
   DH: string;
@@ -529,18 +528,6 @@ const initAutoUpload = (appContext: AppContext) => {
   });
 };
 
-const handleHMISSetting = async (
-  appContext: AppContext,
-  data?: Partial<JTV_HMIS>,
-) => {
-  const { jtv_hmis } = appContext;
-
-  if (data) {
-    jtv_hmis.set(data);
-  }
-  return jtv_hmis.store;
-};
-
 export const bindIpcHandlers = (appContext: AppContext) => {
   ipcHandle("HMIS/jtv_hmis_sqlite_get", (_, params) => {
     return handleReadRecords(appContext, params);
@@ -557,8 +544,6 @@ export const bindIpcHandlers = (appContext: AppContext) => {
   ipcHandle("HMIS/jtv_hmis_api_set", (_, id) => {
     return handleSendData(appContext, id);
   });
-  ipcHandle("HMIS/jtv_hmis_setting", (_, data) => {
-    return handleHMISSetting(appContext, data);
-  });
+
   initAutoUpload(appContext);
 };

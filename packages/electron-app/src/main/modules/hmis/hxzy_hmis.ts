@@ -358,7 +358,7 @@ const initAutoUpload = (appContext: AppContext) => {
 };
 
 export const bindIPCHandlers = (appContext: AppContext) => {
-  const { hxzy_hmis, mdbDB } = appContext;
+  const { mdbDB } = appContext;
 
   ipcHandle("HMIS/hxzy_hmis_sqlite_delete", (_, id) => {
     return sqlite_delete(id, appContext);
@@ -375,13 +375,6 @@ export const bindIPCHandlers = (appContext: AppContext) => {
 
   ipcHandle("HMIS/hxzy_hmis_sqlite_get", (_, params) => {
     return sqlite_get(params, appContext);
-  });
-
-  ipcHandle("HMIS/hxzy_hmis_setting", async (_, data) => {
-    if (data) {
-      hxzy_hmis.set(data);
-    }
-    return hxzy_hmis.store;
   });
 
   initAutoUpload(appContext);

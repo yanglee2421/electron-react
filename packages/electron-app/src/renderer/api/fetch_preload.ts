@@ -1,8 +1,3 @@
-import {
-  queryOptions,
-  useQueryClient,
-  useMutation,
-} from "@tanstack/react-query";
 import type {
   AutoInputToVCParams,
   InsertRecordParams,
@@ -13,15 +8,12 @@ import type {
   SqliteXlsxSizeRParams,
   SqliteXlsxSizeUParams,
 } from "#main/lib/ipc";
-import type {
-  HXZY_HMIS,
-  KH_HMIS,
-  JTV_HMIS,
-  JTV_HMIS_Guangzhoubei,
-  JTV_HMIS_XUZHOUBEI,
-} from "#main/lib/store";
 import type { MDBPayload } from "#main/modules/mdb";
-import type { Profile } from "#main/lib/profile";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 export type MDBUser = {
   szUid: string;
@@ -142,28 +134,6 @@ export const useHxzyHmisApiVerifies = () => {
   });
 };
 
-export const fetchHxzyHmisSetting = () =>
-  queryOptions({
-    queryKey: ["window.electronAPI.hxzy_hmis_setting"],
-    queryFn: async () => {
-      return await invoke("HMIS/hxzy_hmis_setting");
-    },
-  });
-
-export const useUpdateHxzyHmisSetting = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (setting: Partial<HXZY_HMIS>) => {
-      return await invoke("HMIS/hxzy_hmis_setting", setting);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchHxzyHmisSetting().queryKey,
-      });
-    },
-  });
-};
-
 // 京天威HMIS (徐州北)
 export const fetchJtvHmisXuzhoubeiSqliteGet = (params: SQLiteGetParams) =>
   queryOptions({
@@ -230,28 +200,6 @@ export const useJtvHmisXuzhoubeiApiSet = () => {
   });
 };
 
-export const fetchJtvHmisXuzhoubeiSetting = () =>
-  queryOptions({
-    queryKey: ["window.electronAPI.jtv_hmis_xuzhoubei_setting"],
-    queryFn: async () => {
-      return await invoke("HMIS/jtv_hmis_xuzhoubei_setting");
-    },
-  });
-
-export const useUpdateJtvHmisXuzhoubeiSetting = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (setting: Partial<JTV_HMIS_XUZHOUBEI>) => {
-      return await invoke("HMIS/jtv_hmis_xuzhoubei_setting", setting);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisXuzhoubeiSetting().queryKey,
-      });
-    },
-  });
-};
-
 // 康华HMIS (安康)
 export const useKhHmisApiGet = () => {
   return useMutation({
@@ -275,28 +223,6 @@ export const useKhHmisApiSet = () => {
           startDate: "",
           endDate: "",
         }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const fetchKhHmisSetting = () =>
-  queryOptions({
-    queryKey: ["HMIS/kh_hmis_setting"],
-    queryFn: async () => {
-      return await invoke("HMIS/kh_hmis_setting");
-    },
-  });
-
-export const useUpdateKhHmisSetting = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (setting: Partial<KH_HMIS>) => {
-      return await invoke("HMIS/kh_hmis_setting", setting);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchKhHmisSetting().queryKey,
       });
     },
   });
@@ -459,31 +385,6 @@ export const useChr501Export = () => {
   });
 };
 
-export const fetchProfile = () =>
-  queryOptions({
-    queryKey: ["PROFILE/GET"],
-    queryFn: async () => {
-      const profile: Profile = await invoke("PROFILE/GET");
-
-      return profile;
-    },
-  });
-
-export const useProfileUpdate = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: Partial<Profile>) => {
-      const updated = await invoke("PROFILE/SET", payload);
-      return updated;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchProfile().queryKey,
-      });
-    },
-  });
-};
-
 export const useSelectDirectory = () => {
   return useMutation({
     mutationFn: async () => {
@@ -612,28 +513,6 @@ export const fetchSerialPortList = () => {
       const data = await invoke("PLC/serialport_list");
 
       return data;
-    },
-  });
-};
-
-export const fetchJtvHmisGuangzhoubeiSetting = () =>
-  queryOptions({
-    queryKey: ["HMIS/jtv_hmis_guangzhoubei_setting"],
-    queryFn: async () => {
-      return invoke("HMIS/jtv_hmis_guangzhoubei_setting");
-    },
-  });
-
-export const useUpdateJtvHmisGuangzhoubeiSetting = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: Partial<JTV_HMIS_Guangzhoubei>) => {
-      return invoke("HMIS/jtv_hmis_guangzhoubei_setting", payload);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSetting().queryKey,
-      });
     },
   });
 };
@@ -801,28 +680,6 @@ export const useJtvHmisApiSet = () => {
           startDate: "",
           endDate: "",
         }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const fetchJtvHmisSetting = () =>
-  queryOptions({
-    queryKey: ["HMIS/jtv_hmis_setting"],
-    queryFn: () => {
-      return invoke("HMIS/jtv_hmis_setting");
-    },
-  });
-
-export const useUpdateJtvHmisSetting = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: Partial<JTV_HMIS>) => {
-      return invoke("HMIS/jtv_hmis_setting", payload);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisSetting().queryKey,
       });
     },
   });

@@ -1,4 +1,4 @@
-import { getKVStorage } from "#renderer/lib/kv";
+import { getKVStorage } from "#renderer/shared/instances/kv";
 import { guangzhoujibaoduan } from "#shared/initializer";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";

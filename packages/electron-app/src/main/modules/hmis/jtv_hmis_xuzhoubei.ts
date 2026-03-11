@@ -1,14 +1,17 @@
 // 京天威 徐州北
 
-import dayjs from "dayjs";
-import { net } from "electron";
-import * as sql from "drizzle-orm";
-import { ipcHandle, log, withLog } from "#main/lib/ipc";
-import { createEmit } from "#main/lib";
 import * as schema from "#main/db/schema";
-import { calculateDirection, calculatePlace } from "#main/utils/flawDetection";
 import type { AppContext } from "#main/index";
-import type { XZBGetResponse, SQLiteGetParams } from "#main/lib/ipc";
+import { createEmit } from "#main/lib";
+import type { SQLiteGetParams, XZBGetResponse } from "#main/lib/ipc";
+import { ipcHandle, log, withLog } from "#main/lib/ipc";
+import {
+  calculateDirection,
+  calculatePlace,
+} from "#shared/factories/flawDetection";
+import dayjs from "dayjs";
+import * as sql from "drizzle-orm";
+import { net } from "electron";
 
 type PostRequestItem = {
   PJ_JXID: string; // 设备生产ID(主键)
@@ -336,16 +339,6 @@ export const bindIpcHandlers = (appContext: AppContext) => {
   ipcHandle("HMIS/jtv_hmis_xuzhoubei_api_set", (_, id) =>
     api_set(appContext, id),
   );
-
-  ipcHandle("HMIS/jtv_hmis_xuzhoubei_setting", async (_, data) => {
-    const { jtv_hmis_xuzhoubei } = appContext;
-
-    if (data) {
-      jtv_hmis_xuzhoubei.set(data);
-    }
-
-    return jtv_hmis_xuzhoubei.store;
-  });
 
   initAutoUpload(appContext);
 };

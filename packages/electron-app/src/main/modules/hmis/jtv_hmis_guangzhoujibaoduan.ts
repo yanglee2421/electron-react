@@ -9,9 +9,12 @@ import {
   type InsertRecordParams,
   type SQLiteGetParams,
 } from "#main/lib/ipc";
-import { KV } from "#main/modules/kv";
 import type { Detection, DetectionData, MDBDB } from "#main/modules/mdb";
-import { calculateDirection, calculatePlace } from "#main/utils/flawDetection";
+import { KV } from "#main/shared/factories/KV";
+import {
+  calculateDirection,
+  calculatePlace,
+} from "#shared/factories/flawDetection";
 import { guangzhoujibaoduan } from "#shared/initializer";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
@@ -503,6 +506,8 @@ export class JTV_HMIS_Guangzhoujibaoduan {
         this.autoUploadTimer = setTimeout(fn, delay);
       }
     };
+
+    fn();
   }
 
   stopAutoUpload() {

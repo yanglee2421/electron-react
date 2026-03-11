@@ -1,7 +1,16 @@
+import type { QuartorData } from "#main/modules/mdb";
+import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
+import { Loading } from "#renderer/components/Loading";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import {
+  calculateDirection,
+  calculatePlace,
+} from "#shared/factories/flawDetection";
 import {
   Alert,
   AlertTitle,
   Card,
+  CardActionArea,
   CardContent,
   CardHeader,
   Divider,
@@ -17,8 +26,8 @@ import {
   TableRow,
   TextField,
   Typography,
-  CardActionArea,
 } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
   flexRender,
@@ -28,12 +37,6 @@ import {
 } from "@tanstack/react-table";
 import React from "react";
 import { useParams } from "react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Loading } from "#renderer/components/Loading";
-import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { calculateDirection, calculatePlace } from "#main/utils/flawDetection";
-import type { QuartorData } from "#main/modules/mdb";
 
 const check = (current: string, excepted: string) => {
   if (!excepted) return true;

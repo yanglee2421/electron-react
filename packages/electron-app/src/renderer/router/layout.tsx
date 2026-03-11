@@ -1,54 +1,49 @@
+import { useMobileMode } from "#renderer/api/fetch_preload";
+import { useProfileStore } from "#renderer/shared/hooks/ui/useProfileStore";
 import {
-  useMobileMode,
-  fetchProfile,
-  useProfileUpdate,
-} from "#renderer/api/fetch_preload";
-import { NprogressBar } from "./nprogress";
-import {
-  LightModeOutlined,
+  CalendarMonthOutlined,
+  CalendarTodayOutlined,
+  ChatOutlined,
+  CodeOutlined,
   DarkModeOutlined,
   DesktopWindowsOutlined,
+  HelpOutlined,
+  InfoOutlined,
+  LightModeOutlined,
+  Memory,
+  PermMediaOutlined,
   PhonelinkOutlined,
   PushPin,
   PushPinOutlined,
-  QrCodeScannerOutlined,
-  CalendarTodayOutlined,
-  TuneOutlined,
-  TrainOutlined,
-  CalendarMonthOutlined,
-  InfoOutlined,
-  SettingsOutlined,
-  VpnKeyOutlined,
-  PermMediaOutlined,
-  CodeOutlined,
-  ScienceOutlined,
-  SportsEsportsOutlined,
   QrCodeOutlined,
-  HelpOutlined,
-  ChatOutlined,
-  Memory,
+  QrCodeScannerOutlined,
+  ScienceOutlined,
+  SettingsOutlined,
+  SportsEsportsOutlined,
+  TrainOutlined,
+  TuneOutlined,
+  VpnKeyOutlined,
 } from "@mui/icons-material";
 import {
   IconButton,
   ListItemIcon,
   ListItemText,
-  useMediaQuery,
   Menu,
   MenuItem,
+  useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import {
-  useNotifications,
-  DashboardLayout,
-  PageContainer,
-  NotificationsProvider,
-  DialogsProvider,
-} from "@toolpad/core";
 import type { Navigation } from "@toolpad/core";
+import {
+  DashboardLayout,
+  DialogsProvider,
+  NotificationsProvider,
+  PageContainer,
+} from "@toolpad/core";
 import { ReactRouterAppProvider } from "@toolpad/core/react-router";
 import React from "react";
 import { Outlet, ScrollRestoration, useLocation } from "react-router";
+import { NprogressBar } from "./nprogress";
 
 const createSegmentAlias = () => {
   const segmentAlias = new Map([
@@ -351,29 +346,15 @@ const ModeIcon = ({ mode }: ModeIconProps) => {
 const ModeToggle = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
-  const fetcher = fetchProfile();
-  const profile = useQuery(fetcher);
-  const snackbar = useNotifications();
-  const updateSettings = useProfileUpdate();
+  const mode = useProfileStore((state) => state.mode);
 
   const setMode = (newMode: "system" | "light" | "dark") => {
     document.startViewTransition(async () => {
-      await updateSettings.mutateAsync(
-        { mode: newMode },
-        {
-          onError: () => {
-            snackbar.show("设置失败", { severity: "error" });
-          },
-        },
-      );
+      useProfileStore.setState((draft) => {
+        draft.mode = newMode;
+      });
     });
   };
-
-  if (!profile.isSuccess) {
-    return null;
-  }
-
-  const mode = profile.data.mode;
 
   return (
     <>
@@ -440,32 +421,15 @@ const MobileModeButton = () => {
 };
 
 const AlwaysOnTop = () => {
-  const fetcher = fetchProfile();
-  const profile = useQuery(fetcher);
-  const snackbar = useNotifications();
-  const updateSettings = useProfileUpdate();
-
-  if (!profile.isSuccess) {
-    return null;
-  }
-
-  const alwaysOnTop = profile.data.alwaysOnTop;
+  const alwaysOnTop = useProfileStore((state) => state.alwaysOnTop);
 
   return (
     <IconButton
       onClick={() => {
-        updateSettings.mutate(
-          {
-            alwaysOnTop: !alwaysOnTop,
-          },
-          {
-            onError: () => {
-              snackbar.show("设置失败", { severity: "error" });
-            },
-          },
-        );
+        useProfileStore.setState((draft) => {
+          draft.alwaysOnTop = !draft.alwaysOnTop;
+        });
       }}
-      disabled={profile.isFetching}
     >
       {alwaysOnTop ? <PushPin /> : <PushPinOutlined />}
     </IconButton>

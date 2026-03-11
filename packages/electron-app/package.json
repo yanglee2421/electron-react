@@ -51,7 +51,6 @@
     "@yotulee/run": "npm:@jsr/yotulee__run@^0.0.15",
     "better-sqlite3": "^12.5.0",
     "drizzle-orm": "1.0.0-beta.15-859cf75",
-    "electron-store": "^11.0.2",
     "fast-xml-parser": "^5.3.3",
     "iconv-lite": "^0.7.1",
     "ini": "^6.0.0",

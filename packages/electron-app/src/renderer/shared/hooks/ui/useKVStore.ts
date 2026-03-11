@@ -1,4 +1,4 @@
-import { getKVStorage } from "#renderer/lib/kv";
+import { ipc } from "#renderer/shared/instances/ipc";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -10,8 +10,6 @@ const storeInitializer = () => {
 export const useKVStore = create()(
   persist(immer(storeInitializer), {
     name: "useKVStore",
-    storage: createJSONStorage(getKVStorage),
+    storage: createJSONStorage(() => ipc),
   }),
 );
-
-useKVStore.persist.rehydrate();

@@ -1,8 +1,7 @@
-import { SerialPort } from "serialport";
-import { FXPLCClient, TransportSerial } from "node-fxplc";
-import { ipcHandle } from "#main/lib/ipc";
-import type { AppContext } from "..";
 import type { PLCReadResult, PLCWritePayload } from "#main/lib/ipc";
+import { type IpcHandle } from "#main/lib/ipc";
+import { FXPLCClient, TransportSerial } from "node-fxplc";
+import { SerialPort } from "serialport";
 
 const createPLCClient = (path: string = DEFAULT_PATH) => {
   const port = new TransportSerial({
@@ -100,9 +99,7 @@ const handleWriteState = async (payload: PLCWritePayload) => {
   return null;
 };
 
-export const bindIpcHandlers = (appContext: AppContext) => {
-  void appContext;
-
+export const bindIpcHandlers = (ipcHandle: IpcHandle) => {
   ipcHandle("PLC/read_test", (_, path) => handleReadState(path));
   ipcHandle("PLC/write_test", async (_, payload) => {
     await handleWriteState(payload);
