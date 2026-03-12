@@ -1,14 +1,6 @@
 import type { JTVBarcode } from "#main/db/schema";
 import type { JTVNormalizeResponse } from "#main/lib/ipc";
-import {
-  fetchJtvHmisSetting,
-  fetchJtvHmisSqliteGet,
-  useJtvHmisApiGet,
-  useJtvHmisApiSet,
-  useJtvHmisSqliteDelete,
-  useJtvHmisSqliteInsert,
-  useAutoInputToVC,
-} from "#renderer/api/fetch_preload";
+import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
@@ -23,29 +15,29 @@ import {
   RefreshOutlined,
 } from "@mui/icons-material";
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
+  CircularProgress,
+  Divider,
+  FormControlLabel,
   Grid,
   IconButton,
   InputAdornment,
-  Table,
-  TableFooter,
-  TextField,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TablePagination,
-  Button,
-  Divider,
-  Link,
-  CircularProgress,
-  TableContainer,
   LinearProgress,
+  Link,
   Stack,
-  FormControlLabel,
   Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableFooter,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -481,7 +473,6 @@ export const Component = () => {
   const autoInput = useAutoInputToVC();
   const inputRef = useAutoFocusInputRef();
   const insertBarcode = useJtvHmisSqliteInsert();
-  const { data: hmis } = useQuery(fetchJtvHmisSetting());
   const barcode = useQuery(fetchJtvHmisSqliteGet(params));
 
   useSubscribe("api_set", () => {

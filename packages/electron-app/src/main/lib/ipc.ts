@@ -1,20 +1,20 @@
 import type {
-  JTVBarcode,
   JTVGuangzhoubeiBarcode,
   JtvXuzhoubeiBarcode,
-  KhBarcode,
   XlsxSize,
 } from "#main/db/schema";
 import type { MDBPayload } from "#main/modules/mdb";
 import type * as hxzy from "#main/shared/factories/hmis/hxzy";
+import type * as jtv from "#main/shared/factories/hmis/jtv";
 import { type IpcContract as guangzhoujibaoduanIPC } from "#main/shared/factories/hmis/jtv_hmis_guangzhoujibaoduan";
+import type * as kh from "#main/shared/factories/hmis/kh_hmis";
 import type * as kv from "#main/shared/factories/KV";
 import { calculateErrorMessage } from "#main/utils/error";
 import { promiseTry } from "@yotulee/run";
 import { BrowserWindow, ipcMain } from "electron";
 
 export interface IpcContract
-  extends kv.IpcContract, guangzhoujibaoduanIPC, hxzy.Ipc {
+  extends kv.IpcContract, guangzhoujibaoduanIPC, hxzy.Ipc, kh.Ipc, jtv.Ipc {
   "VERSION/GET": {
     args: [];
     return: Version;
@@ -110,42 +110,6 @@ export interface IpcContract
   "MDB/MDB_APP_GET": {
     args: [MDBPayload];
     return: { total: number; rows: unknown[] };
-  };
-  "HMIS/jtv_hmis_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: RowsResult<JTVBarcode>;
-  };
-  "HMIS/jtv_hmis_sqlite_delete": {
-    args: [number];
-    return: JTVBarcode;
-  };
-  "HMIS/jtv_hmis_sqlite_insert": {
-    args: [InsertRecordParams];
-    return: JTVBarcode;
-  };
-  "HMIS/jtv_hmis_api_get": {
-    args: [string, boolean?];
-    return: JTVNormalizeResponse[];
-  };
-  "HMIS/jtv_hmis_api_set": {
-    args: [number];
-    return: JTVBarcode;
-  };
-  "HMIS/kh_hmis_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: RowsResult<KhBarcode>;
-  };
-  "HMIS/kh_hmis_sqlite_delete": {
-    args: [number];
-    return: KhBarcode;
-  };
-  "HMIS/kh_hmis_api_get": {
-    args: [string];
-    return: KHGetResponse;
-  };
-  "HMIS/kh_hmis_api_set": {
-    args: [number];
-    return: KhBarcode;
   };
   "XML/XML": {
     args: [string];

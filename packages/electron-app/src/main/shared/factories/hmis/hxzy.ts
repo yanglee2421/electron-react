@@ -16,7 +16,7 @@ import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
 import type { KV } from "../KV";
-import type { Net } from "./hmis";
+import { HMIS, type Net } from "./hmis";
 
 interface HxzyGetResponse {
   code: "200";
@@ -68,88 +68,58 @@ type PostResponse = {
 
 const emit = createEmit("api_set");
 
-type ListenerFn = (state: HXZY_HMIS, previous: HXZY_HMIS) => void;
-
-export class Hxzy {
+export class Hxzy extends HMIS<HXZY_HMIS> {
   private db: SQLiteDBType;
-  private kv: KV;
   private mdb: MDBDB;
   private net: Net;
-  private store = Object.freeze(hxzy_hmis.parse({}));
-  private handles: Set<ListenerFn> = new Set();
-  private autoUploadTimer: NodeJS.Timeout | null = null;
 
   constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net) {
+    super(hxzy_hmis.parse, HXZY_HMIS_STORAGE_KEY, kv);
+
     this.db = db;
-    this.kv = kv;
     this.mdb = mdb;
     this.net = net;
-
-    this.kv.on((key) => {
-      if (key === HXZY_HMIS_STORAGE_KEY) {
-        this.hydrate();
-      }
-    });
   }
 
   async hydrate() {
-    const persistedValue = await this.kv.getItem(HXZY_HMIS_STORAGE_KEY);
+    await super.hydrate();
 
-    if (!persistedValue) return;
-
-    const previous = this.store;
-    const data = JSON.parse(persistedValue);
-
-    this.store = Object.freeze(hxzy_hmis.parse(data.state));
-    this.emit(this.store, previous);
-
-    if (this.store.autoUpload) {
-      this.startAutoUpload();
-    } else {
-      this.stopAutoUpload();
-    }
-  }
-  getStore() {
-    return this.store;
+    this.autoUploadLoop();
   }
 
-  on(handle: ListenerFn) {
-    this.handles.add(handle);
-
-    return () => {
-      this.off(handle);
-    };
-  }
-  off(handle: ListenerFn) {
-    this.handles.delete(handle);
-  }
-  emit(state: HXZY_HMIS, previous: HXZY_HMIS) {
-    this.handles.forEach((handle) => handle(state, previous));
-  }
-
-  async fetchAxleInfo(dh: string) {
-    const state = this.getStore();
-    const host = state.ip + ":" + state.port;
-
-    const url = new URL(
-      `http://${host}/lzjx/dx/csbts/device_api/csbts/api/getDate`,
-    );
-
-    url.searchParams.set("type", "csbts");
-    url.searchParams.set("param", dh);
-    log(`请求数据:${url.href}`);
-
-    const res = await this.net.fetch(url.href, { method: "GET" });
-
-    if (!res.ok) {
-      throw `接口异常[${res.status}]:${res.statusText}`;
+  async autoUploadLoop() {
+    if (!this.getStore().autoUpload) {
+      return;
     }
 
-    const data: HxzyGetResponse = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    const limit = pLimit(1);
 
-    return data;
+    try {
+      const barcodes = await this.db
+        .select()
+        .from(schema.hxzyBarcodeTable)
+        .where(
+          sql.and(
+            sql.eq(schema.hxzyBarcodeTable.isUploaded, false),
+            sql.between(
+              schema.hxzyBarcodeTable.date,
+              dayjs().startOf("day").toDate(),
+              dayjs().endOf("day").toDate(),
+            ),
+          ),
+        );
+
+      await Promise.allSettled(
+        barcodes.map((dh) => limit(() => this.handleUpload(dh.id))),
+      );
+    } finally {
+      const store = this.getStore();
+      const delay = store.autoUploadInterval * 1000;
+
+      setTimeout(this.autoUploadLoop.bind(this), delay);
+    }
   }
+
   async sendPostRequest(request: PostRequestItem[]) {
     const state = this.getStore();
     const host = state.ip + ":" + state.port;
@@ -180,13 +150,8 @@ export class Hxzy {
     }
     return data;
   }
-
   async recordToPostBody(record: schema.HxzyBarcode) {
     const id = record.id;
-
-    if (!record) {
-      throw new Error(`记录#${id}不存在`);
-    }
 
     if (!record.zh) {
       throw new Error(`记录#${id}轴号不存在`);
@@ -274,50 +239,6 @@ export class Hxzy {
     };
   }
 
-  startAutoUpload() {
-    if (this.autoUploadTimer) {
-      return;
-    }
-
-    const fn = async () => {
-      // 串行执行
-      const limit = pLimit(1);
-
-      try {
-        const barcodes = await this.db
-          .select()
-          .from(schema.hxzyBarcodeTable)
-          .where(
-            sql.and(
-              sql.eq(schema.hxzyBarcodeTable.isUploaded, false),
-              sql.between(
-                schema.hxzyBarcodeTable.date,
-                dayjs().startOf("day").toDate(),
-                dayjs().endOf("day").toDate(),
-              ),
-            ),
-          );
-
-        await Promise.allSettled(
-          barcodes.map((dh) => limit(() => this.handleUpload(dh.id))),
-        );
-      } finally {
-        const store = this.getStore();
-        const delay = store.autoUploadInterval * 1000;
-
-        this.autoUploadTimer = setTimeout(fn, delay);
-      }
-    };
-
-    fn();
-  }
-  stopAutoUpload() {
-    if (this.autoUploadTimer) {
-      clearTimeout(this.autoUploadTimer);
-      this.autoUploadTimer = null;
-    }
-  }
-
   async handleRecordRead(_: SQLiteGetParams) {
     const rows = await this.db
       .select()
@@ -356,9 +277,28 @@ export class Hxzy {
       })
       .returning();
   }
+  async handleFetch(dh: string) {
+    const state = this.getStore();
+    const host = state.ip + ":" + state.port;
 
-  handleFetch(dh: string) {
-    return this.fetchAxleInfo(dh);
+    const url = new URL(
+      `http://${host}/lzjx/dx/csbts/device_api/csbts/api/getDate`,
+    );
+
+    url.searchParams.set("type", "csbts");
+    url.searchParams.set("param", dh);
+    log(`请求数据:${url.href}`);
+
+    const res = await this.net.fetch(url.href, { method: "GET" });
+
+    if (!res.ok) {
+      throw `接口异常[${res.status}]:${res.statusText}`;
+    }
+
+    const data: HxzyGetResponse = await res.json();
+    log(`返回数据:${JSON.stringify(data)}`);
+
+    return data;
   }
   async handleUpload(id: number) {
     const [record] = await this.db

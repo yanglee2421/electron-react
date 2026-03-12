@@ -9,6 +9,7 @@ import {
   bindIpc as bindIpcGuangzhouJibaoduan,
   JTV_HMIS_Guangzhoujibaoduan,
 } from "#main/shared/factories/hmis/jtv_hmis_guangzhoujibaoduan";
+import * as kh from "#main/shared/factories/hmis/kh_hmis";
 import { bindIpc, KV } from "#main/shared/factories/KV";
 import { Profile } from "#main/shared/factories/Profile";
 import type { ThemeMode } from "#shared/instances/schema";
@@ -253,6 +254,7 @@ const bootstrap = async () => {
   const mdbDB = new MDBDB(profile);
 
   const hxzy = new Hxzy(sqliteDB, kv, mdbDB, net);
+  const khHmis = new kh.KH(sqliteDB, kv, mdbDB, net);
   const jtv_hmis_guangzhoujibaoduan = new JTV_HMIS_Guangzhoujibaoduan(
     sqliteDB,
     kv,
@@ -278,6 +280,7 @@ const bootstrap = async () => {
   xml.bindIpcHandlers();
 
   bindIpc(kv, ipcHandle);
+  kh.bindIpcHandlers(khHmis, ipcHandle);
   bindIpcGuangzhouJibaoduan(jtv_hmis_guangzhoujibaoduan, ipcHandle);
   bindHxzyIpc(hxzy, ipcHandle);
 

@@ -1,70 +1,67 @@
+import { NumberField } from "#renderer/components/number";
+import { useKhHmisStore } from "#renderer/shared/hooks/ui/useKhHmisStore";
+import { kh_hmis } from "#shared/instances/schema";
+import { SaveOutlined } from "@mui/icons-material";
 import {
   Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
-  FormControlLabel,
-  Grid,
   Checkbox,
-  TextField,
-  FormGroup,
   CircularProgress,
+  FormControlLabel,
+  FormGroup,
+  Grid,
+  TextField,
 } from "@mui/material";
-import { z } from "zod";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import { useForm } from "@tanstack/react-form";
 import { useNotifications } from "@toolpad/core";
-import { useQuery } from "@tanstack/react-query";
-import {
-  fetchKhHmisSetting,
-  useUpdateKhHmisSetting,
-} from "#renderer/api/fetch_preload";
-import { SaveOutlined } from "@mui/icons-material";
-import { NumberField } from "#renderer/components/number";
-
-type FormValues = z.infer<typeof schema>;
-
-const schema = z.object({
-  ip: z.ipv4(),
-  port: z.number().int().min(1).max(65535),
-  autoInput: z.boolean(),
-  autoUpload: z.boolean(),
-  autoUploadInterval: z.number().int().min(10),
-  tsgz: z.string(),
-  tszjy: z.string(),
-  tsysy: z.string(),
-});
-
-const useSettingForm = () => {
-  const { data: hmis } = useQuery(fetchKhHmisSetting());
-
-  if (!hmis) {
-    throw new Error("fetchKhHmisSetting data not found");
-  }
-
-  return useForm<FormValues>({
-    defaultValues: {
-      ip: hmis.host.split(":")[0],
-      port: Number.parseInt(hmis.host.split(":")[1]),
-      autoInput: hmis.autoInput,
-      autoUpload: hmis.autoUpload,
-      autoUploadInterval: hmis.autoUploadInterval,
-      tsgz: hmis.tsgz,
-      tszjy: hmis.tszjy,
-      tsysy: hmis.tsysy,
-    },
-    resolver: zodResolver(schema),
-  });
-};
+import React from "react";
 
 export const Component = () => {
   const formId = React.useId();
 
   const snackbar = useNotifications();
-  const form = useSettingForm();
-  const update = useUpdateKhHmisSetting();
+  const ip = useKhHmisStore((store) => store.ip);
+  const port = useKhHmisStore((store) => store.port);
+  const autoInput = useKhHmisStore((store) => store.autoInput);
+  const autoUpload = useKhHmisStore((store) => store.autoUpload);
+  const autoUploadInterval = useKhHmisStore(
+    (store) => store.autoUploadInterval,
+  );
+  const tsgz = useKhHmisStore((store) => store.tsgz);
+  const tszjy = useKhHmisStore((store) => store.tszjy);
+  const tsysy = useKhHmisStore((store) => store.tsysy);
+
+  const form = useForm({
+    defaultValues: {
+      ip,
+      port,
+      autoInput,
+      autoUpload,
+      autoUploadInterval,
+      tsgz,
+      tszjy,
+      tsysy,
+    },
+    validators: {
+      onChange: kh_hmis.required(),
+    },
+    onSubmit: ({ value }) => {
+      useKhHmisStore.setState((draft) => {
+        draft.ip = value.ip;
+        draft.port = value.port;
+        draft.autoInput = value.autoInput;
+        draft.autoUpload = value.autoUpload;
+        draft.autoUploadInterval = value.autoUploadInterval;
+        draft.tsgz = value.tsgz;
+        draft.tszjy = value.tszjy;
+        draft.tsysy = value.tsysy;
+      });
+      snackbar.show("保存成功", { severity: "success" });
+    },
+  });
 
   return (
     <Card>
@@ -74,48 +71,21 @@ export const Component = () => {
           id={formId}
           noValidate
           autoComplete="off"
-          onSubmit={form.handleSubmit((data) => {
-            update.mutate(
-              {
-                host: `${data.ip}:${data.port}`,
-                autoInput: data.autoInput,
-                autoUpload: data.autoUpload,
-                autoUploadInterval: data.autoUploadInterval,
-                tsgz: data.tsgz,
-                tszjy: data.tszjy,
-                tsysy: data.tsysy,
-              },
-              {
-                onError: () => {
-                  snackbar.show("保存失败", { severity: "error" });
-                },
-                onSuccess: (data) => {
-                  form.reset({
-                    ip: data.host.split(":")[0],
-                    port: Number.parseInt(data.host.split(":")[1]),
-                    autoInput: data.autoInput,
-                    autoUpload: data.autoUpload,
-                    autoUploadInterval: data.autoUploadInterval,
-                    tsgz: data.tsgz,
-                    tszjy: data.tszjy,
-                    tsysy: data.tsysy,
-                  });
-                  snackbar.show("保存成功", { severity: "success" });
-                },
-              },
-            );
-          }, console.warn)}
+          onSubmit={(e) => {
+            e.preventDefault();
+          }}
         >
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
+              <form.Field
                 name="ip"
-                render={({ field, fieldState }) => (
+                children={(field) => (
                   <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
                     label="IP地址"
                     fullWidth
                   />
@@ -123,29 +93,32 @@ export const Component = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="port"
-                render={({ field, fieldState }) => (
+              <form.Field name="port">
+                {(field) => (
                   <NumberField
-                    field={field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: field.handleBlur,
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
                     label="端口号"
                     fullWidth
                   />
                 )}
-              />
+              </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
+              <form.Field
                 name="tsgz"
-                render={({ field, fieldState }) => (
+                children={(field) => (
                   <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
                     label="探伤工长"
                     fullWidth
                   />
@@ -153,14 +126,15 @@ export const Component = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
+              <form.Field
                 name="tszjy"
-                render={({ field, fieldState }) => (
+                children={(field) => (
                   <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
                     label="探伤质检员"
                     fullWidth
                   />
@@ -168,46 +142,44 @@ export const Component = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="tsysy"
-                render={({ field, fieldState }) => (
+              <form.Field name="tsysy">
+                {(field) => (
                   <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
                     label="探伤验收员"
                     fullWidth
                   />
                 )}
-              />
+              </form.Field>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <FormGroup row>
-                <Controller
-                  control={form.control}
+                <form.Field
                   name="autoInput"
-                  render={({ field }) => (
+                  children={(field) => (
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={field.value}
-                          onChange={(e) => field.onChange(e.target.checked)}
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
                         />
                       }
                       label="自动录入"
                     />
                   )}
                 />
-                <Controller
-                  control={form.control}
+                <form.Field
                   name="autoUpload"
-                  render={({ field }) => (
+                  children={(field) => (
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={field.value}
-                          onChange={(e) => field.onChange(e.target.checked)}
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
                         />
                       }
                       label="自动上传"
@@ -217,38 +189,46 @@ export const Component = () => {
               </FormGroup>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="autoUploadInterval"
-                render={({ field, fieldState }) => (
+              <form.Field name="autoUploadInterval">
+                {(field) => (
                   <NumberField
-                    field={field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: field.handleBlur,
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
                     label="自动上传间隔"
                     fullWidth
                   />
                 )}
-              />
+              </form.Field>
             </Grid>
           </Grid>
         </form>
       </CardContent>
       <CardActions>
-        <Button
-          form={formId}
-          type="submit"
-          disabled={update.isPending}
-          startIcon={
-            update.isPending ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : (
-              <SaveOutlined />
-            )
-          }
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
         >
-          保存
-        </Button>
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              form={formId}
+              type="submit"
+              disabled={!canSubmit}
+              startIcon={
+                isSubmitting ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <SaveOutlined />
+                )
+              }
+            >
+              保存
+            </Button>
+          )}
+        </form.Subscribe>
       </CardActions>
     </Card>
   );

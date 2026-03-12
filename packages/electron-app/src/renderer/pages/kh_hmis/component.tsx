@@ -1,15 +1,15 @@
 import type { KhBarcode } from "#main/db/schema";
+import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
-  useAutoInputToVC,
-  useKhHmisApiGet,
-  useKhHmisApiSet,
-  useKhHmisSqliteDelete,
-  fetchKhHmisSqliteGet,
-  fetchHxzyHmisSetting,
-} from "#renderer/api/fetch_preload";
+  fetchKhRecord,
+  useDeleteKhRecord,
+  useFetchKhAxleInfo,
+  useUploadAxleInfo,
+} from "#renderer/api/kh";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import { useKhHmisStore } from "#renderer/shared/hooks/ui/useKhHmisStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CheckOutlined,
@@ -20,26 +20,26 @@ import {
   KeyboardReturnOutlined,
 } from "@mui/icons-material";
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
+  CircularProgress,
+  Divider,
   Grid,
   IconButton,
   InputAdornment,
-  Table,
-  TableFooter,
-  TextField,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TablePagination,
-  Button,
-  Divider,
-  Link,
-  CircularProgress,
-  TableContainer,
   LinearProgress,
+  Link,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableFooter,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -109,10 +109,10 @@ type ActionCellProps = {
 };
 
 const ActionCell = (props: ActionCellProps) => {
-  const saveData = useKhHmisApiSet();
+  const saveData = useUploadAxleInfo();
   const snackbar = useNotifications();
   const dialog = useDialogs();
-  const deleteBarcode = useKhHmisSqliteDelete();
+  const deleteBarcode = useDeleteKhRecord();
 
   const handleUpload = () => {
     saveData.mutate(props.id, {
@@ -178,11 +178,11 @@ export const Component = () => {
 
   const inputRef = useAutoFocusInputRef();
   const form = useScanerForm();
-  const getData = useKhHmisApiGet();
+  const getData = useFetchKhAxleInfo();
   const snackbar = useNotifications();
   const autoInput = useAutoInputToVC();
-  const { data: hmis } = useQuery(fetchHxzyHmisSetting());
-  const barcode = useQuery(fetchKhHmisSqliteGet(params));
+  const barcode = useQuery(fetchKhRecord(params));
+  const isAutoInput = useKhHmisStore((store) => store.autoInput);
 
   const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
 
@@ -281,8 +281,7 @@ export const Component = () => {
                   },
                 });
 
-                if (!hmis) return;
-                if (!hmis.autoInput) return;
+                if (!isAutoInput) return;
 
                 autoInput.mutate(
                   {

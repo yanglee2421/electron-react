@@ -60,14 +60,6 @@ export const useAutoInputToVC = () => {
   });
 };
 
-export const useHxzyHmisApiVerifies = () => {
-  return useMutation({
-    mutationFn: async (id: string) => {
-      return await invoke("HMIS/hxzy_hmis_api_verifies", id);
-    },
-  });
-};
-
 // 京天威HMIS (徐州北)
 export const fetchJtvHmisXuzhoubeiSqliteGet = (params: SQLiteGetParams) =>
   queryOptions({
@@ -124,61 +116,6 @@ export const useJtvHmisXuzhoubeiApiSet = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: fetchJtvHmisXuzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-// 康华HMIS (安康)
-export const useKhHmisApiGet = () => {
-  return useMutation({
-    mutationFn: async (barcode: string) => {
-      return await invoke("HMIS/kh_hmis_api_get", barcode);
-    },
-  });
-};
-
-export const useKhHmisApiSet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      return await invoke("HMIS/kh_hmis_api_set", id);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchKhHmisSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const fetchKhHmisSqliteGet = (params: SQLiteGetParams) =>
-  queryOptions({
-    queryKey: ["HMIS/kh_hmis_sqlite_get", params],
-    queryFn: async () => {
-      return await invoke("HMIS/kh_hmis_sqlite_get", params);
-    },
-  });
-
-export const useKhHmisSqliteDelete = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      return await invoke("HMIS/kh_hmis_sqlite_delete", id);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchKhHmisSqliteGet({
           pageIndex: 1,
           pageSize: 10,
           startDate: "",
@@ -525,90 +462,6 @@ export const useJtvHmisGuangzhoubeiApiSet = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const fetchJtvHmisSqliteGet = (payload: SQLiteGetParams) =>
-  queryOptions({
-    queryKey: ["HMIS/jtv_hmis_sqlite_get", payload],
-    queryFn: () => {
-      return invoke("HMIS/jtv_hmis_sqlite_get", payload);
-    },
-  });
-
-export const useJtvHmisSqliteDelete = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => {
-      return invoke("HMIS/jtv_hmis_sqlite_delete", id);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisSqliteInsert = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: InsertRecordParams) => {
-      return invoke("HMIS/jtv_hmis_sqlite_insert", payload);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisApiGet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ barcode, isZhMode }: JTVZHGetPayload) => {
-      return invoke("HMIS/jtv_hmis_api_get", barcode, isZhMode);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisApiSet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => {
-      return invoke("HMIS/jtv_hmis_api_set", id);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisSqliteGet({
           pageIndex: 1,
           pageSize: 10,
           startDate: "",

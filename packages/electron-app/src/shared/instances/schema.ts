@@ -13,8 +13,11 @@ export const profile = z.object({
 
 export type Profile = z.infer<typeof profile>;
 
+const portSchema = z.number().int().min(1).max(65535).default(0);
+
 export const kh_hmis = z.object({
-  host: z.string().default(""),
+  ip: z.ipv4().default(""),
+  port: portSchema,
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),
@@ -27,7 +30,7 @@ export type KH_HMIS = z.infer<typeof kh_hmis>;
 
 export const hxzy_hmis = z.object({
   ip: z.ipv4().default(""),
-  port: z.number().int().min(1).max(65535).default(0),
+  port: portSchema,
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),
@@ -37,7 +40,8 @@ export const hxzy_hmis = z.object({
 export type HXZY_HMIS = z.infer<typeof hxzy_hmis>;
 
 export const jtv_hmis = z.object({
-  host: z.string().default(""),
+  ip: z.ipv4().default(""),
+  port: portSchema,
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),
@@ -71,9 +75,9 @@ export type JTV_HMIS_Guangzhoubei = z.infer<typeof jtv_hmis_guangzhoubei>;
 
 export const guangzhoujibaoduan = z.object({
   get_ip: z.ipv4().default("0.0.0.0"),
-  get_port: z.number().int().min(1).max(65535).default(0),
+  get_port: portSchema,
   post_ip: z.ipv4().default("0.0.0.0"),
-  post_port: z.number().int().min(1).max(65535).default(0),
+  post_port: portSchema,
   unitCode: z.string().default(""),
   signature_prefix: z.string().default("W"),
   autoInput: z.boolean().default(false),
