@@ -1,5 +1,5 @@
 import type { JTVGuangzhoubeiBarcode } from "#main/db/schema";
-import type { NormalizeResponse } from "#main/shared/factories/hmis/jtv_hmis_guangzhoujibaoduan";
+import type { NormalizeResponse } from "#main/shared/factories/hmis/guangzhoujibaoduan";
 import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
   fetchGuangzhouJibaoduanRecord,

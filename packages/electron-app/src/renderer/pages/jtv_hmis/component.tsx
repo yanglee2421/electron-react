@@ -1,5 +1,5 @@
 import type { JTVBarcode } from "#main/db/schema";
-import type { JTVNormalizeResponse } from "#main/lib/ipc";
+import type { JTVNormalizeResponse } from "#main/shared/factories/hmis/jtv";
 import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
   fetchJtvHmisSqliteGet,

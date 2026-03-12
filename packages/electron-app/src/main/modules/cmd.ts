@@ -1,7 +1,19 @@
-import type { AutoInputToVCParams } from "#main/lib/ipc";
 import { type IpcHandle } from "#main/lib/ipc";
 import addon from "@yanglee2421/cpp-addon";
 import dayjs from "dayjs";
+
+export type AutoInputToVCParams = {
+  zx: string;
+  zh: string;
+  czzzdw: string;
+  sczzdw: string;
+  mczzdw: string;
+  czzzrq: string;
+  sczzrq: string;
+  mczzrq: string;
+  ztx: string;
+  ytx: string;
+};
 
 const autoInputToVCNaive = async (data: AutoInputToVCParams) => {
   await addon.autoInputToVC(
@@ -19,6 +31,17 @@ const autoInputToVCNaive = async (data: AutoInputToVCParams) => {
 
   return "";
 };
+
+export interface Ipc {
+  "WIN/autoInputToVC": {
+    args: [AutoInputToVCParams];
+    return: string;
+  };
+  "WIN/isRunAsAdmin": {
+    args: [];
+    return: boolean;
+  };
+}
 
 export const bindIpcHandlers = (ipcHandle: IpcHandle) => {
   ipcHandle("WIN/autoInputToVC", async (_, data: AutoInputToVCParams) => {

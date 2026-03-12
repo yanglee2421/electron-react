@@ -1,5 +1,4 @@
 import type {
-  AutoInputToVCParams,
   InsertRecordParams,
   IpcContract,
   PLCWritePayload,
@@ -8,6 +7,7 @@ import type {
   SqliteXlsxSizeRParams,
   SqliteXlsxSizeUParams,
 } from "#main/lib/ipc";
+import type { AutoInputToVCParams } from "#main/modules/cmd";
 import type { MDBPayload } from "#main/modules/mdb";
 import {
   queryOptions,

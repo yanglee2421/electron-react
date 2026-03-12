@@ -1,16 +1,12 @@
 import { createSQLiteDB } from "#main/db";
 import { ipcHandle } from "#main/lib/ipc";
 import { MDBDB } from "#main/modules/mdb";
-import {
-  bindIPCHandlers as bindHxzyIpc,
-  Hxzy,
-} from "#main/shared/factories/hmis/hxzy";
+import * as guangzhoubei from "#main/shared/factories/hmis/guangzhoubei";
+import * as guangzhouJibaoduan from "#main/shared/factories/hmis/guangzhoujibaoduan";
+import * as hxzy from "#main/shared/factories/hmis/hxzy";
 import * as jtv from "#main/shared/factories/hmis/jtv";
-import {
-  bindIpc as bindIpcGuangzhouJibaoduan,
-  JTV_HMIS_Guangzhoujibaoduan,
-} from "#main/shared/factories/hmis/jtv_hmis_guangzhoujibaoduan";
 import * as kh from "#main/shared/factories/hmis/kh_hmis";
+import * as xuzhoubei from "#main/shared/factories/hmis/xuzhoubei";
 import { bindIpc, KV } from "#main/shared/factories/KV";
 import { Profile } from "#main/shared/factories/Profile";
 import type { ThemeMode } from "#shared/instances/schema";
@@ -254,22 +250,32 @@ const bootstrap = async () => {
   const profile = new Profile(kv);
   const mdbDB = new MDBDB(profile);
 
-  const hxzy = new Hxzy(sqliteDB, kv, mdbDB, net);
+  const hxzyHmis = new hxzy.Hxzy(sqliteDB, kv, mdbDB, net);
   const khHmis = new kh.KH(sqliteDB, kv, mdbDB, net);
   const jtvHmis = new jtv.JTV(sqliteDB, kv, mdbDB, net);
-  const jtv_hmis_guangzhoujibaoduan = new JTV_HMIS_Guangzhoujibaoduan(
+  const xuzhoubeiHmis = new xuzhoubei.Xuzhoubei(sqliteDB, kv, mdbDB, net);
+  const guangzhoubeiHmis = new guangzhoubei.Guangzhoubei(
     sqliteDB,
     kv,
     mdbDB,
     net,
   );
+  const jtv_hmis_guangzhoujibaoduan =
+    new guangzhouJibaoduan.JTV_HMIS_Guangzhoujibaoduan(
+      sqliteDB,
+      kv,
+      mdbDB,
+      net,
+    );
 
   await Promise.allSettled([
     profile.hydrate(),
     jtv_hmis_guangzhoujibaoduan.hydrate(),
-    hxzy.hydrate(),
+    hxzyHmis.hydrate(),
     khHmis.hydrate(),
     jtvHmis.hydrate(),
+    guangzhoubeiHmis.hydrate(),
+    xuzhoubeiHmis.hydrate(),
   ]);
 
   nativeTheme.themeSource = profile.getState().mode;
@@ -286,8 +292,10 @@ const bootstrap = async () => {
   bindIpc(kv, ipcHandle);
   kh.bindIpcHandlers(khHmis, ipcHandle);
   jtv.bindIpcHandlers(jtvHmis, ipcHandle);
-  bindIpcGuangzhouJibaoduan(jtv_hmis_guangzhoujibaoduan, ipcHandle);
-  bindHxzyIpc(hxzy, ipcHandle);
+  hxzy.bindIPCHandlers(hxzyHmis, ipcHandle);
+  xuzhoubei.bindIpcHandlers(xuzhoubeiHmis, ipcHandle);
+  guangzhoubei.bindIpcHandlers(guangzhoubeiHmis, ipcHandle);
+  guangzhouJibaoduan.bindIpc(jtv_hmis_guangzhoujibaoduan, ipcHandle);
 
   profile.on((state, previous) => {
     diffMode(previous.mode, state.mode);

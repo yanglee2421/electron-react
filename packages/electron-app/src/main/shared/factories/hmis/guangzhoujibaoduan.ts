@@ -382,10 +382,11 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
 
   async sendDataToServer(request: PostItem[]) {
     const store = this.getStore();
-    const url = new URL(
-      `http://${store.post_ip}:${store.post_port}/pmss/example.do`,
-    );
     const body = JSON.stringify(request);
+    const url = new URL(
+      "/pmss/example.do",
+      `http://${store.post_ip}:${store.post_port}`,
+    );
 
     url.searchParams.set("method", "saveData");
     url.searchParams.set("type", "csbts");
@@ -435,7 +436,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     const body = await this.createPostBody(record);
     await this.sendDataToServer(body);
 
-    const [result] = await this.db
+    const result = await this.db
       .update(schema.jtvGuangzhoujibaoduanBarcodeTable)
       .set({ isUploaded: true })
       .where(sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.id, record.id))

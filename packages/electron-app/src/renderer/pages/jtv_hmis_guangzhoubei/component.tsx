@@ -1,13 +1,12 @@
 import type { JTVGuangzhoubeiBarcode } from "#main/db/schema";
-import type { NormalizeResponse } from "#main/lib/ipc";
+import type { NormalizeResponse } from "#main/shared/factories/hmis/guangzhoubei";
 import {
-  fetchJtvHmisGuangzhoubeiSetting,
   fetchJtvHmisGuangzhoubeiSqliteGet,
+  useAutoInputToVC,
   useJtvHmisGuangzhoubeiApiGet,
   useJtvHmisGuangzhoubeiApiSet,
   useJtvHmisGuangzhoubeiSqliteDelete,
   useJtvHmisGuangzhoubeiSqliteInsert,
-  useAutoInputToVC,
 } from "#renderer/api/fetch_preload";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
@@ -23,29 +22,29 @@ import {
   RefreshOutlined,
 } from "@mui/icons-material";
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
+  CircularProgress,
+  Divider,
+  FormControlLabel,
   Grid,
   IconButton,
   InputAdornment,
-  Table,
-  TableFooter,
-  TextField,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TablePagination,
-  Button,
-  Divider,
-  Link,
-  CircularProgress,
-  TableContainer,
   LinearProgress,
-  FormControlLabel,
-  Switch,
+  Link,
   Stack,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableFooter,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -62,7 +61,7 @@ import React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 
 const storeInitializer = () => {

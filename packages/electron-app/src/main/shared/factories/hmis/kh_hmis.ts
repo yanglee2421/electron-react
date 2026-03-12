@@ -7,7 +7,6 @@ import {
   log,
   type InsertRecordParams,
   type IpcHandle,
-  type KHGetResponse,
   type SQLiteGetParams,
 } from "#main/lib/ipc";
 import type { MDBDB } from "#main/modules/mdb";
@@ -18,6 +17,24 @@ import { kh_hmis, type KH_HMIS } from "#shared/instances/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
+
+type KHGetResponse = {
+  data: {
+    mesureId: "A23051641563052";
+    zh: "10911";
+    zx: "RE2B";
+    clbjLeft: "HEZD Ⅱ 18264";
+    clbjRight: "HEZD Ⅱ 32744";
+    czzzrq: "2003-01-16";
+    czzzdw: "673";
+    ldszrq: "2014-06-22";
+    ldszdw: "673";
+    ldmzrq: "2018-04-13";
+    ldmzdw: "623";
+  };
+  code: 200;
+  msg: "success";
+};
 
 type QXDataParams = {
   mesureid: string;

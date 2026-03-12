@@ -1,20 +1,27 @@
-import type {
-  JTVGuangzhoubeiBarcode,
-  JtvXuzhoubeiBarcode,
-  XlsxSize,
-} from "#main/db/schema";
+import type { XlsxSize } from "#main/db/schema";
+import type * as win from "#main/modules/cmd";
 import type { MDBPayload } from "#main/modules/mdb";
+import type * as guangzhoubei from "#main/shared/factories/hmis/guangzhoubei";
+import type * as guangzhoujibaoduan from "#main/shared/factories/hmis/guangzhoujibaoduan";
 import type * as hxzy from "#main/shared/factories/hmis/hxzy";
 import type * as jtv from "#main/shared/factories/hmis/jtv";
-import { type IpcContract as guangzhoujibaoduanIPC } from "#main/shared/factories/hmis/jtv_hmis_guangzhoujibaoduan";
 import type * as kh from "#main/shared/factories/hmis/kh_hmis";
+import type * as xuzhoubei from "#main/shared/factories/hmis/xuzhoubei";
 import type * as kv from "#main/shared/factories/KV";
-import { calculateErrorMessage } from "#main/utils/error";
+import { calculateErrorMessage } from "#shared/functions/error";
 import { promiseTry } from "@yotulee/run";
 import { BrowserWindow, ipcMain } from "electron";
 
 export interface IpcContract
-  extends kv.IpcContract, guangzhoujibaoduanIPC, hxzy.Ipc, kh.Ipc, jtv.Ipc {
+  extends
+    kv.IpcContract,
+    hxzy.Ipc,
+    kh.Ipc,
+    jtv.Ipc,
+    guangzhoubei.Ipc,
+    guangzhoujibaoduan.IpcContract,
+    xuzhoubei.Ipc,
+    win.Ipc {
   "VERSION/GET": {
     args: [];
     return: Version;
@@ -47,34 +54,6 @@ export interface IpcContract
     args: [Electron.OpenDialogOptions];
     return: string[];
   };
-  "HMIS/jtv_hmis_guangzhoubei_api_set": {
-    args: [number];
-    return: JTVGuangzhoubeiBarcode;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: RowsResult<JTVGuangzhoubeiBarcode>;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_sqlite_delete": {
-    args: [number];
-    return: JTVGuangzhoubeiBarcode;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_sqlite_insert": {
-    args: [InsertRecordParams];
-    return: JTVGuangzhoubeiBarcode;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_api_get": {
-    args: [string, boolean?];
-    return: NormalizeResponse[];
-  };
-  "WIN/autoInputToVC": {
-    args: [AutoInputToVCParams];
-    return: string;
-  };
-  "WIN/isRunAsAdmin": {
-    args: [];
-    return: boolean;
-  };
   "PLC/read_test": {
     args: [string];
     return: PLCReadResult;
@@ -86,22 +65,6 @@ export interface IpcContract
   "PLC/serialport_list": {
     args: [];
     return: Array<{ path: string }>;
-  };
-  "HMIS/jtv_hmis_xuzhoubei_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: RowsResult<JtvXuzhoubeiBarcode>;
-  };
-  "HMIS/jtv_hmis_xuzhoubei_sqlite_delete": {
-    args: [number];
-    return: JtvXuzhoubeiBarcode;
-  };
-  "HMIS/jtv_hmis_xuzhoubei_api_get": {
-    args: [string];
-    return: XZBGetResponse;
-  };
-  "HMIS/jtv_hmis_xuzhoubei_api_set": {
-    args: [number];
-    return: JtvXuzhoubeiBarcode;
   };
   "MDB/MDB_ROOT_GET": {
     args: [MDBPayload];
@@ -161,73 +124,6 @@ export interface IpcContract
   };
 }
 
-// Kanghua
-export type KHGetResponse = {
-  data: {
-    mesureId: "A23051641563052";
-    zh: "10911";
-    zx: "RE2B";
-    clbjLeft: "HEZD Ⅱ 18264";
-    clbjRight: "HEZD Ⅱ 32744";
-    czzzrq: "2003-01-16";
-    czzzdw: "673";
-    ldszrq: "2014-06-22";
-    ldszdw: "673";
-    ldmzrq: "2018-04-13";
-    ldmzdw: "623";
-  };
-  code: 200;
-  msg: "success";
-};
-
-// Tongxing
-export type JTVNormalizeResponse = {
-  DH: string;
-  ZH: string;
-  ZX: string;
-  CZZZDW: string;
-  CZZZRQ: string;
-  MCZZDW: string;
-  MCZZRQ: string;
-  SCZZDW: string;
-  SCZZRQ: string;
-};
-
-// Xuzhoubei
-export type XZBGetResponse = [
-  {
-    SCZZRQ: "1990-10-19";
-    DH: "50409100225";
-    SRDW: "504";
-    CZZZRQ: "1990-10-01";
-    MCZZDW: "921";
-    SRRQ: "2009-10-09";
-    SRYY: "01";
-    CZZZDW: "183";
-    MCZZRQ: "2007-05-18";
-    ZH: "18426";
-    ZX: "RD2";
-    SCZZDW: "183";
-    ZTX?: null | string;
-    YTX?: null | string;
-  },
-];
-
-// Guangzhoubei
-export type NormalizeResponse = {
-  DH: string;
-  ZH: string;
-  ZX: string;
-  CZZZDW: string;
-  CZZZRQ: string;
-  MCZZDW: string;
-  MCZZRQ: string;
-  SCZZDW: string;
-  SCZZRQ: string;
-  ZTX: boolean;
-  YTX: boolean;
-};
-
 export type SQLiteGetParams = {
   pageIndex: number;
   pageSize: number;
@@ -240,19 +136,6 @@ export type InsertRecordParams = {
   ZH: string;
   CZZZDW: string;
   CZZZRQ: string;
-};
-
-export type AutoInputToVCParams = {
-  zx: string;
-  zh: string;
-  czzzdw: string;
-  sczzdw: string;
-  mczzdw: string;
-  czzzrq: string;
-  sczzrq: string;
-  mczzrq: string;
-  ztx: string;
-  ytx: string;
 };
 
 export type SqliteXlsxSizeRParams = {
@@ -417,10 +300,9 @@ type HandlerFn<K extends keyof IpcContract> = IpcContract[K] extends {
   args: infer A;
   return: infer R;
 }
-  ? CallbackFn<
-      A extends unknown[] ? [Electron.IpcMainInvokeEvent, ...A] : [],
-      Promise<Awaited<R>>
-    >
+  ? (
+      ...args: A extends unknown[] ? [Electron.IpcMainInvokeEvent, ...A] : []
+    ) => Promise<Awaited<R>>
   : never;
 
 type RowsResult<TRow> = {
