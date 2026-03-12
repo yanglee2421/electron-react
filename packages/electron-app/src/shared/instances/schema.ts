@@ -26,7 +26,8 @@ export const kh_hmis = z.object({
 export type KH_HMIS = z.infer<typeof kh_hmis>;
 
 export const hxzy_hmis = z.object({
-  host: z.string().default(""),
+  ip: z.ipv4().default(""),
+  port: z.number().int().min(1).max(65535).default(0),
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),

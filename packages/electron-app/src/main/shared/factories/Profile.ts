@@ -15,6 +15,12 @@ export class Profile {
 
   constructor(kv: KV) {
     this.kv = kv;
+
+    this.kv.on((key) => {
+      if (key === PROFILE_STORAGE_KEY) {
+        this.hydrate();
+      }
+    });
   }
 
   async hydrate() {

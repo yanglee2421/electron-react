@@ -5,7 +5,6 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import pLimit from "p-limit";
-import type { AppContext } from "..";
 import createImageWorker from "./image.worker?nodeWorker";
 
 const computeMD5 = (files: string[]) => {
@@ -77,8 +76,7 @@ const bootstrap = async (source: string) => {
   await copyFile(md5ToFilePath, outputDirectory);
 };
 
-export const bindIpcHandlers = (appContext: AppContext) => {
-  void appContext;
+export const bindIpcHandlers = () => {
   ipcHandle("MD5/MD5_BACKUP_IMAGE", async (_, payload: string) => {
     await bootstrap(payload);
   });

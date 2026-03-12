@@ -2,15 +2,15 @@ import { createSQLiteDB } from "#main/db";
 import { ipcHandle } from "#main/lib/ipc";
 import { MDBDB } from "#main/modules/mdb";
 import {
+  bindIPCHandlers as bindHxzyIpc,
+  Hxzy,
+} from "#main/shared/factories/hmis/hxzy";
+import {
   bindIpc as bindIpcGuangzhouJibaoduan,
   JTV_HMIS_Guangzhoujibaoduan,
 } from "#main/shared/factories/hmis/jtv_hmis_guangzhoujibaoduan";
 import { bindIpc, KV } from "#main/shared/factories/KV";
 import { Profile } from "#main/shared/factories/Profile";
-import {
-  GUANGZHOU_JIBAODUAN_STORAGE_KEY,
-  PROFILE_STORAGE_KEY,
-} from "#shared/instances/constants";
 import type { ThemeMode } from "#shared/instances/schema";
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import {
@@ -28,13 +28,7 @@ import url from "node:url";
 import * as cmd from "./modules/cmd";
 import * as md5 from "./modules/image";
 import * as plc from "./modules/plc";
-import * as excel from "./modules/xlsx";
 import * as xml from "./modules/xml";
-
-export type AppContext = {
-  mdbDB: MDBDB;
-  sqliteDB: ReturnType<typeof createSQLiteDB>;
-};
 
 const createWindow = async (alwaysOnTop: boolean) => {
   const win = new BrowserWindow({
@@ -258,6 +252,7 @@ const bootstrap = async () => {
   const profile = new Profile(kv);
   const mdbDB = new MDBDB(profile);
 
+  const hxzy = new Hxzy(sqliteDB, kv, mdbDB, net);
   const jtv_hmis_guangzhoujibaoduan = new JTV_HMIS_Guangzhoujibaoduan(
     sqliteDB,
     kv,
@@ -265,14 +260,10 @@ const bootstrap = async () => {
     net,
   );
 
-  const appContext = {
-    mdbDB,
-    sqliteDB,
-  };
-
   await Promise.allSettled([
     profile.hydrate(),
     jtv_hmis_guangzhoujibaoduan.hydrate(),
+    hxzy.hydrate(),
   ]);
 
   nativeTheme.themeSource = profile.getState().mode;
@@ -282,23 +273,13 @@ const bootstrap = async () => {
 
   mdbDB.bindIpcHandlers();
   cmd.bindIpcHandlers(ipcHandle);
-  excel.bindIpcHandlers(appContext);
-  md5.bindIpcHandlers(appContext);
-  xml.bindIpcHandlers(appContext);
   plc.bindIpcHandlers(ipcHandle);
+  md5.bindIpcHandlers();
+  xml.bindIpcHandlers();
 
   bindIpc(kv, ipcHandle);
   bindIpcGuangzhouJibaoduan(jtv_hmis_guangzhoujibaoduan, ipcHandle);
-
-  kv.on((key) => {
-    if (key === GUANGZHOU_JIBAODUAN_STORAGE_KEY) {
-      jtv_hmis_guangzhoujibaoduan.hydrate();
-    }
-
-    if (key === PROFILE_STORAGE_KEY) {
-      profile.hydrate();
-    }
-  });
+  bindHxzyIpc(hxzy, ipcHandle);
 
   profile.on((state, previous) => {
     diffMode(previous.mode, state.mode);

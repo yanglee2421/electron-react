@@ -23,6 +23,7 @@ import {
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
+import type { Net } from "./hmis";
 
 interface ZH_Item {
   DH: string;
@@ -153,25 +154,25 @@ export interface IpcContract {
   "hmis_guangzhoujibaoduan/get_record": {
     args: [SQLiteGetParams];
     return: Awaited<
-      ReturnType<typeof JTV_HMIS_Guangzhoujibaoduan.prototype.getRecord>
+      ReturnType<typeof JTV_HMIS_Guangzhoujibaoduan.prototype.handleRecordRead>
     >;
   };
   "hmis_guangzhoujibaoduan/delete_record": {
     args: [number];
     return: ReturnType<
-      typeof JTV_HMIS_Guangzhoujibaoduan.prototype.deleteRecord
+      typeof JTV_HMIS_Guangzhoujibaoduan.prototype.handleRecordDelete
     >;
   };
   "hmis_guangzhoujibaoduan/insert_record": {
     args: [InsertRecordParams];
     return: ReturnType<
-      typeof JTV_HMIS_Guangzhoujibaoduan.prototype.insertRecord
+      typeof JTV_HMIS_Guangzhoujibaoduan.prototype.handleRecordInsert
     >;
   };
   "hmis_guangzhoujibaoduan/fetch_axle_info": {
     args: [string, boolean?];
     return: ReturnType<
-      typeof JTV_HMIS_Guangzhoujibaoduan.prototype.handleFetchAxleInfo
+      typeof JTV_HMIS_Guangzhoujibaoduan.prototype.handleFetch
     >;
   };
   "hmis_guangzhoujibaoduan/upload_data": {
@@ -186,10 +187,6 @@ type ListenerFn = (
   state: Guangzhoujibaoduan,
   previous: Guangzhoujibaoduan,
 ) => void;
-
-interface Net {
-  fetch(input: RequestInfo, init?: RequestInit): Promise<Response>;
-}
 
 export class JTV_HMIS_Guangzhoujibaoduan {
   private db: SQLiteDBType;
@@ -207,6 +204,12 @@ export class JTV_HMIS_Guangzhoujibaoduan {
     this.mdb = mdb;
     this.kv = kv;
     this.net = net;
+
+    this.kv.on((key) => {
+      if (key === GUANGZHOU_JIBAODUAN_STORAGE_KEY) {
+        this.hydrate();
+      }
+    });
   }
 
   async hydrate() {
@@ -244,57 +247,6 @@ export class JTV_HMIS_Guangzhoujibaoduan {
   }
   emit(state: Guangzhoujibaoduan, previous: Guangzhoujibaoduan) {
     this.handles.forEach((handle) => handle(state, previous));
-  }
-
-  async getRecord(params: SQLiteGetParams) {
-    const rows = await this.db
-      .select()
-      .from(schema.jtvGuangzhoujibaoduanBarcodeTable)
-      .where(
-        sql.between(
-          schema.jtvGuangzhoujibaoduanBarcodeTable.date,
-          new Date(params.startDate),
-          new Date(params.endDate),
-        ),
-      )
-      .offset(params.pageIndex * params.pageSize)
-      .limit(params.pageSize)
-      .orderBy();
-
-    const [{ count }] = await this.db
-      .select({ count: sql.count() })
-      .from(schema.jtvGuangzhoujibaoduanBarcodeTable)
-      .where(
-        sql.between(
-          schema.jtvGuangzhoujibaoduanBarcodeTable.date,
-          new Date(params.startDate),
-          new Date(params.endDate),
-        ),
-      )
-      .limit(1);
-
-    return { rows, count };
-  }
-
-  deleteRecord(id: number) {
-    return this.db
-      .delete(schema.jtvGuangzhoujibaoduanBarcodeTable)
-      .where(sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.id, id))
-      .returning();
-  }
-
-  insertRecord(params: InsertRecordParams) {
-    return this.db
-      .insert(schema.jtvGuangzhoujibaoduanBarcodeTable)
-      .values({
-        barCode: params.DH,
-        zh: params.ZH,
-        date: new Date(),
-        isUploaded: false,
-        CZZZDW: params.CZZZDW,
-        CZZZRQ: params.CZZZRQ,
-      })
-      .returning();
   }
 
   resolveFetchURL(dh: string) {
@@ -348,20 +300,6 @@ export class JTV_HMIS_Guangzhoujibaoduan {
     }
 
     return data;
-  }
-
-  async handleFetchAxleInfo(barcode: string, isZhMode?: boolean) {
-    if (isZhMode) {
-      const data = await this.fetchAxleInfoByZH(barcode);
-      const result = normalizeZHResponse(data);
-
-      return result;
-    } else {
-      const data = await this.fetchAxleInfoByDH(barcode);
-      const result = normalizeDHResponse(data);
-
-      return result;
-    }
   }
 
   createPostItem(
@@ -485,30 +423,6 @@ export class JTV_HMIS_Guangzhoujibaoduan {
     return data;
   }
 
-  async handleUpload(id: number) {
-    const [record] = await this.db
-      .select()
-      .from(schema.jtvGuangzhoujibaoduanBarcodeTable)
-      .where(sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.id, id));
-
-    if (!record) {
-      throw new Error(`记录#${id}不存在`);
-    }
-
-    const body = await this.createPostBody(record);
-    await this.uploadData(body);
-
-    const [result] = await this.db
-      .update(schema.jtvGuangzhoujibaoduanBarcodeTable)
-      .set({ isUploaded: true })
-      .where(sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.id, record.id))
-      .returning();
-
-    emit();
-
-    return result;
-  }
-
   startAutoUpload() {
     if (this.autoUploadTimer !== null) {
       return;
@@ -547,11 +461,95 @@ export class JTV_HMIS_Guangzhoujibaoduan {
 
     fn();
   }
-
   stopAutoUpload() {
     if (!this.autoUploadTimer) return;
     clearTimeout(this.autoUploadTimer);
     this.autoUploadTimer = null;
+  }
+
+  async handleFetch(barcode: string, isZhMode?: boolean) {
+    if (isZhMode) {
+      const data = await this.fetchAxleInfoByZH(barcode);
+      const result = normalizeZHResponse(data);
+
+      return result;
+    } else {
+      const data = await this.fetchAxleInfoByDH(barcode);
+      const result = normalizeDHResponse(data);
+
+      return result;
+    }
+  }
+  async handleUpload(id: number) {
+    const [record] = await this.db
+      .select()
+      .from(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .where(sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.id, id));
+
+    if (!record) {
+      throw new Error(`记录#${id}不存在`);
+    }
+
+    const body = await this.createPostBody(record);
+    await this.uploadData(body);
+
+    const [result] = await this.db
+      .update(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .set({ isUploaded: true })
+      .where(sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.id, record.id))
+      .returning();
+
+    emit();
+
+    return result;
+  }
+  async handleRecordRead(params: SQLiteGetParams) {
+    const rows = await this.db
+      .select()
+      .from(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .where(
+        sql.between(
+          schema.jtvGuangzhoujibaoduanBarcodeTable.date,
+          new Date(params.startDate),
+          new Date(params.endDate),
+        ),
+      )
+      .offset(params.pageIndex * params.pageSize)
+      .limit(params.pageSize)
+      .orderBy();
+
+    const [{ count }] = await this.db
+      .select({ count: sql.count() })
+      .from(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .where(
+        sql.between(
+          schema.jtvGuangzhoujibaoduanBarcodeTable.date,
+          new Date(params.startDate),
+          new Date(params.endDate),
+        ),
+      )
+      .limit(1);
+
+    return { rows, count };
+  }
+  handleRecordDelete(id: number) {
+    return this.db
+      .delete(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .where(sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.id, id))
+      .returning();
+  }
+  handleRecordInsert(params: InsertRecordParams) {
+    return this.db
+      .insert(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .values({
+        barCode: params.DH,
+        zh: params.ZH,
+        date: new Date(),
+        isUploaded: false,
+        CZZZDW: params.CZZZDW,
+        CZZZRQ: params.CZZZRQ,
+      })
+      .returning();
   }
 }
 
@@ -560,21 +558,21 @@ export const bindIpc = (
   ipcHandle: IpcHandle,
 ) => {
   ipcHandle("hmis_guangzhoujibaoduan/get_record", async (_, params) => {
-    return hmis.getRecord(params);
+    return hmis.handleRecordRead(params);
   });
 
   ipcHandle("hmis_guangzhoujibaoduan/delete_record", async (_, id) => {
-    return hmis.deleteRecord(id);
+    return hmis.handleRecordDelete(id);
   });
 
   ipcHandle("hmis_guangzhoujibaoduan/insert_record", async (_, params) => {
-    return hmis.insertRecord(params);
+    return hmis.handleRecordInsert(params);
   });
 
   ipcHandle(
     "hmis_guangzhoujibaoduan/fetch_axle_info",
     async (_, barcode, isZhMode) => {
-      return hmis.handleFetchAxleInfo(barcode, isZhMode);
+      return hmis.handleFetch(barcode, isZhMode);
     },
   );
 

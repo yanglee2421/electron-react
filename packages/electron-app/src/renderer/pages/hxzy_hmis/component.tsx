@@ -1,15 +1,15 @@
 import type { HxzyBarcode } from "#main/db/schema";
+import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
-  fetchHxzyHmisSqliteGet,
-  fetchHxzyHmisSetting,
-  useHxzyHmisApiGet,
-  useHxzyHmisApiSet,
-  useHxzyHmisSqliteDelete,
-  useAutoInputToVC,
-} from "#renderer/api/fetch_preload";
+  fetchHxzyRecord,
+  useDeleteHxzyRecord,
+  useFetchAxleInfo,
+  useUploadDetecion,
+} from "#renderer/api/hxzy";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import { useHxzyHmisStore } from "#renderer/shared/hooks/ui/useHxzyHmisStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CheckOutlined,
@@ -20,26 +20,26 @@ import {
   KeyboardReturnOutlined,
 } from "@mui/icons-material";
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
+  CircularProgress,
+  Divider,
   Grid,
   IconButton,
   InputAdornment,
-  Table,
-  TableFooter,
-  TextField,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TablePagination,
-  Button,
-  Link,
-  CircularProgress,
-  TableContainer,
   LinearProgress,
-  Divider,
+  Link,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableFooter,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -109,10 +109,10 @@ type ActionCellProps = {
 };
 
 const ActionCell = (props: ActionCellProps) => {
-  const saveData = useHxzyHmisApiSet();
+  const saveData = useUploadDetecion();
   const snackbar = useNotifications();
   const dialog = useDialogs();
-  const deleteBarcode = useHxzyHmisSqliteDelete();
+  const deleteBarcode = useDeleteHxzyRecord();
 
   const handleUpload = () => {
     saveData.mutate(props.id, {
@@ -178,12 +178,12 @@ export const Component = () => {
   };
 
   const form = useScanerForm();
-  const getData = useHxzyHmisApiGet();
+  const getData = useFetchAxleInfo();
   const snackbar = useNotifications();
-  const barcode = useQuery(fetchHxzyHmisSqliteGet(params));
-  const { data: hmis } = useQuery(fetchHxzyHmisSetting());
+  const barcode = useQuery(fetchHxzyRecord(params));
   const autoInput = useAutoInputToVC();
   const inputRef = useAutoFocusInputRef();
+  const isAutoInput = useHxzyHmisStore((state) => state.autoInput);
 
   const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
 
@@ -282,8 +282,7 @@ export const Component = () => {
                   },
                 });
 
-                if (!hmis) return;
-                if (!hmis.autoInput) return;
+                if (!isAutoInput) return;
 
                 autoInput.mutate(
                   {

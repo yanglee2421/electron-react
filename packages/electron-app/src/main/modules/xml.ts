@@ -9,7 +9,6 @@ import * as path from "node:path";
 import { PDFParse } from "pdf-parse";
 import { getPath } from "pdf-parse/worker";
 import { prepareZXingModule, readBarcodes } from "zxing-wasm";
-import type { AppContext } from "..";
 
 PDFParse.setWorker(getPath());
 
@@ -155,8 +154,7 @@ const collectPDFResult = async (
   }
 };
 
-export const bindIpcHandlers = (appContext: AppContext) => {
-  void appContext;
+export const bindIpcHandlers = () => {
   ipcHandle("XML/XML", async (_, payload: string) => {
     const xmlPath = payload;
     const data = await xmlPathToJSONData(xmlPath);

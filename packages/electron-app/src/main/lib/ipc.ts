@@ -1,19 +1,20 @@
 import type {
-  HxzyBarcode,
   JTVBarcode,
   JTVGuangzhoubeiBarcode,
   JtvXuzhoubeiBarcode,
   KhBarcode,
   XlsxSize,
 } from "#main/db/schema";
-import type { MDBPayload, Verify, VerifyData } from "#main/modules/mdb";
+import type { MDBPayload } from "#main/modules/mdb";
+import type * as hxzy from "#main/shared/factories/hmis/hxzy";
 import { type IpcContract as guangzhoujibaoduanIPC } from "#main/shared/factories/hmis/jtv_hmis_guangzhoujibaoduan";
 import type * as kv from "#main/shared/factories/KV";
 import { calculateErrorMessage } from "#main/utils/error";
 import { promiseTry } from "@yotulee/run";
 import { BrowserWindow, ipcMain } from "electron";
 
-export interface IpcContract extends kv.IpcContract, guangzhoujibaoduanIPC {
+export interface IpcContract
+  extends kv.IpcContract, guangzhoujibaoduanIPC, hxzy.Ipc {
   "VERSION/GET": {
     args: [];
     return: Version;
@@ -45,29 +46,6 @@ export interface IpcContract extends kv.IpcContract, guangzhoujibaoduanIPC {
   "APP/SHOW_OPEN_DIALOG": {
     args: [Electron.OpenDialogOptions];
     return: string[];
-  };
-  "HMIS/hxzy_hmis_sqlite_delete": {
-    args: [number];
-    return: HxzyBarcode;
-  };
-  "HMIS/hxzy_hmis_api_get": {
-    args: [string];
-    return: HxzyGetResponse;
-  };
-  "HMIS/hxzy_hmis_api_set": {
-    args: [number];
-    return: HxzyBarcode;
-  };
-  "HMIS/hxzy_hmis_api_verifies": {
-    args: [string];
-    return: {
-      verifies: Verify;
-      verifiesData: VerifyData[];
-    };
-  };
-  "HMIS/hxzy_hmis_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: RowsResult<HxzyBarcode>;
   };
   "HMIS/jtv_hmis_guangzhoubei_api_set": {
     args: [number];
@@ -218,27 +196,6 @@ export interface IpcContract extends kv.IpcContract, guangzhoujibaoduanIPC {
     return: XlsxSize[];
   };
 }
-
-// Hxzy
-export type HxzyGetResponse = {
-  code: "200";
-  msg: "数据读取成功";
-  data: [
-    {
-      CZZZDW: "048";
-      CZZZRQ: "2009-10";
-      MCZZDW: "131";
-      MCZZRQ: "2018-07-09 00:00:00";
-      SCZZDW: "131";
-      SCZZRQ: "2018-07-09 00:00:00";
-      DH: "91022070168";
-      ZH: "67444";
-      ZX: "RE2B";
-      SRYY: "厂修";
-      SRDW: "588";
-    },
-  ];
-};
 
 // Kanghua
 export type KHGetResponse = {
