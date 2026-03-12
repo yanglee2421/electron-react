@@ -5,6 +5,7 @@ import {
   bindIPCHandlers as bindHxzyIpc,
   Hxzy,
 } from "#main/shared/factories/hmis/hxzy";
+import * as jtv from "#main/shared/factories/hmis/jtv";
 import {
   bindIpc as bindIpcGuangzhouJibaoduan,
   JTV_HMIS_Guangzhoujibaoduan,
@@ -255,6 +256,7 @@ const bootstrap = async () => {
 
   const hxzy = new Hxzy(sqliteDB, kv, mdbDB, net);
   const khHmis = new kh.KH(sqliteDB, kv, mdbDB, net);
+  const jtvHmis = new jtv.JTV(sqliteDB, kv, mdbDB, net);
   const jtv_hmis_guangzhoujibaoduan = new JTV_HMIS_Guangzhoujibaoduan(
     sqliteDB,
     kv,
@@ -266,6 +268,8 @@ const bootstrap = async () => {
     profile.hydrate(),
     jtv_hmis_guangzhoujibaoduan.hydrate(),
     hxzy.hydrate(),
+    khHmis.hydrate(),
+    jtvHmis.hydrate(),
   ]);
 
   nativeTheme.themeSource = profile.getState().mode;
@@ -281,6 +285,7 @@ const bootstrap = async () => {
 
   bindIpc(kv, ipcHandle);
   kh.bindIpcHandlers(khHmis, ipcHandle);
+  jtv.bindIpcHandlers(jtvHmis, ipcHandle);
   bindIpcGuangzhouJibaoduan(jtv_hmis_guangzhoujibaoduan, ipcHandle);
   bindHxzyIpc(hxzy, ipcHandle);
 

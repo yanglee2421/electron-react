@@ -111,7 +111,9 @@ export const Component = () => {
               <form.Field name="unitCode">
                 {(field) => (
                   <TextField
-                    {...field}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors[0]?.message}
                     label="单位代码"
@@ -124,7 +126,9 @@ export const Component = () => {
               <form.Field name="signature_prefix">
                 {(field) => (
                   <TextField
-                    {...field}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors[0]?.message}
                     label="签章前缀"

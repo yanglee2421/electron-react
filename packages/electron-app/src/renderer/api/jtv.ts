@@ -16,7 +16,7 @@ export const fetchJtvHmisSqliteGet = (payload: SQLiteGetParams) =>
     },
   });
 
-export const useJtvHmisSqliteDelete = () => {
+export const useDeleteJTVRecord = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => {
@@ -30,7 +30,7 @@ export const useJtvHmisSqliteDelete = () => {
   });
 };
 
-export const useJtvHmisSqliteInsert = () => {
+export const useInsertJTVRecord = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: InsertRecordParams) => {
@@ -49,7 +49,7 @@ type JTVZHGetPayload = {
   isZhMode: boolean;
 };
 
-export const useJtvHmisApiGet = () => {
+export const useFetchAxleInfo = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -64,7 +64,7 @@ export const useJtvHmisApiGet = () => {
   });
 };
 
-export const useJtvHmisApiSet = () => {
+export const useUploadAxleInfo = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
