@@ -1,35 +1,29 @@
-import type { SQLiteDBType } from "#main/db";
-import * as schema from "#main/db/schema";
 import { PROFILE_STORAGE_KEY } from "#shared/instances/constants";
 import { profile, type Profile as ProfileType } from "#shared/instances/schema";
-import * as sql from "drizzle-orm";
 import iconv from "iconv-lite";
 import ini from "ini";
 import fs from "node:fs";
 import path from "node:path";
+import type { KV } from "./KV";
 
 export class Profile {
   private state = Object.freeze(profile.parse({}));
   private handles = new Set<
     (state: ProfileType, previous: ProfileType) => void
   >();
-  db: SQLiteDBType;
+  private kv: KV;
 
-  constructor(db: SQLiteDBType) {
-    this.db = db;
+  constructor(kv: KV) {
+    this.kv = kv;
   }
 
   async hydrate() {
-    const [row] = await this.db
-      .select()
-      .from(schema.kvTable)
-      .where(sql.eq(schema.kvTable.key, PROFILE_STORAGE_KEY))
-      .limit(1);
+    const value = await this.kv.getItem(PROFILE_STORAGE_KEY);
 
-    if (!row?.value) return;
+    if (!value) return;
 
     const previous = this.state;
-    const data = JSON.parse(row.value);
+    const data = JSON.parse(value);
 
     this.state = Object.freeze(profile.parse(data.state));
     this.emit(this.state, previous);

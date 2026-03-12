@@ -15,7 +15,7 @@ export type Return<TKey extends keyof IpcContract> = IpcContract[TKey] extends {
   : never;
 
 export class IPC {
-  ipcInvoke<TKey extends keyof IpcContract>(
+  invoke<TKey extends keyof IpcContract>(
     key: TKey,
     ...args: Args<TKey>
   ): Return<TKey> {
@@ -23,12 +23,12 @@ export class IPC {
   }
 
   getItem(name: string): Promise<string | null> {
-    return this.ipcInvoke("kv/get", name);
+    return this.invoke("kv/get", name);
   }
   setItem(name: string, value: string): Promise<void> {
-    return this.ipcInvoke("kv/set", name, value);
+    return this.invoke("kv/set", name, value);
   }
   removeItem(name: string): Promise<void> {
-    return this.ipcInvoke("kv/remove", name);
+    return this.invoke("kv/remove", name);
   }
 }

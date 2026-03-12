@@ -5,7 +5,7 @@ import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
   calculateDirection,
   calculatePlace,
-} from "#shared/factories/flawDetection";
+} from "#shared/functions/flawDetection";
 import {
   Alert,
   AlertTitle,

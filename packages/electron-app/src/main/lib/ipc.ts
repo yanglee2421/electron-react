@@ -6,8 +6,8 @@ import type {
   KhBarcode,
   XlsxSize,
 } from "#main/db/schema";
-import { type IpcContract as guangzhoujibaoduanIPC } from "#main/modules/hmis/jtv_hmis_guangzhoujibaoduan";
 import type { MDBPayload, Verify, VerifyData } from "#main/modules/mdb";
+import { type IpcContract as guangzhoujibaoduanIPC } from "#main/shared/factories/hmis/jtv_hmis_guangzhoujibaoduan";
 import type * as kv from "#main/shared/factories/KV";
 import { calculateErrorMessage } from "#main/utils/error";
 import { promiseTry } from "@yotulee/run";

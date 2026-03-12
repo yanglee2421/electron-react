@@ -1,18 +1,18 @@
 import type { JTVGuangzhoubeiBarcode } from "#main/db/schema";
-import type { NormalizeResponse } from "#main/lib/ipc";
+import type { NormalizeResponse } from "#main/shared/factories/hmis/jtv_hmis_guangzhoujibaoduan";
+import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
-  fetchJtvHmisGuangzhoubeiSetting,
-  fetchJtvHmisGuangzhoubeiSqliteGet,
-  useJtvHmisGuangzhoubeiApiGet,
-  useJtvHmisGuangzhoubeiApiSet,
-  useJtvHmisGuangzhoubeiSqliteDelete,
-  useJtvHmisGuangzhoubeiSqliteInsert,
-  useAutoInputToVC,
-} from "#renderer/api/fetch_preload";
+  fetchGuangzhouJibaoduanRecord,
+  useDeleteGuangzhoujibaoduanRecord,
+  useFetchGuangzhouJibaoduanAxle,
+  useInsertGuangzhouJibaoduanRecord,
+  useUploadGuangzhouJibaoduanData,
+} from "#renderer/api/guangzhouJibaoduan";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import { useGuangzhoujibaoduan } from "#renderer/shared/hooks/ui/useGuangzhoujibaoduan";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CheckOutlined,
@@ -23,29 +23,29 @@ import {
   RefreshOutlined,
 } from "@mui/icons-material";
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
+  CircularProgress,
+  Divider,
+  FormControlLabel,
   Grid,
   IconButton,
   InputAdornment,
-  Table,
-  TableFooter,
-  TextField,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TablePagination,
-  Button,
-  Divider,
-  Link,
-  CircularProgress,
-  TableContainer,
   LinearProgress,
-  FormControlLabel,
-  Switch,
+  Link,
   Stack,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableFooter,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -62,7 +62,7 @@ import React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 
 const storeInitializer = () => {
@@ -189,8 +189,8 @@ type ActionCellProps = {
 const ActionCell = (props: ActionCellProps) => {
   const snackbar = useNotifications();
   const dialog = useDialogs();
-  const saveData = useJtvHmisGuangzhoubeiApiSet();
-  const deleteBarcode = useJtvHmisGuangzhoubeiSqliteDelete();
+  const saveData = useUploadGuangzhouJibaoduanData();
+  const deleteBarcode = useDeleteGuangzhoujibaoduanRecord();
 
   const handleUpload = () => {
     saveData.mutate(props.id, {
@@ -478,19 +478,18 @@ export const Component = () => {
   const snackbar = useNotifications();
   const autoInput = useAutoInputToVC();
   const inputRef = useAutoFocusInputRef();
-  const getData = useJtvHmisGuangzhoubeiApiGet();
-  const saveData = useJtvHmisGuangzhoubeiApiSet();
-  const insertBarcode = useJtvHmisGuangzhoubeiSqliteInsert();
-  const { data: hmis } = useQuery(fetchJtvHmisGuangzhoubeiSetting());
-  const barcode = useQuery(fetchJtvHmisGuangzhoubeiSqliteGet(params));
+  const getData = useFetchGuangzhouJibaoduanAxle();
+  const saveData = useUploadGuangzhouJibaoduanData();
+  const insertBarcode = useInsertGuangzhouJibaoduanRecord();
+  const barcode = useQuery(fetchGuangzhouJibaoduanRecord(params));
+  const isAutoInput = useGuangzhoujibaoduan((store) => store.autoInput);
 
   useSubscribe("api_set", () => {
     barcode.refetch();
   });
 
   const sendDataItemToWindow = async (dataItem: NormalizeResponse) => {
-    if (!hmis) return;
-    if (!hmis.autoInput) return;
+    if (!isAutoInput) return;
 
     await autoInput.mutateAsync(
       {

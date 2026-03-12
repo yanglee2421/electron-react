@@ -8,7 +8,7 @@ import { ipcHandle, log, withLog } from "#main/lib/ipc";
 import {
   calculateDirection,
   calculatePlace,
-} from "#shared/factories/flawDetection";
+} from "#shared/functions/flawDetection";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";

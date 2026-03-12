@@ -1,3 +1,6 @@
+import type { DetectionData } from "#main/modules/mdb";
+import dayjs from "dayjs";
+
 export const calculateDirection = (nBoard: number) => {
   //board(板卡)：0.左 1.右
   switch (nBoard) {
@@ -29,4 +32,13 @@ export const calculatePlace = (nChannel: number) => {
     default:
       return "车轴";
   }
+};
+export const tmnowToTSSJ = (tmnow: string) => {
+  return dayjs(tmnow).format("YYYY-MM-DD HH:mm:ss");
+};
+export const detectionDataToTPlace = (detectionData: DetectionData) => {
+  const direction = calculateDirection(detectionData.nBoard);
+  const place = calculatePlace(detectionData.nChannel);
+
+  return direction + place;
 };

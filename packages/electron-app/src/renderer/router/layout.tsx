@@ -251,11 +251,6 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
       icon: <CalendarMonthOutlined />,
     },
     {
-      segment: calculateSegment("xlsx"),
-      title: "xlsx设置",
-      icon: <SettingsOutlined />,
-    },
-    {
       kind: "divider",
     },
     {
@@ -286,6 +281,11 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
 
   if (shouldAdd) {
     result.push(
+      {
+        segment: calculateSegment("xlsx"),
+        title: "xlsx设置",
+        icon: <SettingsOutlined />,
+      },
       {
         segment: calculateSegment("md5_compute"),
         title: "MD5计算",

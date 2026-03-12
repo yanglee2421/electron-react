@@ -1,10 +1,16 @@
 import { createSQLiteDB } from "#main/db";
 import { ipcHandle } from "#main/lib/ipc";
-import { JTV_HMIS_Guangzhoujibaoduan } from "#main/modules/hmis/jtv_hmis_guangzhoujibaoduan";
 import { MDBDB } from "#main/modules/mdb";
+import {
+  bindIpc as bindIpcGuangzhouJibaoduan,
+  JTV_HMIS_Guangzhoujibaoduan,
+} from "#main/shared/factories/hmis/jtv_hmis_guangzhoujibaoduan";
 import { bindIpc, KV } from "#main/shared/factories/KV";
 import { Profile } from "#main/shared/factories/Profile";
-import { PROFILE_STORAGE_KEY } from "#shared/instances/constants";
+import {
+  GUANGZHOU_JIBAODUAN_STORAGE_KEY,
+  PROFILE_STORAGE_KEY,
+} from "#shared/instances/constants";
 import type { ThemeMode } from "#shared/instances/schema";
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import {
@@ -20,11 +26,6 @@ import {
 import path from "node:path";
 import url from "node:url";
 import * as cmd from "./modules/cmd";
-import * as hxzyHmis from "./modules/hmis/hxzy_hmis";
-import * as jtvHmis from "./modules/hmis/jtv_hmis";
-import * as jtvHmisGuangzhoubei from "./modules/hmis/jtv_hmis_guangzhoubei";
-import * as jtvHmisXuzhoubei from "./modules/hmis/jtv_hmis_xuzhoubei";
-import * as khHmis from "./modules/hmis/kh_hmis";
 import * as md5 from "./modules/image";
 import * as plc from "./modules/plc";
 import * as excel from "./modules/xlsx";
@@ -254,13 +255,14 @@ const bootstrap = async () => {
     migrationsFolder: path.resolve(__dirname, "../../drizzle"),
   });
   const kv = new KV(sqliteDB);
-  const profile = new Profile(sqliteDB);
+  const profile = new Profile(kv);
   const mdbDB = new MDBDB(profile);
 
   const jtv_hmis_guangzhoujibaoduan = new JTV_HMIS_Guangzhoujibaoduan(
     sqliteDB,
     kv,
     mdbDB,
+    net,
   );
 
   const appContext = {
@@ -268,7 +270,10 @@ const bootstrap = async () => {
     sqliteDB,
   };
 
-  await profile.hydrate();
+  await Promise.allSettled([
+    profile.hydrate(),
+    jtv_hmis_guangzhoujibaoduan.hydrate(),
+  ]);
 
   nativeTheme.themeSource = profile.getState().mode;
 
@@ -276,25 +281,18 @@ const bootstrap = async () => {
   bindIpcHandles();
 
   mdbDB.bindIpcHandlers();
-
-  hxzyHmis.bindIPCHandlers(appContext);
-  jtvHmisXuzhoubei.bindIpcHandlers(appContext);
-  jtvHmis.bindIpcHandlers(appContext);
-  jtvHmisGuangzhoubei.bindIpcHandlers(appContext);
-  khHmis.bindIpcHandlers(appContext);
-
   cmd.bindIpcHandlers(ipcHandle);
   excel.bindIpcHandlers(appContext);
   md5.bindIpcHandlers(appContext);
   xml.bindIpcHandlers(appContext);
   plc.bindIpcHandlers(ipcHandle);
-  bindIpc(kv, ipcHandle);
 
-  jtv_hmis_guangzhoujibaoduan.bindIPCHandlers();
+  bindIpc(kv, ipcHandle);
+  bindIpcGuangzhouJibaoduan(jtv_hmis_guangzhoujibaoduan, ipcHandle);
 
   kv.on((key) => {
-    if (key === jtv_hmis_guangzhoujibaoduan.storeKey) {
-      jtv_hmis_guangzhoujibaoduan.updateStore();
+    if (key === GUANGZHOU_JIBAODUAN_STORAGE_KEY) {
+      jtv_hmis_guangzhoujibaoduan.hydrate();
     }
 
     if (key === PROFILE_STORAGE_KEY) {
