@@ -259,7 +259,7 @@ export class MDBDB {
         {
           type: "equal",
           field: "szIDsMake",
-          value: dayjs(params.CZZZDW).format("YYYYMM"),
+          value: params.CZZZDW,
         },
         {
           type: "equal",
