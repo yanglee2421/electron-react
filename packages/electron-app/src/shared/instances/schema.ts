@@ -52,7 +52,8 @@ export const jtv_hmis = z.object({
 export type JTV_HMIS = z.infer<typeof jtv_hmis>;
 
 export const jtv_hmis_xuzhoubei = z.object({
-  host: z.string().default(""),
+  ip: z.ipv4().default(""),
+  port: portSchema,
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),
@@ -62,8 +63,10 @@ export const jtv_hmis_xuzhoubei = z.object({
 export type JTV_HMIS_XUZHOUBEI = z.infer<typeof jtv_hmis_xuzhoubei>;
 
 export const jtv_hmis_guangzhoubei = z.object({
-  get_host: z.string().default(""),
-  post_host: z.string().default(""),
+  get_ip: z.ipv4().default(""),
+  get_port: portSchema,
+  post_ip: z.ipv4().default(""),
+  post_port: portSchema,
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),

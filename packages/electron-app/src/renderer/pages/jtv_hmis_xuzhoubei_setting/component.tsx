@@ -1,66 +1,58 @@
+import { NumberField } from "#renderer/components/number";
+import { useXuzhoubei } from "#renderer/shared/hooks/ui/useXuzhoubei";
+import { jtv_hmis_xuzhoubei } from "#shared/instances/schema";
+import { SaveOutlined } from "@mui/icons-material";
 import {
   Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
-  FormControlLabel,
-  Grid,
   Checkbox,
-  TextField,
-  FormGroup,
   CircularProgress,
+  FormControlLabel,
+  FormGroup,
+  Grid,
+  TextField,
 } from "@mui/material";
-import { z } from "zod";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import { useForm } from "@tanstack/react-form";
 import { useNotifications } from "@toolpad/core";
-import {
-  fetchJtvHmisXuzhoubeiSetting,
-  useUpdateJtvHmisXuzhoubeiSetting,
-} from "#renderer/api/fetch_preload";
-import { useQuery } from "@tanstack/react-query";
-import { NumberField } from "#renderer/components/number";
-import { SaveOutlined } from "@mui/icons-material";
-
-type FormValues = z.infer<typeof schema>;
-
-const schema = z.object({
-  ip: z.ipv4(),
-  port: z.number().int().min(1).max(65535),
-  autoInput: z.boolean(),
-  autoUpload: z.boolean(),
-  autoUploadInterval: z.number().int().min(10),
-  username_prefix: z.string(),
-});
-
-const useSettingForm = () => {
-  const { data: hmis } = useQuery(fetchJtvHmisXuzhoubeiSetting());
-
-  if (!hmis) {
-    throw new Error("fetchJtvHmisXuzhoubeiSetting data not found");
-  }
-
-  return useForm<FormValues>({
-    defaultValues: {
-      ip: hmis.host.split(":")[0],
-      port: Number.parseInt(hmis.host.split(":")[1]),
-      autoInput: hmis.autoInput,
-      autoUpload: hmis.autoUpload,
-      autoUploadInterval: hmis.autoUploadInterval,
-      username_prefix: hmis.username_prefix,
-    },
-    resolver: zodResolver(schema),
-  });
-};
+import React from "react";
 
 export const Component = () => {
   const formId = React.useId();
 
   const snackbar = useNotifications();
-  const form = useSettingForm();
-  const update = useUpdateJtvHmisXuzhoubeiSetting();
+  const ip = useXuzhoubei((store) => store.ip);
+  const port = useXuzhoubei((store) => store.port);
+  const autoInput = useXuzhoubei((store) => store.autoInput);
+  const autoUpload = useXuzhoubei((store) => store.autoUpload);
+  const autoUploadInterval = useXuzhoubei((store) => store.autoUploadInterval);
+  const username_prefix = useXuzhoubei((store) => store.username_prefix);
+
+  const form = useForm({
+    defaultValues: {
+      ip: ip,
+      port: port,
+      autoInput: autoInput,
+      autoUpload: autoUpload,
+      autoUploadInterval: autoUploadInterval,
+      username_prefix: username_prefix,
+    },
+    validators: { onChange: jtv_hmis_xuzhoubei.required() },
+    onSubmit: ({ value }) => {
+      useXuzhoubei.setState((draft) => {
+        draft.ip = value.ip;
+        draft.port = value.port;
+        draft.autoInput = value.autoInput;
+        draft.autoUpload = value.autoUpload;
+        draft.autoUploadInterval = value.autoUploadInterval;
+        draft.username_prefix = value.username_prefix;
+      });
+
+      snackbar.show("保存成功", { severity: "success" });
+    },
+  });
 
   return (
     <Card>
@@ -70,139 +62,144 @@ export const Component = () => {
           id={formId}
           noValidate
           autoComplete="off"
-          onSubmit={form.handleSubmit((data) => {
-            update.mutate(
-              {
-                host: `${data.ip}:${data.port}`,
-                autoInput: data.autoInput,
-                autoUpload: data.autoUpload,
-                autoUploadInterval: data.autoUploadInterval,
-                username_prefix: data.username_prefix,
-              },
-              {
-                onError: (error) => {
-                  snackbar.show(error.message, { severity: "error" });
-                },
-                onSuccess: () => {
-                  snackbar.show("保存成功", { severity: "success" });
-                },
-              },
-            );
-          }, console.warn)}
+          onSubmit={(e) => {
+            e.preventDefault();
+            form.handleSubmit();
+          }}
         >
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="ip"
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    label="IP地址"
-                    fullWidth
-                  />
-                )}
-              />
+              <form.Field name="ip">
+                {(field) => {
+                  return (
+                    <TextField
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      name={field.name}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors?.[0]?.message}
+                      label="IP地址"
+                      fullWidth
+                    />
+                  );
+                }}
+              </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="port"
-                render={({ field, fieldState }) => (
-                  <NumberField
-                    field={field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    label="端口号"
-                    fullWidth
-                  />
-                )}
-              />
+              <form.Field name="port">
+                {(field) => {
+                  return (
+                    <NumberField
+                      field={{
+                        value: field.state.value,
+                        onChange: (value) => field.handleChange(value),
+                        onBlur: field.handleBlur,
+                      }}
+                      name={field.name}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors?.[0]?.message}
+                      label="端口号"
+                      fullWidth
+                    />
+                  );
+                }}
+              </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="username_prefix"
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    label="用户名前缀"
-                    fullWidth
-                  />
-                )}
-              />
+              <form.Field name="username_prefix">
+                {(field) => {
+                  return (
+                    <TextField
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      name={field.name}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors?.[0]?.message}
+                      label="用户名前缀"
+                      fullWidth
+                    />
+                  );
+                }}
+              </form.Field>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <FormGroup row>
-                <Controller
-                  control={form.control}
-                  name="autoInput"
-                  render={({ field }) => (
+                <form.Field name="autoInput">
+                  {(field) => (
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={field.value}
-                          onChange={(e) => field.onChange(e.target.checked)}
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
                         />
                       }
                       label="自动录入"
                     />
                   )}
-                />
-                <Controller
-                  control={form.control}
-                  name="autoUpload"
-                  render={({ field }) => (
+                </form.Field>
+                <form.Field name="autoUpload">
+                  {(field) => (
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={field.value}
-                          onChange={(e) => field.onChange(e.target.checked)}
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
                         />
                       }
                       label="自动上传"
                     />
                   )}
-                />
+                </form.Field>
               </FormGroup>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                control={form.control}
-                name="autoUploadInterval"
-                render={({ field, fieldState }) => (
-                  <NumberField
-                    field={field}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    label="自动上传间隔"
-                    fullWidth
-                  />
-                )}
-              />
+              <form.Field name="autoUploadInterval">
+                {(field) => {
+                  return (
+                    <NumberField
+                      field={{
+                        value: field.state.value,
+                        onChange: (value) => field.handleChange(value),
+                        onBlur: field.handleBlur,
+                      }}
+                      name={field.name}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors?.[0]?.message}
+                      label="自动上传间隔"
+                      fullWidth
+                    />
+                  );
+                }}
+              </form.Field>
             </Grid>
           </Grid>
         </form>
       </CardContent>
       <CardActions>
-        <Button
-          form={formId}
-          type="submit"
-          disabled={update.isPending}
-          startIcon={
-            update.isPending ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : (
-              <SaveOutlined />
-            )
-          }
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
         >
-          保存
-        </Button>
+          {([canSubmit, isSubmitting]) => {
+            return (
+              <Button
+                form={formId}
+                type="submit"
+                disabled={!canSubmit}
+                startIcon={
+                  isSubmitting ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : (
+                    <SaveOutlined />
+                  )
+                }
+              >
+                保存
+              </Button>
+            );
+          }}
+        </form.Subscribe>
       </CardActions>
     </Card>
   );

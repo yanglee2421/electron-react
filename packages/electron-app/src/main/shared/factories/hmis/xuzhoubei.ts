@@ -21,7 +21,7 @@ import pLimit from "p-limit";
 import type { KV } from "../KV";
 import { HMIS, type Net } from "./hmis";
 
-type XZBGetResponse = [
+export type XZBGetResponse = [
   {
     SCZZRQ: "1990-10-19";
     DH: "50409100225";
@@ -253,7 +253,7 @@ export class Xuzhoubei extends HMIS<JTV_HMIS_XUZHOUBEI> {
 
   async sendDataToServer(request: PostRequestItem) {
     const store = this.getStore();
-    const host = store.host;
+    const host = store.ip + ":" + store.port;
     const url = new URL(`http://${host}/pmss/example.do`);
     const body = JSON.stringify(request);
 
@@ -285,7 +285,7 @@ export class Xuzhoubei extends HMIS<JTV_HMIS_XUZHOUBEI> {
 
   async handleFetch(dh: string) {
     const store = this.getStore();
-    const host = store.host;
+    const host = store.ip + ":" + store.port;
     const url = new URL(`http://${host}/pmss/vjkxx.do`);
 
     url.searchParams.set("method", "getData");

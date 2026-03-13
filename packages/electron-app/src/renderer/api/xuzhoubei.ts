@@ -1,4 +1,5 @@
-import type { InsertRecordParams, SQLiteGetParams } from "#main/lib/ipc";
+import type { SQLiteGetParams } from "#main/lib/ipc";
+import type { InsertRecordParams } from "#main/shared/factories/hmis/xuzhoubei";
 import { ipc } from "#renderer/shared/instances/ipc";
 import {
   queryOptions,
@@ -6,23 +7,23 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-const QUERY_KEY = "guangzhouJibaoduanRecord";
+// 京天威HMIS (徐州北)
+const QUERY_KEY = "jtv_hmis_xuzhoubei";
 
-export const fetchGuangzhouJibaoduanRecord = (params: SQLiteGetParams) => {
-  return queryOptions({
+export const fetchXuzhoubeiRecord = (params: SQLiteGetParams) =>
+  queryOptions({
     queryKey: [QUERY_KEY, params],
     queryFn: () => {
-      return ipc.invoke("hmis_guangzhoujibaoduan/get_record", params);
+      return ipc.invoke("HMIS/jtv_hmis_xuzhoubei_sqlite_get", params);
     },
   });
-};
 
-export const useDeleteGuangzhoujibaoduanRecord = () => {
+export const useDeleteXuzhoubeiRecord = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: number) => {
-      return ipc.invoke("hmis_guangzhoujibaoduan/delete_record", id);
+      return ipc.invoke("HMIS/jtv_hmis_xuzhoubei_sqlite_delete", id);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -32,12 +33,12 @@ export const useDeleteGuangzhoujibaoduanRecord = () => {
   });
 };
 
-export const useInsertGuangzhouJibaoduanRecord = () => {
+export const useInsertXuzhoubeiRecord = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (params: InsertRecordParams) => {
-      return ipc.invoke("hmis_guangzhoujibaoduan/insert_record", params);
+      return ipc.invoke("HMIS/jtv_hmis_xuzhoubei_sqlite_insert", params);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -47,22 +48,12 @@ export const useInsertGuangzhouJibaoduanRecord = () => {
   });
 };
 
-export const useFetchGuangzhouJibaoduanAxle = () => {
+export const useFetchXuzhoubeiAxleInfo = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      barcode,
-      isZhMode,
-    }: {
-      barcode: string;
-      isZhMode?: boolean;
-    }) => {
-      return ipc.invoke(
-        "hmis_guangzhoujibaoduan/fetch_axle_info",
-        barcode,
-        isZhMode,
-      );
+    mutationFn: (barcode: string) => {
+      return ipc.invoke("HMIS/jtv_hmis_xuzhoubei_api_get", barcode);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -72,12 +63,12 @@ export const useFetchGuangzhouJibaoduanAxle = () => {
   });
 };
 
-export const useUploadGuangzhouJibaoduanData = () => {
+export const useUploadXuzhoubeiAxleInfo = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: number) => {
-      return ipc.invoke("hmis_guangzhoujibaoduan/upload_data", id);
+      return ipc.invoke("HMIS/jtv_hmis_xuzhoubei_api_set", id);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

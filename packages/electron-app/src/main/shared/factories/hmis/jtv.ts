@@ -22,7 +22,7 @@ import pLimit from "p-limit";
 import type { KV } from "../KV";
 import { HMIS, type Net } from "./hmis";
 
-type ZH_Item = {
+interface ZH_Item {
   DH: string;
   ZH: string;
   ZX: string;
@@ -52,15 +52,15 @@ type ZH_Item = {
   LBYSXH: string | null;
   LBZLX: string | null;
   LBYCDH: string | null;
-};
+}
 
-type ZH_Response = {
+interface ZH_Response {
   code: string;
   msg: string;
   data: ZH_Item[];
-};
+}
 
-type DH_Item = {
+interface DH_Item {
   DH: string;
   ZH: string;
   ZX: string;
@@ -73,15 +73,15 @@ type DH_Item = {
 
   SRYY?: string | null;
   SRDW?: string | null;
-};
+}
 
-type DH_Response = {
+interface DH_Response {
   code: string;
   msg: string;
   data: DH_Item[];
-};
+}
 
-type PostItem = {
+interface PostItem {
   eq_ip: string; // 设备IP
   eq_bh: string; // 设备编号
   dh: string; // 扫码单号
@@ -101,12 +101,12 @@ type PostItem = {
   TSZ: string; // 探伤者左
   TSZY: string; // 探伤者右
   CT_RESULT: string; // 合格
-};
+}
 
-type PostResponse = {
+interface PostResponse {
   code: "200";
   msg: "数据上传成功";
-};
+}
 
 const normalizeZHResponse = (data: ZH_Response) => {
   if (data.code !== "200") {

@@ -231,7 +231,7 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
 
   makeDataRequestURL(dh: string) {
     const store = this.getStore();
-    const host = store.get_host;
+    const host = store.get_ip + ":" + store.get_port;
     const unitCode = store.unitCode;
     const url = new URL(`http://${host}/api/getData`);
 
@@ -286,7 +286,7 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
 
   async sendDataToServer(request: PostItem[]) {
     const store = this.getStore();
-    const host = store.post_host;
+    const host = store.post_ip + ":" + store.post_port;
     const url = new URL(`http://${host}/pmss/example.do`);
     const body = JSON.stringify(request);
 

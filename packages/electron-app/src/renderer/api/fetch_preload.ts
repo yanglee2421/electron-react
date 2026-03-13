@@ -1,8 +1,6 @@
 import type {
-  InsertRecordParams,
   IpcContract,
   PLCWritePayload,
-  SQLiteGetParams,
   SqliteXlsxSizeCParams,
   SqliteXlsxSizeRParams,
   SqliteXlsxSizeUParams,
@@ -38,11 +36,6 @@ type Return<TKey extends keyof IpcContract> = IpcContract[TKey] extends {
   ? Promise<TReturn>
   : never;
 
-type JTVZHGetPayload = {
-  barcode: string;
-  isZhMode?: boolean;
-};
-
 const invoke = <TKey extends keyof IpcContract>(
   channel: TKey,
   ...args: Args<TKey>
@@ -56,72 +49,6 @@ export const useAutoInputToVC = () => {
   return useMutation({
     mutationFn: async (params: AutoInputToVCParams) => {
       return await invoke("WIN/autoInputToVC", params);
-    },
-  });
-};
-
-// 京天威HMIS (徐州北)
-export const fetchJtvHmisXuzhoubeiSqliteGet = (params: SQLiteGetParams) =>
-  queryOptions({
-    queryKey: ["window.electronAPI.jtv_hmis_xuzhoubei_sqlite_get", params],
-    queryFn: async () => {
-      return await invoke("HMIS/jtv_hmis_xuzhoubei_sqlite_get", params);
-    },
-  });
-
-export const useJtvHmisXuzhoubeiSqliteDelete = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      return await invoke("HMIS/jtv_hmis_xuzhoubei_sqlite_delete", id);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisXuzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisXuzhoubeiApiGet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (barcode: string) => {
-      return await invoke("HMIS/jtv_hmis_xuzhoubei_api_get", barcode);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisXuzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisXuzhoubeiApiSet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      return await invoke("HMIS/jtv_hmis_xuzhoubei_api_set", id);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisXuzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
     },
   });
 };
@@ -384,90 +311,6 @@ export const fetchSerialPortList = () => {
       const data = await invoke("PLC/serialport_list");
 
       return data;
-    },
-  });
-};
-
-export const fetchJtvHmisGuangzhoubeiSqliteGet = (payload: SQLiteGetParams) =>
-  queryOptions({
-    queryKey: ["HMIS/jtv_hmis_guangzhoubei_sqlite_get", payload],
-    queryFn: () => {
-      return invoke("HMIS/jtv_hmis_guangzhoubei_sqlite_get", payload);
-    },
-  });
-
-export const useJtvHmisGuangzhoubeiSqliteDelete = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => {
-      return invoke("HMIS/jtv_hmis_guangzhoubei_sqlite_delete", id);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisGuangzhoubeiSqliteInsert = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: InsertRecordParams) => {
-      return invoke("HMIS/jtv_hmis_guangzhoubei_sqlite_insert", payload);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisGuangzhoubeiApiGet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ barcode, isZhMode }: JTVZHGetPayload) => {
-      return invoke("HMIS/jtv_hmis_guangzhoubei_api_get", barcode, isZhMode);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useJtvHmisGuangzhoubeiApiSet = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => {
-      return invoke("HMIS/jtv_hmis_guangzhoubei_api_set", id);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: fetchJtvHmisGuangzhoubeiSqliteGet({
-          pageIndex: 1,
-          pageSize: 10,
-          startDate: "",
-          endDate: "",
-        }).queryKey.slice(0, 1),
-      });
     },
   });
 };

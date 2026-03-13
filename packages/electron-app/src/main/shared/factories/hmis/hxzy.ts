@@ -18,7 +18,7 @@ import pLimit from "p-limit";
 import type { KV } from "../KV";
 import { HMIS, type Net } from "./hmis";
 
-interface HxzyGetResponse {
+export interface HxzyGetResponse {
   code: "200";
   msg: "数据读取成功";
   data: [
@@ -38,7 +38,7 @@ interface HxzyGetResponse {
   ];
 }
 
-type PostRequestItem = {
+interface PostRequestItem {
   EQ_IP: string; // 设备IP
   EQ_BH: string; // 设备编号
   GD: string; // 股道号
@@ -59,12 +59,12 @@ type PostRequestItem = {
   TSZ: string; // 探伤者左
   TSZY: string; // 探伤者右
   CT_RESULT: string; // 合格
-};
+}
 
-type PostResponse = {
+interface PostResponse {
   code: "200";
   msg: "数据上传成功";
-};
+}
 
 const emit = createEmit("api_set");
 

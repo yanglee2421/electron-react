@@ -18,7 +18,7 @@ import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
 
-type KHGetResponse = {
+export interface KHGetResponse {
   data: {
     mesureId: "A23051641563052";
     zh: "10911";
@@ -34,9 +34,9 @@ type KHGetResponse = {
   };
   code: 200;
   msg: "success";
-};
+}
 
-type QXDataParams = {
+interface QXDataParams {
   mesureid: string;
   zh: string;
   testdatetime: string;
@@ -77,9 +77,9 @@ type QXDataParams = {
   qxclylwcz?: string;
   qxclylwcy?: string;
   bz: "";
-};
+}
 
-type PostRequestItem = {
+interface PostRequestItem {
   mesureId?: string;
   ZH: string;
   ZCTJG: string;
@@ -93,12 +93,12 @@ type PostRequestItem = {
   TSRY: string;
   JCSJ: string;
   sbbh: string;
-};
+}
 
-type PostResponse = {
+interface PostResponse {
   code: 200;
   msg: "success";
-};
+}
 
 const emit = createEmit("api_set");
 

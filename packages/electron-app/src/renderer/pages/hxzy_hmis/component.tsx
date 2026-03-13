@@ -1,4 +1,5 @@
 import type { HxzyBarcode } from "#main/db/schema";
+import type { HxzyGetResponse } from "#main/shared/factories/hmis/hxzy";
 import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
   fetchHxzyRecord,
@@ -10,7 +11,6 @@ import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { useHxzyHmisStore } from "#renderer/shared/hooks/ui/useHxzyHmisStore";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CheckOutlined,
   ClearOutlined,
@@ -42,6 +42,7 @@ import {
   TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
+import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
@@ -52,7 +53,6 @@ import {
 import { useDialogs, useNotifications } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
-import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 const dateInitializer = () => dayjs();
@@ -94,15 +94,6 @@ const columns = [
     cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
   }),
 ];
-
-const useScanerForm = () => {
-  return useForm({
-    defaultValues: {
-      barCode: "",
-    },
-    resolver: zodResolver(schema),
-  });
-};
 
 type ActionCellProps = {
   id: number;
@@ -177,13 +168,33 @@ export const Component = () => {
     endDate: dayjs(date).endOf("day").toISOString(),
   };
 
-  const form = useScanerForm();
   const getData = useFetchAxleInfo();
   const snackbar = useNotifications();
   const barcode = useQuery(fetchHxzyRecord(params));
   const autoInput = useAutoInputToVC();
   const inputRef = useAutoFocusInputRef();
   const isAutoInput = useHxzyHmisStore((state) => state.autoInput);
+
+  const form = useForm({
+    defaultValues: {
+      barCode: "",
+    },
+    validators: { onChange: schema },
+    onSubmit: async ({ value }) => {
+      const data = await getData.mutateAsync(value.barCode, {
+        onError: (error) => {
+          snackbar.show(error.message, { severity: "error" });
+        },
+        onSuccess: () => {
+          form.reset();
+        },
+      });
+
+      if (!isAutoInput) return;
+
+      sendDataToWindow(data);
+    },
+  });
 
   const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
 
@@ -192,13 +203,34 @@ export const Component = () => {
     columns,
     getRowId: (row) => row.id.toString(),
     getCoreRowModel: getCoreRowModel(),
-
     manualPagination: true,
   });
 
   useSubscribe("api_set", () => {
     barcode.refetch();
   });
+
+  const sendDataToWindow = async (data: HxzyGetResponse) => {
+    await autoInput.mutateAsync(
+      {
+        zx: data.data[0].ZX,
+        zh: data.data[0].ZH,
+        czzzdw: data.data[0].CZZZDW,
+        sczzdw: data.data[0].SCZZDW,
+        mczzdw: data.data[0].MCZZDW,
+        czzzrq: data.data[0].CZZZRQ,
+        sczzrq: data.data[0].SCZZRQ,
+        mczzrq: data.data[0].MCZZRQ,
+        ztx: "1",
+        ytx: "1",
+      },
+      {
+        onError: (error) => {
+          snackbar.show(error.message, { severity: "error" });
+        },
+      },
+    );
+  };
 
   const renderRow = () => {
     if (!table.getRowCount()) {
@@ -270,73 +302,55 @@ export const Component = () => {
               id={formId}
               noValidate
               autoComplete="off"
-              onSubmit={form.handleSubmit(async (values) => {
-                if (getData.isPending) return;
-
-                form.reset();
-                const data = await getData.mutateAsync(values.barCode, {
-                  onError: (error) => {
-                    snackbar.show(error.message, {
-                      severity: "error",
-                    });
-                  },
-                });
-
-                if (!isAutoInput) return;
-
-                autoInput.mutate(
-                  {
-                    zx: data.data[0].ZX,
-                    zh: data.data[0].ZH,
-                    czzzdw: data.data[0].CZZZDW,
-                    sczzdw: data.data[0].SCZZDW,
-                    mczzdw: data.data[0].MCZZDW,
-                    czzzrq: data.data[0].CZZZRQ,
-                    sczzrq: data.data[0].SCZZRQ,
-                    mczzrq: data.data[0].MCZZRQ,
-                    ztx: "1",
-                    ytx: "1",
-                  },
-                  {
-                    onError: (error) => {
-                      snackbar.show(error.message, {
-                        severity: "error",
-                      });
-                    },
-                  },
-                );
-              }, console.warn)}
+              onSubmit={(e) => {
+                e.preventDefault();
+                form.handleSubmit();
+              }}
               onReset={() => form.reset()}
             >
-              <Controller
-                control={form.control}
-                name="barCode"
-                render={({ field, fieldState }) => (
+              <form.Field name="barCode">
+                {(field) => (
                   <TextField
-                    {...field}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
                     inputRef={inputRef}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors[0]?.message}
                     fullWidth
                     slotProps={{
                       input: {
                         endAdornment: (
                           <InputAdornment position="end">
-                            <Button
-                              form={formId}
-                              type="submit"
-                              endIcon={
-                                getData.isPending ? (
-                                  <CircularProgress size={16} color="inherit" />
-                                ) : (
-                                  <KeyboardReturnOutlined />
-                                )
-                              }
-                              variant="contained"
-                              disabled={getData.isPending}
+                            <form.Subscribe
+                              selector={(state) => [
+                                state.canSubmit,
+                                state.isSubmitting,
+                              ]}
                             >
-                              录入
-                            </Button>
+                              {([canSubmit, isSubmitting]) => {
+                                return (
+                                  <Button
+                                    form={formId}
+                                    type="submit"
+                                    endIcon={
+                                      isSubmitting ? (
+                                        <CircularProgress
+                                          size={16}
+                                          color="inherit"
+                                        />
+                                      ) : (
+                                        <KeyboardReturnOutlined />
+                                      )
+                                    }
+                                    variant="contained"
+                                    disabled={!canSubmit}
+                                  >
+                                    录入
+                                  </Button>
+                                );
+                              }}
+                            </form.Subscribe>
                           </InputAdornment>
                         ),
                         autoFocus: true,
@@ -346,7 +360,7 @@ export const Component = () => {
                     placeholder="请扫描条形码或二维码"
                   />
                 )}
-              />
+              </form.Field>
             </form>
           </Grid>
         </Grid>

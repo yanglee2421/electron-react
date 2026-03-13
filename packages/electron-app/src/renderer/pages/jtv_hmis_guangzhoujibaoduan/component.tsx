@@ -13,7 +13,6 @@ import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { useGuangzhoujibaoduan } from "#renderer/shared/hooks/ui/useGuangzhoujibaoduan";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CheckOutlined,
   ClearOutlined,
@@ -48,6 +47,7 @@ import {
   TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
+import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
@@ -59,7 +59,6 @@ import {
 import { useDialogs, useNotifications } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
-import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -172,15 +171,6 @@ const useSessionStore = create<ReturnType<typeof storeInitializer>>()(
     storage: createJSONStorage(() => sessionStorage),
   }),
 );
-
-const useScanerForm = () => {
-  return useForm({
-    defaultValues: {
-      barCode: "",
-    },
-    resolver: zodResolver(schema),
-  });
-};
 
 type ActionCellProps = {
   id: number;
@@ -474,15 +464,45 @@ export const Component = () => {
     endDate: date.endOf("day").toISOString(),
   };
 
-  const form = useScanerForm();
   const snackbar = useNotifications();
   const autoInput = useAutoInputToVC();
   const inputRef = useAutoFocusInputRef();
   const getData = useFetchGuangzhouJibaoduanAxle();
-  const saveData = useUploadGuangzhouJibaoduanData();
   const insertBarcode = useInsertGuangzhouJibaoduanRecord();
   const barcode = useQuery(fetchGuangzhouJibaoduanRecord(params));
   const isAutoInput = useGuangzhoujibaoduan((store) => store.autoInput);
+
+  const form = useForm({
+    defaultValues: {
+      barCode: "",
+    },
+    validators: { onChange: schema },
+    onSubmit: async ({ value }) => {
+      const data = await getData.mutateAsync(
+        { barcode: value.barCode, isZhMode: zhMode },
+        {
+          onError: (error) => {
+            snackbar.show(error.message, { severity: "error" });
+          },
+          onSuccess: () => {
+            form.reset();
+          },
+        },
+      );
+
+      useSessionStore.setState((draft) => {
+        draft.selectOptions = data;
+      });
+
+      const isSingleElement = Object.is(data.length, 1);
+      if (!isSingleElement) return;
+
+      const record = data.at(0)!;
+      if (!record) return;
+
+      await handleRowSelect(record);
+    },
+  });
 
   useSubscribe("api_set", () => {
     barcode.refetch();
@@ -516,10 +536,8 @@ export const Component = () => {
 
   const inserDataItemToDB = async (dataItem: NormalizeResponse) => {
     await insertBarcode.mutateAsync(dataItem, {
-      onError(error) {
-        snackbar.show(error.message, {
-          severity: "error",
-        });
+      onError: (error) => {
+        snackbar.show(error.message, { severity: "error" });
       },
     });
   };
@@ -580,44 +598,18 @@ export const Component = () => {
                   id={formId}
                   noValidate
                   autoComplete="off"
-                  onSubmit={form.handleSubmit(async (values) => {
-                    if (saveData.isPending) return;
-
-                    form.reset();
-
-                    const data = await getData.mutateAsync(
-                      { barcode: values.barCode, isZhMode: zhMode },
-                      {
-                        onError: (error) => {
-                          snackbar.show(error.message, {
-                            severity: "error",
-                          });
-                        },
-                      },
-                    );
-
-                    useSessionStore.setState((draft) => {
-                      draft.selectOptions = data;
-                    });
-
-                    const isSingleElement = Object.is(data.length, 1);
-                    if (!isSingleElement) return;
-
-                    const record = data.at(0)!;
-                    if (!record) return;
-
-                    await handleRowSelect(record);
-                  }, console.warn)}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    form.handleSubmit();
+                  }}
                   onReset={() => form.reset()}
                 >
-                  <Controller
-                    control={form.control}
-                    name="barCode"
-                    render={({ field, fieldState }) => (
+                  <form.Field name="barCode">
+                    {(field) => (
                       <TextField
-                        {...field}
+                        value={field.state.value}
                         onChange={(e) => {
-                          field.onChange(e);
+                          field.handleChange(e.target.value);
 
                           if (zhMode) return;
                           clearTimeout(debounceRef.current);
@@ -625,32 +617,45 @@ export const Component = () => {
                             formRef.current?.requestSubmit();
                           }, 1000 * 1);
                         }}
+                        onBlur={field.handleBlur}
+                        name={field.name}
                         inputRef={inputRef}
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
+                        error={!!field.state.meta.errors.length}
+                        helperText={field.state.meta.errors.at(0)?.message}
                         fullWidth
                         slotProps={{
                           input: {
                             endAdornment: (
                               <InputAdornment position="end">
-                                <Button
-                                  form={formId}
-                                  type="submit"
-                                  endIcon={
-                                    getData.isPending ? (
-                                      <CircularProgress
-                                        size={16}
-                                        color="inherit"
-                                      />
-                                    ) : (
-                                      <KeyboardReturnOutlined />
-                                    )
-                                  }
-                                  variant="contained"
-                                  disabled={getData.isPending}
+                                <form.Subscribe
+                                  selector={(state) => [
+                                    state.canSubmit,
+                                    state.isSubmitting,
+                                  ]}
                                 >
-                                  录入
-                                </Button>
+                                  {([canSubmit, isSubmitting]) => {
+                                    return (
+                                      <Button
+                                        form={formId}
+                                        type="submit"
+                                        endIcon={
+                                          isSubmitting ? (
+                                            <CircularProgress
+                                              size={16}
+                                              color="inherit"
+                                            />
+                                          ) : (
+                                            <KeyboardReturnOutlined />
+                                          )
+                                        }
+                                        variant="contained"
+                                        disabled={!canSubmit}
+                                      >
+                                        录入
+                                      </Button>
+                                    );
+                                  }}
+                                </form.Subscribe>
                               </InputAdornment>
                             ),
                             autoFocus: true,
@@ -662,7 +667,7 @@ export const Component = () => {
                         }
                       />
                     )}
-                  />
+                  </form.Field>
                 </form>
               </Grid>
             </Grid>

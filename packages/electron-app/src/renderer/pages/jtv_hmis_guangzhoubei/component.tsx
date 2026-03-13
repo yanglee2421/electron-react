@@ -1,18 +1,18 @@
 import type { JTVGuangzhoubeiBarcode } from "#main/db/schema";
 import type { NormalizeResponse } from "#main/shared/factories/hmis/guangzhoubei";
+import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
-  fetchJtvHmisGuangzhoubeiSqliteGet,
-  useAutoInputToVC,
-  useJtvHmisGuangzhoubeiApiGet,
-  useJtvHmisGuangzhoubeiApiSet,
-  useJtvHmisGuangzhoubeiSqliteDelete,
-  useJtvHmisGuangzhoubeiSqliteInsert,
-} from "#renderer/api/fetch_preload";
+  fetchGuangzhoubeiRecord,
+  useDeleteGuangzhoubeiRecord,
+  useFetchGuangzhoubeiRecord,
+  useInsertGuangzhoubeiRecord,
+  useUploadGuangzhoubeiAxleInfo,
+} from "#renderer/api/guangzhoubei";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useGuangzhoubei } from "#renderer/shared/hooks/ui/useGuangzhoubei";
 import {
   CheckOutlined,
   ClearOutlined,
@@ -47,6 +47,7 @@ import {
   TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
+import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
@@ -58,7 +59,6 @@ import {
 import { useDialogs, useNotifications } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
-import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -172,15 +172,6 @@ const useSessionStore = create<ReturnType<typeof storeInitializer>>()(
   }),
 );
 
-const useScanerForm = () => {
-  return useForm({
-    defaultValues: {
-      barCode: "",
-    },
-    resolver: zodResolver(schema),
-  });
-};
-
 type ActionCellProps = {
   id: number;
 };
@@ -188,8 +179,8 @@ type ActionCellProps = {
 const ActionCell = (props: ActionCellProps) => {
   const snackbar = useNotifications();
   const dialog = useDialogs();
-  const saveData = useJtvHmisGuangzhoubeiApiSet();
-  const deleteBarcode = useJtvHmisGuangzhoubeiSqliteDelete();
+  const saveData = useUploadGuangzhoubeiAxleInfo();
+  const deleteBarcode = useDeleteGuangzhoubeiRecord();
 
   const handleUpload = () => {
     saveData.mutate(props.id, {
@@ -358,10 +349,7 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
     getCoreRowModel: getCoreRowModel(),
     columns: rowSelectColumns,
     data: rows,
-    getRowId(row) {
-      return row.DH;
-    },
-
+    getRowId: (row) => row.DH,
     getPaginationRowModel: getPaginationRowModel(),
   });
 
@@ -473,23 +461,56 @@ export const Component = () => {
     endDate: date.endOf("day").toISOString(),
   };
 
-  const form = useScanerForm();
   const snackbar = useNotifications();
   const autoInput = useAutoInputToVC();
   const inputRef = useAutoFocusInputRef();
-  const getData = useJtvHmisGuangzhoubeiApiGet();
-  const saveData = useJtvHmisGuangzhoubeiApiSet();
-  const insertBarcode = useJtvHmisGuangzhoubeiSqliteInsert();
-  const { data: hmis } = useQuery(fetchJtvHmisGuangzhoubeiSetting());
-  const barcode = useQuery(fetchJtvHmisGuangzhoubeiSqliteGet(params));
+  const getData = useFetchGuangzhoubeiRecord();
+  const insertBarcode = useInsertGuangzhoubeiRecord();
+  const barcode = useQuery(fetchGuangzhoubeiRecord(params));
+  const isAutoInput = useGuangzhoubei((store) => store.autoInput);
+
+  const form = useForm({
+    defaultValues: {
+      barCode: "",
+    },
+    validators: {
+      onChange: schema,
+    },
+    onSubmit: async ({ value }) => {
+      const data = await getData.mutateAsync(
+        { barcode: value.barCode, isZhMode: zhMode },
+        {
+          onError: (error) => {
+            snackbar.show(error.message, {
+              severity: "error",
+            });
+          },
+          onSuccess: () => {
+            form.reset();
+          },
+        },
+      );
+
+      useSessionStore.setState((draft) => {
+        draft.selectOptions = data;
+      });
+
+      const isSingleElement = Object.is(data.length, 1);
+      if (!isSingleElement) return;
+
+      const record = data.at(0)!;
+      if (!record) return;
+
+      await handleRowSelect(record);
+    },
+  });
 
   useSubscribe("api_set", () => {
     barcode.refetch();
   });
 
   const sendDataItemToWindow = async (dataItem: NormalizeResponse) => {
-    if (!hmis) return;
-    if (!hmis.autoInput) return;
+    if (!isAutoInput) return;
 
     await autoInput.mutateAsync(
       {
@@ -506,9 +527,7 @@ export const Component = () => {
       },
       {
         onError(error) {
-          snackbar.show(error.message, {
-            severity: "error",
-          });
+          snackbar.show(error.message, { severity: "error" });
         },
       },
     );
@@ -580,89 +599,67 @@ export const Component = () => {
                   id={formId}
                   noValidate
                   autoComplete="off"
-                  onSubmit={form.handleSubmit(async (values) => {
-                    if (saveData.isPending) return;
-
-                    form.reset();
-
-                    const data = await getData.mutateAsync(
-                      { barcode: values.barCode, isZhMode: zhMode },
-                      {
-                        onError: (error) => {
-                          snackbar.show(error.message, {
-                            severity: "error",
-                          });
-                        },
-                      },
-                    );
-
-                    useSessionStore.setState((draft) => {
-                      draft.selectOptions = data;
-                    });
-
-                    const isSingleElement = Object.is(data.length, 1);
-                    if (!isSingleElement) return;
-
-                    const record = data.at(0)!;
-                    if (!record) return;
-
-                    await handleRowSelect(record);
-                  }, console.warn)}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    form.handleSubmit();
+                  }}
                   onReset={() => form.reset()}
                 >
-                  <Controller
-                    control={form.control}
-                    name="barCode"
-                    render={({ field, fieldState }) => (
-                      <TextField
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e);
+                  <form.Field name="barCode">
+                    {(field) => {
+                      return (
+                        <TextField
+                          value={field.state.value}
+                          onChange={(e) => {
+                            field.handleChange(e.target.value);
 
-                          if (zhMode) return;
-                          clearTimeout(debounceRef.current);
-                          debounceRef.current = setTimeout(() => {
-                            formRef.current?.requestSubmit();
-                          }, 1000 * 1);
-                        }}
-                        inputRef={inputRef}
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
-                        fullWidth
-                        slotProps={{
-                          input: {
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <Button
-                                  form={formId}
-                                  type="submit"
-                                  endIcon={
-                                    getData.isPending ? (
-                                      <CircularProgress
-                                        size={16}
-                                        color="inherit"
-                                      />
-                                    ) : (
-                                      <KeyboardReturnOutlined />
-                                    )
-                                  }
-                                  variant="contained"
-                                  disabled={getData.isPending}
-                                >
-                                  录入
-                                </Button>
-                              </InputAdornment>
-                            ),
-                            autoFocus: true,
-                          },
-                        }}
-                        label={zhMode ? "轴号" : "条形码/二维码"}
-                        placeholder={
-                          zhMode ? "请输入轴号" : "请扫描条形码或二维码"
-                        }
-                      />
-                    )}
-                  />
+                            if (zhMode) return;
+                            clearTimeout(debounceRef.current);
+                            debounceRef.current = setTimeout(() => {
+                              formRef.current?.requestSubmit();
+                            }, 1000 * 1);
+                          }}
+                          onBlur={field.handleBlur}
+                          error={!!field.state.meta.errors.length}
+                          helperText={field.state.meta.errors[0]?.message}
+                          name={field.name}
+                          inputRef={inputRef}
+                          fullWidth
+                          slotProps={{
+                            input: {
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <Button
+                                    form={formId}
+                                    type="submit"
+                                    endIcon={
+                                      getData.isPending ? (
+                                        <CircularProgress
+                                          size={16}
+                                          color="inherit"
+                                        />
+                                      ) : (
+                                        <KeyboardReturnOutlined />
+                                      )
+                                    }
+                                    variant="contained"
+                                    disabled={getData.isPending}
+                                  >
+                                    录入
+                                  </Button>
+                                </InputAdornment>
+                              ),
+                              autoFocus: true,
+                            },
+                          }}
+                          label={zhMode ? "轴号" : "条形码/二维码"}
+                          placeholder={
+                            zhMode ? "请输入轴号" : "请扫描条形码或二维码"
+                          }
+                        />
+                      );
+                    }}
+                  </form.Field>
                 </form>
               </Grid>
             </Grid>
