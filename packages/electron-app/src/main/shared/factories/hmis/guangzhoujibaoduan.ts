@@ -237,7 +237,10 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
 
   resolveFetchURL(dh: string) {
     const store = this.getStore();
-    const url = new URL(`http://${store.get_ip}:${store.get_port}/api/getData`);
+    const url = new URL(
+      "/api/getData",
+      `http://${store.get_ip}:${store.get_port}`,
+    );
 
     url.searchParams.set("param", [dh, store.unitCode].join(","));
 
@@ -384,7 +387,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     const store = this.getStore();
     const body = JSON.stringify(request);
     const url = new URL(
-      "/pmss/example.do",
+      "/api/saveData",
       `http://${store.post_ip}:${store.post_port}`,
     );
 
