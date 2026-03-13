@@ -207,6 +207,13 @@ const bindIpcHandles = () => {
 };
 
 const bootstrap = async () => {
+  if (import.meta.env.DEV) {
+    app.setPath(
+      "userData",
+      path.resolve(app.getPath("appData"), `./${app.getName()}-dev`),
+    );
+  }
+
   /**
    * @description true: No other instances exist
    * @description false: Other instances exist
@@ -219,13 +226,6 @@ const bootstrap = async () => {
 
     app.quit();
     return;
-  }
-
-  if (import.meta.env.DEV) {
-    app.setPath(
-      "userData",
-      path.resolve(app.getPath("appData"), `./${app.getName()}-dev`),
-    );
   }
 
   /**
