@@ -8,13 +8,29 @@ import * as z from "zod";
 import { zhCN } from "zod/locales";
 import { App } from "./App";
 
-dayjs.locale("zh");
-enableMapSet();
-z.config(zhCN());
-pdf.prepareModule();
+const main = async () => {
+  dayjs.locale("zh");
+  enableMapSet();
+  z.config(zhCN());
+  pdf.prepareModule();
 
-createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+  const container = document.getElementById("root");
+
+  if (!container) {
+    throw new Error("Root container not found");
+  }
+
+  const root = createRoot(container);
+
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+
+  return root;
+};
+
+void main().catch((error) => {
+  console.error("Error in main:", error);
+});

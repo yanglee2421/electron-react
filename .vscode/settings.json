@@ -1,15 +1,29 @@
 {
   "editor.codeActionsOnSave": {
-    "source.organizeImports": "explicit"
+    "source.organizeImports": "explicit",
     // "source.fixAll": "explicit",
+    "source.fixAll.oxc": "explicit",
   },
   "editor.fontSize": 20,
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
   "editor.linkedEditing": true,
+
+  // Git
   "git.confirmSync": false,
   "git.enableSmartCommit": true,
   "git.autofetch": true,
+
+  // Others
   "workbench.iconTheme": "vscode-icons",
 
-  "js/ts.experimental.useTsgo": true
+  // Language specific settings
+  "js/ts.experimental.useTsgo": true,
+  "[jsonc]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+  },
 }
