@@ -1,10 +1,16 @@
-import type { VerifyData } from "#main/modules/cmd";
+import type { VerifyData } from "#main/modules/mdb";
 import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
 import { Loading } from "#renderer/components/Loading";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import {
+  calculateDirection,
+  calculatePlace,
+} from "#shared/functions/flawDetection";
 import {
   Alert,
   AlertTitle,
   Card,
+  CardActionArea,
   CardContent,
   CardHeader,
   Divider,
@@ -20,10 +26,8 @@ import {
   TableRow,
   TextField,
   Typography,
-  CardActionArea,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
 import {
   createColumnHelper,
   flexRender,
@@ -32,50 +36,17 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React from "react";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-
-const getDirection = (nBoard: number) => {
-  //board(板卡)：0.左 1.右
-  switch (nBoard) {
-    case 1:
-      return "右";
-    case 0:
-      return "左";
-    default:
-      return "";
-  }
-};
-
-const getPlace = (nChannel: number) => {
-  switch (nChannel) {
-    case 0:
-      return "穿透";
-    case 1:
-    case 2:
-      return "卸荷槽";
-    case 3:
-      return "外";
-    case 4:
-      return "内";
-    case 5:
-    case 6:
-    case 7:
-    case 8:
-      return "轮座";
-    default:
-      return "车轴";
-  }
-};
+import { useParams } from "react-router";
 
 const columnHelper = createColumnHelper<VerifyData>();
 const columns = [
   columnHelper.accessor("nBoard", {
-    cell: ({ getValue }) => getDirection(getValue()),
+    cell: ({ getValue }) => calculateDirection(getValue()),
     header: "方向",
     footer: "方向",
   }),
   columnHelper.accessor("nChannel", {
-    cell: ({ getValue }) => getPlace(getValue()),
+    cell: ({ getValue }) => calculatePlace(getValue()),
     header: "位置",
     footer: "位置",
   }),
@@ -121,8 +92,8 @@ export const Component = () => {
     const rows = query.data?.rows || [];
     return rows.filter(
       (row) =>
-        check(getDirection(row.nBoard), direction) &&
-        check(getPlace(row.nChannel), place),
+        check(calculateDirection(row.nBoard), direction) &&
+        check(calculatePlace(row.nChannel), place),
     );
   }, [query.data, direction, place]);
 
@@ -135,8 +106,8 @@ export const Component = () => {
   });
 
   const map = (query.data?.rows || []).reduce((result, row) => {
-    const direction = getDirection(row.nBoard);
-    const place = getPlace(row.nChannel);
+    const direction = calculateDirection(row.nBoard);
+    const place = calculatePlace(row.nChannel);
     const key = direction + place;
     const prev = result.get(key) || new Set();
     result.set(key, prev.add(row));

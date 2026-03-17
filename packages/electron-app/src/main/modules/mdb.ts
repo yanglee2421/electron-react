@@ -4,7 +4,33 @@ import dayjs from "dayjs";
 import type { MDBWorkerData } from "./mdb.worker";
 import createMDBWorker from "./mdb.worker?nodeWorker";
 
-export type Detection = {
+interface Detecotor {
+  id: number;
+  nwheel: number;
+  nAttenuation: number;
+  nSAttenuation: number;
+  nRange: number;
+  nPulse: number;
+  nRes0: number;
+  nRes1: number;
+  nRes2: number;
+  nDelay: number;
+  nZSize: number;
+  nWAngle: number;
+  nManualDB: number;
+  nDBSub: number;
+  dblDistance: number;
+  nBoard: number;
+  nChannel: number;
+  nTGBoard: number;
+  nTGCChannel: number;
+
+  guid: string;
+  szName: string;
+  szwheel: string;
+}
+
+export interface Detection {
   bFlaws: boolean | null;
   bSickLD: boolean | null;
   bSickRD: boolean | null;
@@ -36,9 +62,9 @@ export type Detection = {
    */
   szWHModel: string | null;
   tmnow: string | null;
-};
+}
 
-export type DetectionData = {
+export interface DetectionData {
   ManualRes: string | null;
   bEnable: boolean;
   fltValueUS: number;
@@ -54,9 +80,9 @@ export type DetectionData = {
   nFWOut: number;
   nTAIndex: number;
   opid: string | null;
-};
+}
 
-export type Verify = {
+export interface Verify {
   bFlaws: boolean;
   bSickLD: boolean;
   bSickRD: boolean;
@@ -76,9 +102,9 @@ export type Verify = {
   szUsername: string | null;
   szWHModel: string | null;
   tmNow: string | null;
-};
+}
 
-export type VerifyData = {
+export interface VerifyData {
   ManualRes: string | null;
   bEnable: boolean;
   fltValueUS: number;
@@ -94,9 +120,9 @@ export type VerifyData = {
   nFWOut: number;
   nTAIndex: number;
   opid: string | null;
-};
+}
 
-export type Quartor = {
+export interface Quartor {
   szIDs: string;
   szIDsWheel: string | null;
   szWHModel: string | null;
@@ -121,9 +147,9 @@ export type Quartor = {
   bHeGe: boolean | null;
   startTime: string | null;
   endTime: string | null;
-};
+}
 
-export type QuartorData = {
+export interface QuartorData {
   opid: string | null;
   nBoard: number;
   nChannel: number;
@@ -139,26 +165,31 @@ export type QuartorData = {
   fltValueUSH: number;
   bEnable: boolean;
   ManualRes: string | null;
-};
+}
 
-export type Corporation = {
+export interface Corporation {
   DeviceNO: string | null;
-};
+  DeviceName: string | null;
+  DeviceType: string | null;
+  Factory: string | null;
+  Workshop: string | null;
+  TBType: string | null;
+}
 
-type GetDetectionForJTVParams = {
+interface GetDetectionForJTVParams {
   zh: string;
   startDate: string;
   endDate: string;
   CZZZDW: string;
   CZZZRQ: string;
-};
+}
 
 export type MDBPayload = Omit<MDBWorkerData, "databasePath">;
 
 export class MDBDB {
-  #profile: Profile;
+  private profile: Profile;
   constructor(profile: Profile) {
-    this.#profile = profile;
+    this.profile = profile;
   }
 
   getDataByWorker<TRow>(payload: MDBWorkerData) {
@@ -171,16 +202,16 @@ export class MDBDB {
       });
       worker.once("message", (data) => {
         resolve(data);
-        worker.terminate();
+        void worker.terminate();
       });
       worker.once("error", (error) => {
         reject(error);
-        worker.terminate();
+        void worker.terminate();
       });
     });
   }
   async getDataFromAppDB<TRow>(data: MDBPayload) {
-    const databasePath = await this.#profile.getAppDBPath();
+    const databasePath = this.profile.getAppDBPath();
 
     return this.getDataByWorker<TRow>({
       ...data,
@@ -188,7 +219,7 @@ export class MDBDB {
     });
   }
   async getDataFromRootDB<TRow>(data: MDBPayload) {
-    const databasePath = await this.#profile.getRootDBPath();
+    const databasePath = await this.profile.getRootDBPath();
 
     return this.getDataByWorker<TRow>({
       ...data,
@@ -293,6 +324,38 @@ export class MDBDB {
     }
 
     return corporation;
+  }
+  async getDetector(nChannel: number, nBoard: number, szwheel: string) {
+    const data = await this.getDataFromAppDB<Detecotor>({
+      tableName: "detectors",
+      filters: [
+        {
+          type: "equal",
+          field: "nChannel",
+          value: nChannel,
+        },
+        {
+          type: "equal",
+          field: "nBoard",
+          value: nBoard,
+        },
+        {
+          type: "equal",
+          field: "szwheel",
+          value: szwheel,
+        },
+      ],
+    });
+
+    const [record] = data.rows;
+
+    if (!record) {
+      throw new Error(
+        `未找到探头[nBoard=${nBoard}, nChannel=${nChannel}, szwheel=${szwheel}]的记录`,
+      );
+    }
+
+    return record;
   }
 
   bindIpcHandlers() {

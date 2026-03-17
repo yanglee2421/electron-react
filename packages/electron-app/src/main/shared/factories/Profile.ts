@@ -18,7 +18,7 @@ export class Profile {
 
     this.kv.on((key) => {
       if (key === PROFILE_STORAGE_KEY) {
-        this.hydrate();
+        void this.hydrate();
       }
     });
   }
@@ -55,7 +55,7 @@ export class Profile {
 
     return path.resolve(rootPath, "local.mdb");
   }
-  async getAppDBPath() {
+  getAppDBPath() {
     const state = this.getState();
     const appPath = state.appPath;
 
