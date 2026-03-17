@@ -3,6 +3,7 @@ import { useProfileStore } from "#renderer/shared/hooks/ui/useProfileStore";
 import {
   CalendarMonthOutlined,
   CalendarTodayOutlined,
+  CalendarViewMonthOutlined,
   ChatOutlined,
   CodeOutlined,
   DarkModeOutlined,
@@ -54,6 +55,9 @@ const createSegmentAlias = () => {
     ["jtv_guangzhoujibaoduan", "京天威(广州机保段)"],
     ["kh", "康华"],
     ["verifies", "日常校验"],
+    ["verify", "日常校验"],
+    ["quartor", "季度校验"],
+    ["annual", "年度校验"],
     ["setting", "设置"],
     ["detection", "现车作业"],
     ["verify", "日常校验"],
@@ -220,6 +224,21 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
           segment: calculateSegment("kh"),
           title: "HMIS",
           icon: <QrCodeScannerOutlined />,
+        },
+        {
+          segment: calculateSegment("kh", "verify"),
+          title: "日常校验",
+          icon: <CalendarTodayOutlined />,
+        },
+        {
+          segment: calculateSegment("kh", "quartor"),
+          title: "季度校验",
+          icon: <CalendarMonthOutlined />,
+        },
+        {
+          segment: calculateSegment("kh", "annual"),
+          title: "年度校验",
+          icon: <CalendarViewMonthOutlined />,
         },
         {
           segment: calculateSegment("kh", "setting"),
