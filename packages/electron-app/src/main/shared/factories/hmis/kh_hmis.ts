@@ -986,6 +986,7 @@ export class KH extends HMIS<KH_HMIS> {
   async verifyToCHR501InputParams(
     record: VerifyWithData,
   ): Promise<CHR501InputParams> {
+    const store = this.getStore();
     const corporation = await this.mdb.getCorporation();
     const data = await this.resolveFlawData(record);
 
@@ -1170,11 +1171,11 @@ export class KH extends HMIS<KH_HMIS> {
       yct_ts: rightCTData[0].ts,
       yct_qx: rightCTData[0].flaw.fltValueX.toString(),
       czz: record.szUsername || "",
-      gz: "李四",
-      wxg: "刘飞",
-      zjy: "王五",
-      ysy: "赵六",
-      bz: "备注",
+      gz: store.tsgz,
+      wxg: store.tswxg,
+      zjy: store.tszjy,
+      ysy: store.tsysy,
+      bz: "",
     };
   }
 
@@ -1200,15 +1201,15 @@ export class KH extends HMIS<KH_HMIS> {
 }
 
 export const bindIpcHandlers = (hmis: KH, ipcHandle: IpcHandle) => {
-  (ipcHandle("HMIS/kh_hmis_sqlite_get", (_, params) =>
-    hmis.handleReadRecord(params),
-  ),
-    ipcHandle("HMIS/kh_hmis_sqlite_delete", (_, id) =>
-      hmis.handleDeleteRecord(id),
-    ));
-  ipcHandle("HMIS/kh_hmis_sqlite_insert", (_, params) =>
-    hmis.handleInsertRecord(params),
-  );
+  ipcHandle("HMIS/kh_hmis_sqlite_get", (_, params) => {
+    return hmis.handleReadRecord(params);
+  });
+  ipcHandle("HMIS/kh_hmis_sqlite_delete", (_, id) => {
+    return hmis.handleDeleteRecord(id);
+  });
+  ipcHandle("HMIS/kh_hmis_sqlite_insert", (_, params) => {
+    return hmis.handleInsertRecord(params);
+  });
   ipcHandle("HMIS/kh_hmis_api_get", (_, barcode) => hmis.handleFetch(barcode));
   ipcHandle("HMIS/kh_hmis_api_set", (_, id) => hmis.handleUpload(id));
 };

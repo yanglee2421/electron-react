@@ -22,7 +22,7 @@ export abstract class HMIS<TStore> {
 
     this.kv.on((key) => {
       if (key === this.storageKey) {
-        this.hydrate();
+        void this.hydrate();
       }
     });
   }

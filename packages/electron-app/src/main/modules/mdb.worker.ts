@@ -1,43 +1,43 @@
-import * as fs from "node:fs";
-import * as workerThreads from "node:worker_threads";
-import MDBReader from "mdb-reader";
 import dayjs from "dayjs";
+import MDBReader from "mdb-reader";
+import fs from "node:fs";
+import workerThreads from "node:worker_threads";
 
 export type Filter = LikeFilter | DateFilter | InFilter | EqualFilter;
 
-type LikeFilter = {
+interface LikeFilter {
   type: "like";
   field: string;
   value: string;
-};
+}
 
-type DateFilter = {
+interface DateFilter {
   type: "date";
   field: string;
   startAt: string;
   endAt: string;
-};
+}
 
-type InFilter = {
+interface InFilter {
   type: "in";
   field: string;
   value: string[];
-};
+}
 
-type EqualFilter = {
+interface EqualFilter {
   type: "equal";
   field: string;
   value: string | number | boolean;
-};
+}
 
-export type MDBWorkerData = {
+export interface MDBWorkerData {
   databasePath: string;
   tableName: string;
   pageIndex?: number;
   pageSize?: number;
   filters?: Filter[];
   with?: boolean;
-};
+}
 
 const likeFn = (row: NonNullable<unknown>, filter: LikeFilter) => {
   const fieldValue = Reflect.get(row, filter.field);
@@ -113,20 +113,15 @@ const fixMDBDate = (value: Date) => {
   return dayjs(value).add(value.getTimezoneOffset(), "minute").toDate();
 };
 
-const bootstrap = async () => {
-  const workerData: MDBWorkerData = workerThreads.workerData;
-  const tableName = workerData.tableName;
-  const databasePath = workerData.databasePath;
-  const pageIndex = workerData.pageIndex || 0;
-  const pageSize = workerData.pageSize;
+export const getDataFromMDB = async (data: MDBWorkerData) => {
+  const { databasePath, tableName, filters, pageSize, pageIndex = 0 } = data;
   const buf = await fs.promises.readFile(databasePath);
   const mdbReader = new MDBReader(buf, { password: "Joney" });
-  const allRows = getDataFromTable(mdbReader, tableName, workerData.filters);
+  const allRows = getDataFromTable(mdbReader, tableName, filters);
   const total = allRows.length;
 
   if (!pageSize) {
-    workerThreads.parentPort?.postMessage({ total, rows: allRows.reverse() });
-    return;
+    return { total, rows: allRows.reverse() };
   }
 
   const rowOffset = pageIndex * pageSize;
@@ -144,9 +139,8 @@ const bootstrap = async () => {
       return Object.fromEntries(keyValuePair);
     });
 
-  if (!workerData.with) {
-    workerThreads.parentPort?.postMessage({ total, rows });
-    return;
+  if (!data.with) {
+    return { total, rows };
   }
 
   const rowIds = rows
@@ -161,13 +155,14 @@ const bootstrap = async () => {
     },
   ]);
 
-  workerThreads.parentPort?.postMessage({
-    total,
-    rows: rows.map((row) => ({
-      ...row,
-      with: withData.filter((data) => data.opid === Reflect.get(row, "opid")),
-    })),
-  });
+  return { total, rows, with: withData };
 };
 
-bootstrap();
+export default getDataFromMDB;
+
+export const bootstrap = async () => {
+  const data: MDBWorkerData = workerThreads.workerData;
+  const result = await getDataFromMDB(data);
+
+  workerThreads.parentPort?.postMessage(result);
+};

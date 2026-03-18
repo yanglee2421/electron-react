@@ -33,6 +33,7 @@ export const Component = () => {
   const tsgz = useKhHmisStore((store) => store.tsgz);
   const tszjy = useKhHmisStore((store) => store.tszjy);
   const tsysy = useKhHmisStore((store) => store.tsysy);
+  const tswxg = useKhHmisStore((store) => store.tswxg);
 
   const form = useForm({
     defaultValues: {
@@ -44,6 +45,7 @@ export const Component = () => {
       tsgz,
       tszjy,
       tsysy,
+      tswxg,
     },
     validators: {
       onChange: kh_hmis.required(),
@@ -77,9 +79,8 @@ export const Component = () => {
         >
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field
-                name="ip"
-                children={(field) => (
+              <form.Field name="ip">
+                {(field) => (
                   <TextField
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
@@ -90,7 +91,7 @@ export const Component = () => {
                     fullWidth
                   />
                 )}
-              />
+              </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <form.Field name="port">
@@ -110,9 +111,8 @@ export const Component = () => {
               </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field
-                name="tsgz"
-                children={(field) => (
+              <form.Field name="tsgz">
+                {(field) => (
                   <TextField
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
@@ -123,12 +123,11 @@ export const Component = () => {
                     fullWidth
                   />
                 )}
-              />
+              </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field
-                name="tszjy"
-                children={(field) => (
+              <form.Field name="tszjy">
+                {(field) => (
                   <TextField
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
@@ -139,7 +138,7 @@ export const Component = () => {
                     fullWidth
                   />
                 )}
-              />
+              </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <form.Field name="tsysy">
@@ -158,9 +157,8 @@ export const Component = () => {
             </Grid>
             <Grid size={{ xs: 12 }}>
               <FormGroup row>
-                <form.Field
-                  name="autoInput"
-                  children={(field) => (
+                <form.Field name="autoInput">
+                  {(field) => (
                     <FormControlLabel
                       control={
                         <Checkbox
@@ -171,10 +169,9 @@ export const Component = () => {
                       label="自动录入"
                     />
                   )}
-                />
-                <form.Field
-                  name="autoUpload"
-                  children={(field) => (
+                </form.Field>
+                <form.Field name="autoUpload">
+                  {(field) => (
                     <FormControlLabel
                       control={
                         <Checkbox
@@ -185,7 +182,7 @@ export const Component = () => {
                       label="自动上传"
                     />
                   )}
-                />
+                </form.Field>
               </FormGroup>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>

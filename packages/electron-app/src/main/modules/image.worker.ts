@@ -1,10 +1,13 @@
-import * as fs from "node:fs";
-import * as crypto from "node:crypto";
-import * as workerThreads from "node:worker_threads";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import workerThreads from "node:worker_threads";
+import pLimit from "p-limit";
 
 const computeMD5 = (filePath: string) => {
   const hash = crypto.createHash("md5");
   const stream = fs.createReadStream(filePath);
+
   return new Promise<string>((resolve, reject) => {
     stream.on("error", reject);
     stream.on("data", (chunk) => {
@@ -16,22 +19,32 @@ const computeMD5 = (filePath: string) => {
   });
 };
 
-type WrokerData = {
+interface WrokerData {
   files: string[];
-};
+}
 
-const bootstrap = async () => {
-  const { files }: WrokerData = workerThreads.workerData;
+export const resolveFiles = async (workerData: WrokerData) => {
+  const { files }: WrokerData = workerData;
   const md5ToFile = new Map<string, string>();
+  const limit = pLimit(os.cpus().length);
 
-  for (const file of files) {
-    const md5 = await computeMD5(file);
-    md5ToFile.set(md5, file);
-  }
-
-  workerThreads.parentPort?.postMessage(
-    Object.fromEntries(md5ToFile.entries()),
+  await Promise.all(
+    files.map((file) => {
+      return limit(async () => {
+        const md5 = await computeMD5(file);
+        md5ToFile.set(md5, file);
+      });
+    }),
   );
+
+  return Object.fromEntries(md5ToFile.entries());
 };
 
-bootstrap();
+export default resolveFiles;
+
+export const bootstrap = async () => {
+  const data: WrokerData = workerThreads.workerData;
+  const result = await resolveFiles(data);
+
+  workerThreads.parentPort?.postMessage(result);
+};

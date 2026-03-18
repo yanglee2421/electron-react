@@ -1,8 +1,10 @@
 import { ipcHandle } from "#main/lib/ipc";
 import type { Profile } from "#main/shared/factories/Profile";
 import dayjs from "dayjs";
+import os from "node:os";
+import { Piscina } from "piscina";
 import type { MDBWorkerData } from "./mdb.worker";
-import createMDBWorker from "./mdb.worker?nodeWorker";
+import workerPath from "./mdb.worker?modulePath";
 
 interface Detecotor {
   id: number;
@@ -188,27 +190,39 @@ export type MDBPayload = Omit<MDBWorkerData, "databasePath">;
 
 export class MDBDB {
   private profile: Profile;
+  private piscina: Piscina;
+
   constructor(profile: Profile) {
     this.profile = profile;
+    this.piscina = new Piscina({
+      filename: workerPath,
+      minThreads: 1,
+      maxThreads: os.cpus().length,
+    });
   }
 
-  getDataByWorker<TRow>(payload: MDBWorkerData) {
-    return new Promise<{
-      total: number;
-      rows: TRow[];
-    }>((resolve, reject) => {
-      const worker = createMDBWorker({
-        workerData: payload,
-      });
-      worker.once("message", (data) => {
-        resolve(data);
-        void worker.terminate();
-      });
-      worker.once("error", (error) => {
-        reject(error);
-        void worker.terminate();
-      });
-    });
+  getDataByWorker<TRow>(payload: MDBWorkerData): Promise<{
+    total: number;
+    rows: TRow[];
+  }> {
+    // return new Promise<{
+    //   total: number;
+    //   rows: TRow[];
+    // }>((resolve, reject) => {
+    //   const worker = createMDBWorker({
+    //     workerData: payload,
+    //   });
+    //   worker.once("message", (data) => {
+    //     resolve(data);
+    //     void worker.terminate();
+    //   });
+    //   worker.once("error", (error) => {
+    //     reject(error);
+    //     void worker.terminate();
+    //   });
+    // });
+
+    return this.piscina.run(payload);
   }
   async getDataFromAppDB<TRow>(data: MDBPayload) {
     const databasePath = this.profile.getAppDBPath();
