@@ -67,7 +67,7 @@ const createWindow = async (alwaysOnTop: boolean) => {
     win.webContents.send("windowShow");
   });
   win.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
+    void shell.openExternal(details.url);
     return { action: "deny" };
   });
 
@@ -108,7 +108,7 @@ const bindAppEventListeners = (profile: Profile) => {
   // dock icon is clicked and there are no other windows open.
   app.on("activate", async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow(profile.getState().alwaysOnTop);
+      void createWindow(profile.getState().alwaysOnTop);
     }
   });
 
@@ -206,6 +206,14 @@ const bindIpcHandles = () => {
   );
 };
 
+interface HydratableModule {
+  hydrate: () => Promise<void>;
+}
+
+const hydrateModules = async (...modules: HydratableModule[]) => {
+  await Promise.allSettled(modules.map((module) => module.hydrate()));
+};
+
 const bootstrap = async () => {
   if (import.meta.env.DEV) {
     app.setPath(
@@ -268,15 +276,13 @@ const bootstrap = async () => {
       net,
     );
 
-  await Promise.allSettled([
-    profile.hydrate(),
-    jtv_hmis_guangzhoujibaoduan.hydrate(),
-    hxzyHmis.hydrate(),
-    khHmis.hydrate(),
-    jtvHmis.hydrate(),
-    guangzhoubeiHmis.hydrate(),
-    xuzhoubeiHmis.hydrate(),
-  ]);
+  await hydrateModules(
+    profile,
+    jtv_hmis_guangzhoujibaoduan,
+    hxzyHmis,
+    khHmis,
+    jtvHmis,
+  );
 
   nativeTheme.themeSource = profile.getState().mode;
 
@@ -306,7 +312,7 @@ const bootstrap = async () => {
   await createWindow(profile.getState().alwaysOnTop);
 };
 
-bootstrap();
+void bootstrap();
 
 const diffMode = (prev: ThemeMode, next: ThemeMode) => {
   if (Object.is(prev, next)) return;
