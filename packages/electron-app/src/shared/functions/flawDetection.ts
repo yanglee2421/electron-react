@@ -118,3 +118,63 @@ export const calculateZSJ = (nWAngle: number) => {
     .divide(mathjs.bignumber(nWAngle), mathjs.bignumber(10))
     .toString();
 };
+
+interface LzFlaw {
+  fltValueX: number;
+}
+
+export const resolveLzFlaws = <TFlaw extends LzFlaw>(flaws: TFlaw[]) => {
+  return flaws
+    .sort((a, b) => a.fltValueX - b.fltValueX)
+    .reduce<TFlaw[]>((result, b) => {
+      const lastX = result.at(-1)?.fltValueX || 0;
+      const diff = b.fltValueX - lastX;
+
+      if (diff > 10) {
+        return [...result, b];
+      }
+
+      return result;
+    }, []);
+};
+
+interface Flaw {
+  nAtten: number;
+}
+
+export const calculateNAtten = (flaw: Flaw) => {
+  return mathjs
+    .divide(mathjs.bignumber(flaw.nAtten), mathjs.bignumber(10))
+    .toString();
+};
+
+export const calculateNAttenDiff = (...flaws: Flaw[]) => {
+  const minAtten = mathjs.min(
+    ...flaws.map((flaw) => mathjs.bignumber(flaw.nAtten)),
+  );
+  const maxAtten = mathjs.max(
+    ...flaws.map((flaw) => mathjs.bignumber(flaw.nAtten)),
+  );
+
+  return mathjs
+    .divide(mathjs.subtract(maxAtten, minAtten), mathjs.bignumber(10))
+    .toString();
+};
+
+export const resolveQuartorResult = (...flaws: Flaw[]) => {
+  const minAtten = mathjs.min(
+    ...flaws.map((flaw) => mathjs.bignumber(flaw.nAtten)),
+  );
+  const maxAtten = mathjs.max(
+    ...flaws.map((flaw) => mathjs.bignumber(flaw.nAtten)),
+  );
+  const diff = mathjs.subtract(maxAtten, minAtten);
+
+  const result = mathjs.smallerEq(diff, mathjs.bignumber(6));
+
+  if (typeof result === "boolean") {
+    return result ? "合格" : "不合格";
+  }
+
+  return "不合格";
+};

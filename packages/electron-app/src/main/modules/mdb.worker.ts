@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import MDBReader from "mdb-reader";
 import fs from "node:fs";
 import workerThreads from "node:worker_threads";
+import type { Quartor } from "./mdb";
 
 export type Filter = LikeFilter | DateFilter | InFilter | EqualFilter;
 
@@ -165,4 +166,73 @@ export const bootstrap = async () => {
   const result = await getDataFromMDB(data);
 
   workerThreads.parentPort?.postMessage(result);
+};
+
+interface HandleCHR502Params {
+  databasePath: string;
+  ids: string[];
+}
+
+export const handleCHR502 = async (params: HandleCHR502Params) => {
+  const quartors = await getDataFromMDB({
+    databasePath: params.databasePath,
+    tableName: "quartors",
+  });
+
+  const rows = quartors.rows as unknown as Quartor[];
+  const flaws = await getDataFromMDB({
+    databasePath: params.databasePath,
+    tableName: "quartors_data",
+  });
+
+  const sortedRows = rows.sort((a, b) => {
+    const aTmNow = a.tmnow;
+    if (!aTmNow) return 0;
+    const bTmNow = b.tmnow;
+    if (!bTmNow) return 0;
+
+    return new Date(aTmNow).getTime() - new Date(bTmNow).getTime();
+  });
+
+  const selectedRows = sortedRows
+    .filter((row) => {
+      return params.ids.includes(row.szIDs);
+    })
+    .map((row) => {
+      return {
+        ...row,
+        with: flaws.rows.filter((flaw) => {
+          return flaw.opid === row.szIDs;
+        }),
+      };
+    });
+
+  // selectedRows is already sorted by tmnow because sortedRows is sorted.
+  const firstSelectedRow = selectedRows.at(0);
+
+  if (!firstSelectedRow) {
+    return {
+      previous: null,
+      rows: selectedRows,
+    };
+  }
+
+  const firstSelectedRowIndex = sortedRows.findIndex(
+    (row) => row.szIDs === firstSelectedRow.szIDs,
+  );
+  const previouseInFirstSelectedRowIndex = firstSelectedRowIndex - 1;
+  if (previouseInFirstSelectedRowIndex < 0) {
+    return {
+      previous: null,
+      rows: selectedRows,
+    };
+  }
+  const previousInFirstSelectedRow = sortedRows.at(
+    previouseInFirstSelectedRowIndex,
+  );
+
+  return {
+    previous: previousInFirstSelectedRow || null,
+    rows: selectedRows,
+  };
 };

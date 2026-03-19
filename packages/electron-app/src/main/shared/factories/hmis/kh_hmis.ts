@@ -1,19 +1,27 @@
 // 康华 安康
-
 import type { SQLiteDBType } from "#main/db";
 import * as schema from "#main/db/schema";
 import { createEmit } from "#main/lib";
-import {
-  log,
-  type InsertRecordParams,
-  type IpcHandle,
-  type SQLiteGetParams,
+import type {
+  InsertRecordParams,
+  IpcHandle,
+  SQLiteGetParams,
 } from "#main/lib/ipc";
-import type { MDBDB, Verify, VerifyData } from "#main/modules/mdb";
-import { HMIS, type Net } from "#main/shared/factories/hmis/hmis";
+import { log } from "#main/lib/ipc";
+import type {
+  MDBDB,
+  Quartor,
+  QuartorData,
+  Verify,
+  VerifyData,
+} from "#main/modules/mdb";
+import type { Net } from "#main/shared/factories/hmis/hmis";
+import { HMIS } from "#main/shared/factories/hmis/hmis";
 import type { KV } from "#main/shared/factories/KV";
 import {
   calculateJY,
+  calculateNAtten,
+  calculateNAttenDiff,
   calculateTS,
   calculateZSJ,
   isCTFlaw,
@@ -21,9 +29,13 @@ import {
   isLZFlaw,
   isRightFlaw,
   isXHCFlaw,
+  resolveLzFlaws,
+  resolveQuartorResult,
 } from "#shared/functions/flawDetection";
 import { KH_HMIS_STORAGE_KEY } from "#shared/instances/constants";
-import { kh_hmis, type KH_HMIS } from "#shared/instances/schema";
+import type { KH_HMIS } from "#shared/instances/schema";
+import { kh_hmis } from "#shared/instances/schema";
+import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
@@ -193,227 +205,1488 @@ interface CHR501InputParams {
 }
 
 interface CHR502InputParams {
+  /**
+   * 写入时间
+   * 数据库类型: DATE
+   * 是否允许为空: 否
+   */
+  xrsj: string;
+
+  /**
+   * 设备编号
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 否
+   */
   sbbh: string;
+
+  /**
+   * 设备名称
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 否
+   */
   sbmc: string;
+
+  /**
+   * 单位名称
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 否
+   */
   dwmc: string;
+
+  /**
+   * 制造时间
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   zzsj: string;
+
+  /**
+   * 制造单位
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   zzdw: string;
-  scjsj: string;
+
+  /**
+   * 上次检修时间
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  scjxsj: string;
+
+  /**
+   * 校验日期
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 否
+   */
   jyrq: string;
-  zjgb: string;
-  zjgb_1: string;
-  zjgb_2: string;
-  zjgb_3: string;
-  zjgb_4: string;
-  zjgb_5: string;
-  zjgb_6: string;
-  zjgb_7: string;
-  zjgb_8: string;
-  zjgb_9: string;
-  zjgb_10: string;
-  zjgb_11: string;
-  zjgb_12: string;
-  zjgb_13: string;
-  zjgb_14: string;
-  zjgb_15: string;
-  zjgb_16: string;
-  zjgb_17: string;
-  zjgb_18: string;
-  zjgb_19: string;
-  zjgb_20: string;
-  zjgb_21: string;
-  zjgb_22: string;
-  zjgb_23: string;
-  zjgb_24: string;
-  zjgb_25: string;
-  zjgb_26: string;
-  zjgb_27: string;
-  zjgb_28: string;
-  zjgb_29: string;
-  zjgb_30: string;
-  zjgb_31: string;
-  zjgb_32: string;
-  zjgb_33: string;
-  zjgb_34: string;
-  zjgb_35: string;
-  zjgb_36: string;
-  zjgb_37: string;
-  zjgb_38: string;
-  zjgb_39: string;
-  zjgb_40: string;
-  zjgb_41: string;
-  zjgb_42: string;
-  zjgb_43: string;
-  zjgb_44: string;
-  zjgb_45: string;
-  zjgb_46: string;
-  zjgb_47: string;
-  zjgb_48: string;
-  zjgb_49: string;
-  zjgb_50: string;
-  zjgb_51: string;
-  zjgb_52: string;
-  zjgb_53: string;
-  zjgb_54: string;
-  zjgb_55: string;
-  zjgb_56: string;
-  zjgb_57: string;
-  zjgb_58: string;
-  zjgb_59: string;
-  zjgb_60: string;
-  zjgb_61: string;
-  zjgb_62: string;
-  zjgb_63: string;
-  zjgb_64: string;
-  zjgb_65: string;
-  zjgb_66: string;
-  zjgb_67: string;
-  zjgb_68: string;
-  zjgb_69: string;
-  zjgb_70: string;
-  zjgb_71: string;
-  zjgb_72: string;
-  zjgb_73: string;
-  zjgb_74: string;
-  zjgb_75: string;
-  zjgb_76: string;
-  zjgb_77: string;
-  zjgb_78: string;
-  zjgb_79: string;
-  zjgb_80: string;
-  zjgb_81: string;
-  zjgb_82: string;
-  zjgb_83: string;
-  zjgb_84: string;
-  zjgb_85: string;
-  zjgb_86: string;
-  zjgb_87: string;
-  zjgb_88: string;
-  zjgb_89: string;
-  zjgb_90: string;
-  zjgb_91: string;
-  zjgb_92: string;
-  zjgb_93: string;
-  zjgb_94: string;
-  zjgb_95: string;
-  zjgb_96: string;
-  zjgb_97: string;
-  zjgb_98: string;
-  zjgb_99: string;
-  zjgb_100: string;
-  zjgb_101: string;
-  zjgb_102: string;
-  zjgb_103: string;
-  zjgb_104: string;
-  zjgb_105: string;
-  zjgb_106: string;
-  zjgb_107: string;
-  zjgb_108: string;
-  zjgb_109: string;
-  zjgb_110: string;
-  zjgb_111: string;
-  zjgb_112: string;
-  zjgb_113: string;
-  zjgb_114: string;
-  zjgb_115: string;
-  zjgb_116: string;
-  zjgb_117: string;
-  zjgb_118: string;
-  zjgb_119: string;
-  zjgb_120: string;
-  zjgb_121: string;
-  zjgb_122: string;
-  zjgb_123: string;
-  zjgb_124: string;
-  zjgb_125: string;
-  zjgb_126: string;
-  zjgb_127: string;
-  zjgb_128: string;
-  zjgb_129: string;
-  zjgb_130: string;
-  zjgb_131: string;
-  zjgb_132: string;
-  zjgb_133: string;
-  zjgb_134: string;
-  zjgb_135: string;
-  zjgb_136: string;
-  zjgb_137: string;
-  zjgb_138: string;
-  zjgb_139: string;
-  zjgb_140: string;
-  zjgb_141: string;
-  zjgb_142: string;
-  zjgb_143: string;
-  zjgb_144: string;
-  zjgb_145: string;
-  zjgb_146: string;
-  zjgb_147: string;
-  zjgb_148: string;
-  zjgb_149: string;
-  zjgb_150: string;
-  zjgb_151: string;
-  zjgb_152: string;
-  zjgb_153: string;
-  zjgb_154: string;
-  zjgb_155: string;
-  zjgb_156: string;
-  zjgb_157: string;
-  zjgb_158: string;
-  zjgb_159: string;
-  zjgb_160: string;
-  zjgb_161: string;
-  zjgb_162: string;
-  zjgb_163: string;
-  zjgb_164: string;
-  zjgb_165: string;
-  zjgb_166: string;
-  zjgb_167: string;
-  zjgb_168: string;
-  zjgb_169: string;
-  zjgb_170: string;
-  zjgb_171: string;
-  zjgb_172: string;
-  zjgb_173: string;
-  zjgb_174: string;
-  zjgb_175: string;
-  zjgb_176: string;
-  zjgb_177: string;
-  zjgb_178: string;
-  zjgb_179: string;
-  zjgb_180: string;
-  zjgb_181: string;
-  zjgb_182: string;
-  zjgb_183: string;
-  zjgb_184: string;
-  zjgb_185: string;
-  zjgb_186: string;
-  zjgb_187: string;
-  zjgb_188: string;
-  zjgb_189: string;
-  zjgb_190: string;
-  zjgb_191: string;
-  zjgb_192: string;
-  zjgb_193: string;
-  zjgb_194: string;
-  zjgb_195: string;
-  zjgb_196: string;
-  zjgb_197: string;
-  zjgb_198: string;
-  zjgb_199: string;
-  zjgb_200: string;
-  zjgb_201: string;
-  zjgb_202: string;
-  zjgb_203: string;
-  zjgb_204: string;
-  zjgb_205: string;
+
+  /**
+   * 轴颈根部 1 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_11_z: string;
+
+  /**
+   * 轴颈根部 1 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_11_y: string;
+
+  /**
+   * 轴颈根部 1 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_12_z: string;
+
+  /**
+   * 轴颈根部 1 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_12_y: string;
+
+  /**
+   * 轴颈根部 1 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_13_z: string;
+
+  /**
+   * 轴颈根部 1 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_13_y: string;
+
+  /**
+   * 轴颈根部 1 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_14_z: string;
+
+  /**
+   * 轴颈根部 1 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_14_y: string;
+
+  /**
+   * 轴颈根部 1 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_15_z: string;
+
+  /**
+   * 轴颈根部 1 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_15_y: string;
+
+  /**
+   * 轴颈根部 1 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_1cz_z: string;
+
+  /**
+   * 轴颈根部 1 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_1cz_y: string;
+
+  /**
+   * 轴颈根部 1 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_1jg: string;
+
+  /**
+   * 轴颈根部 2 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_21_z: string;
+
+  /**
+   * 轴颈根部 2 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_21_y: string;
+
+  /**
+   * 轴颈根部 2 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_22_z: string;
+
+  /**
+   * 轴颈根部 2 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_22_y: string;
+
+  /**
+   * 轴颈根部 2 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_23_z: string;
+
+  /**
+   * 轴颈根部 2 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_23_y: string;
+
+  /**
+   * 轴颈根部 2 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_24_z: string;
+
+  /**
+   * 轴颈根部 2 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_24_y: string;
+
+  /**
+   * 轴颈根部 2 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_25_z: string;
+
+  /**
+   * 轴颈根部 2 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_25_y: string;
+
+  /**
+   * 轴颈根部 2 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_2cz_z: string;
+
+  /**
+   * 轴颈根部 2 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_2cz_y: string;
+
+  /**
+   * 轴颈根部 2 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_2jg: string;
+
+  /**
+   * 轴颈根部 3 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_31_z: string;
+
+  /**
+   * 轴颈根部 3 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_31_y: string;
+
+  /**
+   * 轴颈根部 3 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_32_z: string;
+
+  /**
+   * 轴颈根部 3 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_32_y: string;
+
+  /**
+   * 轴颈根部 3 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_33_z: string;
+
+  /**
+   * 轴颈根部 3 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_33_y: string;
+
+  /**
+   * 轴颈根部 3 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_34_z: string;
+
+  /**
+   * 轴颈根部 3 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_34_y: string;
+
+  /**
+   * 轴颈根部 3 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_35_z: string;
+
+  /**
+   * 轴颈根部 3 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_35_y: string;
+
+  /**
+   * 轴颈根部 3 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_3cz_z: string;
+
+  /**
+   * 轴颈根部 3 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_3cz_y: string;
+
+  /**
+   * 轴颈根部 3 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  zjgb_3jg: string;
+
+  /**
+   * 轮座镶入部1 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_11_z: string;
+
+  /**
+   * 轮座镶入部1 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_11_y: string;
+
+  /**
+   * 轮座镶入部1 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_12_z: string;
+
+  /**
+   * 轮座镶入部1 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_12_y: string;
+
+  /**
+   * 轮座镶入部1 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_13_z: string;
+
+  /**
+   * 轮座镶入部1 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_13_y: string;
+
+  /**
+   * 轮座镶入部1 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_14_z: string;
+
+  /**
+   * 轮座镶入部1 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_14_y: string;
+
+  /**
+   * 轮座镶入部1 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_15_z: string;
+
+  /**
+   * 轮座镶入部1 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_15_y: string;
+
+  /**
+   * 轮座镶入部1 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_1cz_z: string;
+
+  /**
+   * 轮座镶入部1 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_1cz_y: string;
+
+  /**
+   * 轮座镶入部1 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_1jg: string;
+
+  /**
+   * 轮座镶入部2 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_21_z: string;
+
+  /**
+   * 轮座镶入部2 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_21_y: string;
+
+  /**
+   * 轮座镶入部2 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_22_z: string;
+
+  /**
+   * 轮座镶入部2 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_22_y: string;
+
+  /**
+   * 轮座镶入部2 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_23_z: string;
+
+  /**
+   * 轮座镶入部2 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_23_y: string;
+
+  /**
+   * 轮座镶入部2 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_24_z: string;
+
+  /**
+   * 轮座镶入部2 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_24_y: string;
+
+  /**
+   * 轮座镶入部2 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_25_z: string;
+
+  /**
+   * 轮座镶入部2 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_25_y: string;
+
+  /**
+   * 轮座镶入部2 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_2cz_z: string;
+
+  /**
+   * 轮座镶入部2 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_2cz_y: string;
+
+  /**
+   * 轮座镶入部2 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_2jg: string;
+
+  /**
+   * 轮座镶入部3 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_31_z: string;
+
+  /**
+   * 轮座镶入部3 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_31_y: string;
+
+  /**
+   * 轮座镶入部3 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_32_z: string;
+
+  /**
+   * 轮座镶入部3 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_32_y: string;
+
+  /**
+   * 轮座镶入部3 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_33_z: string;
+
+  /**
+   * 轮座镶入部3 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_33_y: string;
+
+  /**
+   * 轮座镶入部3 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_34_z: string;
+
+  /**
+   * 轮座镶入部3 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_34_y: string;
+
+  /**
+   * 轮座镶入部3 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_35_z: string;
+
+  /**
+   * 轮座镶入部3 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_35_y: string;
+
+  /**
+   * 轮座镶入部3 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_3cz_z: string;
+
+  /**
+   * 轮座镶入部3 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_3cz_y: string;
+
+  /**
+   * 轮座镶入部3 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_3jg: string;
+
+  /**
+   * 轮座镶入部4 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_41_z: string;
+
+  /**
+   * 轮座镶入部4 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_41_y: string;
+
+  /**
+   * 轮座镶入部4 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_42_z: string;
+
+  /**
+   * 轮座镶入部4 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_42_y: string;
+
+  /**
+   * 轮座镶入部4 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_43_z: string;
+
+  /**
+   * 轮座镶入部4 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_43_y: string;
+
+  /**
+   * 轮座镶入部4 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_44_z: string;
+
+  /**
+   * 轮座镶入部4 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_44_y: string;
+
+  /**
+   * 轮座镶入部4 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_45_z: string;
+
+  /**
+   * 轮座镶入部4 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_45_y: string;
+
+  /**
+   * 轮座镶入部4 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_4cz_z: string;
+
+  /**
+   * 轮座镶入部4 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_4cz_y: string;
+
+  /**
+   * 轮座镶入部4 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_4jg: string;
+
+  /**
+   * 轮座镶入部5 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_51_z: string;
+
+  /**
+   * 轮座镶入部5 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_51_y: string;
+
+  /**
+   * 轮座镶入部5 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_52_z: string;
+
+  /**
+   * 轮座镶入部5 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_52_y: string;
+
+  /**
+   * 轮座镶入部5 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_53_z: string;
+
+  /**
+   * 轮座镶入部5 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_53_y: string;
+
+  /**
+   * 轮座镶入部5 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_54_z: string;
+
+  /**
+   * 轮座镶入部5 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_54_y: string;
+
+  /**
+   * 轮座镶入部5 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_55_z: string;
+
+  /**
+   * 轮座镶入部5 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_55_y: string;
+
+  /**
+   * 轮座镶入部5 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_5cz_z: string;
+
+  /**
+   * 轮座镶入部5 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_5cz_y: string;
+
+  /**
+   * 轮座镶入部5 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_5jg: string;
+
+  /**
+   * 轮座镶入部6 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_61_z: string;
+
+  /**
+   * 轮座镶入部6 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_61_y: string;
+
+  /**
+   * 轮座镶入部6 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_62_z: string;
+
+  /**
+   * 轮座镶入部6 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_62_y: string;
+
+  /**
+   * 轮座镶入部6 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_63_z: string;
+
+  /**
+   * 轮座镶入部6 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_63_y: string;
+
+  /**
+   * 轮座镶入部6 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_64_z: string;
+
+  /**
+   * 轮座镶入部6 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_64_y: string;
+
+  /**
+   * 轮座镶入部6 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_65_z: string;
+
+  /**
+   * 轮座镶入部6 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_65_y: string;
+
+  /**
+   * 轮座镶入部6 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_6cz_z: string;
+
+  /**
+   * 轮座镶入部6 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_6cz_y: string;
+
+  /**
+   * 轮座镶入部6 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_6jg: string;
+
+  /**
+   * 轮座镶入部7 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_71_z: string;
+
+  /**
+   * 轮座镶入部7 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_71_y: string;
+
+  /**
+   * 轮座镶入部7 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_72_z: string;
+
+  /**
+   * 轮座镶入部7 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_72_y: string;
+
+  /**
+   * 轮座镶入部7 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_73_z: string;
+
+  /**
+   * 轮座镶入部7 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_73_y: string;
+
+  /**
+   * 轮座镶入部7 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_74_z: string;
+
+  /**
+   * 轮座镶入部7 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_74_y: string;
+
+  /**
+   * 轮座镶入部7 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_75_z: string;
+
+  /**
+   * 轮座镶入部7 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_75_y: string;
+
+  /**
+   * 轮座镶入部7 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_7cz_z: string;
+
+  /**
+   * 轮座镶入部7 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_7cz_y: string;
+
+  /**
+   * 轮座镶入部7 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_7jg: string;
+
+  /**
+   * 轮座镶入部8 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_81_z: string;
+
+  /**
+   * 轮座镶入部8 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_81_y: string;
+
+  /**
+   * 轮座镶入部8 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_82_z: string;
+
+  /**
+   * 轮座镶入部8 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_82_y: string;
+
+  /**
+   * 轮座镶入部8 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_83_z: string;
+
+  /**
+   * 轮座镶入部8 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_83_y: string;
+
+  /**
+   * 轮座镶入部8 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_84_z: string;
+
+  /**
+   * 轮座镶入部8 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_84_y: string;
+
+  /**
+   * 轮座镶入部8 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_85_z: string;
+
+  /**
+   * 轮座镶入部8 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_85_y: string;
+
+  /**
+   * 轮座镶入部8 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_8cz_z: string;
+
+  /**
+   * 轮座镶入部8 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_8cz_y: string;
+
+  /**
+   * 轮座镶入部8结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_8jg: string;
+
+  /**
+   * 轮座镶入部9 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_91_z: string;
+
+  /**
+   * 轮座镶入部9 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_91_y: string;
+
+  /**
+   * 轮座镶入部9 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_92_z: string;
+
+  /**
+   * 轮座镶入部9 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_92_y: string;
+
+  /**
+   * 轮座镶入部9 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_93_z: string;
+
+  /**
+   * 轮座镶入部9 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_93_y: string;
+
+  /**
+   * 轮座镶入部9 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_94_z: string;
+
+  /**
+   * 轮座镶入部9 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_94_y: string;
+
+  /**
+   * 轮座镶入部9 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_95_z: string;
+
+  /**
+   * 轮座镶入部9 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_95_y: string;
+
+  /**
+   * 轮座镶入部9 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_9cz_z: string;
+
+  /**
+   * 轮座镶入部9 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_9cz_y: string;
+
+  /**
+   * 轮座镶入部9 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_9jg: string;
+
+  /**
+   * 轮座镶入部10第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_101_z: string;
+
+  /**
+   * 轮座镶入部10第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_101_y: string;
+
+  /**
+   * 轮座镶入部10第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_102_z: string;
+
+  /**
+   * 轮座镶入部10第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_102_y: string;
+
+  /**
+   * 轮座镶入部10第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_103_z: string;
+
+  /**
+   * 轮座镶入部10第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_103_y: string;
+
+  /**
+   * 轮座镶入部10第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_104_z: string;
+
+  /**
+   * 轮座镶入部10第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_104_y: string;
+
+  /**
+   * 轮座镶入部10第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_105_z: string;
+
+  /**
+   * 轮座镶入部10第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_105_y: string;
+
+  /**
+   * 轮座镶入部10 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_10cz_z: string;
+
+  /**
+   * 轮座镶入部10 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_10cz_y: string;
+
+  /**
+   * 轮座镶入部10 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_10jg: string;
+
+  /**
+   * 轮座镶入部11第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_111_z: string;
+
+  /**
+   * 轮座镶入部11第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_111_y: string;
+
+  /**
+   * 轮座镶入部11第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_112_z: string;
+
+  /**
+   * 轮座镶入部11第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_112_y: string;
+
+  /**
+   * 轮座镶入部11第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_113_z: string;
+
+  /**
+   * 轮座镶入部11第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_113_y: string;
+
+  /**
+   * 轮座镶入部11第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_114_z: string;
+
+  /**
+   * 轮座镶入部11第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_114_y: string;
+
+  /**
+   * 轮座镶入部11第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_115_z: string;
+
+  /**
+   * 轮座镶入部11第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_115_y: string;
+
+  /**
+   * 轮座镶入部11 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_11cz_z: string;
+
+  /**
+   * 轮座镶入部11 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_11cz_y: string;
+
+  /**
+   * 轮座镶入部11 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  lzxrb_11jg: string;
+
+  /**
+   * 全轴穿透1 第一次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_11_z: string;
+
+  /**
+   * 全轴穿透1 第一次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_11_y: string;
+
+  /**
+   * 全轴穿透1 第二次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_12_z: string;
+
+  /**
+   * 全轴穿透1 第二次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_12_y: string;
+
+  /**
+   * 全轴穿透1 第三次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_13_z: string;
+
+  /**
+   * 全轴穿透1 第三次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_13_y: string;
+
+  /**
+   * 全轴穿透1 第四次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_14_z: string;
+
+  /**
+   * 全轴穿透1 第四次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_14_y: string;
+
+  /**
+   * 全轴穿透1 第五次 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_15_z: string;
+
+  /**
+   * 全轴穿透1 第五次 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_15_y: string;
+
+  /**
+   * 全轴穿透1 差值 左
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_1cz_z: string;
+
+  /**
+   * 全轴穿透1 差值 右
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_1cz_y: string;
+
+  /**
+   * 全轴穿透1 结果
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
+  qzct_1jg: string;
+
+  /**
+   * 探伤工
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   tsg: string;
+
+  /**
+   * 工长
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   gz: string;
+
+  /**
+   * 质检员
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   zjy: string;
+
+  /**
+   * 验收员
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   ysy: string;
+
+  /**
+   * 维修工
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   wxg: string;
+
+  /**
+   * 设备专职
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   sbzz: string;
+
+  /**
+   * 探伤专职
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   tszz: string;
+
+  /**
+   * 主管领导
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   zgld: string;
+
+  /**
+   * 备注
+   * 数据库类型: VARCHAR2
+   * 是否允许为空: 是
+   */
   bz: string;
 }
 
@@ -571,7 +1844,15 @@ type VerifyWithData = Verify & {
   with: VerifyData[];
 };
 
+type QuartorWithData = Quartor & {
+  with: QuartorData[];
+};
+
 const emit = createEmit("api_set");
+
+const resolveFlawX = (flaw: VerifyData) => {
+  return Math.floor(flaw.fltValueX).toString(10);
+};
 
 export interface Ipc {
   "HMIS/kh_hmis_api_get": {
@@ -972,15 +2253,29 @@ export class KH extends HMIS<KH_HMIS> {
     const [record] = records.rows;
 
     if (!record) {
-      throw new Error(`未找到验证记录[${id}]`);
+      throw new Error(`未找到校验记录[${id}]`);
     }
 
-    const chr501Params: CHR501InputParams =
-      await this.verifyToCHR501InputParams(record);
+    const chr501Params = await this.verifyToCHR501InputParams(record);
 
     return this.sendCHR501ToServer(chr501Params);
   }
-  handleUploadCHR502(id: string) {}
+  async handleUploadCHR502(ids: string[]) {
+    const records = await this.mdb.getDataForCHR502({ ids });
+
+    if (records.rows.length < 5) {
+      throw new Error(
+        `CHR502接口至少需要5条记录，当前仅${records.rows.length}条`,
+      );
+    }
+
+    const chr502Params = await this.quartorToCHR502InputParams(
+      records.rows,
+      records.previous,
+    );
+
+    return this.sendCHR502ToServer(chr502Params);
+  }
   handleUploadCHR503(id: string) {}
 
   async verifyToCHR501InputParams(
@@ -988,7 +2283,12 @@ export class KH extends HMIS<KH_HMIS> {
   ): Promise<CHR501InputParams> {
     const store = this.getStore();
     const corporation = await this.mdb.getCorporation();
-    const data = await this.resolveFlawData(record);
+
+    const resolvedRecord = {
+      ...record,
+      with: resolveLzFlaws(record.with),
+    };
+    const data = await this.resolveFlawData(resolvedRecord);
 
     const leftLzData = data.filter(({ flaw }) => {
       return isLeftFlaw(flaw.nBoard) && isLZFlaw(flaw.nChannel);
@@ -1055,37 +2355,37 @@ export class KH extends HMIS<KH_HMIS> {
       zlz_ts9: leftLzData[8]?.ts || "",
       zlz_ts10: leftLzData[9]?.ts || "",
       zlz_ts11: leftLzData[10]?.ts || "",
-      zlz_qx1_1: "",
+      zlz_qx1_1: resolveFlawX(leftLzData[0]?.flaw) || "",
       zlz_qx1_2: "",
-      zlz_qx2_1: "",
+      zlz_qx2_1: resolveFlawX(leftLzData[1]?.flaw) || "",
       zlz_qx2_2: "",
       zlz_qx2_3: "",
-      zlz_qx3_1: "",
+      zlz_qx3_1: resolveFlawX(leftLzData[2]?.flaw) || "",
       zlz_qx3_3: "",
-      zlz_qx3_4: "9.7",
-      zlz_qx4_1: "4",
-      zlz_qx4_4: "5",
-      zlz_qx4_5: "3",
-      zlz_qx5_1: "1",
-      zlz_qx5_5: "2.5",
-      zlz_qx5_6: "2",
-      zlz_qx6_1: "3",
-      zlz_qx6_6: "3",
-      zlz_qx6_7: "2",
-      zlz_qx7_1: "2.4",
-      zlz_qx7_7: "1.2",
-      zlz_qx7_8: "9.7",
-      zlz_qx8_1: "4",
-      zlz_qx8_8: "5",
-      zlz_qx8_9: "3",
-      zlz_qx9_1: "1",
-      zlz_qx9_9: "2.5",
-      zlz_qx9_10: "2",
-      zlz_qx10_1: "3",
-      zlz_qx10_10: "3",
-      zlz_qx10_11: "2",
-      zlz_qx11_1: "2.4",
-      zlz_qx11_11: "1.2",
+      zlz_qx3_4: "",
+      zlz_qx4_1: resolveFlawX(leftLzData[3]?.flaw) || "",
+      zlz_qx4_4: "",
+      zlz_qx4_5: "",
+      zlz_qx5_1: resolveFlawX(leftLzData[4]?.flaw) || "",
+      zlz_qx5_5: "",
+      zlz_qx5_6: "",
+      zlz_qx6_1: resolveFlawX(leftLzData[5]?.flaw) || "",
+      zlz_qx6_6: "",
+      zlz_qx6_7: "",
+      zlz_qx7_1: resolveFlawX(leftLzData[6]?.flaw) || "",
+      zlz_qx7_7: "",
+      zlz_qx7_8: "",
+      zlz_qx8_1: resolveFlawX(leftLzData[7]?.flaw) || "",
+      zlz_qx8_8: "",
+      zlz_qx8_9: "",
+      zlz_qx9_1: resolveFlawX(leftLzData[8]?.flaw) || "",
+      zlz_qx9_9: "",
+      zlz_qx9_10: "",
+      zlz_qx10_1: resolveFlawX(leftLzData[9]?.flaw) || "",
+      zlz_qx10_10: "",
+      zlz_qx10_11: "",
+      zlz_qx11_1: resolveFlawX(leftLzData[10]?.flaw) || "",
+      zlz_qx11_11: "",
       ylz_zsj1: rightLzData[0]?.zsj || "",
       ylz_zsj2: rightLzData[1]?.zsj || "",
       ylz_zsj3: rightLzData[2]?.zsj || "",
@@ -1119,37 +2419,37 @@ export class KH extends HMIS<KH_HMIS> {
       ylz_ts9: rightLzData[8]?.ts || "",
       ylz_ts10: rightLzData[9]?.ts || "",
       ylz_ts11: rightLzData[10]?.ts || "",
-      ylz_qx1_1: "2",
-      ylz_qx1_2: "2.4",
-      ylz_qx2_1: "1.2",
-      ylz_qx2_2: "9.7",
-      ylz_qx2_3: "4",
-      ylz_qx3_1: "5",
-      ylz_qx3_3: "3",
-      ylz_qx3_4: "1",
-      ylz_qx4_1: "2.5",
-      ylz_qx4_4: "2",
-      ylz_qx4_5: "3",
-      ylz_qx5_1: "3",
-      ylz_qx5_5: "2",
-      ylz_qx5_6: "2.4",
-      ylz_qx6_1: "1.2",
-      ylz_qx6_6: "9.7",
-      ylz_qx6_7: "4",
-      ylz_qx7_1: "5",
-      ylz_qx7_7: "3",
-      ylz_qx7_8: "1",
-      ylz_qx8_1: "2.5",
-      ylz_qx8_8: "2",
-      ylz_qx8_9: "3",
-      ylz_qx9_1: "3",
-      ylz_qx9_9: "2",
-      ylz_qx9_10: "2.4",
-      ylz_qx10_1: "1.2",
-      ylz_qx10_10: "9.7",
-      ylz_qx10_11: "4",
-      ylz_qx11_1: "5",
-      ylz_qx11_11: "3",
+      ylz_qx1_1: resolveFlawX(rightLzData[0]?.flaw) || "",
+      ylz_qx1_2: "",
+      ylz_qx2_1: resolveFlawX(rightLzData[1]?.flaw) || "",
+      ylz_qx2_2: "",
+      ylz_qx2_3: "",
+      ylz_qx3_1: resolveFlawX(rightLzData[2]?.flaw) || "",
+      ylz_qx3_3: "",
+      ylz_qx3_4: "",
+      ylz_qx4_1: resolveFlawX(rightLzData[3]?.flaw) || "",
+      ylz_qx4_4: "",
+      ylz_qx4_5: "",
+      ylz_qx5_1: resolveFlawX(rightLzData[4]?.flaw) || "",
+      ylz_qx5_5: "",
+      ylz_qx5_6: "",
+      ylz_qx6_1: resolveFlawX(rightLzData[5]?.flaw) || "",
+      ylz_qx6_6: "",
+      ylz_qx6_7: "",
+      ylz_qx7_1: resolveFlawX(rightLzData[6]?.flaw) || "",
+      ylz_qx7_7: "",
+      ylz_qx7_8: "",
+      ylz_qx8_1: resolveFlawX(rightLzData[7]?.flaw) || "",
+      ylz_qx8_8: "",
+      ylz_qx8_9: "",
+      ylz_qx9_1: resolveFlawX(rightLzData[8]?.flaw) || "",
+      ylz_qx9_9: "",
+      ylz_qx9_10: "",
+      ylz_qx10_1: resolveFlawX(rightLzData[9]?.flaw) || "",
+      ylz_qx10_10: "",
+      ylz_qx10_11: "",
+      ylz_qx11_1: resolveFlawX(rightLzData[10]?.flaw) || "",
+      ylz_qx11_11: "",
       zzj_zsj: leftXHCData[0].zsj,
       zzj_jy: leftXHCData[0].jy,
       zzj_ts: leftXHCData[0].ts,
@@ -1178,6 +2478,508 @@ export class KH extends HMIS<KH_HMIS> {
       bz: "",
     };
   }
+  async quartorToCHR502InputParams(
+    records: QuartorWithData[],
+    previous: Quartor | null,
+  ): Promise<CHR502InputParams> {
+    const store = this.getStore();
+    const corporation = await this.mdb.getCorporation();
+    const tsg = records[0].szUsername || "";
+
+    const firstData = this.resolveCHR502Data(records[0]);
+    const secondData = this.resolveCHR502Data(records[1]);
+    const thirdData = this.resolveCHR502Data(records[2]);
+    const fourthData = this.resolveCHR502Data(records[3]);
+    const fifthData = this.resolveCHR502Data(records[4]);
+
+    return {
+      xrsj: dayjs(records[0].tmnow).format("YYYY-MM-DD HH:mm:ss"),
+      sbbh: corporation.DeviceNO || "",
+      sbmc: corporation.DeviceName || "",
+      dwmc: corporation.Factory || "",
+      zzsj: corporation.prodate || "",
+      zzdw: "武铁紫云轨道装备有限公司",
+      scjxsj: previous ? dayjs(previous.tmnow).format("YYYY-MM-DD") : "",
+      jyrq: dayjs(records[0].tmnow).format("YYYY-MM-DD"),
+      zjgb_11_z: calculateNAtten(firstData.leftXHC[0]) || "",
+      zjgb_11_y: calculateNAtten(firstData.rightXHC[0]) || "",
+      zjgb_12_z: calculateNAtten(secondData.leftXHC[0]) || "",
+      zjgb_12_y: calculateNAtten(secondData.rightXHC[0]) || "",
+      zjgb_13_z: calculateNAtten(thirdData.leftXHC[0]) || "",
+      zjgb_13_y: calculateNAtten(thirdData.rightXHC[0]) || "",
+      zjgb_14_z: calculateNAtten(fourthData.leftXHC[0]) || "",
+      zjgb_14_y: calculateNAtten(fourthData.rightXHC[0]) || "",
+      zjgb_15_z: calculateNAtten(fifthData.leftXHC[0]) || "",
+      zjgb_15_y: calculateNAtten(fifthData.rightXHC[0]) || "",
+      zjgb_1cz_z: calculateNAttenDiff(
+        firstData.leftXHC[0],
+        secondData.leftXHC[0],
+        thirdData.leftXHC[0],
+        fourthData.leftXHC[0],
+        fifthData.leftXHC[0],
+      ),
+      zjgb_1cz_y: calculateNAttenDiff(
+        firstData.rightXHC[0],
+        secondData.rightXHC[0],
+        thirdData.rightXHC[0],
+        fourthData.rightXHC[0],
+        fifthData.rightXHC[0],
+      ),
+      zjgb_1jg: resolveQuartorResult(
+        firstData.rightXHC[0],
+        secondData.rightXHC[0],
+        thirdData.rightXHC[0],
+        fourthData.rightXHC[0],
+        fifthData.rightXHC[0],
+      ),
+      zjgb_21_z: calculateNAtten(firstData.leftXHC[1]) || "",
+      zjgb_21_y: calculateNAtten(firstData.rightXHC[1]) || "",
+      zjgb_22_z: calculateNAtten(secondData.leftXHC[1]) || "",
+      zjgb_22_y: calculateNAtten(secondData.rightXHC[1]) || "",
+      zjgb_23_z: calculateNAtten(thirdData.leftXHC[1]) || "",
+      zjgb_23_y: calculateNAtten(thirdData.rightXHC[1]) || "",
+      zjgb_24_z: calculateNAtten(fourthData.leftXHC[1]) || "",
+      zjgb_24_y: calculateNAtten(fourthData.rightXHC[1]) || "",
+      zjgb_25_z: calculateNAtten(fifthData.leftXHC[1]) || "",
+      zjgb_25_y: calculateNAtten(fifthData.rightXHC[1]) || "",
+      zjgb_2cz_z: calculateNAttenDiff(
+        firstData.leftXHC[1],
+        secondData.leftXHC[1],
+        thirdData.leftXHC[1],
+        fourthData.leftXHC[1],
+        fifthData.leftXHC[1],
+      ),
+      zjgb_2cz_y: calculateNAttenDiff(
+        firstData.rightXHC[1],
+        secondData.rightXHC[1],
+        thirdData.rightXHC[1],
+        fourthData.rightXHC[1],
+        fifthData.rightXHC[1],
+      ),
+      zjgb_2jg: resolveQuartorResult(
+        firstData.rightXHC[1],
+        secondData.rightXHC[1],
+        thirdData.rightXHC[1],
+        fourthData.rightXHC[1],
+        fifthData.rightXHC[1],
+      ),
+      zjgb_31_z: calculateNAtten(firstData.leftXHC[2]) || "",
+      zjgb_31_y: calculateNAtten(firstData.rightXHC[2]) || "",
+      zjgb_32_z: calculateNAtten(secondData.leftXHC[2]) || "",
+      zjgb_32_y: calculateNAtten(secondData.rightXHC[2]) || "",
+      zjgb_33_z: calculateNAtten(thirdData.leftXHC[2]) || "",
+      zjgb_33_y: calculateNAtten(thirdData.rightXHC[2]) || "",
+      zjgb_34_z: calculateNAtten(fourthData.leftXHC[2]) || "",
+      zjgb_34_y: calculateNAtten(fourthData.rightXHC[2]) || "",
+      zjgb_35_z: calculateNAtten(fifthData.leftXHC[2]) || "",
+      zjgb_35_y: calculateNAtten(fifthData.rightXHC[2]) || "",
+      zjgb_3cz_z: calculateNAttenDiff(
+        firstData.leftXHC[2],
+        secondData.leftXHC[2],
+        thirdData.leftXHC[2],
+        fourthData.leftXHC[2],
+        fifthData.leftXHC[2],
+      ),
+      zjgb_3cz_y: calculateNAttenDiff(
+        firstData.rightXHC[2],
+        secondData.rightXHC[2],
+        thirdData.rightXHC[2],
+        fourthData.rightXHC[2],
+        fifthData.rightXHC[2],
+      ),
+      zjgb_3jg: resolveQuartorResult(
+        firstData.rightXHC[2],
+        secondData.rightXHC[2],
+        thirdData.rightXHC[2],
+        fourthData.rightXHC[2],
+        fifthData.rightXHC[2],
+      ),
+      lzxrb_11_z: calculateNAtten(firstData.leftLZ[0]) || "",
+      lzxrb_11_y: calculateNAtten(firstData.rightLZ[0]) || "",
+      lzxrb_12_z: calculateNAtten(secondData.leftLZ[0]) || "",
+      lzxrb_12_y: calculateNAtten(secondData.rightLZ[0]) || "",
+      lzxrb_13_z: calculateNAtten(thirdData.leftLZ[0]) || "",
+      lzxrb_13_y: calculateNAtten(thirdData.rightLZ[0]) || "",
+      lzxrb_14_z: calculateNAtten(fourthData.leftLZ[0]) || "",
+      lzxrb_14_y: calculateNAtten(fourthData.rightLZ[0]) || "",
+      lzxrb_15_z: calculateNAtten(fifthData.leftLZ[0]) || "",
+      lzxrb_15_y: calculateNAtten(fifthData.rightLZ[0]) || "",
+      lzxrb_1cz_z: calculateNAttenDiff(
+        firstData.leftLZ[0],
+        secondData.leftLZ[0],
+        thirdData.leftLZ[0],
+        fourthData.leftLZ[0],
+        fifthData.leftLZ[0],
+      ),
+      lzxrb_1cz_y: calculateNAttenDiff(
+        firstData.rightLZ[0],
+        secondData.rightLZ[0],
+        thirdData.rightLZ[0],
+        fourthData.rightLZ[0],
+        fifthData.rightLZ[0],
+      ),
+      lzxrb_1jg: resolveQuartorResult(
+        firstData.rightLZ[0],
+        secondData.rightLZ[0],
+        thirdData.rightLZ[0],
+        fourthData.rightLZ[0],
+        fifthData.rightLZ[0],
+      ),
+      lzxrb_21_z: calculateNAtten(firstData.leftLZ[1]) || "",
+      lzxrb_21_y: calculateNAtten(firstData.rightLZ[1]) || "",
+      lzxrb_22_z: calculateNAtten(secondData.leftLZ[1]) || "",
+      lzxrb_22_y: calculateNAtten(secondData.rightLZ[1]) || "",
+      lzxrb_23_z: calculateNAtten(thirdData.leftLZ[1]) || "",
+      lzxrb_23_y: calculateNAtten(thirdData.rightLZ[1]) || "",
+      lzxrb_24_z: calculateNAtten(fourthData.leftLZ[1]) || "",
+      lzxrb_24_y: calculateNAtten(fourthData.rightLZ[1]) || "",
+      lzxrb_25_z: calculateNAtten(fifthData.leftLZ[1]) || "",
+      lzxrb_25_y: calculateNAtten(fifthData.rightLZ[1]) || "",
+      lzxrb_2cz_z: calculateNAttenDiff(
+        firstData.leftLZ[1],
+        secondData.leftLZ[1],
+        thirdData.leftLZ[1],
+        fourthData.leftLZ[1],
+        fifthData.leftLZ[1],
+      ),
+      lzxrb_2cz_y: calculateNAttenDiff(
+        firstData.rightLZ[1],
+        secondData.rightLZ[1],
+        thirdData.rightLZ[1],
+        fourthData.rightLZ[1],
+        fifthData.rightLZ[1],
+      ),
+      lzxrb_2jg: resolveQuartorResult(
+        firstData.rightLZ[1],
+        secondData.rightLZ[1],
+        thirdData.rightLZ[1],
+        fourthData.rightLZ[1],
+        fifthData.rightLZ[1],
+      ),
+      lzxrb_31_z: calculateNAtten(firstData.leftLZ[2]) || "",
+      lzxrb_31_y: calculateNAtten(firstData.rightLZ[2]) || "",
+      lzxrb_32_z: calculateNAtten(secondData.leftLZ[2]) || "",
+      lzxrb_32_y: calculateNAtten(secondData.rightLZ[2]) || "",
+      lzxrb_33_z: calculateNAtten(thirdData.leftLZ[2]) || "",
+      lzxrb_33_y: calculateNAtten(thirdData.rightLZ[2]) || "",
+      lzxrb_34_z: calculateNAtten(fourthData.leftLZ[2]) || "",
+      lzxrb_34_y: calculateNAtten(fourthData.rightLZ[2]) || "",
+      lzxrb_35_z: calculateNAtten(fifthData.leftLZ[2]) || "",
+      lzxrb_35_y: calculateNAtten(fifthData.rightLZ[2]) || "",
+      lzxrb_3cz_z: calculateNAttenDiff(
+        firstData.leftLZ[2],
+        secondData.leftLZ[2],
+        thirdData.leftLZ[2],
+        fourthData.leftLZ[2],
+        fifthData.leftLZ[2],
+      ),
+      lzxrb_3cz_y: calculateNAttenDiff(
+        firstData.rightLZ[2],
+        secondData.rightLZ[2],
+        thirdData.rightLZ[2],
+        fourthData.rightLZ[2],
+        fifthData.rightLZ[2],
+      ),
+      lzxrb_3jg: resolveQuartorResult(
+        firstData.rightLZ[2],
+        secondData.rightLZ[2],
+        thirdData.rightLZ[2],
+        fourthData.rightLZ[2],
+        fifthData.rightLZ[2],
+      ),
+      lzxrb_41_z: calculateNAtten(firstData.leftLZ[3]) || "",
+      lzxrb_41_y: calculateNAtten(firstData.rightLZ[3]) || "",
+      lzxrb_42_z: calculateNAtten(secondData.leftLZ[3]) || "",
+      lzxrb_42_y: calculateNAtten(secondData.rightLZ[3]) || "",
+      lzxrb_43_z: calculateNAtten(thirdData.leftLZ[3]) || "",
+      lzxrb_43_y: calculateNAtten(thirdData.rightLZ[3]) || "",
+      lzxrb_44_z: calculateNAtten(fourthData.leftLZ[3]) || "",
+      lzxrb_44_y: calculateNAtten(fourthData.rightLZ[3]) || "",
+      lzxrb_45_z: calculateNAtten(fifthData.leftLZ[3]) || "",
+      lzxrb_45_y: calculateNAtten(fifthData.rightLZ[3]) || "",
+      lzxrb_4cz_z: calculateNAttenDiff(
+        firstData.leftLZ[3],
+        secondData.leftLZ[3],
+        thirdData.leftLZ[3],
+        fourthData.leftLZ[3],
+        fifthData.leftLZ[3],
+      ),
+      lzxrb_4cz_y: calculateNAttenDiff(
+        firstData.rightLZ[3],
+        secondData.rightLZ[3],
+        thirdData.rightLZ[3],
+        fourthData.rightLZ[3],
+        fifthData.rightLZ[3],
+      ),
+      lzxrb_4jg: resolveQuartorResult(
+        firstData.rightLZ[3],
+        secondData.rightLZ[3],
+        thirdData.rightLZ[3],
+        fourthData.rightLZ[3],
+        fifthData.rightLZ[3],
+      ),
+      lzxrb_51_z: calculateNAtten(firstData.leftLZ[4]) || "",
+      lzxrb_51_y: calculateNAtten(firstData.rightLZ[4]) || "",
+      lzxrb_52_z: calculateNAtten(secondData.leftLZ[4]) || "",
+      lzxrb_52_y: calculateNAtten(secondData.rightLZ[4]) || "",
+      lzxrb_53_z: calculateNAtten(thirdData.leftLZ[4]) || "",
+      lzxrb_53_y: calculateNAtten(thirdData.rightLZ[4]) || "",
+      lzxrb_54_z: calculateNAtten(fourthData.leftLZ[4]) || "",
+      lzxrb_54_y: calculateNAtten(fourthData.rightLZ[4]) || "",
+      lzxrb_55_z: calculateNAtten(fifthData.leftLZ[4]) || "",
+      lzxrb_55_y: calculateNAtten(fifthData.rightLZ[4]) || "",
+      lzxrb_5cz_z: calculateNAttenDiff(
+        firstData.leftLZ[4],
+        secondData.leftLZ[4],
+        thirdData.leftLZ[4],
+        fourthData.leftLZ[4],
+        fifthData.leftLZ[4],
+      ),
+      lzxrb_5cz_y: calculateNAttenDiff(
+        firstData.rightLZ[4],
+        secondData.rightLZ[4],
+        thirdData.rightLZ[4],
+        fourthData.rightLZ[4],
+        fifthData.rightLZ[4],
+      ),
+      lzxrb_5jg: resolveQuartorResult(
+        firstData.rightLZ[4],
+        secondData.rightLZ[4],
+        thirdData.rightLZ[4],
+        fourthData.rightLZ[4],
+        fifthData.rightLZ[4],
+      ),
+      lzxrb_61_z: calculateNAtten(firstData.leftLZ[5]) || "",
+      lzxrb_61_y: calculateNAtten(firstData.rightLZ[5]) || "",
+      lzxrb_62_z: calculateNAtten(secondData.leftLZ[5]) || "",
+      lzxrb_62_y: calculateNAtten(secondData.rightLZ[5]) || "",
+      lzxrb_63_z: calculateNAtten(thirdData.leftLZ[5]) || "",
+      lzxrb_63_y: calculateNAtten(thirdData.rightLZ[5]) || "",
+      lzxrb_64_z: calculateNAtten(fourthData.leftLZ[5]) || "",
+      lzxrb_64_y: calculateNAtten(fourthData.rightLZ[5]) || "",
+      lzxrb_65_z: calculateNAtten(fifthData.leftLZ[5]) || "",
+      lzxrb_65_y: calculateNAtten(fifthData.rightLZ[5]) || "",
+      lzxrb_6cz_z: calculateNAttenDiff(
+        firstData.leftLZ[5],
+        secondData.leftLZ[5],
+        thirdData.leftLZ[5],
+        fourthData.leftLZ[5],
+        fifthData.leftLZ[5],
+      ),
+      lzxrb_6cz_y: calculateNAttenDiff(
+        firstData.rightLZ[5],
+        secondData.rightLZ[5],
+        thirdData.rightLZ[5],
+        fourthData.rightLZ[5],
+        fifthData.rightLZ[5],
+      ),
+      lzxrb_6jg: resolveQuartorResult(
+        firstData.rightLZ[5],
+        secondData.rightLZ[5],
+        thirdData.rightLZ[5],
+        fourthData.rightLZ[5],
+        fifthData.rightLZ[5],
+      ),
+      lzxrb_71_z: calculateNAtten(firstData.leftLZ[6]) || "",
+      lzxrb_71_y: calculateNAtten(firstData.rightLZ[6]) || "",
+      lzxrb_72_z: calculateNAtten(secondData.leftLZ[6]) || "",
+      lzxrb_72_y: calculateNAtten(secondData.rightLZ[6]) || "",
+      lzxrb_73_z: calculateNAtten(thirdData.leftLZ[6]) || "",
+      lzxrb_73_y: calculateNAtten(thirdData.rightLZ[6]) || "",
+      lzxrb_74_z: calculateNAtten(fourthData.leftLZ[6]) || "",
+      lzxrb_74_y: calculateNAtten(fourthData.rightLZ[6]) || "",
+      lzxrb_75_z: calculateNAtten(fifthData.leftLZ[6]) || "",
+      lzxrb_75_y: calculateNAtten(fifthData.rightLZ[6]) || "",
+      lzxrb_7cz_z: calculateNAttenDiff(
+        firstData.leftLZ[6],
+        secondData.leftLZ[6],
+        thirdData.leftLZ[6],
+        fourthData.leftLZ[6],
+        fifthData.leftLZ[6],
+      ),
+      lzxrb_7cz_y: calculateNAttenDiff(
+        firstData.rightLZ[6],
+        secondData.rightLZ[6],
+        thirdData.rightLZ[6],
+        fourthData.rightLZ[6],
+        fifthData.rightLZ[6],
+      ),
+      lzxrb_7jg: resolveQuartorResult(
+        firstData.rightLZ[6],
+        secondData.rightLZ[6],
+        thirdData.rightLZ[6],
+        fourthData.rightLZ[6],
+        fifthData.rightLZ[6],
+      ),
+      lzxrb_81_z: calculateNAtten(firstData.leftLZ[7]) || "",
+      lzxrb_81_y: calculateNAtten(firstData.rightLZ[7]) || "",
+      lzxrb_82_z: calculateNAtten(secondData.leftLZ[7]) || "",
+      lzxrb_82_y: calculateNAtten(secondData.rightLZ[7]) || "",
+      lzxrb_83_z: calculateNAtten(thirdData.leftLZ[7]) || "",
+      lzxrb_83_y: calculateNAtten(thirdData.rightLZ[7]) || "",
+      lzxrb_84_z: calculateNAtten(fourthData.leftLZ[7]) || "",
+      lzxrb_84_y: calculateNAtten(fourthData.rightLZ[7]) || "",
+      lzxrb_85_z: calculateNAtten(fifthData.leftLZ[7]) || "",
+      lzxrb_85_y: calculateNAtten(fifthData.rightLZ[7]) || "",
+      lzxrb_8cz_z: calculateNAttenDiff(
+        firstData.leftLZ[7],
+        secondData.leftLZ[7],
+        thirdData.leftLZ[7],
+        fourthData.leftLZ[7],
+        fifthData.leftLZ[7],
+      ),
+      lzxrb_8cz_y: calculateNAttenDiff(
+        firstData.rightLZ[7],
+        secondData.rightLZ[7],
+        thirdData.rightLZ[7],
+        fourthData.rightLZ[7],
+        fifthData.rightLZ[7],
+      ),
+      lzxrb_8jg: resolveQuartorResult(
+        firstData.rightLZ[7],
+        secondData.rightLZ[7],
+        thirdData.rightLZ[7],
+        fourthData.rightLZ[7],
+        fifthData.rightLZ[7],
+      ),
+      lzxrb_91_z: calculateNAtten(firstData.leftLZ[8]) || "",
+      lzxrb_91_y: calculateNAtten(firstData.rightLZ[8]) || "",
+      lzxrb_92_z: calculateNAtten(secondData.leftLZ[8]) || "",
+      lzxrb_92_y: calculateNAtten(secondData.rightLZ[8]) || "",
+      lzxrb_93_z: calculateNAtten(thirdData.leftLZ[8]) || "",
+      lzxrb_93_y: calculateNAtten(thirdData.rightLZ[8]) || "",
+      lzxrb_94_z: calculateNAtten(fourthData.leftLZ[8]) || "",
+      lzxrb_94_y: calculateNAtten(fourthData.rightLZ[8]) || "",
+      lzxrb_95_z: calculateNAtten(fifthData.leftLZ[8]) || "",
+      lzxrb_95_y: calculateNAtten(fifthData.rightLZ[8]) || "",
+      lzxrb_9cz_z: calculateNAttenDiff(
+        firstData.leftLZ[8],
+        secondData.leftLZ[8],
+        thirdData.leftLZ[8],
+        fourthData.leftLZ[8],
+        fifthData.leftLZ[8],
+      ),
+      lzxrb_9cz_y: calculateNAttenDiff(
+        firstData.rightLZ[8],
+        secondData.rightLZ[8],
+        thirdData.rightLZ[8],
+        fourthData.rightLZ[8],
+        fifthData.rightLZ[8],
+      ),
+      lzxrb_9jg: resolveQuartorResult(
+        firstData.rightLZ[8],
+        secondData.rightLZ[8],
+        thirdData.rightLZ[8],
+        fourthData.rightLZ[8],
+        fifthData.rightLZ[8],
+      ),
+      lzxrb_101_z: calculateNAtten(firstData.leftLZ[9]) || "",
+      lzxrb_101_y: calculateNAtten(firstData.rightLZ[9]) || "",
+      lzxrb_102_z: calculateNAtten(secondData.leftLZ[9]) || "",
+      lzxrb_102_y: calculateNAtten(secondData.rightLZ[9]) || "",
+      lzxrb_103_z: calculateNAtten(thirdData.leftLZ[9]) || "",
+      lzxrb_103_y: calculateNAtten(thirdData.rightLZ[9]) || "",
+      lzxrb_104_z: calculateNAtten(fourthData.leftLZ[9]) || "",
+      lzxrb_104_y: calculateNAtten(fourthData.rightLZ[9]) || "",
+      lzxrb_105_z: calculateNAtten(fifthData.leftLZ[9]) || "",
+      lzxrb_105_y: calculateNAtten(fifthData.rightLZ[9]) || "",
+      lzxrb_10cz_z: calculateNAttenDiff(
+        firstData.leftLZ[9],
+        secondData.leftLZ[9],
+        thirdData.leftLZ[9],
+        fourthData.leftLZ[9],
+        fifthData.leftLZ[9],
+      ),
+      lzxrb_10cz_y: calculateNAttenDiff(
+        firstData.rightLZ[9],
+        secondData.rightLZ[9],
+        thirdData.rightLZ[9],
+        fourthData.rightLZ[9],
+        fifthData.rightLZ[9],
+      ),
+      lzxrb_10jg: resolveQuartorResult(
+        firstData.rightLZ[9],
+        secondData.rightLZ[9],
+        thirdData.rightLZ[9],
+        fourthData.rightLZ[9],
+        fifthData.rightLZ[9],
+      ),
+      lzxrb_111_z: calculateNAtten(firstData.leftLZ[10]) || "",
+      lzxrb_111_y: calculateNAtten(firstData.rightLZ[10]) || "",
+      lzxrb_112_z: calculateNAtten(secondData.leftLZ[10]) || "",
+      lzxrb_112_y: calculateNAtten(secondData.rightLZ[10]) || "",
+      lzxrb_113_z: calculateNAtten(thirdData.leftLZ[10]) || "",
+      lzxrb_113_y: calculateNAtten(thirdData.rightLZ[10]) || "",
+      lzxrb_114_z: calculateNAtten(fourthData.leftLZ[10]) || "",
+      lzxrb_114_y: calculateNAtten(fourthData.rightLZ[10]) || "",
+      lzxrb_115_z: calculateNAtten(fifthData.leftLZ[10]) || "",
+      lzxrb_115_y: calculateNAtten(fifthData.rightLZ[10]) || "",
+      lzxrb_11cz_z: calculateNAttenDiff(
+        firstData.leftLZ[10],
+        secondData.leftLZ[10],
+        thirdData.leftLZ[10],
+        fourthData.leftLZ[10],
+        fifthData.leftLZ[10],
+      ),
+      lzxrb_11cz_y: calculateNAttenDiff(
+        firstData.rightLZ[10],
+        secondData.rightLZ[10],
+        thirdData.rightLZ[10],
+        fourthData.rightLZ[10],
+        fifthData.rightLZ[10],
+      ),
+      lzxrb_11jg: resolveQuartorResult(
+        firstData.rightLZ[10],
+        secondData.rightLZ[10],
+        thirdData.rightLZ[10],
+        fourthData.rightLZ[10],
+        fifthData.rightLZ[10],
+      ),
+      qzct_11_z: calculateNAtten(firstData.leftCT[0]) || "",
+      qzct_11_y: calculateNAtten(firstData.rightCT[0]) || "",
+      qzct_12_z: calculateNAtten(secondData.leftCT[0]) || "",
+      qzct_12_y: calculateNAtten(secondData.rightCT[0]) || "",
+      qzct_13_z: calculateNAtten(thirdData.leftCT[0]) || "",
+      qzct_13_y: calculateNAtten(thirdData.rightCT[0]) || "",
+      qzct_14_z: calculateNAtten(fourthData.leftCT[0]) || "",
+      qzct_14_y: calculateNAtten(fourthData.rightCT[0]) || "",
+      qzct_15_z: calculateNAtten(fifthData.leftCT[0]) || "",
+      qzct_15_y: calculateNAtten(fifthData.rightCT[0]) || "",
+      qzct_1cz_z: calculateNAttenDiff(
+        firstData.leftCT[0],
+        secondData.leftCT[0],
+        thirdData.leftCT[0],
+        fourthData.leftCT[0],
+        fifthData.leftCT[0],
+      ),
+      qzct_1cz_y: calculateNAttenDiff(
+        firstData.rightCT[0],
+        secondData.rightCT[0],
+        thirdData.rightCT[0],
+        fourthData.rightCT[0],
+        fifthData.rightCT[0],
+      ),
+      qzct_1jg: resolveQuartorResult(
+        firstData.rightCT[0],
+        secondData.rightCT[0],
+        thirdData.rightCT[0],
+        fourthData.rightCT[0],
+        fifthData.rightCT[0],
+      ),
+      tsg,
+      gz: store.tsgz,
+      zjy: store.tszjy,
+      ysy: store.tsysy,
+      wxg: store.tswxg,
+      sbzz: "",
+      tszz: "",
+      zgld: "",
+      bz: "",
+    };
+  }
+  async toCHR503InputParams(): Promise<CHR503InputParams> {
+    return {};
+  }
 
   resolveFlawData(record: VerifyWithData) {
     return Promise.all(
@@ -1197,6 +2999,57 @@ export class KH extends HMIS<KH_HMIS> {
         };
       }),
     );
+  }
+  groupFlaws(flaws: QuartorData[]) {
+    return mapGroupBy(flaws, (flaw) => {
+      const isLeftCT = isLeftFlaw(flaw.nBoard) && isCTFlaw(flaw.nChannel);
+      if (isLeftCT) return "leftCT";
+
+      const isRightCT = isRightFlaw(flaw.nBoard) && isCTFlaw(flaw.nChannel);
+      if (isRightCT) return "rightCT";
+
+      const isLeftXHC = isLeftFlaw(flaw.nBoard) && isXHCFlaw(flaw.nChannel);
+      if (isLeftXHC) return "leftXHC";
+
+      const isRightXHC = isRightFlaw(flaw.nBoard) && isXHCFlaw(flaw.nChannel);
+      if (isRightXHC) return "rightXHC";
+
+      const isLeftLZ = isLeftFlaw(flaw.nBoard) && isLZFlaw(flaw.nChannel);
+      if (isLeftLZ) return "leftLZ";
+
+      const isRightLZ = isRightFlaw(flaw.nBoard) && isLZFlaw(flaw.nChannel);
+      if (isRightLZ) return "rightLZ";
+    });
+  }
+  resolveCHR502Data(record: QuartorWithData) {
+    const flawGroup = this.groupFlaws(record.with);
+
+    return {
+      /**
+       * 左穿透，一个伤
+       */
+      leftCT: flawGroup.get("leftCT") || [],
+      /**
+       * 右穿透，一个伤
+       */
+      rightCT: flawGroup.get("rightCT") || [],
+      /**
+       * 左卸荷槽，三伤
+       */
+      leftXHC: flawGroup.get("leftXHC") || [],
+      /**
+       * 右卸荷槽，三伤
+       */
+      rightXHC: flawGroup.get("rightXHC") || [],
+      /**
+       * 左轮座，十一伤
+       */
+      leftLZ: flawGroup.get("leftLZ") || [],
+      /**
+       * 右轮座，十一伤
+       */
+      rightLZ: flawGroup.get("rightLZ") || [],
+    };
   }
 }
 

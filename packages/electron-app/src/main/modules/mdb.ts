@@ -176,6 +176,7 @@ export interface Corporation {
   Factory: string | null;
   Workshop: string | null;
   TBType: string | null;
+  prodate: string | null;
 }
 
 interface GetDetectionForJTVParams {
@@ -185,6 +186,14 @@ interface GetDetectionForJTVParams {
   CZZZDW: string;
   CZZZRQ: string;
 }
+
+interface GetDataForCHR502Params {
+  ids: string[];
+}
+
+type QuartorWithData = Quartor & {
+  with: QuartorData[];
+};
 
 export type MDBPayload = Omit<MDBWorkerData, "databasePath">;
 
@@ -224,6 +233,15 @@ export class MDBDB {
 
     return this.piscina.run(payload);
   }
+  async getDataForCHR502({ ids }: GetDataForCHR502Params): Promise<{
+    previous: Quartor | null;
+    rows: QuartorWithData[];
+  }> {
+    const databasePath = await this.profile.getRootDBPath();
+
+    return this.piscina.run({ ids, databasePath }, { name: "handleCHR502" });
+  }
+
   async getDataFromAppDB<TRow>(data: MDBPayload) {
     const databasePath = this.profile.getAppDBPath();
 
