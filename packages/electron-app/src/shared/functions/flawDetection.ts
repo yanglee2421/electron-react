@@ -1,4 +1,5 @@
 import type { DetectionData } from "#main/modules/mdb";
+import { isClamped, mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as mathjs from "mathjs";
 
@@ -44,13 +45,12 @@ export const isRightFlaw = (nBoard: number) => {
 };
 
 export const isLZFlaw = (nChannel: number) => {
-  switch (nChannel) {
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-    case 7:
-    case 8:
+  const place = calculatePlace(nChannel);
+
+  switch (place) {
+    case "内":
+    case "外":
+    case "轮座":
       return true;
     default:
       return false;
@@ -58,17 +58,11 @@ export const isLZFlaw = (nChannel: number) => {
 };
 
 export const isXHCFlaw = (nChannel: number) => {
-  switch (nChannel) {
-    case 1:
-    case 2:
-      return true;
-    default:
-      return false;
-  }
+  return calculatePlace(nChannel) === "卸荷槽";
 };
 
 export const isCTFlaw = (nChannel: number) => {
-  return Object.is(nChannel, 0);
+  return calculatePlace(nChannel) === "穿透";
 };
 
 export const tmnowToTSSJ = (tmnow: string) => {
@@ -119,23 +113,71 @@ export const calculateZSJ = (nWAngle: number) => {
     .toString();
 };
 
-interface LzFlaw {
+interface Flaw {
   fltValueX: number;
 }
 
-export const resolveLzFlaws = <TFlaw extends LzFlaw>(flaws: TFlaw[]) => {
+/**
+ * 计算轮座缺陷，要求fltValueX相差至少10
+ * @param flaws 轮座缺陷列表
+ * @returns 过滤后的轮座缺陷列表
+ */
+export const calculateLZFlaws = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
   return flaws
     .sort((a, b) => a.fltValueX - b.fltValueX)
     .reduce<TFlaw[]>((result, b) => {
-      const lastX = result.at(-1)?.fltValueX || 0;
+      const lastX = result.at(-1)?.fltValueX || Number.NEGATIVE_INFINITY;
       const diff = b.fltValueX - lastX;
 
-      if (diff > 10) {
+      if (diff >= 10) {
         return [...result, b];
       }
 
       return result;
     }, []);
+};
+
+const calculateXHCFlawsByFirstFlaw = <TFlaw extends Flaw>(
+  flaws: TFlaw[],
+  firstFlaw: TFlaw,
+) => {
+  const exceptedSecondFlawX = firstFlaw.fltValueX + 10;
+  const secondFlaw = flaws.find((flaw) =>
+    isClamped(flaw.fltValueX, exceptedSecondFlawX - 3, exceptedSecondFlawX + 3),
+  );
+
+  if (!secondFlaw) {
+    return [firstFlaw];
+  }
+
+  const exceptedThirdFlawX = secondFlaw?.fltValueX + 5;
+  const thirdFlaw = flaws.find((flaw) =>
+    isClamped(flaw.fltValueX, exceptedThirdFlawX - 3, exceptedThirdFlawX + 3),
+  );
+
+  if (!thirdFlaw) {
+    return [firstFlaw, secondFlaw];
+  }
+
+  return [firstFlaw, secondFlaw, thirdFlaw];
+};
+
+export const calculateXHCFlaws = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
+  const oirginMap = new Map<number, TFlaw[]>();
+  const flawMap = flaws
+    .sort((a, b) => a.fltValueX - b.fltValueX)
+    .reduce((result, flaw) => {
+      return new Map(result).set(
+        flaw.fltValueX,
+        calculateXHCFlawsByFirstFlaw(flaws, flaw),
+      );
+    }, oirginMap);
+
+  const flawGroups = [...flawMap.values()];
+  const validatedFlaws = flawGroups.find((flaws) => flaws.length === 3);
+  if (validatedFlaws) return validatedFlaws;
+
+  return flawGroups.sort((a, b) => b.length - a.length).at(0) || [];
 };
 
 interface Flaw {
@@ -161,7 +203,7 @@ export const calculateNAttenDiff = (...flaws: Flaw[]) => {
     .toString();
 };
 
-export const resolveQuartorResult = (...flaws: Flaw[]) => {
+export const calculateQuartorResult = (...flaws: Flaw[]) => {
   const minAtten = mathjs.min(
     ...flaws.map((flaw) => mathjs.bignumber(flaw.nAtten)),
   );
@@ -169,12 +211,87 @@ export const resolveQuartorResult = (...flaws: Flaw[]) => {
     ...flaws.map((flaw) => mathjs.bignumber(flaw.nAtten)),
   );
   const diff = mathjs.subtract(maxAtten, minAtten);
-
   const result = mathjs.smallerEq(diff, mathjs.bignumber(6));
 
   if (typeof result === "boolean") {
     return result ? "合格" : "不合格";
   }
 
-  return "不合格";
+  throw new Error("Unexpected result type");
+};
+
+interface Flaw {
+  nBoard: number;
+  nChannel: number;
+}
+
+export const groupFlaws = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
+  return mapGroupBy(flaws, (flaw) => {
+    const isLeftCT = isLeftFlaw(flaw.nBoard) && isCTFlaw(flaw.nChannel);
+    if (isLeftCT) return "leftCT";
+
+    const isRightCT = isRightFlaw(flaw.nBoard) && isCTFlaw(flaw.nChannel);
+    if (isRightCT) return "rightCT";
+
+    const isLeftXHC = isLeftFlaw(flaw.nBoard) && isXHCFlaw(flaw.nChannel);
+    if (isLeftXHC) return "leftXHC";
+
+    const isRightXHC = isRightFlaw(flaw.nBoard) && isXHCFlaw(flaw.nChannel);
+    if (isRightXHC) return "rightXHC";
+
+    const isLeftLZ = isLeftFlaw(flaw.nBoard) && isLZFlaw(flaw.nChannel);
+    if (isLeftLZ) return "leftLZ";
+
+    const isRightLZ = isRightFlaw(flaw.nBoard) && isLZFlaw(flaw.nChannel);
+    if (isRightLZ) return "rightLZ";
+  });
+};
+
+export const createFlawGroup = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
+  const flawMap = groupFlaws(flaws);
+  const leftCT = flawMap.get("leftCT") || [];
+  const rightCT = flawMap.get("rightCT") || [];
+  const leftXHC = flawMap.get("leftXHC") || [];
+  const rightXHC = flawMap.get("rightXHC") || [];
+  const leftLZ = flawMap.get("leftLZ") || [];
+  const rightLZ = flawMap.get("rightLZ") || [];
+
+  return {
+    /**
+     * 左穿透1伤
+     */
+    leftCT,
+    /**
+     * 右穿透1伤
+     */
+    rightCT,
+    /**
+     * 左卸荷槽3伤，
+     *
+     * 第一个伤和第二个伤的fltValueX相差10，
+     *
+     * 第二个伤和第三个伤的fltValueX相差5
+     */
+    leftXHC: calculateXHCFlaws(leftXHC),
+    /**
+     * 右卸荷槽3伤，
+     *
+     * 第一个伤和第二个伤的fltValueX相差10，
+     *
+     * 第二个伤和第三个伤的fltValueX相差5
+     */
+    rightXHC: calculateXHCFlaws(rightXHC),
+    /**
+     * 左轮座11伤
+     *
+     * fltValueX相差至少10，理论相差15
+     */
+    leftLZ: calculateLZFlaws(leftLZ),
+    /**
+     * 右轮座11伤
+     *
+     * fltValueX相差至少10，理论相差15
+     */
+    rightLZ: calculateLZFlaws(rightLZ),
+  };
 };

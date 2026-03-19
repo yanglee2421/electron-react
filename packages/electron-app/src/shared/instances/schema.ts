@@ -25,6 +25,9 @@ export const kh_hmis = z.object({
   tszjy: z.string().default(""),
   tsysy: z.string().default(""),
   tswxg: z.string().default(""),
+  tszz: z.string().default(""),
+  sbzz: z.string().default(""),
+  zgld: z.string().default(""),
 });
 
 export type KH_HMIS = z.infer<typeof kh_hmis>;

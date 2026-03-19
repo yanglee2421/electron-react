@@ -1,6 +1,6 @@
 import module from "node:module";
 
-type NativeAddon = {
+interface NativeAddon {
   add(a: number, b: number): number;
   showAlert(message: string, title: string): Promise<number>;
   isRunAsAdmin(): boolean;
@@ -16,7 +16,7 @@ type NativeAddon = {
     ztx: number,
     ytx: number,
   ): Promise<boolean>;
-};
+}
 
 const require = module.createRequire(import.meta.url);
 const addon: NativeAddon = require("../build/Release/hello_addon.node");

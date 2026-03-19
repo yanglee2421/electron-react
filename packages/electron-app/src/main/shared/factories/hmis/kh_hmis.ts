@@ -22,22 +22,17 @@ import {
   calculateJY,
   calculateNAtten,
   calculateNAttenDiff,
+  calculateQuartorResult,
   calculateTS,
   calculateZSJ,
-  isCTFlaw,
-  isLeftFlaw,
-  isLZFlaw,
-  isRightFlaw,
-  isXHCFlaw,
-  resolveLzFlaws,
-  resolveQuartorResult,
+  createFlawGroup,
 } from "#shared/functions/flawDetection";
 import { KH_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { KH_HMIS } from "#shared/instances/schema";
 import { kh_hmis } from "#shared/instances/schema";
-import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
+import os from "node:os";
 import pLimit from "p-limit";
 
 interface CHR501InputParams {
@@ -2283,36 +2278,19 @@ export class KH extends HMIS<KH_HMIS> {
   ): Promise<CHR501InputParams> {
     const store = this.getStore();
     const corporation = await this.mdb.getCorporation();
-
-    const resolvedRecord = {
-      ...record,
-      with: resolveLzFlaws(record.with),
-    };
-    const data = await this.resolveFlawData(resolvedRecord);
-
-    const leftLzData = data.filter(({ flaw }) => {
-      return isLeftFlaw(flaw.nBoard) && isLZFlaw(flaw.nChannel);
-    });
-
-    const leftXHCData = data.filter(({ flaw }) => {
-      return isLeftFlaw(flaw.nBoard) && isXHCFlaw(flaw.nChannel);
-    });
-
-    const leftCTData = data.filter(({ flaw }) => {
-      return isLeftFlaw(flaw.nBoard) && isCTFlaw(flaw.nChannel);
-    });
-
-    const rightLzData = data.filter(({ flaw }) => {
-      return isRightFlaw(flaw.nBoard) && isLZFlaw(flaw.nChannel);
-    });
-
-    const rightXHCData = data.filter(({ flaw }) => {
-      return isRightFlaw(flaw.nBoard) && isXHCFlaw(flaw.nChannel);
-    });
-
-    const rightCTData = data.filter(({ flaw }) => {
-      return isRightFlaw(flaw.nBoard) && isCTFlaw(flaw.nChannel);
-    });
+    const flawGroup = createFlawGroup(record.with);
+    const leftLZTasks = this.createFlawTasks(flawGroup.leftLZ, record);
+    const leftXHCTasks = this.createFlawTasks(flawGroup.leftXHC, record);
+    const leftCTTasks = this.createFlawTasks(flawGroup.leftCT, record);
+    const rightLZTasks = this.createFlawTasks(flawGroup.rightLZ, record);
+    const rightXHCTasks = this.createFlawTasks(flawGroup.rightXHC, record);
+    const rightCTTasks = this.createFlawTasks(flawGroup.rightCT, record);
+    const leftLzData = await Promise.all(leftLZTasks);
+    const leftXHCData = await Promise.all(leftXHCTasks);
+    const leftCTData = await Promise.all(leftCTTasks);
+    const rightLzData = await Promise.all(rightLZTasks);
+    const rightXHCData = await Promise.all(rightXHCTasks);
+    const rightCTData = await Promise.all(rightCTTasks);
 
     return {
       sbbh: corporation.DeviceNO || "",
@@ -2486,11 +2464,11 @@ export class KH extends HMIS<KH_HMIS> {
     const corporation = await this.mdb.getCorporation();
     const tsg = records[0].szUsername || "";
 
-    const firstData = this.resolveCHR502Data(records[0]);
-    const secondData = this.resolveCHR502Data(records[1]);
-    const thirdData = this.resolveCHR502Data(records[2]);
-    const fourthData = this.resolveCHR502Data(records[3]);
-    const fifthData = this.resolveCHR502Data(records[4]);
+    const firstData = createFlawGroup(records[0].with);
+    const secondData = createFlawGroup(records[1].with);
+    const thirdData = createFlawGroup(records[2].with);
+    const fourthData = createFlawGroup(records[3].with);
+    const fifthData = createFlawGroup(records[4].with);
 
     return {
       xrsj: dayjs(records[0].tmnow).format("YYYY-MM-DD HH:mm:ss"),
@@ -2525,7 +2503,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightXHC[0],
         fifthData.rightXHC[0],
       ),
-      zjgb_1jg: resolveQuartorResult(
+      zjgb_1jg: calculateQuartorResult(
         firstData.rightXHC[0],
         secondData.rightXHC[0],
         thirdData.rightXHC[0],
@@ -2556,7 +2534,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightXHC[1],
         fifthData.rightXHC[1],
       ),
-      zjgb_2jg: resolveQuartorResult(
+      zjgb_2jg: calculateQuartorResult(
         firstData.rightXHC[1],
         secondData.rightXHC[1],
         thirdData.rightXHC[1],
@@ -2587,7 +2565,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightXHC[2],
         fifthData.rightXHC[2],
       ),
-      zjgb_3jg: resolveQuartorResult(
+      zjgb_3jg: calculateQuartorResult(
         firstData.rightXHC[2],
         secondData.rightXHC[2],
         thirdData.rightXHC[2],
@@ -2618,7 +2596,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[0],
         fifthData.rightLZ[0],
       ),
-      lzxrb_1jg: resolveQuartorResult(
+      lzxrb_1jg: calculateQuartorResult(
         firstData.rightLZ[0],
         secondData.rightLZ[0],
         thirdData.rightLZ[0],
@@ -2649,7 +2627,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[1],
         fifthData.rightLZ[1],
       ),
-      lzxrb_2jg: resolveQuartorResult(
+      lzxrb_2jg: calculateQuartorResult(
         firstData.rightLZ[1],
         secondData.rightLZ[1],
         thirdData.rightLZ[1],
@@ -2680,7 +2658,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[2],
         fifthData.rightLZ[2],
       ),
-      lzxrb_3jg: resolveQuartorResult(
+      lzxrb_3jg: calculateQuartorResult(
         firstData.rightLZ[2],
         secondData.rightLZ[2],
         thirdData.rightLZ[2],
@@ -2711,7 +2689,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[3],
         fifthData.rightLZ[3],
       ),
-      lzxrb_4jg: resolveQuartorResult(
+      lzxrb_4jg: calculateQuartorResult(
         firstData.rightLZ[3],
         secondData.rightLZ[3],
         thirdData.rightLZ[3],
@@ -2742,7 +2720,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[4],
         fifthData.rightLZ[4],
       ),
-      lzxrb_5jg: resolveQuartorResult(
+      lzxrb_5jg: calculateQuartorResult(
         firstData.rightLZ[4],
         secondData.rightLZ[4],
         thirdData.rightLZ[4],
@@ -2773,7 +2751,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[5],
         fifthData.rightLZ[5],
       ),
-      lzxrb_6jg: resolveQuartorResult(
+      lzxrb_6jg: calculateQuartorResult(
         firstData.rightLZ[5],
         secondData.rightLZ[5],
         thirdData.rightLZ[5],
@@ -2804,7 +2782,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[6],
         fifthData.rightLZ[6],
       ),
-      lzxrb_7jg: resolveQuartorResult(
+      lzxrb_7jg: calculateQuartorResult(
         firstData.rightLZ[6],
         secondData.rightLZ[6],
         thirdData.rightLZ[6],
@@ -2835,7 +2813,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[7],
         fifthData.rightLZ[7],
       ),
-      lzxrb_8jg: resolveQuartorResult(
+      lzxrb_8jg: calculateQuartorResult(
         firstData.rightLZ[7],
         secondData.rightLZ[7],
         thirdData.rightLZ[7],
@@ -2866,7 +2844,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[8],
         fifthData.rightLZ[8],
       ),
-      lzxrb_9jg: resolveQuartorResult(
+      lzxrb_9jg: calculateQuartorResult(
         firstData.rightLZ[8],
         secondData.rightLZ[8],
         thirdData.rightLZ[8],
@@ -2897,7 +2875,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[9],
         fifthData.rightLZ[9],
       ),
-      lzxrb_10jg: resolveQuartorResult(
+      lzxrb_10jg: calculateQuartorResult(
         firstData.rightLZ[9],
         secondData.rightLZ[9],
         thirdData.rightLZ[9],
@@ -2928,7 +2906,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightLZ[10],
         fifthData.rightLZ[10],
       ),
-      lzxrb_11jg: resolveQuartorResult(
+      lzxrb_11jg: calculateQuartorResult(
         firstData.rightLZ[10],
         secondData.rightLZ[10],
         thirdData.rightLZ[10],
@@ -2959,7 +2937,7 @@ export class KH extends HMIS<KH_HMIS> {
         fourthData.rightCT[0],
         fifthData.rightCT[0],
       ),
-      qzct_1jg: resolveQuartorResult(
+      qzct_1jg: calculateQuartorResult(
         firstData.rightCT[0],
         secondData.rightCT[0],
         thirdData.rightCT[0],
@@ -2971,9 +2949,9 @@ export class KH extends HMIS<KH_HMIS> {
       zjy: store.tszjy,
       ysy: store.tsysy,
       wxg: store.tswxg,
-      sbzz: "",
-      tszz: "",
-      zgld: "",
+      sbzz: store.sbzz,
+      tszz: store.tszz,
+      zgld: store.zgld,
       bz: "",
     };
   }
@@ -2981,75 +2959,24 @@ export class KH extends HMIS<KH_HMIS> {
     return {};
   }
 
-  resolveFlawData(record: VerifyWithData) {
-    return Promise.all(
-      record.with.map(async (flaw) => {
-        const detector = await this.mdb.getDetector(
-          flaw.nChannel,
-          flaw.nBoard,
-          record.szWHModel || "",
-        );
-
-        return {
-          flaw,
-          detector,
-          zsj: calculateZSJ(detector.nWAngle),
-          jy: calculateJY(flaw.nAtten),
-          ts: calculateTS(flaw.nAtten, detector.nDBSub),
-        };
-      }),
+  async resolveFlawData(flaw: VerifyData, record: Verify) {
+    const detector = await this.mdb.getDetector(
+      flaw.nChannel,
+      flaw.nBoard,
+      record.szWHModel || "",
     );
-  }
-  groupFlaws(flaws: QuartorData[]) {
-    return mapGroupBy(flaws, (flaw) => {
-      const isLeftCT = isLeftFlaw(flaw.nBoard) && isCTFlaw(flaw.nChannel);
-      if (isLeftCT) return "leftCT";
-
-      const isRightCT = isRightFlaw(flaw.nBoard) && isCTFlaw(flaw.nChannel);
-      if (isRightCT) return "rightCT";
-
-      const isLeftXHC = isLeftFlaw(flaw.nBoard) && isXHCFlaw(flaw.nChannel);
-      if (isLeftXHC) return "leftXHC";
-
-      const isRightXHC = isRightFlaw(flaw.nBoard) && isXHCFlaw(flaw.nChannel);
-      if (isRightXHC) return "rightXHC";
-
-      const isLeftLZ = isLeftFlaw(flaw.nBoard) && isLZFlaw(flaw.nChannel);
-      if (isLeftLZ) return "leftLZ";
-
-      const isRightLZ = isRightFlaw(flaw.nBoard) && isLZFlaw(flaw.nChannel);
-      if (isRightLZ) return "rightLZ";
-    });
-  }
-  resolveCHR502Data(record: QuartorWithData) {
-    const flawGroup = this.groupFlaws(record.with);
 
     return {
-      /**
-       * 左穿透，一个伤
-       */
-      leftCT: flawGroup.get("leftCT") || [],
-      /**
-       * 右穿透，一个伤
-       */
-      rightCT: flawGroup.get("rightCT") || [],
-      /**
-       * 左卸荷槽，三伤
-       */
-      leftXHC: flawGroup.get("leftXHC") || [],
-      /**
-       * 右卸荷槽，三伤
-       */
-      rightXHC: flawGroup.get("rightXHC") || [],
-      /**
-       * 左轮座，十一伤
-       */
-      leftLZ: flawGroup.get("leftLZ") || [],
-      /**
-       * 右轮座，十一伤
-       */
-      rightLZ: flawGroup.get("rightLZ") || [],
+      flaw,
+      detector,
+      zsj: calculateZSJ(detector.nWAngle),
+      jy: calculateJY(flaw.nAtten),
+      ts: calculateTS(flaw.nAtten, detector.nDBSub),
     };
+  }
+  createFlawTasks(flaws: VerifyData[], record: Verify) {
+    const limit = pLimit(os.cpus().length);
+    return flaws.map((flaw) => limit(() => this.resolveFlawData(flaw, record)));
   }
 }
 
