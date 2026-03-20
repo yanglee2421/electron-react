@@ -160,28 +160,30 @@ export const Component = () => {
                   />
                   <Divider />
                   <CardContent>
-                    <Grid container spacing={1.5}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 1.5,
+                      }}
+                    >
                       {Array.from(
                         Object.entries(group),
                         ([channel, [data]]) => {
                           return (
-                            <Grid key={channel} size={{ xs: 4, sm: 3 }}>
-                              <Box
-                                sx={{ display: "grid", placeItems: "center" }}
-                              >
-                                <Chip
-                                  label={calculateChipLabel(channel)}
-                                  variant="outlined"
-                                  color={data.bResult ? "success" : "error"}
-                                  icon={<WifiChannel />}
-                                  size="medium"
-                                />
-                              </Box>
-                            </Grid>
+                            <Chip
+                              key={channel}
+                              label={calculateChipLabel(channel)}
+                              variant="outlined"
+                              color={data.bResult ? "success" : "error"}
+                              icon={<WifiChannel />}
+                              size="medium"
+                              sx={{ flexGrow: 1 }}
+                            />
                           );
                         },
                       )}
-                    </Grid>
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>

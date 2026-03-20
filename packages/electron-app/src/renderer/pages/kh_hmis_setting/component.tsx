@@ -35,6 +35,8 @@ export const Component = () => {
   const tsysy = useKhHmisStore((store) => store.tsysy);
   const tswxg = useKhHmisStore((store) => store.tswxg);
   const zgld = useKhHmisStore((store) => store.zgld);
+  const sbzz = useKhHmisStore((store) => store.sbzz);
+  const tszz = useKhHmisStore((store) => store.tszz);
 
   const form = useForm({
     defaultValues: {
@@ -47,7 +49,9 @@ export const Component = () => {
       tszjy,
       tsysy,
       tswxg,
+      tszz,
       zgld,
+      sbzz,
     },
     validators: {
       onChange: kh_hmis.required(),
@@ -64,6 +68,8 @@ export const Component = () => {
         draft.tsysy = value.tsysy;
         draft.tswxg = value.tswxg;
         draft.zgld = value.zgld;
+        draft.sbzz = value.sbzz;
+        draft.tszz = value.tszz;
       });
       snackbar.show("保存成功", { severity: "success" });
     },
@@ -146,6 +152,21 @@ export const Component = () => {
               </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="tswxg">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="维修工"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <form.Field name="tsysy">
                 {(field) => (
                   <TextField
@@ -155,6 +176,36 @@ export const Component = () => {
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors.at(0)?.message}
                     label="探伤验收员"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="tszz">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="探伤专职"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="sbzz">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="设备专职"
                     fullWidth
                   />
                 )}
@@ -175,21 +226,7 @@ export const Component = () => {
                 )}
               </form.Field>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="tswxg">
-                {(field) => (
-                  <TextField
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors.at(0)?.message}
-                    label="维修工"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
+
             <Grid size={{ xs: 12 }}>
               <FormGroup row>
                 <form.Field name="autoInput">
