@@ -1,5 +1,4 @@
-import type { PLCReadResult, PLCWritePayload } from "#main/lib/ipc";
-import { type IpcHandle } from "#main/lib/ipc";
+import type { IpcHandle, PLCReadResult, PLCWritePayload } from "#main/lib/ipc";
 import { FXPLCClient, TransportSerial } from "node-fxplc";
 import { SerialPort } from "serialport";
 

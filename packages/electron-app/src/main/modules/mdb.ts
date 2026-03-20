@@ -1,4 +1,4 @@
-import { ipcHandle } from "#main/lib/ipc";
+import { type IpcHandle } from "#main/lib/ipc";
 import type { Profile } from "#main/shared/factories/Profile";
 import dayjs from "dayjs";
 import os from "node:os";
@@ -482,15 +482,15 @@ export class MDBDB {
 
     return record;
   }
-
-  bindIpcHandlers() {
-    ipcHandle("MDB/MDB_ROOT_GET", async (_, data: MDBPayload) => {
-      const result = await this.getDataFromRootDB(data);
-      return result;
-    });
-    ipcHandle("MDB/MDB_APP_GET", async (_, data: MDBPayload) => {
-      const result = await this.getDataFromAppDB(data);
-      return result;
-    });
-  }
 }
+
+export const bindIpcHandlers = (mdb: MDBDB, ipcHandle: IpcHandle) => {
+  ipcHandle("MDB/MDB_ROOT_GET", async (_, data: MDBPayload) => {
+    const result = await mdb.getDataFromRootDB(data);
+    return result;
+  });
+  ipcHandle("MDB/MDB_APP_GET", async (_, data: MDBPayload) => {
+    const result = await mdb.getDataFromAppDB(data);
+    return result;
+  });
+};

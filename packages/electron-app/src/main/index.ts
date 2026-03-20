@@ -1,6 +1,6 @@
 import { createSQLiteDB } from "#main/db";
 import { ipcHandle } from "#main/lib/ipc";
-import { MDBDB } from "#main/modules/mdb";
+import * as mdb from "#main/modules/mdb";
 import * as guangzhoubei from "#main/shared/factories/hmis/guangzhoubei";
 import * as guangzhouJibaoduan from "#main/shared/factories/hmis/guangzhoujibaoduan";
 import * as hxzy from "#main/shared/factories/hmis/hxzy";
@@ -256,7 +256,7 @@ const bootstrap = async () => {
   });
   const kv = new KV(sqliteDB);
   const profile = new Profile(kv);
-  const mdbDB = new MDBDB(profile);
+  const mdbDB = new mdb.MDBDB(profile);
 
   const hxzyHmis = new hxzy.Hxzy(sqliteDB, kv, mdbDB, net);
   const khHmis = new kh.KH(sqliteDB, kv, mdbDB, net);
@@ -289,7 +289,7 @@ const bootstrap = async () => {
   bindAppEventListeners(profile);
   bindIpcHandles();
 
-  mdbDB.bindIpcHandlers();
+  mdb.bindIpcHandlers(mdbDB, ipcHandle);
   cmd.bindIpcHandlers(ipcHandle);
   plc.bindIpcHandlers(ipcHandle);
   md5.bindIpcHandlers();
