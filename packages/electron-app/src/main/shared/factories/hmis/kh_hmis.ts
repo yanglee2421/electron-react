@@ -12,13 +12,17 @@ import type {
   MDBDB,
   Quartor,
   QuartorData,
+  QuartorYearlyData,
   Verify,
   VerifyData,
 } from "#main/modules/mdb";
 import type { Net } from "#main/shared/factories/hmis/hmis";
 import { HMIS } from "#main/shared/factories/hmis/hmis";
 import type { KV } from "#main/shared/factories/KV";
+import { calculateErrorMessage } from "#shared/functions/error";
 import {
+  calculateAttResult,
+  calculateDecResult,
   calculateJY,
   calculateNAtten,
   calculateNAttenDiff,
@@ -26,12 +30,15 @@ import {
   calculateTS,
   calculateZSJ,
   createFlawGroup,
+  createNChannelGroup,
+  verifyFlawGroup,
 } from "#shared/functions/flawDetection";
 import { KH_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { KH_HMIS } from "#shared/instances/schema";
 import { kh_hmis } from "#shared/instances/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
+import * as mathjs from "mathjs";
 import os from "node:os";
 import pLimit from "p-limit";
 
@@ -1686,70 +1693,269 @@ interface CHR502InputParams {
 }
 
 interface CHR503InputParams {
+  /**
+   * 写入时间
+   */
+  xrsj: Date | string;
+  /**
+   * 设备编号
+   */
   sbbh: string;
+  /**
+   * 设备名称
+   */
   sbmc: string;
+  /**
+   * 规格型号
+   */
   ggxh: string;
+  /**
+   * 制造厂家
+   */
   zzcj: string;
+  /**
+   * 单位名称
+   */
   dwmc: string;
+  /**
+   * 校验日期
+   */
   jyrq: string;
+  /**
+   * 通道1-水平线性
+   */
   cl11: string;
+  /**
+   * 通道1-分辨力
+   */
   cl12: string;
+  /**
+   * 通道1-垂直线性
+   */
   cl13: string;
+  /**
+   * 通道1-灵敏度余量
+   */
   cl14: string;
+  /**
+   * 测试结果判定
+   */
   jg1: string;
+  /**
+   * 通道2-水平线性
+   */
   cl21: string;
+  /**
+   * 通道2-分辨力
+   */
   cl22: string;
+  /**
+   * 通道2-垂直线性
+   */
   cl23: string;
+  /**
+   * 通道2-灵敏度余量
+   */
   cl24: string;
+  /**
+   * 测试结果判定
+   */
   jg2: string;
+  /**
+   * 通道3-水平线性
+   */
   cl31: string;
+  /**
+   * 通道3-分辨力
+   */
   cl32: string;
+  /**
+   * 通道3-垂直线性
+   */
   cl33: string;
+  /**
+   * 通道3-灵敏度余量
+   */
   cl34: string;
+  /**
+   * 测试结果判定
+   */
   jg3: string;
+  /**
+   * 通道4-水平线性
+   */
   cl41: string;
+  /**
+   * 通道4-分辨力
+   */
   cl42: string;
+  /**
+   * 通道4-垂直线性
+   */
   cl43: string;
+  /**
+   * 通道4-灵敏度余量
+   */
   cl44: string;
+  /**
+   * 测试结果判定
+   */
   jg4: string;
+  /**
+   * 通道5-水平线性
+   */
   cl51: string;
+  /**
+   * 通道5-分辨力
+   */
   cl52: string;
+  /**
+   * 通道5-垂直线性
+   */
   cl53: string;
+  /**
+   * 通道5-灵敏度余量
+   */
   cl54: string;
+  /**
+   * 测试结果判定
+   */
   jg5: string;
+  /**
+   * 通道6-水平线性
+   */
   cl61: string;
+  /**
+   * 通道6-分辨力
+   */
   cl62: string;
+  /**
+   * 通道6-垂直线性
+   */
   cl63: string;
+  /**
+   * 通道6-灵敏度余量
+   */
   cl64: string;
+  /**
+   * 测试结果判定
+   */
   jg6: string;
+  /**
+   * 通道7-水平线性
+   */
   cl71: string;
+  /**
+   * 通道7-分辨力
+   */
   cl72: string;
+  /**
+   * 通道7-垂直线性
+   */
   cl73: string;
+  /**
+   * 通道7-灵敏度余量
+   */
   cl74: string;
+  /**
+   * 测试结果判定
+   */
   jg7: string;
+  /**
+   * 通道8-水平线性
+   */
   cl81: string;
+  /**
+   * 通道8-分辨力
+   */
   cl82: string;
+  /**
+   * 通道8-垂直线性
+   */
   cl83: string;
+  /**
+   * 通道8-灵敏度余量
+   */
   cl84: string;
+  /**
+   * 测试结果判定
+   */
   jg8: string;
+  /**
+   * 通道9-水平线性
+   */
   cl91: string;
+  /**
+   * 通道9-分辨力
+   */
   cl92: string;
+  /**
+   * 通道9-垂直线性
+   */
   cl93: string;
+  /**
+   * 通道9-灵敏度余量
+   */
   cl94: string;
+  /**
+   * 测试结果判定
+   */
   jg9: string;
+  /**
+   * 通道10-水平线性
+   */
   cl101: string;
+  /**
+   * 通道10-分辨力
+   */
   cl102: string;
+  /**
+   * 通道10-垂直线性
+   */
   cl103: string;
+  /**
+   * 通道10-灵敏度余量
+   */
   cl104: string;
+  /**
+   * 测试结果判定
+   */
   jg10: string;
+  /**
+   * 探伤工
+   */
   tsg: string;
+  /**
+   * 工长
+   */
   gz: string;
+  /**
+   * 质检员
+   */
   zjy: string;
+  /**
+   * 验收员
+   */
   ysy: string;
+  /**
+   * 维修工
+   */
   wxg: string;
+  /**
+   * 设备专职
+   */
   sbzz: string;
+  /**
+   * 探伤专职
+   */
   tszz: string;
+  /**
+   * 主管领导
+   */
   zgld: string;
+  /**
+   * 备注
+   */
   bz: string;
 }
 
@@ -1848,29 +2054,6 @@ const emit = createEmit("api_set");
 const resolveFlawX = (flaw: VerifyData) => {
   return Math.floor(flaw.fltValueX).toString(10);
 };
-
-export interface Ipc {
-  "HMIS/kh_hmis_api_get": {
-    args: [string];
-    return: ReturnType<typeof KH.prototype.handleFetch>;
-  };
-  "HMIS/kh_hmis_api_set": {
-    args: [number];
-    return: ReturnType<typeof KH.prototype.handleUpload>;
-  };
-  "HMIS/kh_hmis_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: ReturnType<typeof KH.prototype.handleReadRecord>;
-  };
-  "HMIS/kh_hmis_sqlite_delete": {
-    args: [number];
-    return: ReturnType<typeof KH.prototype.handleDeleteRecord>;
-  };
-  "HMIS/kh_hmis_sqlite_insert": {
-    args: [InsertRecordParams];
-    return: ReturnType<typeof KH.prototype.handleInsertRecord>;
-  };
-}
 
 export class KH extends HMIS<KH_HMIS> {
   private db: SQLiteDBType;
@@ -2051,6 +2234,7 @@ export class KH extends HMIS<KH_HMIS> {
     const host = store.ip + ":" + store.port;
     const url = new URL(`http://${host}/api/csbts_501/save`);
     const body = JSON.stringify(params);
+    console.log("host", host);
 
     log(`请求数据[${url.href}]:${body}`);
 
@@ -2251,7 +2435,7 @@ export class KH extends HMIS<KH_HMIS> {
       throw new Error(`未找到校验记录[${id}]`);
     }
 
-    const chr501Params = await this.verifyToCHR501InputParams(record);
+    const chr501Params = await this.resolveCHR501InputParams(record);
 
     return this.sendCHR501ToServer(chr501Params);
   }
@@ -2264,21 +2448,27 @@ export class KH extends HMIS<KH_HMIS> {
       );
     }
 
-    const chr502Params = await this.quartorToCHR502InputParams(
+    const chr502Params = await this.resolveCHR502InputParams(
       records.rows,
       records.previous,
     );
 
     return this.sendCHR502ToServer(chr502Params);
   }
-  handleUploadCHR503(id: string) {}
+  async handleUploadCHR503(id: string) {
+    const query = await this.mdb.getYearlyData(id);
+    const chr503Params = await this.resolveCHR503InputParams(query.rows);
 
-  async verifyToCHR501InputParams(
+    return this.sendCHR503ToServer(chr503Params);
+  }
+
+  async resolveCHR501InputParams(
     record: VerifyWithData,
   ): Promise<CHR501InputParams> {
     const store = this.getStore();
     const corporation = await this.mdb.getCorporation();
     const flawGroup = createFlawGroup(record.with);
+    verifyFlawGroup(flawGroup);
     const leftLZTasks = this.createFlawTasks(flawGroup.leftLZ, record);
     const leftXHCTasks = this.createFlawTasks(flawGroup.leftXHC, record);
     const leftCTTasks = this.createFlawTasks(flawGroup.leftCT, record);
@@ -2431,23 +2621,47 @@ export class KH extends HMIS<KH_HMIS> {
       zzj_zsj: leftXHCData[0].zsj,
       zzj_jy: leftXHCData[0].jy,
       zzj_ts: leftXHCData[0].ts,
-      zzj_qx1: leftXHCData[0].flaw.fltValueX.toString(),
-      zzj_qx2: leftXHCData[1].flaw.fltValueX.toString(),
-      zzj_qx3: leftXHCData[2].flaw.fltValueX.toString(),
+      zzj_qx1: mathjs.format(leftXHCData[0].flaw.fltValueX, {
+        notation: "fixed",
+        precision: 0,
+      }),
+      zzj_qx2: mathjs.format(leftXHCData[1].flaw.fltValueX, {
+        notation: "fixed",
+        precision: 0,
+      }),
+      zzj_qx3: mathjs.format(leftXHCData[2].flaw.fltValueX, {
+        notation: "fixed",
+        precision: 0,
+      }),
       zct_zsj: leftCTData[0].zsj,
       zct_jy: leftCTData[0].jy,
       zct_ts: leftCTData[0].ts,
-      zct_qx: leftCTData[0].flaw.fltValueX.toString(),
+      zct_qx: mathjs.format(leftCTData[0].flaw.fltValueX, {
+        notation: "fixed",
+        precision: 0,
+      }),
       yzj_zsj: rightXHCData[0].zsj,
       yzj_jy: rightXHCData[0].jy,
       yzj_ts: rightXHCData[0].ts,
-      yzj_qx1: rightXHCData[0].flaw.fltValueX.toString(),
-      yzj_qx2: rightXHCData[1].flaw.fltValueX.toString(),
-      yzj_qx3: rightXHCData[2].flaw.fltValueX.toString(),
+      yzj_qx1: mathjs.format(rightXHCData[0].flaw.fltValueX, {
+        notation: "fixed",
+        precision: 0,
+      }),
+      yzj_qx2: mathjs.format(rightXHCData[1].flaw.fltValueX, {
+        notation: "fixed",
+        precision: 0,
+      }),
+      yzj_qx3: mathjs.format(rightXHCData[2].flaw.fltValueX, {
+        notation: "fixed",
+        precision: 0,
+      }),
       yct_zsj: rightCTData[0].zsj,
       yct_jy: rightCTData[0].jy,
       yct_ts: rightCTData[0].ts,
-      yct_qx: rightCTData[0].flaw.fltValueX.toString(),
+      yct_qx: mathjs.format(rightCTData[0].flaw.fltValueX, {
+        notation: "fixed",
+        precision: 0,
+      }),
       czz: record.szUsername || "",
       gz: store.tsgz,
       wxg: store.tswxg,
@@ -2456,19 +2670,53 @@ export class KH extends HMIS<KH_HMIS> {
       bz: "",
     };
   }
-  async quartorToCHR502InputParams(
+  async resolveCHR502InputParams(
     records: QuartorWithData[],
     previous: Quartor | null,
   ): Promise<CHR502InputParams> {
+    if (records.length !== 5) {
+      throw new Error(`CHR502接口需要5条记录，当前${records.length}条`);
+    }
+
     const store = this.getStore();
     const corporation = await this.mdb.getCorporation();
     const tsg = records[0].szUsername || "";
 
     const firstData = createFlawGroup(records[0].with);
+    try {
+      verifyFlawGroup(firstData);
+    } catch (error) {
+      const message = calculateErrorMessage(error);
+      throw new Error(`记录#${records[0].szIDs}数据异常:${message}`);
+    }
     const secondData = createFlawGroup(records[1].with);
+    try {
+      verifyFlawGroup(secondData);
+    } catch (error) {
+      const message = calculateErrorMessage(error);
+      throw new Error(`记录#${records[1].szIDs}数据异常:${message}`);
+    }
     const thirdData = createFlawGroup(records[2].with);
+    try {
+      verifyFlawGroup(thirdData);
+    } catch (error) {
+      const message = calculateErrorMessage(error);
+      throw new Error(`记录#${records[2].szIDs}数据异常:${message}`);
+    }
     const fourthData = createFlawGroup(records[3].with);
+    try {
+      verifyFlawGroup(fourthData);
+    } catch (error) {
+      const message = calculateErrorMessage(error);
+      throw new Error(`记录#${records[3].szIDs}数据异常:${message}`);
+    }
     const fifthData = createFlawGroup(records[4].with);
+    try {
+      verifyFlawGroup(fifthData);
+    } catch (error) {
+      const message = calculateErrorMessage(error);
+      throw new Error(`记录#${records[4].szIDs}数据异常:${message}`);
+    }
 
     return {
       xrsj: dayjs(records[0].tmnow).format("YYYY-MM-DD HH:mm:ss"),
@@ -2476,7 +2724,7 @@ export class KH extends HMIS<KH_HMIS> {
       sbmc: corporation.DeviceName || "",
       dwmc: corporation.Factory || "",
       zzsj: corporation.prodate || "",
-      zzdw: "武铁紫云轨道装备有限公司",
+      zzdw: "武汉武铁紫云轨道装备有限公司",
       scjxsj: previous ? dayjs(previous.tmnow).format("YYYY-MM-DD") : "",
       jyrq: dayjs(records[0].tmnow).format("YYYY-MM-DD"),
       zjgb_11_z: calculateNAtten(firstData.leftXHC[0]) || "",
@@ -2955,8 +3203,152 @@ export class KH extends HMIS<KH_HMIS> {
       bz: "",
     };
   }
-  async toCHR503InputParams(): Promise<CHR503InputParams> {
-    return {};
+  async resolveCHR503InputParams(
+    rows: QuartorYearlyData[],
+  ): Promise<CHR503InputParams> {
+    const store = this.getStore();
+    const corporation = await this.mdb.getCorporation();
+    const channelGroup = createNChannelGroup(rows);
+    const left1 = channelGroup.left1[0];
+    const left2 = channelGroup.left2[0];
+    const left3 = channelGroup.left3[0];
+    const left4 = channelGroup.left4[0];
+    const left5 = channelGroup.left5[0];
+    const right7 = channelGroup.right7[0];
+    const right8 = channelGroup.right8[0];
+    const right9 = channelGroup.right9[0];
+    const right10 = channelGroup.right10[0];
+    const right11 = channelGroup.right11[0];
+
+    return {
+      xrsj: dayjs(left1.tmNow).format("YYYY-MM-DD HH:mm:ss"),
+      sbbh: corporation.DeviceNO || "",
+      sbmc: corporation.DeviceName || "",
+      ggxh: corporation.DeviceType || "",
+      zzcj: "武汉武铁紫云轨道装备有限公司",
+      dwmc: corporation.Factory || "",
+      jyrq: dayjs(left1.tmNow).format("YYYY-MM-DD"),
+      cl11: mathjs.format(left1.Hor_fResult, {
+        notation: "fixed",
+        precision: 2,
+      }),
+      cl12: calculateDecResult(left1.Dec_Max) || "",
+      cl13: mathjs.format(left1.Ver_fResult, {
+        notation: "fixed",
+        precision: 2,
+      }),
+      cl14: calculateAttResult(left1.Att_Max) || "",
+      jg1: left1.bResult ? "合格" : "不合格",
+      cl21:
+        mathjs.format(left2.Hor_fResult, { notation: "fixed", precision: 2 }) ||
+        "",
+      cl22: calculateDecResult(left2.Dec_Max) || "",
+      cl23:
+        mathjs.format(left2.Ver_fResult, { notation: "fixed", precision: 2 }) ||
+        "",
+      cl24: calculateAttResult(left2.Att_Max) || "",
+      jg2: left2.bResult ? "合格" : "不合格",
+      cl31:
+        mathjs.format(left3.Hor_fResult, { notation: "fixed", precision: 2 }) ||
+        "",
+      cl32: calculateDecResult(left3.Dec_Max) || "",
+      cl33:
+        mathjs.format(left3.Ver_fResult, { notation: "fixed", precision: 2 }) ||
+        "",
+      cl34: calculateAttResult(left3.Att_Max) || "",
+      jg3: left3.bResult ? "合格" : "不合格",
+      cl41:
+        mathjs.format(left4.Hor_fResult, { notation: "fixed", precision: 2 }) ||
+        "",
+      cl42: calculateDecResult(left4.Dec_Max) || "",
+      cl43: mathjs.format(left4.Ver_fResult, {
+        notation: "fixed",
+        precision: 2,
+      }),
+      cl44: calculateAttResult(left4.Att_Max) || "",
+      jg4: left4.bResult ? "合格" : "不合格",
+      cl51:
+        mathjs.format(left5.Hor_fResult, { notation: "fixed", precision: 2 }) ||
+        "",
+      cl52: calculateDecResult(left5.Dec_Max) || "",
+      cl53:
+        mathjs.format(left5.Ver_fResult, { notation: "fixed", precision: 2 }) ||
+        "",
+      cl54: calculateAttResult(left5.Att_Max) || "",
+      jg5: left5.bResult ? "合格" : "不合格",
+      cl61:
+        mathjs.format(right7.Hor_fResult, {
+          notation: "fixed",
+          precision: 2,
+        }) || "",
+      cl62: calculateDecResult(right7.Dec_Max) || "",
+      cl63:
+        mathjs.format(right7.Ver_fResult, {
+          notation: "fixed",
+          precision: 2,
+        }) || "",
+      cl64: calculateAttResult(right7.Att_Max) || "",
+      jg6: right7.bResult ? "合格" : "不合格",
+      cl71:
+        mathjs.format(right8.Hor_fResult, {
+          notation: "fixed",
+          precision: 2,
+        }) || "",
+      cl72: calculateDecResult(right8.Dec_Max) || "",
+      cl73:
+        mathjs.format(right8.Ver_fResult, {
+          notation: "fixed",
+          precision: 2,
+        }) || "",
+      cl74: calculateAttResult(right8.Att_Max) || "",
+      jg7: right8.bResult ? "合格" : "不合格",
+      cl81:
+        mathjs.format(right9.Hor_fResult, {
+          notation: "fixed",
+          precision: 2,
+        }) || "",
+      cl82: calculateDecResult(right9.Dec_Max) || "",
+      cl83:
+        mathjs.format(right9.Ver_fResult, {
+          notation: "fixed",
+          precision: 2,
+        }) || "",
+      cl84: calculateAttResult(right9.Att_Max) || "",
+      jg8: right9.bResult ? "合格" : "不合格",
+      cl91:
+        mathjs.format(right10.Hor_fResult, {
+          notation: "fixed",
+          precision: 2,
+        }) || "",
+      cl92: calculateDecResult(right10.Dec_Max) || "",
+      cl93:
+        mathjs.format(right10.Ver_fResult, {
+          notation: "fixed",
+          precision: 2,
+        }) || "",
+      cl94: calculateAttResult(right10.Att_Max) || "",
+      jg9: right10.bResult ? "合格" : "不合格",
+      cl101: mathjs.format(right11.Hor_fResult, {
+        notation: "fixed",
+        precision: 2,
+      }),
+      cl102: calculateDecResult(right11.Dec_Max) || "",
+      cl103: mathjs.format(right11.Ver_fResult, {
+        notation: "fixed",
+        precision: 2,
+      }),
+      cl104: calculateAttResult(right11.Att_Max) || "",
+      jg10: right11.bResult ? "合格" : "不合格",
+      tsg: left1.szUsername || "",
+      gz: store.tsgz,
+      zjy: store.tszjy,
+      ysy: store.tsysy,
+      wxg: store.tswxg,
+      sbzz: store.sbzz,
+      tszz: store.tszz,
+      zgld: store.zgld,
+      bz: "",
+    };
   }
 
   async resolveFlawData(flaw: VerifyData, record: Verify) {
@@ -2980,6 +3372,41 @@ export class KH extends HMIS<KH_HMIS> {
   }
 }
 
+export interface Ipc {
+  "HMIS/kh_hmis_api_get": {
+    args: [string];
+    return: ReturnType<typeof KH.prototype.handleFetch>;
+  };
+  "HMIS/kh_hmis_api_set": {
+    args: [number];
+    return: ReturnType<typeof KH.prototype.handleUpload>;
+  };
+  "HMIS/kh_hmis_sqlite_get": {
+    args: [SQLiteGetParams];
+    return: ReturnType<typeof KH.prototype.handleReadRecord>;
+  };
+  "HMIS/kh_hmis_sqlite_delete": {
+    args: [number];
+    return: ReturnType<typeof KH.prototype.handleDeleteRecord>;
+  };
+  "HMIS/kh_hmis_sqlite_insert": {
+    args: [InsertRecordParams];
+    return: ReturnType<typeof KH.prototype.handleInsertRecord>;
+  };
+  "HMIS/kh_hmis_chr501": {
+    args: [string];
+    return: ReturnType<typeof KH.prototype.handleUploadCHR501>;
+  };
+  "HMIS/kh_hmis_chr502": {
+    args: [string[]];
+    return: ReturnType<typeof KH.prototype.handleUploadCHR502>;
+  };
+  "HMIS/kh_hmis_chr503": {
+    args: [string];
+    return: ReturnType<typeof KH.prototype.handleUploadCHR503>;
+  };
+}
+
 export const bindIpcHandlers = (hmis: KH, ipcHandle: IpcHandle) => {
   ipcHandle("HMIS/kh_hmis_sqlite_get", (_, params) => {
     return hmis.handleReadRecord(params);
@@ -2992,4 +3419,7 @@ export const bindIpcHandlers = (hmis: KH, ipcHandle: IpcHandle) => {
   });
   ipcHandle("HMIS/kh_hmis_api_get", (_, barcode) => hmis.handleFetch(barcode));
   ipcHandle("HMIS/kh_hmis_api_set", (_, id) => hmis.handleUpload(id));
+  ipcHandle("HMIS/kh_hmis_chr501", (_, id) => hmis.handleUploadCHR501(id));
+  ipcHandle("HMIS/kh_hmis_chr502", (_, id) => hmis.handleUploadCHR502(id));
+  ipcHandle("HMIS/kh_hmis_chr503", (_, id) => hmis.handleUploadCHR503(id));
 };

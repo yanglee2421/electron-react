@@ -34,6 +34,7 @@ export const Component = () => {
   const tszjy = useKhHmisStore((store) => store.tszjy);
   const tsysy = useKhHmisStore((store) => store.tsysy);
   const tswxg = useKhHmisStore((store) => store.tswxg);
+  const zgld = useKhHmisStore((store) => store.zgld);
 
   const form = useForm({
     defaultValues: {
@@ -46,6 +47,7 @@ export const Component = () => {
       tszjy,
       tsysy,
       tswxg,
+      zgld,
     },
     validators: {
       onChange: kh_hmis.required(),
@@ -60,6 +62,8 @@ export const Component = () => {
         draft.tsgz = value.tsgz;
         draft.tszjy = value.tszjy;
         draft.tsysy = value.tsysy;
+        draft.tswxg = value.tswxg;
+        draft.zgld = value.zgld;
       });
       snackbar.show("保存成功", { severity: "success" });
     },
@@ -75,6 +79,7 @@ export const Component = () => {
           autoComplete="off"
           onSubmit={(e) => {
             e.preventDefault();
+            void form.handleSubmit();
           }}
         >
           <Grid container spacing={1.5}>
@@ -150,6 +155,36 @@ export const Component = () => {
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors.at(0)?.message}
                     label="探伤验收员"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="zgld">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="主管领导"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="tswxg">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="维修工"
                     fullWidth
                   />
                 )}

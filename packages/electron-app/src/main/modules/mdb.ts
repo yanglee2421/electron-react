@@ -195,6 +195,91 @@ type QuartorWithData = Quartor & {
   with: QuartorData[];
 };
 
+export interface QuartorYearlyData {
+  szIDs: string;
+  nBoard: number;
+  nChannel: number;
+  nDecetoer: number;
+  /**
+   * @description 最终检测结果（合格/不合格）
+   */
+  bResult: boolean;
+  /**
+   * @description 水平线性结果是否合格
+   */
+  bResultHor: boolean;
+  /**
+   * @description 垂直线性结果是否合格
+   */
+  bResultVer: boolean;
+  /**
+   * @description 分辨力检测结果是否合格
+   */
+  bResultDec: boolean;
+  /**
+   * @description 灵敏度余量检测结果是否合格
+   */
+  bResultAtt: boolean;
+  bResultDtyn: boolean;
+
+  Hor_Atten: number;
+  Hor_B0: number;
+  Hor_B1: number;
+  Hor_B2: number;
+  Hor_B3: number;
+  Hor_B4: number;
+  Hor_B5: number;
+  Hor_Max: number;
+  /**
+   * @description 水平线性结果
+   */
+  Hor_fResult: number;
+  // 数字类型（Dec 相关）
+  Dec_LAtten: number;
+  Dec_HAtten: number;
+  /**
+   * @description 分辨力检测结果，需要除以10
+   */
+  Dec_Max: number;
+  // 数字类型（Ver 相关 - 原有）
+  Ver_B0: number;
+  Ver_B1: number;
+  Ver_B2: number;
+  Ver_B3: number;
+  Ver_B4: number;
+  Ver_B5: number;
+  Ver_B6: number;
+  Ver_B7: number;
+  Ver_B8: number;
+  Ver_B9: number;
+  Ver_B10: number;
+  Ver_B11: number;
+  Ver_B12: number;
+  Ver_B13: number;
+  Ver_BP: number;
+  Ver_BN: number;
+  /**
+   * @description 垂直线性结果
+   */
+  Ver_fResult: number;
+  // Att 相关数字字段
+  Att_S0: number;
+  Att_S1: number;
+  /**
+   * @description 灵敏度余量检测结果，需要除以10
+   */
+  Att_Max: number;
+
+  // Dyn 相关数字字段（Dyn_Max 备注为S1与S2的差值的绝对值，类型仍为数字）
+  Dyn_S1: number;
+  Dyn_S2: number;
+  Dyn_Max: number;
+  // 短文本类型
+  szUsername: string;
+  // 日期/时间类型：推荐用 string（适配接口传输），也可根据场景改用 Date 类型
+  tmNow: string; // 若需直接用日期对象，可改为 Date，如：tmNow: Date;
+}
+
 export type MDBPayload = Omit<MDBWorkerData, "databasePath">;
 
 export class MDBDB {
@@ -343,6 +428,14 @@ export class MDBDB {
     }
 
     return detection;
+  }
+  async getYearlyData(id: string) {
+    const query = await this.getDataFromRootDB<QuartorYearlyData>({
+      tableName: "Quartor",
+      filters: [{ type: "equal", field: "szIDs", value: id }],
+    });
+
+    return query;
   }
   async getCorporation() {
     const {

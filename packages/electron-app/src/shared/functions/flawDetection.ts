@@ -30,6 +30,13 @@ export const calculatePlace = (nChannel: number) => {
     case 6:
     case 7:
     case 8:
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
       return "轮座";
     default:
       return "车轴";
@@ -97,7 +104,7 @@ export const calculateTS = (nAtten: number, nDBSub: number) => {
   return mathjs
     .divide(
       mathjs.add(mathjs.bignumber(nAtten), mathjs.bignumber(nDBSub)),
-      mathjs.add(mathjs.bignumber(nAtten), mathjs.bignumber("1")),
+      mathjs.bignumber(10),
     )
     .toString();
 };
@@ -123,7 +130,7 @@ interface Flaw {
  * @returns 过滤后的轮座缺陷列表
  */
 export const calculateLZFlaws = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
-  return flaws
+  const result = flaws
     .sort((a, b) => a.fltValueX - b.fltValueX)
     .reduce<TFlaw[]>((result, b) => {
       const lastX = result.at(-1)?.fltValueX || Number.NEGATIVE_INFINITY;
@@ -135,6 +142,8 @@ export const calculateLZFlaws = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
 
       return result;
     }, []);
+
+  return result;
 };
 
 const calculateXHCFlawsByFirstFlaw = <TFlaw extends Flaw>(
@@ -294,4 +303,117 @@ export const createFlawGroup = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
      */
     rightLZ: calculateLZFlaws(rightLZ),
   };
+};
+
+interface FlawLike {
+  nBoard: number;
+  nChannel: number;
+}
+
+export const groupByNChannel = <TFlaw extends FlawLike>(flaws: TFlaw[]) => {
+  return mapGroupBy(flaws, (flaw) => {
+    if (flaw.nBoard === 0) {
+      switch (flaw.nChannel) {
+        case 0:
+          return "left1";
+        case 1:
+          return "left2";
+        case 2:
+          return "left3";
+        case 3:
+          return "left4";
+        case 4:
+          return "left5";
+        case 5:
+          return "left6";
+        default:
+          return "_trash";
+      }
+    } else {
+      switch (flaw.nChannel) {
+        case 0:
+          return "right7";
+        case 1:
+          return "right8";
+        case 2:
+          return "right9";
+        case 3:
+          return "right10";
+        case 4:
+          return "right11";
+        case 5:
+          return "right12";
+        default:
+          return "_trash";
+      }
+    }
+  });
+};
+
+export const createNChannelGroup = <TFlaw extends FlawLike>(flaws: TFlaw[]) => {
+  const flawMap = groupByNChannel(flaws);
+  const left1 = flawMap.get("left1") || [];
+  const left2 = flawMap.get("left2") || [];
+  const left3 = flawMap.get("left3") || [];
+  const left4 = flawMap.get("left4") || [];
+  const left5 = flawMap.get("left5") || [];
+  const left6 = flawMap.get("left6") || [];
+  const right7 = flawMap.get("right7") || [];
+  const right8 = flawMap.get("right8") || [];
+  const right9 = flawMap.get("right9") || [];
+  const right10 = flawMap.get("right10") || [];
+  const right11 = flawMap.get("right11") || [];
+  const right12 = flawMap.get("right12") || [];
+
+  return {
+    left1,
+    left2,
+    left3,
+    left4,
+    left5,
+    left6,
+    right7,
+    right8,
+    right9,
+    right10,
+    right11,
+    right12,
+  };
+};
+
+export const calculateDecResult = (Dec_Max: number) => {
+  return mathjs
+    .divide(mathjs.bignumber(Dec_Max), mathjs.bignumber(10))
+    .toString();
+};
+
+export const calculateAttResult = (Att_Max: number) => {
+  return mathjs
+    .divide(mathjs.bignumber(Att_Max), mathjs.bignumber(10))
+    .toString();
+};
+
+type FlawGroup<TFlaw extends Flaw> = ReturnType<typeof createFlawGroup<TFlaw>>;
+
+export const verifyFlawGroup = <TFlaw extends Flaw>(
+  flawGroup: FlawGroup<TFlaw>,
+) => {
+  if (flawGroup.leftCT.length === 0) {
+    throw new Error("缺少左穿透伤");
+  }
+  if (flawGroup.rightCT.length === 0) {
+    throw new Error("缺少右穿透伤");
+  }
+  if (flawGroup.leftXHC.length < 3) {
+    throw new Error(`左卸荷槽伤不足3个; 当前${flawGroup.leftXHC.length}个`);
+  }
+  if (flawGroup.rightXHC.length < 3) {
+    throw new Error(`右卸荷槽伤不足3个; 当前${flawGroup.rightXHC.length}个`);
+  }
+  if (flawGroup.leftLZ.length < 11) {
+    throw new Error(`左轮座伤不足11个; 当前${flawGroup.leftLZ.length}个`);
+  }
+  if (flawGroup.rightLZ.length < 11) {
+    throw new Error(`右轮座伤不足11个; 当前${flawGroup.rightLZ.length}个`);
+  }
 };

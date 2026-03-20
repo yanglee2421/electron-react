@@ -69,3 +69,48 @@ export const useUploadAxleInfo = () => {
     },
   });
 };
+
+export const useUploadCHR501 = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      return ipc.invoke("HMIS/kh_hmis_chr501", id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY],
+      });
+    },
+  });
+};
+
+export const useUploadCHR502 = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => {
+      return ipc.invoke("HMIS/kh_hmis_chr502", ids);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY],
+      });
+    },
+  });
+};
+
+export const useUploadCHR503 = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      return ipc.invoke("HMIS/kh_hmis_chr503", id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY],
+      });
+    },
+  });
+};

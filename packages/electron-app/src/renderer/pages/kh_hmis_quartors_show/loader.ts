@@ -1,0 +1,19 @@
+import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
+import { QueryProvider } from "#renderer/components/query";
+import type { LoaderFunction } from "react-router";
+import type { QuartorData } from "#main/modules/mdb";
+
+export const loader: LoaderFunction = async (ctx) => {
+  await QueryProvider.queryClient.ensureQueryData(
+    fetchDataFromRootDB<QuartorData>({
+      tableName: "quartors_data",
+      filters: [
+        {
+          type: "equal",
+          field: "opid",
+          value: ctx.params.id || "",
+        },
+      ],
+    }),
+  );
+};

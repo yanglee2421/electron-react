@@ -231,13 +231,37 @@ const routes: RouteObject[] = [
                   },
                   {
                     path: "verify",
-                    lazy: () =>
-                      import("#renderer/pages/kh_hmis_verify/component"),
+                    children: [
+                      {
+                        index: true,
+                        lazy: () =>
+                          import("#renderer/pages/kh_hmis_verify/component"),
+                      },
+                      {
+                        path: ":id",
+                        lazy: () =>
+                          import(
+                            "#renderer/pages/kh_hmis_verify_show/component"
+                          ),
+                      },
+                    ],
                   },
                   {
                     path: "quartor",
-                    lazy: () =>
-                      import("#renderer/pages/kh_hmis_quartor/component"),
+                    children: [
+                      {
+                        index: true,
+                        lazy: () =>
+                          import("#renderer/pages/kh_hmis_quartor/component"),
+                      },
+                      {
+                        path: ":id",
+                        lazy: () =>
+                          import(
+                            "#renderer/pages/kh_hmis_quartors_show/component"
+                          ),
+                      },
+                    ],
                   },
                   {
                     path: "annual",

@@ -114,6 +114,20 @@ const fixMDBDate = (value: Date) => {
   return dayjs(value).add(value.getTimezoneOffset(), "minute").toDate();
 };
 
+const pagination = <TRow>(
+  list: TRow[],
+  pageIndex: number,
+  pageSize?: number,
+) => {
+  if (!pageSize) {
+    return list;
+  }
+
+  const rowOffset = pageIndex * pageSize;
+
+  return list.slice(rowOffset, rowOffset + pageSize);
+};
+
 export const getDataFromMDB = async (data: MDBWorkerData) => {
   const { databasePath, tableName, filters, pageSize, pageIndex = 0 } = data;
   const buf = await fs.promises.readFile(databasePath);
@@ -121,42 +135,33 @@ export const getDataFromMDB = async (data: MDBWorkerData) => {
   const allRows = getDataFromTable(mdbReader, tableName, filters);
   const total = allRows.length;
 
-  if (!pageSize) {
-    return { total, rows: allRows.reverse() };
-  }
-
-  const rowOffset = pageIndex * pageSize;
-  const rows = allRows
-    .reverse()
-    .slice(rowOffset, rowOffset + pageSize)
-    .map((row) => {
-      const keyValuePair = Object.entries(row).map(([key, value]) => {
-        return [
-          key,
-          value instanceof Date ? fixMDBDate(value) : value,
-        ] as const;
-      });
-
-      return Object.fromEntries(keyValuePair);
+  const rows = allRows.reverse().map((row) => {
+    const keyValuePair = Object.entries(row).map(([key, value]) => {
+      return [key, value instanceof Date ? fixMDBDate(value) : value] as const;
     });
 
-  if (!data.with) {
-    return { total, rows };
-  }
+    const rowData = Object.fromEntries(keyValuePair);
 
-  const rowIds = rows
-    .map((row) => Reflect.get(row, "szIDs"))
-    .filter((id) => typeof id === "string");
+    if (data.with) {
+      return {
+        ...rowData,
+        with: getDataFromTable(mdbReader, `${tableName}_data`, [
+          {
+            type: "equal",
+            field: "opid",
+            value: Reflect.get(row, "szIDs")?.toString() || "",
+          },
+        ]),
+      };
+    }
 
-  const withData = getDataFromTable(mdbReader, `${tableName}_data`, [
-    {
-      type: "in",
-      field: "opid",
-      value: rowIds,
-    },
-  ]);
+    return rowData;
+  });
 
-  return { total, rows, with: withData };
+  return {
+    total,
+    rows: pagination(rows, pageIndex, pageSize),
+  };
 };
 
 export default getDataFromMDB;
@@ -202,7 +207,10 @@ export const handleCHR502 = async (params: HandleCHR502Params) => {
       return {
         ...row,
         with: flaws.rows.filter((flaw) => {
-          return flaw.opid === row.szIDs;
+          return Object.is(
+            Reflect.get(flaw, "opid"),
+            Reflect.get(row, "szIDs"),
+          );
         }),
       };
     });

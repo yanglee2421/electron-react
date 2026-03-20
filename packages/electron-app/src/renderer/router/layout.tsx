@@ -121,7 +121,7 @@ const calculateBreadcrumbs = (
       title: calculateAlias(segmentAlias, title),
       path: Object.is(index + 1, array.length)
         ? void 0
-        : normalizePathname(segments.slice(0, index).join("/")),
+        : normalizePathname(array.slice(0, index + 1).join("/")),
     };
   });
   return breadcrumbs;
