@@ -5,6 +5,7 @@ import {
   fetchXuzhoubeiRecord,
   useDeleteXuzhoubeiRecord,
   useFetchXuzhoubeiAxleInfo,
+  useInsertXuzhoubeiRecord,
   useUploadXuzhoubeiAxleInfo,
 } from "#renderer/api/xuzhoubei";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
@@ -170,6 +171,7 @@ export const Component = () => {
   const getData = useFetchXuzhoubeiAxleInfo();
   const barcode = useQuery(fetchXuzhoubeiRecord(params));
   const isAutoInput = useXuzhoubei((store) => store.autoInput);
+  const insertRecordToDB = useInsertXuzhoubeiRecord();
 
   const form = useForm({
     defaultValues: {
@@ -187,7 +189,25 @@ export const Component = () => {
           form.reset();
         },
       });
-      await sendMessageToWindow(data);
+
+      const [record] = data;
+      if (!record) {
+        snackbar.show("未查询到相关信息", { severity: "warning" });
+        return;
+      }
+
+      await insertRecordToDB.mutateAsync({
+        barCode: record.DH,
+        zh: record.ZH,
+        PJ_MCZZRQ: record.MCZZRQ,
+        PJ_SCZZRQ: record.SCZZRQ,
+        PJ_ZZRQ: record.CZZZRQ,
+        PJ_ZZDW: record.CZZZDW,
+        PJ_MCZZDW: record.MCZZDW,
+        PJ_SCZZDW: record.SCZZDW,
+      });
+
+      void sendMessageToWindow(data);
     },
   });
 
@@ -204,7 +224,7 @@ export const Component = () => {
   });
 
   useSubscribe("api_set", () => {
-    barcode.refetch();
+    void barcode.refetch();
   });
 
   const sendMessageToWindow = async (data: XZBGetResponse) => {
@@ -302,7 +322,7 @@ export const Component = () => {
               autoComplete="off"
               onSubmit={(e) => {
                 e.preventDefault();
-                form.handleSubmit();
+                void form.handleSubmit();
               }}
               onReset={() => form.reset()}
             >

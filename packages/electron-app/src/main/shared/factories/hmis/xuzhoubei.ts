@@ -40,7 +40,7 @@ export type XZBGetResponse = [
   },
 ];
 
-type PostRequestItem = {
+interface PostRequestItem {
   PJ_JXID: string; // 设备生产ID(主键)
   SB_SN: string | null; // 设备编号
   PJ_TAG: string; // 设备工作状态(开始检修1/结束检修0检修前后更新此标志)
@@ -69,10 +69,10 @@ type PostRequestItem = {
   LW_LZXRBY: string; // 右轮座
   LW_XHCZ: string; // 左轴颈
   LW_XHCY: string; // 右轴颈
-};
+}
 
 const formatDate = (date: string | null) => {
-  return dayjs(date).format("YYYY-MM-DD HH:mm:ss");
+  return dayjs(date).format("YYYY-MM-DD");
 };
 
 const hasQX = (result: string | null) => {
@@ -128,7 +128,11 @@ export class Xuzhoubei extends HMIS<JTV_HMIS_XUZHOUBEI> {
   private net: Net;
 
   constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net) {
-    super(jtv_hmis_xuzhoubei.parse, JTV_HMIS_XUZHOUBEI_STORAGE_KEY, kv);
+    super(
+      jtv_hmis_xuzhoubei.parse.bind(jtv_hmis_xuzhoubei),
+      JTV_HMIS_XUZHOUBEI_STORAGE_KEY,
+      kv,
+    );
 
     this.db = db;
     this.mdb = mdb;
@@ -137,8 +141,7 @@ export class Xuzhoubei extends HMIS<JTV_HMIS_XUZHOUBEI> {
 
   async hydrate() {
     await super.hydrate();
-
-    this.autoUploadLoop();
+    void this.autoUploadLoop();
   }
 
   async autoUploadLoop() {

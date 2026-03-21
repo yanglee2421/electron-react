@@ -19,6 +19,7 @@ export const fetchHxzyRecord = (params: SQLiteGetParams) =>
 
 export const useDeleteHxzyRecord = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (id: number) => {
       return ipc.invoke("HMIS/hxzy_hmis_sqlite_delete", id);
@@ -48,6 +49,7 @@ export const useInsertHxzyRecord = () => {
 
 export const useFetchAxleInfo = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (barcode: string) => {
       return ipc.invoke("HMIS/hxzy_hmis_api_get", barcode);
@@ -62,6 +64,7 @@ export const useFetchAxleInfo = () => {
 
 export const useUploadDetecion = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (id: number) => {
       return ipc.invoke("HMIS/hxzy_hmis_api_set", id);

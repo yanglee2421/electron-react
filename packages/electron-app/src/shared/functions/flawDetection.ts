@@ -37,7 +37,6 @@ export const calculatePlace = (nChannel: number) => {
     case 13:
     case 14:
     case 15:
-      return "轮座";
     default:
       return "车轴";
   }
@@ -57,7 +56,6 @@ export const isLZFlaw = (nChannel: number) => {
   switch (place) {
     case "内":
     case "外":
-    case "轮座":
       return true;
     default:
       return false;

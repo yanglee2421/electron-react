@@ -5,6 +5,7 @@ import {
   fetchHxzyRecord,
   useDeleteHxzyRecord,
   useFetchAxleInfo,
+  useInsertHxzyRecord,
   useUploadDetecion,
 } from "#renderer/api/hxzy";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
@@ -108,14 +109,10 @@ const ActionCell = (props: ActionCellProps) => {
   const handleUpload = () => {
     saveData.mutate(props.id, {
       onError(error) {
-        snackbar.show(error.message, {
-          severity: "error",
-        });
+        snackbar.show(error.message, { severity: "error" });
       },
       onSuccess(data) {
-        snackbar.show(`#${data}上传成功`, {
-          severity: "success",
-        });
+        snackbar.show(`#${data.id}上传成功`, { severity: "success" });
       },
     });
   };
@@ -136,9 +133,7 @@ const ActionCell = (props: ActionCellProps) => {
           if (confirmed) {
             deleteBarcode.mutate(props.id, {
               onError: (error) => {
-                snackbar.show(error.message, {
-                  severity: "error",
-                });
+                snackbar.show(error.message, { severity: "error" });
               },
             });
           }
@@ -174,6 +169,7 @@ export const Component = () => {
   const autoInput = useAutoInputToVC();
   const inputRef = useAutoFocusInputRef();
   const isAutoInput = useHxzyHmisStore((state) => state.autoInput);
+  const insertRecordToDB = useInsertHxzyRecord();
 
   const form = useForm({
     defaultValues: {
@@ -190,9 +186,22 @@ export const Component = () => {
         },
       });
 
+      const [record] = data.data;
+      if (!record) {
+        snackbar.show("未查询到相关轴承信息", { severity: "warning" });
+        return;
+      }
+
+      await insertRecordToDB.mutateAsync({
+        DH: record.DH,
+        ZH: record.ZH,
+        CZZZDW: record.CZZZDW,
+        CZZZRQ: record.CZZZRQ,
+      });
+
       if (!isAutoInput) return;
 
-      sendDataToWindow(data);
+      void sendDataToWindow(data);
     },
   });
 
@@ -207,7 +216,7 @@ export const Component = () => {
   });
 
   useSubscribe("api_set", () => {
-    barcode.refetch();
+    void barcode.refetch();
   });
 
   const sendDataToWindow = async (data: HxzyGetResponse) => {
@@ -304,7 +313,7 @@ export const Component = () => {
               autoComplete="off"
               onSubmit={(e) => {
                 e.preventDefault();
-                form.handleSubmit();
+                void form.handleSubmit();
               }}
               onReset={() => form.reset()}
             >
