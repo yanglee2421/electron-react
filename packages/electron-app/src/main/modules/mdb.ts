@@ -482,6 +482,10 @@ export class MDBDB {
 
     return record;
   }
+
+  dispose() {
+    void this.piscina.destroy();
+  }
 }
 
 export const bindIpcHandlers = (mdb: MDBDB, ipcHandle: IpcHandle) => {

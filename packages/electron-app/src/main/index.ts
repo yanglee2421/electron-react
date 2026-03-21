@@ -275,6 +275,7 @@ const bootstrap = async () => {
       mdbDB,
       net,
     );
+  const imageModule = new md5.ImageModule();
 
   await hydrateModules(
     profile,
@@ -292,7 +293,7 @@ const bootstrap = async () => {
   mdb.bindIpcHandlers(mdbDB, ipcHandle);
   cmd.bindIpcHandlers(ipcHandle);
   plc.bindIpcHandlers(ipcHandle);
-  md5.bindIpcHandlers();
+  md5.bindIpcHandlers(imageModule, ipcHandle);
   xml.bindIpcHandlers();
 
   bindIpc(kv, ipcHandle);

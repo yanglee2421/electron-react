@@ -16,7 +16,7 @@
   "git.autofetch": true,
 
   // Others
-  "workbench.colorTheme": "Dark Modern",
+  // "workbench.colorTheme": "Dark Modern",
   "workbench.iconTheme": "vscode-icons",
 
   // Language specific settings
