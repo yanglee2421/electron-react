@@ -172,6 +172,11 @@ const calculateXHCFlawsByFirstFlaw = <TFlaw extends Flaw>(
 };
 
 export const calculateXHCFlaws = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
+  // 如果缺陷数量不足4个，直接返回原缺陷列表，不进行组合计算
+  if (flaws.length < 4) {
+    return flaws;
+  }
+
   const oirginMap = new Map<number, TFlaw[]>();
   const flawMap = flaws
     .sort((a, b) => a.fltValueX - b.fltValueX)

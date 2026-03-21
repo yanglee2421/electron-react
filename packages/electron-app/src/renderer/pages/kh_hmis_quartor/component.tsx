@@ -201,7 +201,6 @@ const DataGrid = (props: DataGridProps) => {
               },
             });
           }}
-          disabled={!table.getIsSomeRowsSelected()}
         >
           上传CHR502
         </Button>

@@ -1,13 +1,19 @@
 {
   "name": "@yanglee2421/electron-app",
-  "version": "0.6.2",
+  "version": "0.6.3",
+  "private": true,
   "description": "WuTie ZiYun ToolKit",
   "keywords": [
     "electron",
-    "vite",
     "react",
-    "typescript"
+    "typescript",
+    "vite"
   ],
+  "homepage": "https://github.com/yanglee2421/electron-react/blob/main/README.md",
+  "bugs": {
+    "url": "https://github.com/yanglee2421/electron-react/issues",
+    "email": "yanglee2421@outlook.com"
+  },
   "license": "MIT",
   "author": {
     "name": "yanglee2421",
@@ -19,12 +25,6 @@
     "url": "https://github.com/yanglee2421/electron-react.git",
     "directory": "/packages/electron-app"
   },
-  "bugs": {
-    "url": "https://github.com/yanglee2421/electron-react/issues",
-    "email": "yanglee2421@outlook.com"
-  },
-  "homepage": "https://github.com/yanglee2421/electron-react/blob/main/README.md",
-  "private": true,
   "files": [
     "release"
   ],
