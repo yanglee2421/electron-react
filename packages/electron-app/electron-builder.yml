@@ -3,7 +3,7 @@ appId: "app.yanglee2421.wtzy_toolkit"
 asar: true
 asarUnpack:
   - resources/**
-productName: "WTZY_Toolkit"
+productName: "武铁紫云接口面板"
 directories:
   output: "release/${version}"
 files:
