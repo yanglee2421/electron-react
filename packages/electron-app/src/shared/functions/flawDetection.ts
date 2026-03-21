@@ -172,13 +172,21 @@ const calculateXHCFlawsByFirstFlaw = <TFlaw extends Flaw>(
 };
 
 export const calculateXHCFlaws = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
-  // 如果缺陷数量不足4个，直接返回原缺陷列表，不进行组合计算
-  if (flaws.length < 4) {
-    return flaws;
+  // 去重
+  const uniqueMap = flaws.reduce((map, flaw) => {
+    map.set(Math.floor(flaw.fltValueX), flaw);
+
+    return map;
+  }, new Map<number, TFlaw>());
+  const uniquedFlaws = [...uniqueMap.values()];
+
+  // 如果去重后的缺陷数量不足4个，直接返回原缺陷列表，不进行组合计算
+  if (uniquedFlaws.length < 4) {
+    return uniquedFlaws;
   }
 
   const oirginMap = new Map<number, TFlaw[]>();
-  const flawMap = flaws
+  const flawMap = uniquedFlaws
     .sort((a, b) => a.fltValueX - b.fltValueX)
     .reduce((result, flaw) => {
       return new Map(result).set(
@@ -189,6 +197,7 @@ export const calculateXHCFlaws = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
 
   const flawGroups = [...flawMap.values()];
   const validatedFlaws = flawGroups.find((flaws) => flaws.length === 3);
+
   if (validatedFlaws) return validatedFlaws;
 
   return flawGroups.sort((a, b) => b.length - a.length).at(0) || [];
