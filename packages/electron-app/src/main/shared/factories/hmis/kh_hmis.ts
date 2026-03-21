@@ -2364,7 +2364,7 @@ export class KH extends HMIS<KH_HMIS> {
       await this.sendQxToServer(data.qxBody);
     }
 
-    const [result] = await this.db
+    const result = await this.db
       .update(schema.khBarcodeTable)
       .set({ isUploaded: true })
       .where(sql.eq(schema.khBarcodeTable.id, id))

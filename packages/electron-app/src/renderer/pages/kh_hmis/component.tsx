@@ -5,6 +5,7 @@ import {
   fetchKhRecord,
   useDeleteKhRecord,
   useFetchKhAxleInfo,
+  useInsertKhRecord,
   useUploadAxleInfo,
 } from "#renderer/api/kh";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
@@ -173,6 +174,7 @@ export const Component = () => {
   const autoInput = useAutoInputToVC();
   const barcode = useQuery(fetchKhRecord(params));
   const isAutoInput = useKhHmisStore((store) => store.autoInput);
+  const insertRecord = useInsertKhRecord();
 
   const form = useForm({
     defaultValues: {
@@ -189,9 +191,16 @@ export const Component = () => {
         },
       });
 
-      if (!isAutoInput) return;
+      if (isAutoInput) {
+        void sendDataToWindow(data);
+      }
 
-      await sendDataToWindow(data);
+      await insertRecord.mutateAsync({
+        DH: data.data.mesureId,
+        ZH: data.data.zh,
+        CZZZDW: data.data.czzzdw,
+        CZZZRQ: data.data.czzzrq,
+      });
     },
   });
 
@@ -208,7 +217,7 @@ export const Component = () => {
   });
 
   useSubscribe("api_set", () => {
-    barcode.refetch();
+    void barcode.refetch();
   });
 
   const sendDataToWindow = async (data: KHGetResponse) => {
@@ -257,6 +266,7 @@ export const Component = () => {
 
   const renderFilter = () => {
     if (!showFilter) return null;
+
     return (
       <>
         <Divider />
@@ -304,7 +314,7 @@ export const Component = () => {
               autoComplete="off"
               onSubmit={(e) => {
                 e.preventDefault();
-                form.handleSubmit();
+                void form.handleSubmit();
               }}
               onReset={() => form.reset()}
             >
