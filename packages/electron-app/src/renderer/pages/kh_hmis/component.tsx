@@ -19,6 +19,7 @@ import {
   DeleteOutlined,
   FilterListOutlined,
   KeyboardReturn,
+  Refresh,
 } from "@mui/icons-material";
 import {
   Button,
@@ -299,9 +300,19 @@ export const Component = () => {
         title="康华HMIS"
         subheader="安康"
         action={
-          <IconButton onClick={() => setShowFilter((prev) => !prev)}>
-            <FilterListOutlined color={showFilter ? "primary" : void 0} />
-          </IconButton>
+          <>
+            <IconButton onClick={() => setShowFilter((prev) => !prev)}>
+              <FilterListOutlined color={showFilter ? "primary" : void 0} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                void barcode.refetch();
+              }}
+              disabled={barcode.isRefetchError}
+            >
+              <Refresh />
+            </IconButton>
+          </>
         }
       />
       <CardContent>

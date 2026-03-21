@@ -39,7 +39,11 @@ const calculateTheme = (isDark: boolean) => {
 
 const useLog = () => {
   useSubscribe("LOG", (data: Log) => {
-    db.log.add({ type: data.type, message: data.message, date: data.date });
+    void db.log.add({
+      type: data.type,
+      message: data.message,
+      date: data.date,
+    });
   });
 };
 

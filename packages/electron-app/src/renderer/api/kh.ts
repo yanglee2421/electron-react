@@ -11,7 +11,7 @@ const QUERY_KEY = "kh_hmis";
 
 export const fetchKhRecord = (params: SQLiteGetParams) => {
   return queryOptions({
-    queryKey: ["HMIS/kh_hmis_sqlite_get", params],
+    queryKey: [QUERY_KEY, params],
     queryFn: () => {
       return ipc.invoke("HMIS/kh_hmis_sqlite_get", params);
     },
@@ -49,9 +49,16 @@ export const useInsertKhRecord = () => {
 };
 
 export const useFetchKhAxleInfo = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (barcode: string) => {
       return ipc.invoke("HMIS/kh_hmis_api_get", barcode);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY],
+      });
     },
   });
 };
