@@ -127,21 +127,50 @@ interface Flaw {
  * @param flaws 轮座缺陷列表
  * @returns 过滤后的轮座缺陷列表
  */
-export const calculateLZFlaws = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
-  const result = flaws
-    .sort((a, b) => a.fltValueX - b.fltValueX)
-    .reduce<TFlaw[]>((result, b) => {
-      const lastX = result.at(-1)?.fltValueX || Number.NEGATIVE_INFINITY;
-      const diff = b.fltValueX - lastX;
+export const calculateLZFlaws = <TFlaw extends Flaw>(
+  flaws: TFlaw[],
+): TFlaw[] => {
+  const result: TFlaw[] = [];
+  let previous = Number.NEGATIVE_INFINITY;
 
-      if (diff >= 10) {
-        return [...result, b];
+  return flaws
+    .toSorted((a, b) => a.fltValueX - b.fltValueX)
+    .reduce<TFlaw[]>((acc, flaw) => {
+      if (flaw.fltValueX > previous + 10) {
+        acc.push(flaw);
+        previous = flaw.fltValueX;
       }
 
-      return result;
+      return acc;
+    }, result);
+};
+
+export const calculateLZFlawGroup = <TFlaw extends Flaw>(
+  flaws: TFlaw[],
+): Map<number, TFlaw[]> => {
+  const group = mapGroupBy(flaws, (flaw) => Math.floor(flaw.fltValueX));
+  let previous = Number.NEGATIVE_INFINITY;
+
+  const validKeys = [...group.keys()]
+    .toSorted((a, b) => a - b)
+    .reduce<number[]>((acc, key) => {
+      if (key > previous + 10) {
+        acc.push(key);
+        previous = key;
+      }
+
+      return acc;
     }, []);
 
-  return result;
+  group.forEach((_, key) => {
+    if (validKeys.includes(key)) {
+      return;
+    }
+
+    group.delete(key);
+  });
+
+  return group;
 };
 
 const calculateXHCFlawsByFirstFlaw = <TFlaw extends Flaw>(
@@ -169,36 +198,46 @@ const calculateXHCFlawsByFirstFlaw = <TFlaw extends Flaw>(
   return [firstFlaw, secondFlaw, thirdFlaw];
 };
 
-export const calculateXHCFlaws = <TFlaw extends Flaw>(flaws: TFlaw[]) => {
-  // 去重
-  const uniqueMap = flaws.reduce((map, flaw) => {
-    map.set(Math.floor(flaw.fltValueX), flaw);
+const uniqueList = <TEl, TKey>(
+  list: TEl[],
+  fn: (el: TEl, index: number) => TKey,
+): TEl[] => {
+  const map = list.reduce((map, el, index) => {
+    const key = fn(el, index);
 
-    return map;
-  }, new Map<number, TFlaw>());
-  const uniquedFlaws = [...uniqueMap.values()];
+    return map.set(key, el);
+  }, new Map<TKey, TEl>());
 
-  // 如果去重后的缺陷数量不足4个，直接返回原缺陷列表，不进行组合计算
+  return [...map.values()];
+};
+
+export const calculateXHCFlaws = <TFlaw extends Flaw>(
+  flaws: TFlaw[],
+): TFlaw[] => {
+  // 如果去重后的缺陷数量不足4个，直接返回去重结果，不进行组合计算
+  const uniquedFlaws = uniqueList(flaws, (flaw) =>
+    Math.floor(flaw.fltValueX),
+  ).toSorted((a, b) => a.fltValueX - b.fltValueX);
+
   if (uniquedFlaws.length < 4) {
     return uniquedFlaws;
   }
 
-  const oirginMap = new Map<number, TFlaw[]>();
-  const flawMap = uniquedFlaws
-    .sort((a, b) => a.fltValueX - b.fltValueX)
-    .reduce((result, flaw) => {
-      return new Map(result).set(
-        flaw.fltValueX,
-        calculateXHCFlawsByFirstFlaw(flaws, flaw),
-      );
-    }, oirginMap);
+  let result: TFlaw[] = [];
 
-  const flawGroups = [...flawMap.values()];
-  const validatedFlaws = flawGroups.find((flaws) => flaws.length === 3);
+  for (const flaw of uniquedFlaws) {
+    const list = calculateXHCFlawsByFirstFlaw(uniquedFlaws, flaw);
 
-  if (validatedFlaws) return validatedFlaws;
+    if (list.length === 3) {
+      return list;
+    }
 
-  return flawGroups.sort((a, b) => b.length - a.length).at(0) || [];
+    if (list.length > result.length) {
+      result = list;
+    }
+  }
+
+  return result;
 };
 
 interface Flaw {
@@ -409,7 +448,7 @@ type FlawGroup<TFlaw extends Flaw> = ReturnType<typeof createFlawGroup<TFlaw>>;
 
 export const verifyFlawGroup = <TFlaw extends Flaw>(
   flawGroup: FlawGroup<TFlaw>,
-) => {
+): void => {
   if (flawGroup.leftCT.length === 0) {
     throw new Error("缺少左穿透伤");
   }
