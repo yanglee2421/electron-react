@@ -10,8 +10,8 @@
     "require": "./dist/main.cjs"
   },
   "scripts": {
-    "dev": "node --watch src/main.ts",
-    "build": "cmake-js compile --cmake-path \"C:\\Users\\lee\\android_sdk\\cmake\\3.22.1\\bin\\cmake.exe\""
+    "build": "tsdown",
+    "build:node": "cmake-js compile --cmake-path \"C:\\Users\\lee\\android_sdk\\cmake\\3.22.1\\bin\\cmake.exe\""
   },
   "dependencies": {
     "node-addon-api": "^8.5.0"
