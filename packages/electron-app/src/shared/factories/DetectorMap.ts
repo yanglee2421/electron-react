@@ -39,11 +39,22 @@ export class DetectorMap {
       .divide(mathjs.bignumber(detector.nDBSub), mathjs.bignumber(10))
       .toString();
   }
-  ts(nBoard: number, nChannel: number) {
+  ts(nBoard: number, nChannel: number, nAtten?: number) {
+    if (!nAtten) {
+      return "";
+    }
+
     const detector = this.getDetector(nBoard, nChannel);
 
     if (!detector) {
       return "";
     }
+
+    return mathjs
+      .divide(
+        mathjs.add(mathjs.bignumber(detector.nDBSub), mathjs.bignumber(nAtten)),
+        mathjs.bignumber(10),
+      )
+      .toString();
   }
 }

@@ -1,3 +1,4 @@
+import { calculateXHCFlaws } from "#shared/functions/flawDetection";
 import { mapGroupBy } from "@yotulee/run";
 import * as mathjs from "mathjs";
 
@@ -26,7 +27,7 @@ export class FlawMatrix<TFlaw extends Flaw> {
     const flaws = this.flaws.filter(
       (flaw) => flaw.nBoard === nBoard && flaw.nChannel === nChannel,
     );
-    const flaw = flaws[flawIndex];
+    const flaw = flaws.at(flawIndex);
 
     return flaw || null;
   }
@@ -72,12 +73,21 @@ export class FlawMatrix<TFlaw extends Flaw> {
         return "";
     }
 
-    const group = mapGroupBy(this.flaws, (flaw) => Math.floor(flaw.fltValueX));
+    const lzFlaws = this.flaws.filter((flaw) => {
+      const boardMatch = flaw.nBoard === nBoard;
+      if (!boardMatch) {
+        return false;
+      }
+
+      const channelMatch = flaw.nChannel === 3 || flaw.nChannel === 4;
+      return channelMatch;
+    });
+    const group = mapGroupBy(lzFlaws, (flaw) => Math.floor(flaw.fltValueX));
     let latestKey = Number.NEGATIVE_INFINITY;
     const flawX = [...group.keys()]
       .sort((a, b) => a - b)
       .filter((key) => {
-        if (key > latestKey + 10) {
+        if (key > latestKey + 5) {
           latestKey = key;
           return true;
         }
@@ -96,5 +106,30 @@ export class FlawMatrix<TFlaw extends Flaw> {
     }
 
     return mathjs.format(flaw.fltValueX, { notation: "fixed", precision: 0 });
+  }
+
+  /**
+   * 根据nBoard获取XHC缺陷值X
+   * @param flawNo 缺陷编号，表示第几个缺陷值X（从1开始）
+   * @param nBoard 0 或 1，表示0是左，1是右
+   */
+  getXHCFlawX(flawNo: number, nBoard: number) {
+    const xhcFlaws = this.flaws.filter(
+      (flaw) => nBoard === flaw.nBoard && flaw.nChannel === 1,
+    );
+    const validFlaws = calculateXHCFlaws(xhcFlaws);
+    const flaw = validFlaws.at(flawNo - 1);
+
+    if (!flaw) {
+      return "";
+    }
+
+    return mathjs.format(flaw.fltValueX, { notation: "fixed", precision: 0 });
+  }
+
+  getAtten(nBoard: number, nChannel: number) {
+    const flaw = this.getFlaw(nBoard, nChannel, 0);
+
+    return flaw?.nAtten;
   }
 }

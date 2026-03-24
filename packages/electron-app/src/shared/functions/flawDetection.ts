@@ -147,7 +147,7 @@ export const calculateLZFlaws = <TFlaw extends Flaw>(
     .concat(suffixFlaws)
     .toSorted((a, b) => a.fltValueX - b.fltValueX)
     .reduce<TFlaw[]>((acc, flaw) => {
-      if (flaw.fltValueX > previous + 10) {
+      if (flaw.fltValueX > previous + 5) {
         acc.push(flaw);
         previous = flaw.fltValueX;
       }
@@ -165,7 +165,7 @@ export const calculateLZFlawGroup = <TFlaw extends Flaw>(
   const validKeys = [...group.keys()]
     .toSorted((a, b) => a - b)
     .reduce<number[]>((acc, key) => {
-      if (key > previous + 10) {
+      if (key > previous + 5) {
         acc.push(key);
         previous = key;
       }
