@@ -479,3 +479,14 @@ export const verifyFlawGroup = <TFlaw extends Flaw>(
     throw new Error(`右轮座伤不足11个; 当前${flawGroup.rightLZ.length}个`);
   }
 };
+
+export const calculateXHCChNo = (nBoard: number, zx: string) => {
+  switch (zx) {
+    case "RD2":
+      return nBoard ? "ch10" : "ch4";
+    case "RE2B":
+      return nBoard ? "ch11" : "ch5";
+    default:
+      return "";
+  }
+};

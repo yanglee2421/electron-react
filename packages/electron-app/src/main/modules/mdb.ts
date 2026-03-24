@@ -6,7 +6,7 @@ import { Piscina } from "piscina";
 import type { MDBWorkerData } from "./mdb.worker";
 import workerPath from "./mdb.worker?modulePath";
 
-interface Detecotor {
+export interface Detecotor {
   id: number;
   nwheel: number;
   nAttenuation: number;
