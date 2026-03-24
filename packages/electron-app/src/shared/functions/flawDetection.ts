@@ -23,8 +23,10 @@ export const calculatePlace = (nChannel: number) => {
     case 2:
       return "卸荷槽";
     case 3:
+      // 51deg
       return "外";
     case 4:
+      // 44deg
       return "内";
     case 5:
     case 6:
@@ -131,9 +133,18 @@ export const calculateLZFlaws = <TFlaw extends Flaw>(
   flaws: TFlaw[],
 ): TFlaw[] => {
   const result: TFlaw[] = [];
+  const group = mapGroupBy(flaws, (flaw) => calculatePlace(flaw.nChannel));
+  const DEG51 = group.get("外") || [];
+  const DEG44 = group.get("内") || [];
+  const sortedDEG51 = DEG51.toSorted((a, b) => a.fltValueX - b.fltValueX);
+  const sortedDEG44 = DEG44.toSorted((a, b) => a.fltValueX - b.fltValueX);
+  const prefixFlaws = sortedDEG51.slice(0, 7);
+  const suffixFlaws = sortedDEG44.slice(-5);
+
   let previous = Number.NEGATIVE_INFINITY;
 
-  return flaws
+  return prefixFlaws
+    .concat(suffixFlaws)
     .toSorted((a, b) => a.fltValueX - b.fltValueX)
     .reduce<TFlaw[]>((acc, flaw) => {
       if (flaw.fltValueX > previous + 10) {
