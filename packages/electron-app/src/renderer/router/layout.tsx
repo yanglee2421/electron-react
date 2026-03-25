@@ -49,10 +49,10 @@ import { NprogressBar } from "./nprogress";
 const createSegmentAlias = () => {
   const segmentAlias = new Map([
     ["hxzy", "华兴致远"],
-    ["jtv", "京天威"],
-    ["jtv_xuzhoubei", "京天威(徐州北)"],
-    ["jtv_guangzhoubei", "京天威(广州北)"],
-    ["jtv_guangzhoujibaoduan", "京天威(广州机保段)"],
+    ["jtv", "京天威统型"],
+    ["jtv_xuzhoubei", "徐州北"],
+    ["jtv_guangzhoubei", "广州北"],
+    ["jtv_guangzhoujibaoduan", "广州机保段"],
     ["kh", "康华"],
     ["verifies", "日常校验"],
     ["verify", "日常校验"],
@@ -173,7 +173,7 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
       ],
     },
     {
-      title: "京天威(徐州北)",
+      title: "徐州北",
       children: [
         {
           segment: calculateSegment("jtv_xuzhoubei"),
@@ -188,7 +188,7 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
       ],
     },
     {
-      title: "京天威(广州北)",
+      title: "广州北",
       children: [
         {
           segment: calculateSegment("jtv_guangzhoubei"),
@@ -203,7 +203,7 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
       ],
     },
     {
-      title: "京天威(广州机保段)",
+      title: "广州机保段",
       children: [
         {
           segment: calculateSegment("jtv_guangzhoujibaoduan"),

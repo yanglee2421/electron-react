@@ -22,20 +22,13 @@ import { HMIS } from "#main/shared/factories/hmis/hmis";
 import type { KV } from "#main/shared/factories/KV";
 import { DetectorMap } from "#shared/factories/DetectorMap";
 import { FlawQuery } from "#shared/factories/Flaw";
-import { calculateErrorMessage } from "#shared/functions/error";
 import {
   calculateAttResult,
   calculateDecResult,
-  calculateJY,
-  calculateNAtten,
   calculateNAttenDiff,
   calculateQuartorResult,
-  calculateTS,
   calculateXHCChNo,
-  calculateZSJ,
-  createFlawGroup,
   createNChannelGroup,
-  verifyFlawGroup,
 } from "#shared/functions/flawDetection";
 import { KH_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { KH_HMIS } from "#shared/instances/schema";
@@ -43,7 +36,6 @@ import { kh_hmis } from "#shared/instances/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import * as mathjs from "mathjs";
-import os from "node:os";
 import pLimit from "p-limit";
 import type { CHR501InputParams } from "./kh501";
 import type { CHR502InputParams } from "./kh502";
@@ -840,42 +832,172 @@ export class KH extends HMIS<KH_HMIS> {
     const store = this.getStore();
     const corporation = await this.mdb.getCorporation();
     const tsg = records[0].szUsername || "";
+    const q1 = new FlawQuery(records[0].with, records[0].szIDs);
+    const q2 = new FlawQuery(records[1].with, records[1].szIDs);
+    const q3 = new FlawQuery(records[2].with, records[2].szIDs);
+    const q4 = new FlawQuery(records[3].with, records[3].szIDs);
+    const q5 = new FlawQuery(records[4].with, records[4].szIDs);
+    const queries = [q1, q2, q3, q4, q5];
 
-    const firstData = createFlawGroup(records[0].with);
-    try {
-      verifyFlawGroup(firstData);
-    } catch (error) {
-      const message = calculateErrorMessage(error);
-      throw new Error(`记录#${records[0].szIDs}数据异常:${message}`);
-    }
-    const secondData = createFlawGroup(records[1].with);
-    try {
-      verifyFlawGroup(secondData);
-    } catch (error) {
-      const message = calculateErrorMessage(error);
-      throw new Error(`记录#${records[1].szIDs}数据异常:${message}`);
-    }
-    const thirdData = createFlawGroup(records[2].with);
-    try {
-      verifyFlawGroup(thirdData);
-    } catch (error) {
-      const message = calculateErrorMessage(error);
-      throw new Error(`记录#${records[2].szIDs}数据异常:${message}`);
-    }
-    const fourthData = createFlawGroup(records[3].with);
-    try {
-      verifyFlawGroup(fourthData);
-    } catch (error) {
-      const message = calculateErrorMessage(error);
-      throw new Error(`记录#${records[3].szIDs}数据异常:${message}`);
-    }
-    const fifthData = createFlawGroup(records[4].with);
-    try {
-      verifyFlawGroup(fifthData);
-    } catch (error) {
-      const message = calculateErrorMessage(error);
-      throw new Error(`记录#${records[4].szIDs}数据异常:${message}`);
-    }
+    queries.forEach((q) => {
+      q.left().xhc().check();
+      q.right().xhc().check();
+      q.left().lz().check();
+      q.right().lz().check();
+      q.left().ct().check();
+      q.right().ct().check();
+    });
+
+    const zjgb_11_z = q1.left().xhc().flawAtten(1);
+    const zjgb_11_y = q1.right().xhc().flawAtten(1);
+    const zjgb_12_z = q2.left().xhc().flawAtten(1);
+    const zjgb_12_y = q2.right().xhc().flawAtten(1);
+    const zjgb_13_z = q3.left().xhc().flawAtten(1);
+    const zjgb_13_y = q3.right().xhc().flawAtten(1);
+    const zjgb_14_z = q4.left().xhc().flawAtten(1);
+    const zjgb_14_y = q4.right().xhc().flawAtten(1);
+    const zjgb_15_z = q5.left().xhc().flawAtten(1);
+    const zjgb_15_y = q5.right().xhc().flawAtten(1);
+    const zjgb_21_z = q1.left().xhc().flawAtten(2);
+    const zjgb_21_y = q1.right().xhc().flawAtten(2);
+    const zjgb_22_z = q2.left().xhc().flawAtten(2);
+    const zjgb_22_y = q2.right().xhc().flawAtten(2);
+    const zjgb_23_z = q3.left().xhc().flawAtten(2);
+    const zjgb_23_y = q3.right().xhc().flawAtten(2);
+    const zjgb_24_z = q4.left().xhc().flawAtten(2);
+    const zjgb_24_y = q4.right().xhc().flawAtten(2);
+    const zjgb_25_z = q5.left().xhc().flawAtten(2);
+    const zjgb_25_y = q5.right().xhc().flawAtten(2);
+    const zjgb_31_z = q1.left().xhc().flawAtten(3);
+    const zjgb_31_y = q1.right().xhc().flawAtten(3);
+    const zjgb_32_z = q2.left().xhc().flawAtten(3);
+    const zjgb_32_y = q2.right().xhc().flawAtten(3);
+    const zjgb_33_z = q3.left().xhc().flawAtten(3);
+    const zjgb_33_y = q3.right().xhc().flawAtten(3);
+    const zjgb_34_z = q4.left().xhc().flawAtten(3);
+    const zjgb_34_y = q4.right().xhc().flawAtten(3);
+    const zjgb_35_z = q5.left().xhc().flawAtten(3);
+    const zjgb_35_y = q5.right().xhc().flawAtten(3);
+    const lzxrb_11_z = q1.left().lz().deg51().flawAtten(1);
+    const lzxrb_11_y = q1.right().lz().deg51().flawAtten(1);
+    const lzxrb_12_z = q2.left().lz().deg51().flawAtten(1);
+    const lzxrb_12_y = q2.right().lz().deg51().flawAtten(1);
+    const lzxrb_13_z = q3.left().lz().deg51().flawAtten(1);
+    const lzxrb_13_y = q3.right().lz().deg51().flawAtten(1);
+    const lzxrb_14_z = q4.left().lz().deg51().flawAtten(1);
+    const lzxrb_14_y = q4.right().lz().deg51().flawAtten(1);
+    const lzxrb_15_z = q5.left().lz().deg51().flawAtten(1);
+    const lzxrb_15_y = q5.right().lz().deg51().flawAtten(1);
+    const lzxrb_21_z = q1.left().lz().deg51().flawAtten(2);
+    const lzxrb_21_y = q1.right().lz().deg51().flawAtten(2);
+    const lzxrb_22_z = q2.left().lz().deg51().flawAtten(2);
+    const lzxrb_22_y = q2.right().lz().deg51().flawAtten(2);
+    const lzxrb_23_z = q3.left().lz().deg51().flawAtten(2);
+    const lzxrb_23_y = q3.right().lz().deg51().flawAtten(2);
+    const lzxrb_24_z = q4.left().lz().deg51().flawAtten(2);
+    const lzxrb_24_y = q4.right().lz().deg51().flawAtten(2);
+    const lzxrb_25_z = q5.left().lz().deg51().flawAtten(2);
+    const lzxrb_25_y = q5.right().lz().deg51().flawAtten(2);
+    const lzxrb_31_z = q1.left().lz().deg51().flawAtten(3);
+    const lzxrb_31_y = q1.right().lz().deg51().flawAtten(3);
+    const lzxrb_32_z = q2.left().lz().deg51().flawAtten(3);
+    const lzxrb_32_y = q2.right().lz().deg51().flawAtten(3);
+    const lzxrb_33_z = q3.left().lz().deg51().flawAtten(3);
+    const lzxrb_33_y = q3.right().lz().deg51().flawAtten(3);
+    const lzxrb_34_z = q4.left().lz().deg51().flawAtten(3);
+    const lzxrb_34_y = q4.right().lz().deg51().flawAtten(3);
+    const lzxrb_35_z = q5.left().lz().deg51().flawAtten(3);
+    const lzxrb_35_y = q5.right().lz().deg51().flawAtten(3);
+    const lzxrb_41_z = q1.left().lz().deg51().flawAtten(4);
+    const lzxrb_41_y = q1.right().lz().deg51().flawAtten(4);
+    const lzxrb_42_z = q2.left().lz().deg51().flawAtten(4);
+    const lzxrb_42_y = q2.right().lz().deg51().flawAtten(4);
+    const lzxrb_43_z = q3.left().lz().deg51().flawAtten(4);
+    const lzxrb_43_y = q3.right().lz().deg51().flawAtten(4);
+    const lzxrb_44_z = q4.left().lz().deg51().flawAtten(4);
+    const lzxrb_44_y = q4.right().lz().deg51().flawAtten(4);
+    const lzxrb_45_z = q5.left().lz().deg51().flawAtten(4);
+    const lzxrb_45_y = q5.right().lz().deg51().flawAtten(4);
+    const lzxrb_51_z = q1.left().lz().deg51().flawAtten(5);
+    const lzxrb_51_y = q1.right().lz().deg51().flawAtten(5);
+    const lzxrb_52_z = q2.left().lz().deg51().flawAtten(5);
+    const lzxrb_52_y = q2.right().lz().deg51().flawAtten(5);
+    const lzxrb_53_z = q3.left().lz().deg51().flawAtten(5);
+    const lzxrb_53_y = q3.right().lz().deg51().flawAtten(5);
+    const lzxrb_54_z = q4.left().lz().deg51().flawAtten(5);
+    const lzxrb_54_y = q4.right().lz().deg51().flawAtten(5);
+    const lzxrb_55_z = q5.left().lz().deg51().flawAtten(5);
+    const lzxrb_55_y = q5.right().lz().deg51().flawAtten(5);
+    const lzxrb_61_z = q1.left().lz().deg51().flawAtten(6);
+    const lzxrb_61_y = q1.right().lz().deg51().flawAtten(6);
+    const lzxrb_62_z = q2.left().lz().deg51().flawAtten(6);
+    const lzxrb_62_y = q2.right().lz().deg51().flawAtten(6);
+    const lzxrb_63_z = q3.left().lz().deg51().flawAtten(6);
+    const lzxrb_63_y = q3.right().lz().deg51().flawAtten(6);
+    const lzxrb_64_z = q4.left().lz().deg51().flawAtten(6);
+    const lzxrb_64_y = q4.right().lz().deg51().flawAtten(6);
+    const lzxrb_65_z = q5.left().lz().deg51().flawAtten(6);
+    const lzxrb_65_y = q5.right().lz().deg51().flawAtten(6);
+    const lzxrb_71_z = q1.left().lz().deg44().flawAtten(7);
+    const lzxrb_71_y = q1.right().lz().deg44().flawAtten(7);
+    const lzxrb_72_z = q2.left().lz().deg44().flawAtten(7);
+    const lzxrb_72_y = q2.right().lz().deg44().flawAtten(7);
+    const lzxrb_73_z = q3.left().lz().deg44().flawAtten(7);
+    const lzxrb_73_y = q3.right().lz().deg44().flawAtten(7);
+    const lzxrb_74_z = q4.left().lz().deg44().flawAtten(7);
+    const lzxrb_74_y = q4.right().lz().deg44().flawAtten(7);
+    const lzxrb_75_z = q5.left().lz().deg44().flawAtten(7);
+    const lzxrb_75_y = q5.right().lz().deg44().flawAtten(7);
+    const lzxrb_81_z = q1.left().lz().deg44().flawAtten(8);
+    const lzxrb_81_y = q1.right().lz().deg44().flawAtten(8);
+    const lzxrb_82_z = q2.left().lz().deg44().flawAtten(8);
+    const lzxrb_82_y = q2.right().lz().deg44().flawAtten(8);
+    const lzxrb_83_z = q3.left().lz().deg44().flawAtten(8);
+    const lzxrb_83_y = q3.right().lz().deg44().flawAtten(8);
+    const lzxrb_84_z = q4.left().lz().deg44().flawAtten(8);
+    const lzxrb_84_y = q4.right().lz().deg44().flawAtten(8);
+    const lzxrb_85_z = q5.left().lz().deg44().flawAtten(8);
+    const lzxrb_85_y = q5.right().lz().deg44().flawAtten(8);
+    const lzxrb_91_z = q1.left().lz().deg44().flawAtten(9);
+    const lzxrb_91_y = q1.right().lz().deg44().flawAtten(9);
+    const lzxrb_92_z = q2.left().lz().deg44().flawAtten(9);
+    const lzxrb_92_y = q2.right().lz().deg44().flawAtten(9);
+    const lzxrb_93_z = q3.left().lz().deg44().flawAtten(9);
+    const lzxrb_93_y = q3.right().lz().deg44().flawAtten(9);
+    const lzxrb_94_z = q4.left().lz().deg44().flawAtten(9);
+    const lzxrb_94_y = q4.right().lz().deg44().flawAtten(9);
+    const lzxrb_95_z = q5.left().lz().deg44().flawAtten(9);
+    const lzxrb_95_y = q5.right().lz().deg44().flawAtten(9);
+    const lzxrb_101_z = q1.left().lz().deg44().flawAtten(10);
+    const lzxrb_101_y = q1.right().lz().deg44().flawAtten(10);
+    const lzxrb_102_z = q2.left().lz().deg44().flawAtten(10);
+    const lzxrb_102_y = q2.right().lz().deg44().flawAtten(10);
+    const lzxrb_103_z = q3.left().lz().deg44().flawAtten(10);
+    const lzxrb_103_y = q3.right().lz().deg44().flawAtten(10);
+    const lzxrb_104_z = q4.left().lz().deg44().flawAtten(10);
+    const lzxrb_104_y = q4.right().lz().deg44().flawAtten(10);
+    const lzxrb_105_z = q5.left().lz().deg44().flawAtten(10);
+    const lzxrb_105_y = q5.right().lz().deg44().flawAtten(10);
+    const lzxrb_111_z = q1.left().lz().deg44().flawAtten(11);
+    const lzxrb_111_y = q1.right().lz().deg44().flawAtten(11);
+    const lzxrb_112_z = q2.left().lz().deg44().flawAtten(11);
+    const lzxrb_112_y = q2.right().lz().deg44().flawAtten(11);
+    const lzxrb_113_z = q3.left().lz().deg44().flawAtten(11);
+    const lzxrb_113_y = q3.right().lz().deg44().flawAtten(11);
+    const lzxrb_114_z = q4.left().lz().deg44().flawAtten(11);
+    const lzxrb_114_y = q4.right().lz().deg44().flawAtten(11);
+    const lzxrb_115_z = q5.left().lz().deg44().flawAtten(11);
+    const lzxrb_115_y = q5.right().lz().deg44().flawAtten(11);
+    const qzct_11_z = q1.left().ct().flawAtten();
+    const qzct_11_y = q1.right().ct().flawAtten();
+    const qzct_12_z = q2.left().ct().flawAtten();
+    const qzct_12_y = q2.right().ct().flawAtten();
+    const qzct_13_z = q3.left().ct().flawAtten();
+    const qzct_13_y = q3.right().ct().flawAtten();
+    const qzct_14_z = q4.left().ct().flawAtten();
+    const qzct_14_y = q4.right().ct().flawAtten();
+    const qzct_15_z = q5.left().ct().flawAtten();
+    const qzct_15_y = q5.right().ct().flawAtten();
 
     return {
       xrsj: dayjs(records[0].tmnow).format("YYYY-MM-DD HH:mm:ss"),
@@ -886,470 +1008,545 @@ export class KH extends HMIS<KH_HMIS> {
       zzdw: "武汉武铁紫云轨道装备有限公司",
       scjxsj: previous ? dayjs(previous.tmnow).format("YYYY-MM-DD") : "",
       jyrq: dayjs(records[0].tmnow).format("YYYY-MM-DD"),
-      zjgb_11_z: calculateNAtten(firstData.leftXHC[0]),
-      zjgb_11_y: calculateNAtten(firstData.rightXHC[0]),
-      zjgb_12_z: calculateNAtten(secondData.leftXHC[0]),
-      zjgb_12_y: calculateNAtten(secondData.rightXHC[0]),
-      zjgb_13_z: calculateNAtten(thirdData.leftXHC[0]),
-      zjgb_13_y: calculateNAtten(thirdData.rightXHC[0]),
-      zjgb_14_z: calculateNAtten(fourthData.leftXHC[0]),
-      zjgb_14_y: calculateNAtten(fourthData.rightXHC[0]),
-      zjgb_15_z: calculateNAtten(fifthData.leftXHC[0]),
-      zjgb_15_y: calculateNAtten(fifthData.rightXHC[0]),
+      zjgb_11_z,
+      zjgb_11_y,
+      zjgb_12_z,
+      zjgb_12_y,
+      zjgb_13_z,
+      zjgb_13_y,
+      zjgb_14_z,
+      zjgb_14_y,
+      zjgb_15_z,
+      zjgb_15_y,
       zjgb_1cz_z: calculateNAttenDiff(
-        firstData.leftXHC[0],
-        secondData.leftXHC[0],
-        thirdData.leftXHC[0],
-        fourthData.leftXHC[0],
-        fifthData.leftXHC[0],
+        zjgb_11_z,
+        zjgb_12_z,
+        zjgb_13_z,
+        zjgb_14_z,
+        zjgb_15_z,
       ),
       zjgb_1cz_y: calculateNAttenDiff(
-        firstData.rightXHC[0],
-        secondData.rightXHC[0],
-        thirdData.rightXHC[0],
-        fourthData.rightXHC[0],
-        fifthData.rightXHC[0],
+        zjgb_11_y,
+        zjgb_12_y,
+        zjgb_13_y,
+        zjgb_14_y,
+        zjgb_15_y,
       ),
       zjgb_1jg: calculateQuartorResult(
-        firstData.rightXHC[0],
-        secondData.rightXHC[0],
-        thirdData.rightXHC[0],
-        fourthData.rightXHC[0],
-        fifthData.rightXHC[0],
+        zjgb_11_z,
+        zjgb_12_z,
+        zjgb_13_z,
+        zjgb_14_z,
+        zjgb_15_z,
+        zjgb_11_y,
+        zjgb_12_y,
+        zjgb_13_y,
+        zjgb_14_y,
+        zjgb_15_y,
       ),
-      zjgb_21_z: calculateNAtten(firstData.leftXHC[1]),
-      zjgb_21_y: calculateNAtten(firstData.rightXHC[1]),
-      zjgb_22_z: calculateNAtten(secondData.leftXHC[1]),
-      zjgb_22_y: calculateNAtten(secondData.rightXHC[1]),
-      zjgb_23_z: calculateNAtten(thirdData.leftXHC[1]),
-      zjgb_23_y: calculateNAtten(thirdData.rightXHC[1]),
-      zjgb_24_z: calculateNAtten(fourthData.leftXHC[1]),
-      zjgb_24_y: calculateNAtten(fourthData.rightXHC[1]),
-      zjgb_25_z: calculateNAtten(fifthData.leftXHC[1]),
-      zjgb_25_y: calculateNAtten(fifthData.rightXHC[1]),
+      zjgb_21_z,
+      zjgb_21_y,
+      zjgb_22_z,
+      zjgb_22_y,
+      zjgb_23_z,
+      zjgb_23_y,
+      zjgb_24_z,
+      zjgb_24_y,
+      zjgb_25_z,
+      zjgb_25_y,
       zjgb_2cz_z: calculateNAttenDiff(
-        firstData.leftXHC[1],
-        secondData.leftXHC[1],
-        thirdData.leftXHC[1],
-        fourthData.leftXHC[1],
-        fifthData.leftXHC[1],
+        zjgb_21_z,
+        zjgb_22_z,
+        zjgb_23_z,
+        zjgb_24_z,
+        zjgb_25_z,
       ),
       zjgb_2cz_y: calculateNAttenDiff(
-        firstData.rightXHC[1],
-        secondData.rightXHC[1],
-        thirdData.rightXHC[1],
-        fourthData.rightXHC[1],
-        fifthData.rightXHC[1],
+        zjgb_21_y,
+        zjgb_22_y,
+        zjgb_23_y,
+        zjgb_24_y,
+        zjgb_25_y,
       ),
       zjgb_2jg: calculateQuartorResult(
-        firstData.rightXHC[1],
-        secondData.rightXHC[1],
-        thirdData.rightXHC[1],
-        fourthData.rightXHC[1],
-        fifthData.rightXHC[1],
+        zjgb_21_z,
+        zjgb_22_z,
+        zjgb_23_z,
+        zjgb_24_z,
+        zjgb_25_z,
+        zjgb_21_y,
+        zjgb_22_y,
+        zjgb_23_y,
+        zjgb_24_y,
+        zjgb_25_y,
       ),
-      zjgb_31_z: calculateNAtten(firstData.leftXHC[2]),
-      zjgb_31_y: calculateNAtten(firstData.rightXHC[2]),
-      zjgb_32_z: calculateNAtten(secondData.leftXHC[2]),
-      zjgb_32_y: calculateNAtten(secondData.rightXHC[2]),
-      zjgb_33_z: calculateNAtten(thirdData.leftXHC[2]),
-      zjgb_33_y: calculateNAtten(thirdData.rightXHC[2]),
-      zjgb_34_z: calculateNAtten(fourthData.leftXHC[2]),
-      zjgb_34_y: calculateNAtten(fourthData.rightXHC[2]),
-      zjgb_35_z: calculateNAtten(fifthData.leftXHC[2]),
-      zjgb_35_y: calculateNAtten(fifthData.rightXHC[2]),
+      zjgb_31_z,
+      zjgb_31_y,
+      zjgb_32_z,
+      zjgb_32_y,
+      zjgb_33_z,
+      zjgb_33_y,
+      zjgb_34_z,
+      zjgb_34_y,
+      zjgb_35_z,
+      zjgb_35_y,
       zjgb_3cz_z: calculateNAttenDiff(
-        firstData.leftXHC[2],
-        secondData.leftXHC[2],
-        thirdData.leftXHC[2],
-        fourthData.leftXHC[2],
-        fifthData.leftXHC[2],
+        zjgb_31_z,
+        zjgb_32_z,
+        zjgb_33_z,
+        zjgb_34_z,
+        zjgb_35_z,
       ),
       zjgb_3cz_y: calculateNAttenDiff(
-        firstData.rightXHC[2],
-        secondData.rightXHC[2],
-        thirdData.rightXHC[2],
-        fourthData.rightXHC[2],
-        fifthData.rightXHC[2],
+        zjgb_31_y,
+        zjgb_32_y,
+        zjgb_33_y,
+        zjgb_34_y,
+        zjgb_35_y,
       ),
       zjgb_3jg: calculateQuartorResult(
-        firstData.rightXHC[2],
-        secondData.rightXHC[2],
-        thirdData.rightXHC[2],
-        fourthData.rightXHC[2],
-        fifthData.rightXHC[2],
+        zjgb_31_z,
+        zjgb_32_z,
+        zjgb_33_z,
+        zjgb_34_z,
+        zjgb_35_z,
+        zjgb_31_y,
+        zjgb_32_y,
+        zjgb_33_y,
+        zjgb_34_y,
+        zjgb_35_y,
       ),
-      lzxrb_11_z: calculateNAtten(firstData.leftLZ[0]),
-      lzxrb_11_y: calculateNAtten(firstData.rightLZ[0]),
-      lzxrb_12_z: calculateNAtten(secondData.leftLZ[0]),
-      lzxrb_12_y: calculateNAtten(secondData.rightLZ[0]),
-      lzxrb_13_z: calculateNAtten(thirdData.leftLZ[0]),
-      lzxrb_13_y: calculateNAtten(thirdData.rightLZ[0]),
-      lzxrb_14_z: calculateNAtten(fourthData.leftLZ[0]),
-      lzxrb_14_y: calculateNAtten(fourthData.rightLZ[0]),
-      lzxrb_15_z: calculateNAtten(fifthData.leftLZ[0]),
-      lzxrb_15_y: calculateNAtten(fifthData.rightLZ[0]),
+      lzxrb_11_z,
+      lzxrb_11_y,
+      lzxrb_12_z,
+      lzxrb_12_y,
+      lzxrb_13_z,
+      lzxrb_13_y,
+      lzxrb_14_z,
+      lzxrb_14_y,
+      lzxrb_15_z,
+      lzxrb_15_y,
       lzxrb_1cz_z: calculateNAttenDiff(
-        firstData.leftLZ[0],
-        secondData.leftLZ[0],
-        thirdData.leftLZ[0],
-        fourthData.leftLZ[0],
-        fifthData.leftLZ[0],
+        lzxrb_11_z,
+        lzxrb_12_z,
+        lzxrb_13_z,
+        lzxrb_14_z,
+        lzxrb_15_z,
       ),
       lzxrb_1cz_y: calculateNAttenDiff(
-        firstData.rightLZ[0],
-        secondData.rightLZ[0],
-        thirdData.rightLZ[0],
-        fourthData.rightLZ[0],
-        fifthData.rightLZ[0],
+        lzxrb_11_y,
+        lzxrb_12_y,
+        lzxrb_13_y,
+        lzxrb_14_y,
+        lzxrb_15_y,
       ),
       lzxrb_1jg: calculateQuartorResult(
-        firstData.rightLZ[0],
-        secondData.rightLZ[0],
-        thirdData.rightLZ[0],
-        fourthData.rightLZ[0],
-        fifthData.rightLZ[0],
+        lzxrb_11_z,
+        lzxrb_12_z,
+        lzxrb_13_z,
+        lzxrb_14_z,
+        lzxrb_15_z,
+        lzxrb_11_y,
+        lzxrb_12_y,
+        lzxrb_13_y,
+        lzxrb_14_y,
+        lzxrb_15_y,
       ),
-      lzxrb_21_z: calculateNAtten(firstData.leftLZ[1]),
-      lzxrb_21_y: calculateNAtten(firstData.rightLZ[1]),
-      lzxrb_22_z: calculateNAtten(secondData.leftLZ[1]),
-      lzxrb_22_y: calculateNAtten(secondData.rightLZ[1]),
-      lzxrb_23_z: calculateNAtten(thirdData.leftLZ[1]),
-      lzxrb_23_y: calculateNAtten(thirdData.rightLZ[1]),
-      lzxrb_24_z: calculateNAtten(fourthData.leftLZ[1]),
-      lzxrb_24_y: calculateNAtten(fourthData.rightLZ[1]),
-      lzxrb_25_z: calculateNAtten(fifthData.leftLZ[1]),
-      lzxrb_25_y: calculateNAtten(fifthData.rightLZ[1]),
+      lzxrb_21_z,
+      lzxrb_21_y,
+      lzxrb_22_z,
+      lzxrb_22_y,
+      lzxrb_23_z,
+      lzxrb_23_y,
+      lzxrb_24_z,
+      lzxrb_24_y,
+      lzxrb_25_z,
+      lzxrb_25_y,
       lzxrb_2cz_z: calculateNAttenDiff(
-        firstData.leftLZ[1],
-        secondData.leftLZ[1],
-        thirdData.leftLZ[1],
-        fourthData.leftLZ[1],
-        fifthData.leftLZ[1],
+        lzxrb_21_z,
+        lzxrb_22_z,
+        lzxrb_23_z,
+        lzxrb_24_z,
+        lzxrb_25_z,
       ),
       lzxrb_2cz_y: calculateNAttenDiff(
-        firstData.rightLZ[1],
-        secondData.rightLZ[1],
-        thirdData.rightLZ[1],
-        fourthData.rightLZ[1],
-        fifthData.rightLZ[1],
+        lzxrb_21_y,
+        lzxrb_22_y,
+        lzxrb_23_y,
+        lzxrb_24_y,
+        lzxrb_25_y,
       ),
       lzxrb_2jg: calculateQuartorResult(
-        firstData.rightLZ[1],
-        secondData.rightLZ[1],
-        thirdData.rightLZ[1],
-        fourthData.rightLZ[1],
-        fifthData.rightLZ[1],
+        lzxrb_21_z,
+        lzxrb_22_z,
+        lzxrb_23_z,
+        lzxrb_24_z,
+        lzxrb_25_z,
+        lzxrb_21_y,
+        lzxrb_22_y,
+        lzxrb_23_y,
+        lzxrb_24_y,
+        lzxrb_25_y,
       ),
-      lzxrb_31_z: calculateNAtten(firstData.leftLZ[2]),
-      lzxrb_31_y: calculateNAtten(firstData.rightLZ[2]),
-      lzxrb_32_z: calculateNAtten(secondData.leftLZ[2]),
-      lzxrb_32_y: calculateNAtten(secondData.rightLZ[2]),
-      lzxrb_33_z: calculateNAtten(thirdData.leftLZ[2]),
-      lzxrb_33_y: calculateNAtten(thirdData.rightLZ[2]),
-      lzxrb_34_z: calculateNAtten(fourthData.leftLZ[2]),
-      lzxrb_34_y: calculateNAtten(fourthData.rightLZ[2]),
-      lzxrb_35_z: calculateNAtten(fifthData.leftLZ[2]),
-      lzxrb_35_y: calculateNAtten(fifthData.rightLZ[2]),
+      lzxrb_31_z,
+      lzxrb_31_y,
+      lzxrb_32_z,
+      lzxrb_32_y,
+      lzxrb_33_z,
+      lzxrb_33_y,
+      lzxrb_34_z,
+      lzxrb_34_y,
+      lzxrb_35_z,
+      lzxrb_35_y,
       lzxrb_3cz_z: calculateNAttenDiff(
-        firstData.leftLZ[2],
-        secondData.leftLZ[2],
-        thirdData.leftLZ[2],
-        fourthData.leftLZ[2],
-        fifthData.leftLZ[2],
+        lzxrb_31_z,
+        lzxrb_32_z,
+        lzxrb_33_z,
+        lzxrb_34_z,
+        lzxrb_35_z,
       ),
       lzxrb_3cz_y: calculateNAttenDiff(
-        firstData.rightLZ[2],
-        secondData.rightLZ[2],
-        thirdData.rightLZ[2],
-        fourthData.rightLZ[2],
-        fifthData.rightLZ[2],
+        lzxrb_31_y,
+        lzxrb_32_y,
+        lzxrb_33_y,
+        lzxrb_34_y,
+        lzxrb_35_y,
       ),
       lzxrb_3jg: calculateQuartorResult(
-        firstData.rightLZ[2],
-        secondData.rightLZ[2],
-        thirdData.rightLZ[2],
-        fourthData.rightLZ[2],
-        fifthData.rightLZ[2],
+        lzxrb_31_z,
+        lzxrb_32_z,
+        lzxrb_33_z,
+        lzxrb_34_z,
+        lzxrb_35_z,
+        lzxrb_31_y,
+        lzxrb_32_y,
+        lzxrb_33_y,
+        lzxrb_34_y,
+        lzxrb_35_y,
       ),
-      lzxrb_41_z: calculateNAtten(firstData.leftLZ[3]),
-      lzxrb_41_y: calculateNAtten(firstData.rightLZ[3]),
-      lzxrb_42_z: calculateNAtten(secondData.leftLZ[3]),
-      lzxrb_42_y: calculateNAtten(secondData.rightLZ[3]),
-      lzxrb_43_z: calculateNAtten(thirdData.leftLZ[3]),
-      lzxrb_43_y: calculateNAtten(thirdData.rightLZ[3]),
-      lzxrb_44_z: calculateNAtten(fourthData.leftLZ[3]),
-      lzxrb_44_y: calculateNAtten(fourthData.rightLZ[3]),
-      lzxrb_45_z: calculateNAtten(fifthData.leftLZ[3]),
-      lzxrb_45_y: calculateNAtten(fifthData.rightLZ[3]),
+      lzxrb_41_z,
+      lzxrb_41_y,
+      lzxrb_42_z,
+      lzxrb_42_y,
+      lzxrb_43_z,
+      lzxrb_43_y,
+      lzxrb_44_z,
+      lzxrb_44_y,
+      lzxrb_45_z,
+      lzxrb_45_y,
       lzxrb_4cz_z: calculateNAttenDiff(
-        firstData.leftLZ[3],
-        secondData.leftLZ[3],
-        thirdData.leftLZ[3],
-        fourthData.leftLZ[3],
-        fifthData.leftLZ[3],
+        lzxrb_41_z,
+        lzxrb_42_z,
+        lzxrb_43_z,
+        lzxrb_44_z,
+        lzxrb_45_z,
       ),
       lzxrb_4cz_y: calculateNAttenDiff(
-        firstData.rightLZ[3],
-        secondData.rightLZ[3],
-        thirdData.rightLZ[3],
-        fourthData.rightLZ[3],
-        fifthData.rightLZ[3],
+        lzxrb_41_y,
+        lzxrb_42_y,
+        lzxrb_43_y,
+        lzxrb_44_y,
+        lzxrb_45_y,
       ),
       lzxrb_4jg: calculateQuartorResult(
-        firstData.rightLZ[3],
-        secondData.rightLZ[3],
-        thirdData.rightLZ[3],
-        fourthData.rightLZ[3],
-        fifthData.rightLZ[3],
+        lzxrb_41_z,
+        lzxrb_41_y,
+        lzxrb_42_z,
+        lzxrb_42_y,
+        lzxrb_43_z,
+        lzxrb_43_y,
+        lzxrb_44_z,
+        lzxrb_44_y,
+        lzxrb_45_z,
+        lzxrb_45_y,
       ),
-      lzxrb_51_z: calculateNAtten(firstData.leftLZ[4]),
-      lzxrb_51_y: calculateNAtten(firstData.rightLZ[4]),
-      lzxrb_52_z: calculateNAtten(secondData.leftLZ[4]),
-      lzxrb_52_y: calculateNAtten(secondData.rightLZ[4]),
-      lzxrb_53_z: calculateNAtten(thirdData.leftLZ[4]),
-      lzxrb_53_y: calculateNAtten(thirdData.rightLZ[4]),
-      lzxrb_54_z: calculateNAtten(fourthData.leftLZ[4]),
-      lzxrb_54_y: calculateNAtten(fourthData.rightLZ[4]),
-      lzxrb_55_z: calculateNAtten(fifthData.leftLZ[4]),
-      lzxrb_55_y: calculateNAtten(fifthData.rightLZ[4]),
+      lzxrb_51_z,
+      lzxrb_51_y,
+      lzxrb_52_z,
+      lzxrb_52_y,
+      lzxrb_53_z,
+      lzxrb_53_y,
+      lzxrb_54_z,
+      lzxrb_54_y,
+      lzxrb_55_z,
+      lzxrb_55_y,
       lzxrb_5cz_z: calculateNAttenDiff(
-        firstData.leftLZ[4],
-        secondData.leftLZ[4],
-        thirdData.leftLZ[4],
-        fourthData.leftLZ[4],
-        fifthData.leftLZ[4],
+        lzxrb_51_z,
+        lzxrb_52_z,
+        lzxrb_53_z,
+        lzxrb_54_z,
+        lzxrb_55_z,
       ),
       lzxrb_5cz_y: calculateNAttenDiff(
-        firstData.rightLZ[4],
-        secondData.rightLZ[4],
-        thirdData.rightLZ[4],
-        fourthData.rightLZ[4],
-        fifthData.rightLZ[4],
+        lzxrb_51_y,
+        lzxrb_52_y,
+        lzxrb_53_y,
+        lzxrb_54_y,
+        lzxrb_55_y,
       ),
       lzxrb_5jg: calculateQuartorResult(
-        firstData.rightLZ[4],
-        secondData.rightLZ[4],
-        thirdData.rightLZ[4],
-        fourthData.rightLZ[4],
-        fifthData.rightLZ[4],
+        lzxrb_51_z,
+        lzxrb_52_z,
+        lzxrb_53_z,
+        lzxrb_54_z,
+        lzxrb_55_z,
+        lzxrb_51_y,
+        lzxrb_52_y,
+        lzxrb_53_y,
+        lzxrb_54_y,
+        lzxrb_55_y,
       ),
-      lzxrb_61_z: calculateNAtten(firstData.leftLZ[5]),
-      lzxrb_61_y: calculateNAtten(firstData.rightLZ[5]),
-      lzxrb_62_z: calculateNAtten(secondData.leftLZ[5]),
-      lzxrb_62_y: calculateNAtten(secondData.rightLZ[5]),
-      lzxrb_63_z: calculateNAtten(thirdData.leftLZ[5]),
-      lzxrb_63_y: calculateNAtten(thirdData.rightLZ[5]),
-      lzxrb_64_z: calculateNAtten(fourthData.leftLZ[5]),
-      lzxrb_64_y: calculateNAtten(fourthData.rightLZ[5]),
-      lzxrb_65_z: calculateNAtten(fifthData.leftLZ[5]),
-      lzxrb_65_y: calculateNAtten(fifthData.rightLZ[5]),
+      lzxrb_61_z,
+      lzxrb_61_y,
+      lzxrb_62_z,
+      lzxrb_62_y,
+      lzxrb_63_z,
+      lzxrb_63_y,
+      lzxrb_64_z,
+      lzxrb_64_y,
+      lzxrb_65_z,
+      lzxrb_65_y,
       lzxrb_6cz_z: calculateNAttenDiff(
-        firstData.leftLZ[5],
-        secondData.leftLZ[5],
-        thirdData.leftLZ[5],
-        fourthData.leftLZ[5],
-        fifthData.leftLZ[5],
+        lzxrb_61_z,
+        lzxrb_62_z,
+        lzxrb_63_z,
+        lzxrb_64_z,
+        lzxrb_65_z,
       ),
       lzxrb_6cz_y: calculateNAttenDiff(
-        firstData.rightLZ[5],
-        secondData.rightLZ[5],
-        thirdData.rightLZ[5],
-        fourthData.rightLZ[5],
-        fifthData.rightLZ[5],
+        lzxrb_61_y,
+        lzxrb_62_y,
+        lzxrb_63_y,
+        lzxrb_64_y,
+        lzxrb_65_y,
       ),
       lzxrb_6jg: calculateQuartorResult(
-        firstData.rightLZ[5],
-        secondData.rightLZ[5],
-        thirdData.rightLZ[5],
-        fourthData.rightLZ[5],
-        fifthData.rightLZ[5],
+        lzxrb_61_z,
+        lzxrb_62_z,
+        lzxrb_63_z,
+        lzxrb_64_z,
+        lzxrb_65_z,
+        lzxrb_61_y,
+        lzxrb_62_y,
+        lzxrb_63_y,
+        lzxrb_64_y,
+        lzxrb_65_y,
       ),
-      lzxrb_71_z: calculateNAtten(firstData.leftLZ[6]),
-      lzxrb_71_y: calculateNAtten(firstData.rightLZ[6]),
-      lzxrb_72_z: calculateNAtten(secondData.leftLZ[6]),
-      lzxrb_72_y: calculateNAtten(secondData.rightLZ[6]),
-      lzxrb_73_z: calculateNAtten(thirdData.leftLZ[6]),
-      lzxrb_73_y: calculateNAtten(thirdData.rightLZ[6]),
-      lzxrb_74_z: calculateNAtten(fourthData.leftLZ[6]),
-      lzxrb_74_y: calculateNAtten(fourthData.rightLZ[6]),
-      lzxrb_75_z: calculateNAtten(fifthData.leftLZ[6]),
-      lzxrb_75_y: calculateNAtten(fifthData.rightLZ[6]),
+      lzxrb_71_z,
+      lzxrb_71_y,
+      lzxrb_72_z,
+      lzxrb_72_y,
+      lzxrb_73_z,
+      lzxrb_73_y,
+      lzxrb_74_z,
+      lzxrb_74_y,
+      lzxrb_75_z,
+      lzxrb_75_y,
       lzxrb_7cz_z: calculateNAttenDiff(
-        firstData.leftLZ[6],
-        secondData.leftLZ[6],
-        thirdData.leftLZ[6],
-        fourthData.leftLZ[6],
-        fifthData.leftLZ[6],
+        lzxrb_71_z,
+        lzxrb_72_z,
+        lzxrb_73_z,
+        lzxrb_74_z,
+        lzxrb_75_z,
       ),
       lzxrb_7cz_y: calculateNAttenDiff(
-        firstData.rightLZ[6],
-        secondData.rightLZ[6],
-        thirdData.rightLZ[6],
-        fourthData.rightLZ[6],
-        fifthData.rightLZ[6],
+        lzxrb_71_y,
+        lzxrb_72_y,
+        lzxrb_73_y,
+        lzxrb_74_y,
+        lzxrb_75_y,
       ),
       lzxrb_7jg: calculateQuartorResult(
-        firstData.rightLZ[6],
-        secondData.rightLZ[6],
-        thirdData.rightLZ[6],
-        fourthData.rightLZ[6],
-        fifthData.rightLZ[6],
+        lzxrb_71_z,
+        lzxrb_71_y,
+        lzxrb_72_z,
+        lzxrb_72_y,
+        lzxrb_73_z,
+        lzxrb_73_y,
+        lzxrb_74_z,
+        lzxrb_74_y,
+        lzxrb_75_z,
+        lzxrb_75_y,
       ),
-      lzxrb_81_z: calculateNAtten(firstData.leftLZ[7]),
-      lzxrb_81_y: calculateNAtten(firstData.rightLZ[7]),
-      lzxrb_82_z: calculateNAtten(secondData.leftLZ[7]),
-      lzxrb_82_y: calculateNAtten(secondData.rightLZ[7]),
-      lzxrb_83_z: calculateNAtten(thirdData.leftLZ[7]),
-      lzxrb_83_y: calculateNAtten(thirdData.rightLZ[7]),
-      lzxrb_84_z: calculateNAtten(fourthData.leftLZ[7]),
-      lzxrb_84_y: calculateNAtten(fourthData.rightLZ[7]),
-      lzxrb_85_z: calculateNAtten(fifthData.leftLZ[7]),
-      lzxrb_85_y: calculateNAtten(fifthData.rightLZ[7]),
+      lzxrb_81_z,
+      lzxrb_81_y,
+      lzxrb_82_z,
+      lzxrb_82_y,
+      lzxrb_83_z,
+      lzxrb_83_y,
+      lzxrb_84_z,
+      lzxrb_84_y,
+      lzxrb_85_z,
+      lzxrb_85_y,
       lzxrb_8cz_z: calculateNAttenDiff(
-        firstData.leftLZ[7],
-        secondData.leftLZ[7],
-        thirdData.leftLZ[7],
-        fourthData.leftLZ[7],
-        fifthData.leftLZ[7],
+        lzxrb_81_z,
+        lzxrb_82_z,
+        lzxrb_83_z,
+        lzxrb_84_z,
+        lzxrb_85_z,
       ),
       lzxrb_8cz_y: calculateNAttenDiff(
-        firstData.rightLZ[7],
-        secondData.rightLZ[7],
-        thirdData.rightLZ[7],
-        fourthData.rightLZ[7],
-        fifthData.rightLZ[7],
+        lzxrb_81_y,
+        lzxrb_82_y,
+        lzxrb_83_y,
+        lzxrb_84_y,
+        lzxrb_85_y,
       ),
       lzxrb_8jg: calculateQuartorResult(
-        firstData.rightLZ[7],
-        secondData.rightLZ[7],
-        thirdData.rightLZ[7],
-        fourthData.rightLZ[7],
-        fifthData.rightLZ[7],
+        lzxrb_81_z,
+        lzxrb_81_y,
+        lzxrb_82_z,
+        lzxrb_82_y,
+        lzxrb_83_z,
+        lzxrb_83_y,
+        lzxrb_84_z,
+        lzxrb_84_y,
+        lzxrb_85_z,
+        lzxrb_85_y,
       ),
-      lzxrb_91_z: calculateNAtten(firstData.leftLZ[8]),
-      lzxrb_91_y: calculateNAtten(firstData.rightLZ[8]),
-      lzxrb_92_z: calculateNAtten(secondData.leftLZ[8]),
-      lzxrb_92_y: calculateNAtten(secondData.rightLZ[8]),
-      lzxrb_93_z: calculateNAtten(thirdData.leftLZ[8]),
-      lzxrb_93_y: calculateNAtten(thirdData.rightLZ[8]),
-      lzxrb_94_z: calculateNAtten(fourthData.leftLZ[8]),
-      lzxrb_94_y: calculateNAtten(fourthData.rightLZ[8]),
-      lzxrb_95_z: calculateNAtten(fifthData.leftLZ[8]),
-      lzxrb_95_y: calculateNAtten(fifthData.rightLZ[8]),
+      lzxrb_91_z,
+      lzxrb_91_y,
+      lzxrb_92_z,
+      lzxrb_92_y,
+      lzxrb_93_z,
+      lzxrb_93_y,
+      lzxrb_94_z,
+      lzxrb_94_y,
+      lzxrb_95_z,
+      lzxrb_95_y,
       lzxrb_9cz_z: calculateNAttenDiff(
-        firstData.leftLZ[8],
-        secondData.leftLZ[8],
-        thirdData.leftLZ[8],
-        fourthData.leftLZ[8],
-        fifthData.leftLZ[8],
+        lzxrb_91_z,
+        lzxrb_92_z,
+        lzxrb_93_z,
+        lzxrb_94_z,
+        lzxrb_95_z,
       ),
       lzxrb_9cz_y: calculateNAttenDiff(
-        firstData.rightLZ[8],
-        secondData.rightLZ[8],
-        thirdData.rightLZ[8],
-        fourthData.rightLZ[8],
-        fifthData.rightLZ[8],
+        lzxrb_91_y,
+        lzxrb_92_y,
+        lzxrb_93_y,
+        lzxrb_94_y,
+        lzxrb_95_y,
       ),
       lzxrb_9jg: calculateQuartorResult(
-        firstData.rightLZ[8],
-        secondData.rightLZ[8],
-        thirdData.rightLZ[8],
-        fourthData.rightLZ[8],
-        fifthData.rightLZ[8],
+        lzxrb_91_z,
+        lzxrb_91_y,
+        lzxrb_92_z,
+        lzxrb_92_y,
+        lzxrb_93_z,
+        lzxrb_93_y,
+        lzxrb_94_z,
+        lzxrb_94_y,
+        lzxrb_95_z,
+        lzxrb_95_y,
       ),
-      lzxrb_101_z: calculateNAtten(firstData.leftLZ[9]),
-      lzxrb_101_y: calculateNAtten(firstData.rightLZ[9]),
-      lzxrb_102_z: calculateNAtten(secondData.leftLZ[9]),
-      lzxrb_102_y: calculateNAtten(secondData.rightLZ[9]),
-      lzxrb_103_z: calculateNAtten(thirdData.leftLZ[9]),
-      lzxrb_103_y: calculateNAtten(thirdData.rightLZ[9]),
-      lzxrb_104_z: calculateNAtten(fourthData.leftLZ[9]),
-      lzxrb_104_y: calculateNAtten(fourthData.rightLZ[9]),
-      lzxrb_105_z: calculateNAtten(fifthData.leftLZ[9]),
-      lzxrb_105_y: calculateNAtten(fifthData.rightLZ[9]),
+      lzxrb_101_z,
+      lzxrb_101_y,
+      lzxrb_102_z,
+      lzxrb_102_y,
+      lzxrb_103_z,
+      lzxrb_103_y,
+      lzxrb_104_z,
+      lzxrb_104_y,
+      lzxrb_105_z,
+      lzxrb_105_y,
       lzxrb_10cz_z: calculateNAttenDiff(
-        firstData.leftLZ[9],
-        secondData.leftLZ[9],
-        thirdData.leftLZ[9],
-        fourthData.leftLZ[9],
-        fifthData.leftLZ[9],
+        lzxrb_101_z,
+        lzxrb_102_z,
+        lzxrb_103_z,
+        lzxrb_104_z,
+        lzxrb_105_z,
       ),
       lzxrb_10cz_y: calculateNAttenDiff(
-        firstData.rightLZ[9],
-        secondData.rightLZ[9],
-        thirdData.rightLZ[9],
-        fourthData.rightLZ[9],
-        fifthData.rightLZ[9],
+        lzxrb_101_y,
+        lzxrb_102_y,
+        lzxrb_103_y,
+        lzxrb_104_y,
+        lzxrb_105_y,
       ),
       lzxrb_10jg: calculateQuartorResult(
-        firstData.rightLZ[9],
-        secondData.rightLZ[9],
-        thirdData.rightLZ[9],
-        fourthData.rightLZ[9],
-        fifthData.rightLZ[9],
+        lzxrb_101_z,
+        lzxrb_101_y,
+        lzxrb_102_z,
+        lzxrb_102_y,
+        lzxrb_103_z,
+        lzxrb_103_y,
+        lzxrb_104_z,
+        lzxrb_104_y,
+        lzxrb_105_z,
+        lzxrb_105_y,
       ),
-      lzxrb_111_z: calculateNAtten(firstData.leftLZ[10]),
-      lzxrb_111_y: calculateNAtten(firstData.rightLZ[10]),
-      lzxrb_112_z: calculateNAtten(secondData.leftLZ[10]),
-      lzxrb_112_y: calculateNAtten(secondData.rightLZ[10]),
-      lzxrb_113_z: calculateNAtten(thirdData.leftLZ[10]),
-      lzxrb_113_y: calculateNAtten(thirdData.rightLZ[10]),
-      lzxrb_114_z: calculateNAtten(fourthData.leftLZ[10]),
-      lzxrb_114_y: calculateNAtten(fourthData.rightLZ[10]),
-      lzxrb_115_z: calculateNAtten(fifthData.leftLZ[10]),
-      lzxrb_115_y: calculateNAtten(fifthData.rightLZ[10]),
+      lzxrb_111_z,
+      lzxrb_111_y,
+      lzxrb_112_z,
+      lzxrb_112_y,
+      lzxrb_113_z,
+      lzxrb_113_y,
+      lzxrb_114_z,
+      lzxrb_114_y,
+      lzxrb_115_z,
+      lzxrb_115_y,
       lzxrb_11cz_z: calculateNAttenDiff(
-        firstData.leftLZ[10],
-        secondData.leftLZ[10],
-        thirdData.leftLZ[10],
-        fourthData.leftLZ[10],
-        fifthData.leftLZ[10],
+        lzxrb_111_z,
+        lzxrb_112_z,
+        lzxrb_113_z,
+        lzxrb_114_z,
+        lzxrb_115_z,
       ),
       lzxrb_11cz_y: calculateNAttenDiff(
-        firstData.rightLZ[10],
-        secondData.rightLZ[10],
-        thirdData.rightLZ[10],
-        fourthData.rightLZ[10],
-        fifthData.rightLZ[10],
+        lzxrb_111_y,
+        lzxrb_112_y,
+        lzxrb_113_y,
+        lzxrb_114_y,
+        lzxrb_115_y,
       ),
       lzxrb_11jg: calculateQuartorResult(
-        firstData.rightLZ[10],
-        secondData.rightLZ[10],
-        thirdData.rightLZ[10],
-        fourthData.rightLZ[10],
-        fifthData.rightLZ[10],
+        lzxrb_111_z,
+        lzxrb_111_y,
+        lzxrb_112_z,
+        lzxrb_112_y,
+        lzxrb_113_z,
+        lzxrb_113_y,
+        lzxrb_114_z,
+        lzxrb_114_y,
+        lzxrb_115_z,
+        lzxrb_115_y,
       ),
-      qzct_11_z: calculateNAtten(firstData.leftCT[0]),
-      qzct_11_y: calculateNAtten(firstData.rightCT[0]),
-      qzct_12_z: calculateNAtten(secondData.leftCT[0]),
-      qzct_12_y: calculateNAtten(secondData.rightCT[0]),
-      qzct_13_z: calculateNAtten(thirdData.leftCT[0]),
-      qzct_13_y: calculateNAtten(thirdData.rightCT[0]),
-      qzct_14_z: calculateNAtten(fourthData.leftCT[0]),
-      qzct_14_y: calculateNAtten(fourthData.rightCT[0]),
-      qzct_15_z: calculateNAtten(fifthData.leftCT[0]),
-      qzct_15_y: calculateNAtten(fifthData.rightCT[0]),
+      qzct_11_z,
+      qzct_11_y,
+      qzct_12_z,
+      qzct_12_y,
+      qzct_13_z,
+      qzct_13_y,
+      qzct_14_z,
+      qzct_14_y,
+      qzct_15_z,
+      qzct_15_y,
       qzct_1cz_z: calculateNAttenDiff(
-        firstData.leftCT[0],
-        secondData.leftCT[0],
-        thirdData.leftCT[0],
-        fourthData.leftCT[0],
-        fifthData.leftCT[0],
+        qzct_11_z,
+        qzct_12_z,
+        qzct_13_z,
+        qzct_14_z,
+        qzct_15_z,
       ),
       qzct_1cz_y: calculateNAttenDiff(
-        firstData.rightCT[0],
-        secondData.rightCT[0],
-        thirdData.rightCT[0],
-        fourthData.rightCT[0],
-        fifthData.rightCT[0],
+        qzct_11_y,
+        qzct_12_y,
+        qzct_13_y,
+        qzct_14_y,
+        qzct_15_y,
       ),
       qzct_1jg: calculateQuartorResult(
-        firstData.rightCT[0],
-        secondData.rightCT[0],
-        thirdData.rightCT[0],
-        fourthData.rightCT[0],
-        fifthData.rightCT[0],
+        qzct_11_z,
+        qzct_11_y,
+        qzct_12_z,
+        qzct_12_y,
+        qzct_13_z,
+        qzct_13_y,
+        qzct_14_z,
+        qzct_14_y,
+        qzct_15_z,
+        qzct_15_y,
       ),
       tsg,
       gz: store.tsgz,
@@ -1507,30 +1704,6 @@ export class KH extends HMIS<KH_HMIS> {
       zgld: store.zgld,
       bz: "",
     };
-  }
-
-  async resolveFlawData(flaw: VerifyData, record: Verify) {
-    if (!record.szWHModel) {
-      throw new Error("记录缺少机型信息，无法解析缺陷数据");
-    }
-
-    const detector = await this.mdb.getDetector(
-      flaw.nChannel,
-      flaw.nBoard,
-      record.szWHModel,
-    );
-
-    return {
-      flaw,
-      detector,
-      zsj: calculateZSJ(detector.nWAngle),
-      jy: calculateJY(flaw.nAtten),
-      ts: calculateTS(flaw.nAtten, detector.nDBSub),
-    };
-  }
-  createFlawTasks(flaws: VerifyData[], record: Verify) {
-    const limit = pLimit(os.cpus().length);
-    return flaws.map((flaw) => limit(() => this.resolveFlawData(flaw, record)));
   }
 }
 

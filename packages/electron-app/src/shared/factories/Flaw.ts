@@ -10,10 +10,12 @@ interface Flaw {
 }
 
 export class FlawQuery<TFlaw extends Flaw> {
-  public data: TFlaw[];
+  private data: TFlaw[];
+  public id: string;
 
-  constructor(data: TFlaw[]) {
+  constructor(data: TFlaw[], id?: string) {
     this.data = data;
+    this.id = id || "";
   }
 
   flaws() {
@@ -58,9 +60,12 @@ class FlawLZQuery<TFlaw extends Flaw> {
   }
 
   flaws() {
-    return this.parent
-      .flaws()
-      .filter((flaw) => flaw.nChannel === 3 || flaw.nChannel === 4);
+    return this.parent.parent.flaws().filter((flaw) => {
+      const isLZFlaw = flaw.nChannel === 3 || flaw.nChannel === 4;
+      const boardMatched = flaw.nBoard === this.parent.nBoard;
+
+      return isLZFlaw && boardMatched;
+    });
   }
   group() {
     let key = 0;
@@ -82,11 +87,10 @@ class FlawLZQuery<TFlaw extends Flaw> {
 
   check() {
     const group = this.group();
-    console.log("LZGROUP", Object.fromEntries(group.entries()));
 
     if (group.size < 11) {
       throw new Error(
-        `${this.parent.nBoard ? "右" : "左"}LZ缺陷数量不足，当前数量为${group.size}`,
+        `${this.parent.parent.id ? `ID: ${this.parent.parent.id}, ` : ""}${this.parent.nBoard ? "右" : "左"}LZ缺陷数量不足，当前数量为${group.size}`,
       );
     }
   }
@@ -108,9 +112,13 @@ class LZDegQuery<TFlaw extends Flaw> {
   }
 
   flaws() {
-    return this.parent
+    return this.parent.parent.parent
       .flaws()
-      .filter((flaw) => flaw.nChannel === this.nChannel);
+      .filter(
+        (flaw) =>
+          flaw.nChannel === this.nChannel &&
+          flaw.nBoard === this.parent.parent.nBoard,
+      );
   }
 
   flaw(no: number) {
@@ -153,7 +161,14 @@ class FlawXHCQuery<TFlaw extends Flaw> {
   }
 
   flaws() {
-    return this.parent.flaws().filter((flaw) => flaw.nChannel === 1);
+    // Performance optimization:
+    // filter XHC flaws directly from the root node,
+    // instead of filtering from all flaws in the parent query.
+    return this.parent.parent
+      .flaws()
+      .filter(
+        (flaw) => flaw.nChannel === 1 && flaw.nBoard === this.parent.nBoard,
+      );
   }
   check() {
     const flaws = this.flaws();
@@ -161,7 +176,7 @@ class FlawXHCQuery<TFlaw extends Flaw> {
 
     if (xhcFlaws.length < 3) {
       throw new Error(
-        `${this.parent.nBoard ? "右" : "左"}XHC缺陷数量不足，当前数量为${xhcFlaws.length}`,
+        `${this.parent.parent.id ? `ID: ${this.parent.parent.id}, ` : ""}${this.parent.nBoard ? "右" : "左"}XHC缺陷数量不足，当前数量为${xhcFlaws.length}`,
       );
     }
   }
@@ -201,14 +216,21 @@ class FlawCTQuery<TFlaw extends Flaw> {
   }
 
   flaws() {
-    return this.parent.flaws().filter((flaw) => flaw.nChannel === 0);
+    // Performance optimization:
+    // filter CT flaws directly from the parent board flaws,
+    // instead of filtering from all flaws in the parent query.
+    return this.parent.parent
+      .flaws()
+      .filter(
+        (flaw) => flaw.nChannel === 0 && flaw.nBoard === this.parent.nBoard,
+      );
   }
   check() {
     const flaws = this.flaws();
 
     if (flaws.length < 1) {
       throw new Error(
-        `${this.parent.nBoard ? "右" : "左"}CT缺陷数量不足，当前数量为${flaws.length}`,
+        `${this.parent.parent.id ? `ID: ${this.parent.parent.id}, ` : ""}${this.parent.nBoard ? "右" : "左"}CT缺陷数量不足，当前数量为${flaws.length}`,
       );
     }
   }
