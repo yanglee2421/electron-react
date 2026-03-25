@@ -73,7 +73,7 @@ class FlawLZQuery<TFlaw extends Flaw> {
     const group = mapGroupBy(
       this.flaws().toSorted((a, b) => a.fltValueX - b.fltValueX),
       (flaw) => {
-        if (flaw.fltValueX > previousX + 5) {
+        if (flaw.fltValueX > previousX + 10) {
           previousX = flaw.fltValueX;
           return ++key;
         }
@@ -121,15 +121,47 @@ class LZDegQuery<TFlaw extends Flaw> {
       );
   }
 
-  flaw(no: number) {
-    const group = this.parent.group();
+  check() {
+    const excetpedCount = this.nChannel === 3 ? 6 : 5;
+    const group = this.group();
 
-    return (
-      group
-        .get(no)
-        ?.filter((flaw) => flaw.nChannel === this.nChannel)
-        .at(0) || null
+    return group.size >= excetpedCount;
+  }
+
+  group() {
+    let key = 0;
+    let previousX = -Infinity;
+    const group = mapGroupBy(
+      this.flaws().toSorted((a, b) => a.fltValueX - b.fltValueX),
+      (flaw) => {
+        if (flaw.fltValueX > previousX + 10) {
+          previousX = flaw.fltValueX;
+          return ++key;
+        }
+        return key;
+      },
     );
+
+    return group;
+  }
+
+  flaw(no: number) {
+    const group = this.group();
+
+    if (this.nChannel === 3) {
+      return (
+        group
+          .get(no)
+          ?.filter((flaw) => flaw.nChannel === this.nChannel)
+          .at(0) || null
+      );
+    }
+
+    if (this.nChannel === 4) {
+      return group.get(no - 6)?.at(0) || null;
+    }
+
+    return null;
   }
   flawX(no: number) {
     const flaw = this.flaw(no);

@@ -843,6 +843,8 @@ export class KH extends HMIS<KH_HMIS> {
       q.left().xhc().check();
       q.right().xhc().check();
       q.left().lz().check();
+      q.left().lz().deg51().check();
+      q.left().lz().deg44().check();
       q.right().lz().check();
       q.left().ct().check();
       q.right().ct().check();
@@ -998,6 +1000,62 @@ export class KH extends HMIS<KH_HMIS> {
     const qzct_14_y = q4.right().ct().flawAtten();
     const qzct_15_z = q5.left().ct().flawAtten();
     const qzct_15_y = q5.right().ct().flawAtten();
+    const zjgb_1cz_z = calculateNAttenDiff(
+      zjgb_11_z,
+      zjgb_12_z,
+      zjgb_13_z,
+      zjgb_14_z,
+      zjgb_15_z,
+    );
+    const zjgb_1cz_y = calculateNAttenDiff(
+      zjgb_11_y,
+      zjgb_12_y,
+      zjgb_13_y,
+      zjgb_14_y,
+      zjgb_15_y,
+    );
+    const zjgb_2cz_z = calculateNAttenDiff(
+      zjgb_21_z,
+      zjgb_22_z,
+      zjgb_23_z,
+      zjgb_24_z,
+      zjgb_25_z,
+    );
+    const zjgb_2cz_y = calculateNAttenDiff(
+      zjgb_21_y,
+      zjgb_22_y,
+      zjgb_23_y,
+      zjgb_24_y,
+      zjgb_25_y,
+    );
+    const zjgb_3cz_z = calculateNAttenDiff(
+      zjgb_31_z,
+      zjgb_32_z,
+      zjgb_33_z,
+      zjgb_34_z,
+      zjgb_35_z,
+    );
+    const zjgb_3cz_y = calculateNAttenDiff(
+      zjgb_31_y,
+      zjgb_32_y,
+      zjgb_33_y,
+      zjgb_34_y,
+      zjgb_35_y,
+    );
+    const qzct_1cz_z = calculateNAttenDiff(
+      qzct_11_z,
+      qzct_12_z,
+      qzct_13_z,
+      qzct_14_z,
+      qzct_15_z,
+    );
+    const qzct_1cz_y = calculateNAttenDiff(
+      qzct_11_y,
+      qzct_12_y,
+      qzct_13_y,
+      qzct_14_y,
+      qzct_15_y,
+    );
 
     return {
       xrsj: dayjs(records[0].tmnow).format("YYYY-MM-DD HH:mm:ss"),
@@ -1018,32 +1076,9 @@ export class KH extends HMIS<KH_HMIS> {
       zjgb_14_y,
       zjgb_15_z,
       zjgb_15_y,
-      zjgb_1cz_z: calculateNAttenDiff(
-        zjgb_11_z,
-        zjgb_12_z,
-        zjgb_13_z,
-        zjgb_14_z,
-        zjgb_15_z,
-      ),
-      zjgb_1cz_y: calculateNAttenDiff(
-        zjgb_11_y,
-        zjgb_12_y,
-        zjgb_13_y,
-        zjgb_14_y,
-        zjgb_15_y,
-      ),
-      zjgb_1jg: calculateQuartorResult(
-        zjgb_11_z,
-        zjgb_12_z,
-        zjgb_13_z,
-        zjgb_14_z,
-        zjgb_15_z,
-        zjgb_11_y,
-        zjgb_12_y,
-        zjgb_13_y,
-        zjgb_14_y,
-        zjgb_15_y,
-      ),
+      zjgb_1cz_z,
+      zjgb_1cz_y,
+      zjgb_1jg: calculateQuartorResult(zjgb_1cz_z, zjgb_1cz_y),
       zjgb_21_z,
       zjgb_21_y,
       zjgb_22_z,
@@ -1054,32 +1089,9 @@ export class KH extends HMIS<KH_HMIS> {
       zjgb_24_y,
       zjgb_25_z,
       zjgb_25_y,
-      zjgb_2cz_z: calculateNAttenDiff(
-        zjgb_21_z,
-        zjgb_22_z,
-        zjgb_23_z,
-        zjgb_24_z,
-        zjgb_25_z,
-      ),
-      zjgb_2cz_y: calculateNAttenDiff(
-        zjgb_21_y,
-        zjgb_22_y,
-        zjgb_23_y,
-        zjgb_24_y,
-        zjgb_25_y,
-      ),
-      zjgb_2jg: calculateQuartorResult(
-        zjgb_21_z,
-        zjgb_22_z,
-        zjgb_23_z,
-        zjgb_24_z,
-        zjgb_25_z,
-        zjgb_21_y,
-        zjgb_22_y,
-        zjgb_23_y,
-        zjgb_24_y,
-        zjgb_25_y,
-      ),
+      zjgb_2cz_z,
+      zjgb_2cz_y,
+      zjgb_2jg: calculateQuartorResult(zjgb_2cz_z, zjgb_2cz_y),
       zjgb_31_z,
       zjgb_31_y,
       zjgb_32_z,
@@ -1522,32 +1534,9 @@ export class KH extends HMIS<KH_HMIS> {
       qzct_14_y,
       qzct_15_z,
       qzct_15_y,
-      qzct_1cz_z: calculateNAttenDiff(
-        qzct_11_z,
-        qzct_12_z,
-        qzct_13_z,
-        qzct_14_z,
-        qzct_15_z,
-      ),
-      qzct_1cz_y: calculateNAttenDiff(
-        qzct_11_y,
-        qzct_12_y,
-        qzct_13_y,
-        qzct_14_y,
-        qzct_15_y,
-      ),
-      qzct_1jg: calculateQuartorResult(
-        qzct_11_z,
-        qzct_11_y,
-        qzct_12_z,
-        qzct_12_y,
-        qzct_13_z,
-        qzct_13_y,
-        qzct_14_z,
-        qzct_14_y,
-        qzct_15_z,
-        qzct_15_y,
-      ),
+      qzct_1cz_z,
+      qzct_1cz_y,
+      qzct_1jg: calculateQuartorResult(qzct_1cz_z, qzct_1cz_y),
       tsg,
       gz: store.tsgz,
       zjy: store.tszjy,
