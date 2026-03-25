@@ -1,11 +1,11 @@
+import * as schema from "#main/db/schema";
+import type { AppContext } from "#main/index";
+import type { Verify } from "#main/modules/mdb";
+import { createCellHelper, createRowHelper, pageSetup } from "#main/utils";
+import Excel from "@yanglee2421/exceljs";
+import * as sql from "drizzle-orm";
 import { app, shell } from "electron";
 import * as path from "node:path";
-import Excel from "@yanglee2421/exceljs";
-import * as schema from "#main/db/schema";
-import * as sql from "drizzle-orm";
-import { createCellHelper, createRowHelper, pageSetup } from "#main/utils";
-import type { Verify } from "#main/modules/mdb";
-import type { AppContext } from "#main/index";
 
 const columnWidths = new Map([
   ["A", 4.1],
@@ -73,12 +73,10 @@ export const chr_501 = async (appContext: AppContext, id: string) => {
     td(`A${index}:N${index}`);
   });
 
-  const data = await mdbDB.getDataFromRootDB<Verify>({
+  await mdbDB.getDataFromRootDB<Verify>({
     tableName: "verifies",
     filters: [{ type: "equal", field: "szIDs", value: id }],
   });
-
-  console.log(data);
 
   columnWidths.forEach((width, col) => {
     sheet.getColumn(col).width = width;

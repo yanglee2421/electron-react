@@ -69,11 +69,7 @@ export const Component = () => {
       <CardActions>
         <Button
           onClick={() => {
-            xml.mutate(path, {
-              onSuccess: (data) => {
-                console.log(data);
-              },
-            });
+            xml.mutate(path);
           }}
         >
           Parse

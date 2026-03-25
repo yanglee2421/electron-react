@@ -185,7 +185,11 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
   private net: Net;
 
   constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net) {
-    super(jtv_hmis_guangzhoubei.parse, JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY, kv);
+    super(
+      jtv_hmis_guangzhoubei.parse.bind(jtv_hmis_guangzhoubei),
+      JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY,
+      kv,
+    );
 
     this.db = db;
     this.mdb = mdb;
@@ -195,7 +199,7 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
   async hydrate() {
     await super.hydrate();
 
-    this.autoUploadLoop();
+    void this.autoUploadLoop();
   }
 
   async autoUploadLoop() {

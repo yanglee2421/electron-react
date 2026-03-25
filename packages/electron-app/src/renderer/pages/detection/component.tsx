@@ -1,3 +1,20 @@
+import type { Detection } from "#main/modules/mdb";
+import type { Filter } from "#main/modules/mdb.worker";
+import type { MDBUser } from "#renderer/api/fetch_preload";
+import {
+  fetchDataFromAppDB,
+  fetchDataFromRootDB,
+  useChr53aExport,
+} from "#renderer/api/fetch_preload";
+import { Loading } from "#renderer/components/Loading";
+import { ScrollToTopButton } from "#renderer/components/scroll";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import {
+  CheckBoxOutlineBlankOutlined,
+  CheckBoxOutlined,
+  PrintOutlined,
+  RefreshOutlined,
+} from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -27,38 +44,21 @@ import {
   TextField,
   type DialogProps,
 } from "@mui/material";
-import {
-  CheckBoxOutlineBlankOutlined,
-  CheckBoxOutlined,
-  PrintOutlined,
-  RefreshOutlined,
-} from "@mui/icons-material";
-import {
-  createColumnHelper,
-  getCoreRowModel,
-  useReactTable,
-  flexRender,
-} from "@tanstack/react-table";
-import { z } from "zod";
-import dayjs from "dayjs";
-import React from "react";
-import { useDialogs } from "@toolpad/core";
+import { DatePicker } from "@mui/x-date-pickers";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
-import { DatePicker } from "@mui/x-date-pickers";
-import { Link as RouterLink } from "react-router";
-import { useSessionStore } from "./hooks";
-import { Loading } from "#renderer/components/Loading";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
-  useChr53aExport,
-  fetchDataFromRootDB,
-  fetchDataFromAppDB,
-} from "#renderer/api/fetch_preload";
-import { ScrollToTopButton } from "#renderer/components/scroll";
-import type { Detection } from "#main/modules/mdb";
-import type { Filter } from "#main/modules/mdb.worker";
-import type { MDBUser } from "#renderer/api/fetch_preload";
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { useDialogs } from "@toolpad/core";
+import dayjs from "dayjs";
+import React from "react";
+import { Link as RouterLink } from "react-router";
+import { z } from "zod";
+import { useSessionStore } from "./hooks";
 
 const renderCheckBoxIcon = (value: boolean | null) => {
   return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
@@ -208,7 +208,7 @@ const DataGrid = ({
       <CardContent>
         <Button
           onClick={() => {
-            dialogs.open(ExportToXlsx);
+            void dialogs.open(ExportToXlsx);
           }}
           disabled={chr53a.isPending}
           startIcon={
@@ -496,11 +496,9 @@ const ExportToXlsx = (props: DialogProps) => {
         <form
           id={formId}
           onSubmit={(e) => {
-            console.log("submit");
-
             e.stopPropagation();
             e.preventDefault();
-            form.handleSubmit();
+            void form.handleSubmit();
           }}
           onReset={(e) => {
             form.reset();
