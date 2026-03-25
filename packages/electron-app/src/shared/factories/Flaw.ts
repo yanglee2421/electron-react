@@ -138,6 +138,7 @@ class LZDegQuery<TFlaw extends Flaw> {
           previousX = flaw.fltValueX;
           return ++key;
         }
+
         return key;
       },
     );
@@ -149,12 +150,7 @@ class LZDegQuery<TFlaw extends Flaw> {
     const group = this.group();
 
     if (this.nChannel === 3) {
-      return (
-        group
-          .get(no)
-          ?.filter((flaw) => flaw.nChannel === this.nChannel)
-          .at(0) || null
-      );
+      return group.get(no)?.at(0) || null;
     }
 
     if (this.nChannel === 4) {
