@@ -176,7 +176,7 @@ class LZDegQuery<TFlaw extends Flaw> {
     const flaw = this.flaw(no);
 
     if (!flaw) {
-      return "";
+      return "0";
     }
 
     return mathjs
@@ -231,7 +231,7 @@ class FlawXHCQuery<TFlaw extends Flaw> {
     const flaw = this.flaw(no);
 
     if (!flaw) {
-      return "";
+      return "0";
     }
 
     return mathjs
@@ -285,7 +285,7 @@ class FlawCTQuery<TFlaw extends Flaw> {
     const flaw = this.flaw(no);
 
     if (!flaw) {
-      return "";
+      return "0";
     }
 
     return mathjs
