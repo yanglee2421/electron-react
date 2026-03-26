@@ -124,6 +124,10 @@ export interface IpcContract
     args: [number];
     return: XlsxSize[];
   };
+  "DB/EXPORT": {
+    args: [];
+    return: void;
+  };
 }
 
 export interface SQLiteGetParams {

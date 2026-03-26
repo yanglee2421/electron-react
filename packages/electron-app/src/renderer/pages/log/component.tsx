@@ -1,4 +1,5 @@
 import type { Log } from "#main/db/schema";
+import { useExportDB } from "#renderer/api/app";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
@@ -193,13 +194,19 @@ export const Component = () => {
   const logs = [] as Log[];
   const count = 0;
 
+  const exportDBMutation = useExportDB();
+
   return (
     <Card>
       <ScrollToTopButton />
       <CardHeader
         title="日志"
         action={
-          <IconButton onClick={() => {}}>
+          <IconButton
+            onClick={() => {
+              exportDBMutation.mutate();
+            }}
+          >
             <ClearAllOutlined />
           </IconButton>
         }

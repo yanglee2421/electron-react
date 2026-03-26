@@ -45,10 +45,6 @@ const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/md5_backup_image/component"),
           },
           {
-            path: "chat",
-            lazy: () => import("#renderer/pages/chat/component"),
-          },
-          {
             path: "xml",
             lazy: () => import("#renderer/pages/xml/component"),
           },
@@ -177,9 +173,7 @@ const routes: RouteObject[] = [
                   {
                     path: "setting",
                     lazy: () =>
-                      import(
-                        "#renderer/pages/jtv_hmis_xuzhoubei_setting/component"
-                      ),
+                      import("#renderer/pages/jtv_hmis_xuzhoubei_setting/component"),
                   },
                 ],
                 loader: async () => {},
@@ -195,9 +189,7 @@ const routes: RouteObject[] = [
                   {
                     path: "setting",
                     lazy: () =>
-                      import(
-                        "#renderer/pages/jtv_hmis_guangzhoubei_setting/component"
-                      ),
+                      import("#renderer/pages/jtv_hmis_guangzhoubei_setting/component"),
                   },
                 ],
                 loader: async () => {},
@@ -208,16 +200,12 @@ const routes: RouteObject[] = [
                   {
                     index: true,
                     lazy: () =>
-                      import(
-                        "#renderer/pages/jtv_hmis_guangzhoujibaoduan/component"
-                      ),
+                      import("#renderer/pages/jtv_hmis_guangzhoujibaoduan/component"),
                   },
                   {
                     path: "setting",
                     lazy: () =>
-                      import(
-                        "#renderer/pages/jtv_hmis_guangzhoujibaoduan_setting/component"
-                      ),
+                      import("#renderer/pages/jtv_hmis_guangzhoujibaoduan_setting/component"),
                   },
                 ],
                 loader: async () => {},
@@ -240,9 +228,7 @@ const routes: RouteObject[] = [
                       {
                         path: ":id",
                         lazy: () =>
-                          import(
-                            "#renderer/pages/kh_hmis_verify_show/component"
-                          ),
+                          import("#renderer/pages/kh_hmis_verify_show/component"),
                       },
                     ],
                   },
@@ -257,9 +243,7 @@ const routes: RouteObject[] = [
                       {
                         path: ":id",
                         lazy: () =>
-                          import(
-                            "#renderer/pages/kh_hmis_quartors_show/component"
-                          ),
+                          import("#renderer/pages/kh_hmis_quartors_show/component"),
                       },
                     ],
                   },

@@ -23,6 +23,7 @@ import {
   protocol,
   shell,
 } from "electron";
+import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import * as cmd from "./modules/cmd";
@@ -299,6 +300,25 @@ const bootstrap = async () => {
   nativeTheme.themeSource = profile.getState().mode;
   const ipch = new IPCHandle(logger);
   const ipcHandle = ipch.handle.bind(ipch);
+
+  ipcHandle("DB/EXPORT", async () => {
+    const result = await dialog.showSaveDialog({
+      title: "导出数据库",
+      defaultPath: `${app.getPath("desktop")}/db-${Date.now()}.db`,
+      filters: [
+        { name: "数据库文件", extensions: ["db"] },
+        { name: "所有文件", extensions: ["*"] },
+      ],
+    });
+
+    const outputPath = result.filePath;
+
+    if (!outputPath) {
+      return;
+    }
+
+    await fs.promises.copyFile(databasePath, result.filePath);
+  });
 
   bindAppEventListeners(profile);
   bindIpcHandles(ipcHandle);

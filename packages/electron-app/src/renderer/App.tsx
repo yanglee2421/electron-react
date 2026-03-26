@@ -4,9 +4,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import React from "react";
 import { QueryProvider } from "./components/query";
 import { useColorScheme } from "./hooks/dom/useColorScheme";
-import { useSubscribe } from "./hooks/useSubscribe";
-import type { Log } from "./lib/db";
-import { db } from "./lib/db";
 import { AppRouter } from "./router";
 
 const calculateTheme = (isDark: boolean) => {
@@ -37,15 +34,7 @@ const calculateTheme = (isDark: boolean) => {
   return lightTheme;
 };
 
-const useLog = () => {
-  useSubscribe("LOG", (data: Log) => {
-    void db.log.add({
-      type: data.type,
-      message: data.message,
-      date: data.date,
-    });
-  });
-};
+
 
 type MuiProviderProps = React.PropsWithChildren;
 
@@ -65,7 +54,7 @@ const MuiProvider = (props: MuiProviderProps) => {
 };
 
 export const App = () => {
-  useLog();
+
 
   return (
     <QueryProvider>
