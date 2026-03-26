@@ -1,6 +1,10 @@
 import { ls } from "#main/lib/fs";
-import type { Invoice, IssuItemInformation, XMLJSONData } from "#main/lib/ipc";
-import { ipcHandle } from "#main/lib/ipc";
+import type {
+  Invoice,
+  IpcHandle,
+  IssuItemInformation,
+  XMLJSONData,
+} from "#main/lib/ipc";
 import loaderWASM from "#resources/zxing_full.wasm?loader";
 import { mapGroupBy } from "@yotulee/run";
 import { XMLParser } from "fast-xml-parser";
@@ -154,7 +158,7 @@ const collectPDFResult = async (
   }
 };
 
-export const bindIpcHandlers = () => {
+export const bindIpcHandlers = (ipcHandle: IpcHandle) => {
   ipcHandle("XML/XML", async (_, payload: string) => {
     const xmlPath = payload;
     const data = await xmlPathToJSONData(xmlPath);

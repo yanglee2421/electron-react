@@ -1,10 +1,10 @@
-import * as sql from "drizzle-orm";
+import type { SQLiteDBType } from "#main/db";
 import * as schema from "#main/db/schema";
-import { ipcHandle } from "#main/lib/ipc";
+import type { IpcHandle } from "#main/lib/ipc";
+import * as sql from "drizzle-orm";
+import { chr_501 } from "./chr_501";
 import { chr_502 } from "./chr_502";
 import { chr_53a } from "./chr_53a";
-import { chr_501 } from "./chr_501";
-import type { AppContext } from "#main/index";
 
 /**
  * CHR53A Work Records
@@ -12,12 +12,10 @@ import type { AppContext } from "#main/index";
  * CHR502 Quartor Validate
  * CHR503 Yearly Validate
  */
-export const bindIpcHandlers = (appContext: AppContext) => {
-  const { sqliteDB: db } = appContext;
-
-  ipcHandle("XLSX/XLSX_CHR501", (_, id: string) => chr_501(appContext, id));
-  ipcHandle("XLSX/xlsx_chr_502", () => chr_502(appContext));
-  ipcHandle("XLSX/xlsx_chr_53a", (_, data) => chr_53a(appContext, data));
+export const bindIpcHandlers = (db: SQLiteDBType, ipcHandle: IpcHandle) => {
+  ipcHandle("XLSX/XLSX_CHR501", (_, id: string) => chr_501(db, id));
+  ipcHandle("XLSX/xlsx_chr_502", () => chr_502(db));
+  ipcHandle("XLSX/xlsx_chr_53a", (_, data) => chr_53a(db, data));
   ipcHandle("XLSX/sqlite_xlsx_size_c", async (_, params) => {
     const data = await db
       .insert(schema.xlsxSizeTable)
@@ -48,7 +46,7 @@ export const bindIpcHandlers = (appContext: AppContext) => {
 
       const whereSearcher = sql.and(...wheres);
 
-      const rows = await db.query.xlsxSizeTable.findMany({
+      const rows = await db._query.xlsxSizeTable.findMany({
         where: whereSearcher,
         offset: pageIndex * pageSize,
         limit: pageSize,

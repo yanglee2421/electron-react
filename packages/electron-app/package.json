@@ -86,8 +86,6 @@
     "@vitejs/plugin-react": "^5.1.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "dayjs": "^1.11.19",
-    "dexie": "^4.2.1",
-    "dexie-react-hooks": "^4.2.0",
     "drizzle-kit": "1.0.0-beta.15-859cf75",
     "electron": "^38.7.2",
     "electron-builder": "^26.0.12",

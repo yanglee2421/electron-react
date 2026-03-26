@@ -1,3 +1,12 @@
+import type { Log } from "#main/db/schema";
+import { ScrollToTopButton } from "#renderer/components/scroll";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import {
+  AddOutlined,
+  ClearAllOutlined,
+  DeleteOutlined,
+  RemoveOutlined,
+} from "@mui/icons-material";
 import {
   Card,
   CardContent,
@@ -15,12 +24,7 @@ import {
   TablePagination,
   TableRow,
 } from "@mui/material";
-import {
-  AddOutlined,
-  ClearAllOutlined,
-  DeleteOutlined,
-  RemoveOutlined,
-} from "@mui/icons-material";
+import { DatePicker } from "@mui/x-date-pickers";
 import {
   createColumnHelper,
   flexRender,
@@ -30,12 +34,6 @@ import {
 } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import React from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { DatePicker } from "@mui/x-date-pickers";
-import { db } from "#renderer/lib/db";
-import { ScrollToTop } from "#renderer/components/scroll";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import type { Log } from "#renderer/lib/db";
 
 const initDayjs = () => dayjs();
 
@@ -56,11 +54,15 @@ const columns = [
     footer: "ID",
   }),
   columnHelper.accessor("date", {
-    cell: ({ getValue }) => new Date(getValue()).toLocaleString(),
+    cell: ({ getValue }) => {
+      const val = getValue();
+
+      return val && new Date(val).toLocaleString();
+    },
     header: "日期",
     footer: "日期",
   }),
-  columnHelper.accessor("type", {
+  columnHelper.accessor("level", {
     cell: ({ getValue }) => (
       <Chip label={getValue()} sx={{ textTransform: "uppercase" }} />
     ),
@@ -71,11 +73,7 @@ const columns = [
     id: "actions",
     cell: ({ row }) => (
       <>
-        <IconButton
-          onClick={() => {
-            db.log.delete(row.getValue("id"));
-          }}
-        >
+        <IconButton onClick={() => {}}>
           <DeleteOutlined color="error" />
         </IconButton>
       </>
@@ -192,49 +190,16 @@ export const Component = () => {
   const [startDate, setStartDate] = React.useState(initDayjs);
   const [endDate, setEndDate] = React.useState(initDayjs);
 
-  const logs = useLiveQuery(
-    () =>
-      db.log
-        .where("date")
-        .between(
-          startDate.startOf("day").toISOString(),
-          endDate.endOf("day").toISOString(),
-          true,
-          true,
-        )
-        .reverse()
-        .offset(pageIndex * pageSize)
-        .limit(pageSize)
-        .toArray(),
-    [pageIndex, pageSize, startDate, endDate],
-  );
-
-  const count = useLiveQuery(
-    () =>
-      db.log
-        .where("date")
-        .between(
-          startDate.startOf("day").toISOString(),
-          endDate.endOf("day").toISOString(),
-          true,
-          true,
-        )
-        .count(),
-    [],
-  );
-  const [anchorEl, showScrollToTop] = ScrollToTop.useScrollToTop();
+  const logs = [] as Log[];
+  const count = 0;
 
   return (
     <Card>
-      <div ref={anchorEl}></div>
+      <ScrollToTopButton />
       <CardHeader
         title="日志"
         action={
-          <IconButton
-            onClick={() => {
-              db.log.clear();
-            }}
-          >
+          <IconButton onClick={() => {}}>
             <ClearAllOutlined />
           </IconButton>
         }
@@ -291,7 +256,6 @@ export const Component = () => {
         }}
         labelRowsPerPage="每页行数"
       />
-      <ScrollToTop ref={anchorEl} show={showScrollToTop} />
     </Card>
   );
 };

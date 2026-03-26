@@ -8,24 +8,37 @@ import type {
   IpcHandle,
   SQLiteGetParams,
 } from "#main/lib/ipc";
-import { log } from "#main/lib/ipc";
 import type { Detection, DetectionData, MDBDB } from "#main/modules/mdb";
 import {
   detectionDataToTPlace,
   tmnowToTSSJ,
 } from "#shared/functions/flawDetection";
 import { JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY } from "#shared/instances/constants";
-import {
-  jtv_hmis_guangzhoubei,
-  type JTV_HMIS_Guangzhoubei,
-} from "#shared/instances/schema";
+import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
+import { jtv_hmis_guangzhoubei } from "#shared/instances/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
 import type { KV } from "../KV";
-import { HMIS, type Net } from "./hmis";
+import type { Logger } from "../Logger";
+import type { Net } from "./hmis";
+import { HMIS } from "./hmis";
 
-type ZH_Item = {
+export interface NormalizeResponse {
+  DH: string;
+  ZH: string;
+  ZX: string;
+  CZZZDW: string;
+  CZZZRQ: string;
+  MCZZDW: string;
+  MCZZRQ: string;
+  SCZZDW: string;
+  SCZZRQ: string;
+  ZTX: boolean;
+  YTX: boolean;
+}
+
+interface ZH_Item {
   DH: string;
   ZH: string;
   ZX: string;
@@ -57,15 +70,15 @@ type ZH_Item = {
   LBYSXH: string | null;
   LBZLX: string | null;
   LBYCDH: string | null;
-};
+}
 
-type ZH_Response = {
+interface ZH_Response {
   code: string;
   msg: string;
   data: ZH_Item[];
-};
+}
 
-type PostItem = {
+interface PostItem {
   eq_ip: string; // 设备IP
   eq_bh: string; // 设备编号
   dh: string; // 扫码单号
@@ -85,9 +98,9 @@ type PostItem = {
   TSZ: string; // 探伤者左
   TSZY: string; // 探伤者右
   CT_RESULT: string; // 合格
-};
+}
 
-type DH_Item = {
+interface DH_Item {
   DH: string;
   ZH: string;
   ZX: string;
@@ -102,13 +115,13 @@ type DH_Item = {
 
   SRYY?: string | null;
   SRDW?: string | null;
-};
+}
 
-type DH_Response = {
+interface DH_Response {
   code: string;
   msg: string;
   data: DH_Item[];
-};
+}
 
 const normalizeZHResponse = (data: ZH_Response) => {
   if (data.code !== "200") {
@@ -156,35 +169,13 @@ const normalizeDHResponse = (data: DH_Response) => {
 
 const emit = createEmit("api_set");
 
-export interface Ipc {
-  "HMIS/jtv_hmis_guangzhoubei_api_get": {
-    args: [string, boolean?];
-    return: ReturnType<typeof Guangzhoubei.prototype.handleFetch>;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_api_set": {
-    args: [number];
-    return: ReturnType<typeof Guangzhoubei.prototype.handleUpload>;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: ReturnType<typeof Guangzhoubei.prototype.handleReadRecord>;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_sqlite_delete": {
-    args: [number];
-    return: ReturnType<typeof Guangzhoubei.prototype.handleDeleteRecord>;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_sqlite_insert": {
-    args: [InsertRecordParams];
-    return: ReturnType<typeof Guangzhoubei.prototype.handleInsertRecord>;
-  };
-}
-
 export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
   private db: SQLiteDBType;
   private mdb: MDBDB;
   private net: Net;
+  private logger: Logger;
 
-  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net) {
+  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net, logger: Logger) {
     super(
       jtv_hmis_guangzhoubei.parse.bind(jtv_hmis_guangzhoubei),
       JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY,
@@ -194,6 +185,7 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
     this.db = db;
     this.mdb = mdb;
     this.net = net;
+    this.logger = logger;
   }
 
   async hydrate() {
@@ -248,7 +240,7 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
     const url = this.makeDataRequestURL(zh);
 
     url.searchParams.set("type", "csbtszh");
-    log(`请求轴号数据:${url.href}`);
+    this.logger.log({ title: `请求轴号数据:${url.href}` });
 
     const res = await this.net.fetch(url.href, { method: "GET" });
 
@@ -257,7 +249,7 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
     }
 
     const data: ZH_Response = await res.json();
-    log(`返回轴号数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回轴号数据:$`, json: JSON.stringify(data) });
 
     if (data.code !== "200") {
       throw new Error(data.msg);
@@ -270,7 +262,7 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
     const url = this.makeDataRequestURL(dh);
 
     url.searchParams.set("type", "csbts");
-    log(`请求单号数据:${url.href}`);
+    this.logger.error({ title: `请求单号数据:`, message: url.href });
 
     const res = await this.net.fetch(url.href, { method: "GET" });
 
@@ -279,7 +271,7 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
     }
 
     const data: DH_Response = await res.json();
-    log(`返回单号数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回单号数据:`, json: JSON.stringify(data) });
 
     if (data.code !== "200") {
       throw new Error(data.msg);
@@ -296,7 +288,10 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
 
     url.searchParams.set("method", "saveData");
     url.searchParams.set("type", "csbts");
-    log(`请求数据:${url.href},${body}`);
+    this.logger.log({
+      title: `请求数据:`,
+      json: JSON.stringify({ url: url.href, body }),
+    });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -311,7 +306,7 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
     }
 
     const data: boolean = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回数据:`, json: JSON.stringify(data) });
 
     return data;
   }
@@ -485,6 +480,29 @@ export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
   }
 }
 
+export interface Ipc {
+  "HMIS/jtv_hmis_guangzhoubei_api_get": {
+    args: [string, boolean?];
+    return: ReturnType<typeof Guangzhoubei.prototype.handleFetch>;
+  };
+  "HMIS/jtv_hmis_guangzhoubei_api_set": {
+    args: [number];
+    return: ReturnType<typeof Guangzhoubei.prototype.handleUpload>;
+  };
+  "HMIS/jtv_hmis_guangzhoubei_sqlite_get": {
+    args: [SQLiteGetParams];
+    return: ReturnType<typeof Guangzhoubei.prototype.handleReadRecord>;
+  };
+  "HMIS/jtv_hmis_guangzhoubei_sqlite_delete": {
+    args: [number];
+    return: ReturnType<typeof Guangzhoubei.prototype.handleDeleteRecord>;
+  };
+  "HMIS/jtv_hmis_guangzhoubei_sqlite_insert": {
+    args: [InsertRecordParams];
+    return: ReturnType<typeof Guangzhoubei.prototype.handleInsertRecord>;
+  };
+}
+
 export const bindIpcHandlers = (hmis: Guangzhoubei, ipcHandle: IpcHandle) => {
   ipcHandle("HMIS/jtv_hmis_guangzhoubei_sqlite_get", (_, params) => {
     return hmis.handleReadRecord(params);
@@ -502,17 +520,3 @@ export const bindIpcHandlers = (hmis: Guangzhoubei, ipcHandle: IpcHandle) => {
     return hmis.handleUpload(id);
   });
 }; // Guangzhoubei
-
-export type NormalizeResponse = {
-  DH: string;
-  ZH: string;
-  ZX: string;
-  CZZZDW: string;
-  CZZZRQ: string;
-  MCZZDW: string;
-  MCZZRQ: string;
-  SCZZDW: string;
-  SCZZRQ: string;
-  ZTX: boolean;
-  YTX: boolean;
-};

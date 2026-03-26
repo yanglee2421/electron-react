@@ -8,7 +8,6 @@ import type {
   IpcHandle,
   SQLiteGetParams,
 } from "#main/lib/ipc";
-import { log } from "#main/lib/ipc";
 import type { Detection, DetectionData, MDBDB } from "#main/modules/mdb";
 import { KV } from "#main/shared/factories/KV";
 import {
@@ -21,7 +20,9 @@ import { guangzhoujibaoduan } from "#shared/instances/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
-import { HMIS, type Net } from "./hmis";
+import type { Logger } from "../Logger";
+import type { Net } from "./hmis";
+import { HMIS } from "./hmis";
 
 interface ZH_Item {
   DH: string;
@@ -152,8 +153,9 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
   private db: SQLiteDBType;
   private mdb: MDBDB;
   private net: Net;
+  private logger: Logger;
 
-  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net) {
+  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net, logger: Logger) {
     super(
       guangzhoujibaoduan.parse.bind(guangzhoujibaoduan),
       GUANGZHOU_JIBAODUAN_STORAGE_KEY,
@@ -163,6 +165,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     this.db = db;
     this.mdb = mdb;
     this.net = net;
+    this.logger = logger;
   }
 
   async hydrate() {
@@ -221,7 +224,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     const url = this.resolveFetchURL(dh);
 
     url.searchParams.set("type", "csbts");
-    log(`请求单号数据:${url.href}`);
+    this.logger.log({ title: `请求单号数据:`, message: url.href });
 
     const res = await this.net.fetch(url.href, { method: "GET" });
 
@@ -230,7 +233,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     }
 
     const data: DH_Response = await res.json();
-    log(`返回单号数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回单号数据:`, json: JSON.stringify(data) });
 
     if (data.code !== "200") {
       throw new Error(data.msg);
@@ -243,7 +246,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     const url = this.resolveFetchURL(zh);
 
     url.searchParams.set("type", "csbtszh");
-    log(`请求轴号数据:${url.href}`);
+    this.logger.log({ title: `请求轴号数据:`, message: url.href });
 
     const res = await this.net.fetch(url.href, { method: "GET" });
 
@@ -252,7 +255,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     }
 
     const data: ZH_Response = await res.json();
-    log(`返回轴号数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回轴号数据:`, json: JSON.stringify(data) });
 
     if (data.code !== "200") {
       throw new Error(data.msg);
@@ -363,7 +366,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
 
     url.searchParams.set("method", "saveData");
     url.searchParams.set("type", "csbts");
-    log(`请求数据:${url.href},${body}`);
+    this.logger.log({ title: `请求数据:`, message: url.href, json: body });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -378,7 +381,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     }
 
     const data: boolean = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回数据:`, json: JSON.stringify(data) });
 
     return data;
   }

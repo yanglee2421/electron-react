@@ -3,20 +3,22 @@
 import type { SQLiteDBType } from "#main/db";
 import * as schema from "#main/db/schema";
 import { createEmit, getIP } from "#main/lib";
-import {
-  log,
-  type InsertRecordParams,
-  type IpcHandle,
-  type SQLiteGetParams,
+import type {
+  InsertRecordParams,
+  IpcHandle,
+  SQLiteGetParams,
 } from "#main/lib/ipc";
 import type { DetectionData, MDBDB } from "#main/modules/mdb";
 import { HXZY_HMIS_STORAGE_KEY } from "#shared/instances/constants";
-import { hxzy_hmis, type HXZY_HMIS } from "#shared/instances/schema";
+import type { HXZY_HMIS } from "#shared/instances/schema";
+import { hxzy_hmis } from "#shared/instances/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
 import type { KV } from "../KV";
-import { HMIS, type Net } from "./hmis";
+import type { Logger } from "../Logger";
+import type { Net } from "./hmis";
+import { HMIS } from "./hmis";
 
 export interface HxzyGetResponse {
   code: "200";
@@ -62,7 +64,7 @@ interface PostRequestItem {
 }
 
 interface PostResponse {
-  code: "200";
+  code: string;
   msg: "数据上传成功";
 }
 
@@ -72,19 +74,21 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
   private db: SQLiteDBType;
   private mdb: MDBDB;
   private net: Net;
+  private logger: Logger;
 
-  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net) {
-    super(hxzy_hmis.parse, HXZY_HMIS_STORAGE_KEY, kv);
+  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net, logger: Logger) {
+    super(hxzy_hmis.parse.bind(hxzy_hmis), HXZY_HMIS_STORAGE_KEY, kv);
 
     this.db = db;
     this.mdb = mdb;
     this.net = net;
+    this.logger = logger;
   }
 
   async hydrate() {
     await super.hydrate();
 
-    this.autoUploadLoop();
+    void this.autoUploadLoop();
   }
 
   async autoUploadLoop() {
@@ -130,7 +134,11 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
     );
 
     url.searchParams.set("type", "csbts");
-    log(`请求数据:${url.href},${body}`);
+    this.logger.log({
+      title: `请求数据:`,
+      json: body,
+      message: url.href,
+    });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -144,7 +152,13 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
       throw `接口异常[${res.status}]:${res.statusText}`;
     }
     const data: PostResponse = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+
+    this.logger.log({
+      title: `返回数据:`,
+      json: JSON.stringify(data),
+      message: url.href,
+    });
+
     if (data.code !== "200") {
       throw `接口异常[${data.code}]:${data.msg}`;
     }
@@ -287,7 +301,7 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
 
     url.searchParams.set("type", "csbts");
     url.searchParams.set("param", dh);
-    log(`请求数据:${url.href}`);
+    this.logger.error({ title: `请求数据:`, message: url.href });
 
     const res = await this.net.fetch(url.href, { method: "GET" });
 
@@ -296,7 +310,7 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
     }
 
     const data: HxzyGetResponse = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.error({ title: `返回数据:`, message: JSON.stringify(data) });
 
     return data;
   }

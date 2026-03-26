@@ -15,6 +15,7 @@ export type JTVGuangzhoubeiBarcode =
   typeof jtvGuangzhoubeiBarcodeTable.$inferSelect;
 export type JTVGuangzhoujibaoduanBarcode =
   typeof jtvGuangzhoujibaoduanBarcodeTable.$inferSelect;
+export type Log = typeof logTable.$inferSelect;
 
 export const jtvBarcodeTable = sqliteTable("jtv_barcode", {
   id: int("id").primaryKey({ autoIncrement: true }),
@@ -103,4 +104,13 @@ export const jtvGuangzhoujibaoduanBarcodeTable = sqliteTable(
 export const kvTable = sqliteTable("kv", {
   key: text("key").primaryKey(),
   value: text("value"),
+});
+
+export const logTable = sqliteTable("log", {
+  id: int("id").primaryKey({ autoIncrement: true }),
+  date: int("date", { mode: "timestamp" }).$default(() => new Date()),
+  level: text("level").default("log"),
+  title: text("title"),
+  message: text("message"),
+  json: text("json"),
 });

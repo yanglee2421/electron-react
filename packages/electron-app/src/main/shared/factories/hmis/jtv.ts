@@ -8,19 +8,21 @@ import type {
   IpcHandle,
   SQLiteGetParams,
 } from "#main/lib/ipc";
-import { log } from "#main/lib/ipc";
 import type { Detection, DetectionData, MDBDB } from "#main/modules/mdb";
 import {
   detectionDataToTPlace,
   tmnowToTSSJ,
 } from "#shared/functions/flawDetection";
 import { JTV_HMIS_STORAGE_KEY } from "#shared/instances/constants";
-import { jtv_hmis, type JTV_HMIS } from "#shared/instances/schema";
+import type { JTV_HMIS } from "#shared/instances/schema";
+import { jtv_hmis } from "#shared/instances/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
 import type { KV } from "../KV";
-import { HMIS, type Net } from "./hmis";
+import type { Logger } from "../Logger";
+import type { Net } from "./hmis";
+import { HMIS } from "./hmis";
 
 interface ZH_Item {
   DH: string;
@@ -104,8 +106,8 @@ interface PostItem {
 }
 
 interface PostResponse {
-  code: "200";
-  msg: "数据上传成功";
+  code: string;
+  msg: string;
 }
 
 const normalizeZHResponse = (data: ZH_Response) => {
@@ -177,19 +179,21 @@ export class JTV extends HMIS<JTV_HMIS> {
   private db: SQLiteDBType;
   private mdb: MDBDB;
   private net: Net;
+  private logger: Logger;
 
-  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net) {
-    super(jtv_hmis.parse, JTV_HMIS_STORAGE_KEY, kv);
+  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net, logger: Logger) {
+    super(jtv_hmis.parse.bind(jtv_hmis), JTV_HMIS_STORAGE_KEY, kv);
 
     this.db = db;
     this.mdb = mdb;
     this.net = net;
+    this.logger = logger;
   }
 
   async hydrate() {
     await super.hydrate();
 
-    this.autoUploadLoop();
+    void this.autoUploadLoop();
   }
 
   async autoUploadLoop() {
@@ -240,7 +244,7 @@ export class JTV extends HMIS<JTV_HMIS> {
     const url = this.makeDataRequestURL(zh);
 
     url.searchParams.set("type", "csbtszh");
-    log(`请求轴号数据:${url.href}`);
+    this.logger.log({ title: `请求轴号数据:`, message: url.href });
 
     const res = await this.net.fetch(url.href, { method: "GET" });
 
@@ -249,7 +253,7 @@ export class JTV extends HMIS<JTV_HMIS> {
     }
 
     const data: ZH_Response = await res.json();
-    log(`返回轴号数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回轴号数据:`, json: JSON.stringify(data) });
 
     if (data.code !== "200") {
       throw new Error(data.msg);
@@ -262,7 +266,7 @@ export class JTV extends HMIS<JTV_HMIS> {
     const url = this.makeDataRequestURL(dh);
 
     url.searchParams.set("type", "csbts");
-    log(`请求单号数据:${url.href}`);
+    this.logger.log({ title: `请求单号数据:`, message: url.href });
 
     const res = await this.net.fetch(url.href, { method: "GET" });
 
@@ -271,7 +275,7 @@ export class JTV extends HMIS<JTV_HMIS> {
     }
 
     const data: DH_Response = await res.json();
-    log(`返回单号数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回单号数据:`, json: JSON.stringify(data) });
 
     if (data.code !== "200") {
       throw new Error(data.msg);
@@ -287,7 +291,11 @@ export class JTV extends HMIS<JTV_HMIS> {
     const body = JSON.stringify(request);
 
     url.searchParams.set("type", "csbts");
-    log(`请求数据:${url.href},${body}`);
+    this.logger.log({
+      title: `发送作业数据:`,
+      message: url.href,
+      json: body,
+    });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -303,7 +311,7 @@ export class JTV extends HMIS<JTV_HMIS> {
 
     const data: PostResponse = await res.json();
 
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回数据:`, json: JSON.stringify(data) });
     if (data.code !== "200") {
       throw `接口异常[${data.code}]:${data.msg}`;
     }
@@ -494,7 +502,7 @@ export const bindIpcHandlers = (hmis: JTV, ipcHandle: IpcHandle) => {
 };
 // Tongxing
 
-export type JTVNormalizeResponse = {
+export interface JTVNormalizeResponse {
   DH: string;
   ZH: string;
   ZX: string;
@@ -504,4 +512,4 @@ export type JTVNormalizeResponse = {
   MCZZRQ: string;
   SCZZDW: string;
   SCZZRQ: string;
-};
+}

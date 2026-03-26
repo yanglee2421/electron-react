@@ -7,7 +7,6 @@ import type {
   IpcHandle,
   SQLiteGetParams,
 } from "#main/lib/ipc";
-import { log } from "#main/lib/ipc";
 import type {
   MDBDB,
   Quartor,
@@ -36,6 +35,7 @@ import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import * as mathjs from "mathjs";
 import pLimit from "p-limit";
+import type { Logger } from "../Logger";
 import type { CHR501InputParams } from "./kh501";
 import type { CHR502InputParams } from "./kh502";
 import type { CHR503InputParams } from "./kh503";
@@ -136,13 +136,15 @@ export class KH extends HMIS<KH_HMIS> {
   private db: SQLiteDBType;
   private mdb: MDBDB;
   private net: Net;
+  private logger: Logger;
 
-  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net) {
+  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net, logger: Logger) {
     super(kh_hmis.parse.bind(kh_hmis), KH_HMIS_STORAGE_KEY, kv);
 
     this.db = db;
     this.mdb = mdb;
     this.net = net;
+    this.logger = logger;
   }
 
   async hydrate() {
@@ -190,7 +192,10 @@ export class KH extends HMIS<KH_HMIS> {
     const url = new URL(`http://${host}/api/lzdx_csbtsj_whzy_tsjgqx/save`);
     const body = JSON.stringify(params);
 
-    log(`请求数据[${url.href}]:${body}`);
+    this.logger.log({
+      title: `请求数据[${url.href}]:`,
+      json: body,
+    });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -205,7 +210,10 @@ export class KH extends HMIS<KH_HMIS> {
     }
 
     const data: PostResponse = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({
+      title: `返回数据[${url.href}]:`,
+      json: JSON.stringify(data),
+    });
 
     if (data.code !== 200) {
       throw `接口异常[${data.code}]:${data.msg}`;
@@ -283,7 +291,11 @@ export class KH extends HMIS<KH_HMIS> {
     const url = new URL(`http://${host}/api/lzdx_csbtsj_tsjg/save`);
     const body = JSON.stringify(params);
 
-    log(`请求数据[${url.href}]:${body}`);
+    this.logger.log({
+      title: `请求数据:`,
+      message: url.href,
+      json: body,
+    });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -298,7 +310,11 @@ export class KH extends HMIS<KH_HMIS> {
     }
 
     const data: PostResponse = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({
+      title: `返回数据:`,
+      message: url.href,
+      json: JSON.stringify(data),
+    });
 
     if (data.code !== 200) {
       throw `接口异常[${data.code}]:${data.msg}`;
@@ -312,7 +328,11 @@ export class KH extends HMIS<KH_HMIS> {
     const url = new URL(`http://${host}/api/csbts_501/save`);
     const body = JSON.stringify(params);
 
-    log(`请求数据[${url.href}]:${body}`);
+    this.logger.log({
+      title: `请求数据:`,
+      message: url.href,
+      json: body,
+    });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -327,7 +347,11 @@ export class KH extends HMIS<KH_HMIS> {
     }
 
     const data: PostResponse = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({
+      title: `返回数据:`,
+      message: url.href,
+      json: JSON.stringify(data),
+    });
 
     if (data.code !== 200) {
       throw `接口异常[${data.code}]:${data.msg}`;
@@ -341,7 +365,11 @@ export class KH extends HMIS<KH_HMIS> {
     const url = new URL(`http://${host}/api/csbts_502/save`);
     const body = JSON.stringify(params);
 
-    log(`请求数据[${url.href}]:${body}`);
+    this.logger.log({
+      title: `请求数据:`,
+      message: url.href,
+      json: body,
+    });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -356,7 +384,11 @@ export class KH extends HMIS<KH_HMIS> {
     }
 
     const data: PostResponse = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({
+      title: `返回数据:`,
+      message: url.href,
+      json: JSON.stringify(data),
+    });
 
     if (data.code !== 200) {
       throw `接口异常[${data.code}]:${data.msg}`;
@@ -370,7 +402,11 @@ export class KH extends HMIS<KH_HMIS> {
     const url = new URL(`http://${host}/api/csbts_503/save`);
     const body = JSON.stringify(params);
 
-    log(`请求数据[${url.href}]:${body}`);
+    this.logger.log({
+      title: `请求数据:`,
+      message: url.href,
+      json: body,
+    });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -385,7 +421,11 @@ export class KH extends HMIS<KH_HMIS> {
     }
 
     const data: PostResponse = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({
+      title: `返回数据:`,
+      message: url.href,
+      json: JSON.stringify(data),
+    });
 
     if (data.code !== 200) {
       throw `接口异常[${data.code}]:${data.msg}`;
@@ -400,7 +440,11 @@ export class KH extends HMIS<KH_HMIS> {
     const url = new URL(`http://${host}/api/lzdx_csbtsj_get/get`);
     const body = JSON.stringify({ mesureId: dh });
 
-    log(`请求数据[${url.href}]:${body}`);
+    this.logger.log({
+      title: `请求数据:`,
+      message: url.href,
+      json: body,
+    });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -415,7 +459,11 @@ export class KH extends HMIS<KH_HMIS> {
     }
 
     const data: KHGetResponse = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({
+      title: `返回数据:`,
+      message: url.href,
+      json: JSON.stringify(data),
+    });
 
     if (data.code !== 200) {
       throw `接口异常[${data.code}]:${data.msg}`;

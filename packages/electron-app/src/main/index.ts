@@ -1,5 +1,6 @@
 import { createSQLiteDB } from "#main/db";
-import { ipcHandle } from "#main/lib/ipc";
+import type { IpcHandle } from "#main/lib/ipc";
+import { IPCHandle } from "#main/lib/ipc";
 import * as mdb from "#main/modules/mdb";
 import * as guangzhoubei from "#main/shared/factories/hmis/guangzhoubei";
 import * as guangzhouJibaoduan from "#main/shared/factories/hmis/guangzhoujibaoduan";
@@ -8,6 +9,7 @@ import * as jtv from "#main/shared/factories/hmis/jtv";
 import * as kh from "#main/shared/factories/hmis/kh_hmis";
 import * as xuzhoubei from "#main/shared/factories/hmis/xuzhoubei";
 import { bindIpc, KV } from "#main/shared/factories/KV";
+import * as log from "#main/shared/factories/Logger";
 import { Profile } from "#main/shared/factories/Profile";
 import type { ThemeMode } from "#shared/instances/schema";
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
@@ -132,7 +134,7 @@ const bindAppEventListeners = (profile: Profile) => {
   });
 };
 
-const bindIpcHandles = () => {
+const bindIpcHandles = (ipcHandle: IpcHandle) => {
   ipcHandle("VERSION/GET", async () => ({
     version: app.getVersion(),
     electronVersion: process.versions.electron,
@@ -250,23 +252,31 @@ const bootstrap = async () => {
   await app.whenReady();
 
   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+  const databasePath = path.resolve(app.getPath("userData"), "db.db");
   const sqliteDB = createSQLiteDB({
-    databasePath: path.resolve(app.getPath("userData"), "db.db"),
+    databasePath,
     migrationsFolder: path.resolve(__dirname, "../../drizzle"),
   });
   const kv = new KV(sqliteDB);
   const profile = new Profile(kv);
   const mdbDB = new mdb.MDBDB(profile);
-
-  const hxzyHmis = new hxzy.Hxzy(sqliteDB, kv, mdbDB, net);
-  const khHmis = new kh.KH(sqliteDB, kv, mdbDB, net);
-  const jtvHmis = new jtv.JTV(sqliteDB, kv, mdbDB, net);
-  const xuzhoubeiHmis = new xuzhoubei.Xuzhoubei(sqliteDB, kv, mdbDB, net);
+  const logger = new log.Logger(sqliteDB);
+  const hxzyHmis = new hxzy.Hxzy(sqliteDB, kv, mdbDB, net, logger);
+  const khHmis = new kh.KH(sqliteDB, kv, mdbDB, net, logger);
+  const jtvHmis = new jtv.JTV(sqliteDB, kv, mdbDB, net, logger);
+  const xuzhoubeiHmis = new xuzhoubei.Xuzhoubei(
+    sqliteDB,
+    kv,
+    mdbDB,
+    net,
+    logger,
+  );
   const guangzhoubeiHmis = new guangzhoubei.Guangzhoubei(
     sqliteDB,
     kv,
     mdbDB,
     net,
+    logger,
   );
   const jtv_hmis_guangzhoujibaoduan =
     new guangzhouJibaoduan.JTV_HMIS_Guangzhoujibaoduan(
@@ -274,6 +284,7 @@ const bootstrap = async () => {
       kv,
       mdbDB,
       net,
+      logger,
     );
   const imageModule = new md5.ImageModule();
 
@@ -286,15 +297,18 @@ const bootstrap = async () => {
   );
 
   nativeTheme.themeSource = profile.getState().mode;
+  const ipch = new IPCHandle(logger);
+  const ipcHandle = ipch.handle.bind(ipch);
 
   bindAppEventListeners(profile);
-  bindIpcHandles();
+  bindIpcHandles(ipcHandle);
 
   mdb.bindIpcHandlers(mdbDB, ipcHandle);
   cmd.bindIpcHandlers(ipcHandle);
   plc.bindIpcHandlers(ipcHandle);
   md5.bindIpcHandlers(imageModule, ipcHandle);
-  xml.bindIpcHandlers();
+  xml.bindIpcHandlers(ipcHandle);
+  log.bindIPC(logger, ipcHandle);
 
   bindIpc(kv, ipcHandle);
   kh.bindIpcHandlers(khHmis, ipcHandle);

@@ -4,41 +4,40 @@ import type { SQLiteDBType } from "#main/db";
 import * as schema from "#main/db/schema";
 import { createEmit } from "#main/lib";
 import type { IpcHandle, SQLiteGetParams } from "#main/lib/ipc";
-import { log } from "#main/lib/ipc";
 import type { MDBDB } from "#main/modules/mdb";
 import {
   calculateDirection,
   calculatePlace,
 } from "#shared/functions/flawDetection";
 import { JTV_HMIS_XUZHOUBEI_STORAGE_KEY } from "#shared/instances/constants";
-import {
-  jtv_hmis_xuzhoubei,
-  type JTV_HMIS_XUZHOUBEI,
-} from "#shared/instances/schema";
+import type { JTV_HMIS_XUZHOUBEI } from "#shared/instances/schema";
+import { jtv_hmis_xuzhoubei } from "#shared/instances/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
 import type { KV } from "../KV";
-import { HMIS, type Net } from "./hmis";
+import type { Logger } from "../Logger";
+import type { Net } from "./hmis";
+import { HMIS } from "./hmis";
 
-export type XZBGetResponse = [
-  {
-    SCZZRQ: "1990-10-19";
-    DH: "50409100225";
-    SRDW: "504";
-    CZZZRQ: "1990-10-01";
-    MCZZDW: "921";
-    SRRQ: "2009-10-09";
-    SRYY: "01";
-    CZZZDW: "183";
-    MCZZRQ: "2007-05-18";
-    ZH: "18426";
-    ZX: "RD2";
-    SCZZDW: "183";
-    ZTX?: null | string;
-    YTX?: null | string;
-  },
-];
+interface XZBGetResponseItem {
+  SCZZRQ: "1990-10-19";
+  DH: "50409100225";
+  SRDW: "504";
+  CZZZRQ: "1990-10-01";
+  MCZZDW: "921";
+  SRRQ: "2009-10-09";
+  SRYY: "01";
+  CZZZDW: "183";
+  MCZZRQ: "2007-05-18";
+  ZH: "18426";
+  ZX: "RD2";
+  SCZZDW: "183";
+  ZTX?: null | string;
+  YTX?: null | string;
+}
+
+export type XZBGetResponse = XZBGetResponseItem[];
 
 interface PostRequestItem {
   PJ_JXID: string; // 设备生产ID(主键)
@@ -126,8 +125,9 @@ export class Xuzhoubei extends HMIS<JTV_HMIS_XUZHOUBEI> {
   private db: SQLiteDBType;
   private mdb: MDBDB;
   private net: Net;
+  private logger: Logger;
 
-  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net) {
+  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net, logger: Logger) {
     super(
       jtv_hmis_xuzhoubei.parse.bind(jtv_hmis_xuzhoubei),
       JTV_HMIS_XUZHOUBEI_STORAGE_KEY,
@@ -137,6 +137,7 @@ export class Xuzhoubei extends HMIS<JTV_HMIS_XUZHOUBEI> {
     this.db = db;
     this.mdb = mdb;
     this.net = net;
+    this.logger = logger;
   }
 
   async hydrate() {
@@ -262,7 +263,7 @@ export class Xuzhoubei extends HMIS<JTV_HMIS_XUZHOUBEI> {
 
     url.searchParams.set("method", "saveData");
     url.searchParams.set("type", "csbts");
-    log(`请求数据:${url.href},${body}`);
+    this.logger.log({ title: `请求数据:`, json: body, message: url.href });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -277,7 +278,7 @@ export class Xuzhoubei extends HMIS<JTV_HMIS_XUZHOUBEI> {
     }
 
     const data: boolean = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回数据:`, json: JSON.stringify(data) });
 
     if (!data) {
       throw `接口异常${data}`;
@@ -294,7 +295,10 @@ export class Xuzhoubei extends HMIS<JTV_HMIS_XUZHOUBEI> {
     url.searchParams.set("method", "getData");
     url.searchParams.set("type", "csbts");
     url.searchParams.set("param", dh);
-    log(`请求数据:${url.href}`);
+    this.logger.log({
+      title: `请求数据:`,
+      message: url.href,
+    });
 
     const res = await this.net.fetch(url.href, { method: "GET" });
 
@@ -303,7 +307,7 @@ export class Xuzhoubei extends HMIS<JTV_HMIS_XUZHOUBEI> {
     }
 
     const data: XZBGetResponse = await res.json();
-    log(`返回数据:${JSON.stringify(data)}`);
+    this.logger.log({ title: `返回数据:`, json: JSON.stringify(data) });
 
     return data;
   }

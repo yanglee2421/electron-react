@@ -8,9 +8,10 @@ import type * as jtv from "#main/shared/factories/hmis/jtv";
 import type * as kh from "#main/shared/factories/hmis/kh_hmis";
 import type * as xuzhoubei from "#main/shared/factories/hmis/xuzhoubei";
 import type * as kv from "#main/shared/factories/KV";
+import type * as logger from "#main/shared/factories/Logger";
 import { calculateErrorMessage } from "#shared/functions/error";
 import { promiseTry } from "@yotulee/run";
-import { BrowserWindow, ipcMain } from "electron";
+import { ipcMain } from "electron";
 
 export interface IpcContract
   extends
@@ -21,7 +22,8 @@ export interface IpcContract
     guangzhoubei.Ipc,
     guangzhoujibaoduan.IpcContract,
     xuzhoubei.Ipc,
-    win.Ipc {
+    win.Ipc,
+    logger.IPC {
   "VERSION/GET": {
     args: [];
     return: Version;
@@ -124,44 +126,46 @@ export interface IpcContract
   };
 }
 
-export type SQLiteGetParams = {
+export interface SQLiteGetParams {
   pageIndex: number;
   pageSize: number;
   startDate: string;
   endDate: string;
-};
+}
 
-export type InsertRecordParams = {
+export interface InsertRecordParams {
   DH: string;
   ZH: string;
   CZZZDW: string;
   CZZZRQ: string;
-};
+}
 
-export type SqliteXlsxSizeRParams = {
+export interface SqliteXlsxSizeRParams {
   id?: number;
   xlsxName?: string;
   type?: string;
   pageIndex?: number;
   pageSize?: number;
-};
+}
 
-export type SqliteXlsxSizeCParams = {
+export interface SqliteXlsxSizeCParam {
   xlsxName: string;
   type: string;
   index: string;
   size: number;
-}[];
+}
 
-export type SqliteXlsxSizeUParams = {
+export type SqliteXlsxSizeCParams = SqliteXlsxSizeCParam[];
+
+export interface SqliteXlsxSizeUParams {
   id: number;
   xlsxName?: string;
   type: string;
   index: string;
   size: number;
-};
+}
 
-export type PLCReadResult = {
+export interface PLCReadResult {
   D20: number;
   D21: number;
   D22: number;
@@ -172,9 +176,9 @@ export type PLCReadResult = {
   D303: number;
   D308: number;
   D309: number;
-};
+}
 
-export type PLCWritePayload = {
+export interface PLCWritePayload {
   path: string;
 
   D300: number;
@@ -183,9 +187,9 @@ export type PLCWritePayload = {
   D303: number;
   D308: number;
   D309: number;
-};
+}
 
-export type XMLJSONData = {
+export interface XMLJSONData {
   "?xml": string;
   EInvoice: {
     Header: {
@@ -268,9 +272,9 @@ export type XMLJSONData = {
       TaxBureauName: string;
     };
   };
-};
+}
 
-export type IssuItemInformation = {
+export interface IssuItemInformation {
   ItemName: string;
   SpecMod: string;
   MeaUnits: string;
@@ -281,9 +285,9 @@ export type IssuItemInformation = {
   ComTaxAm: number;
   TotaltaxIncludedAmount: number;
   TaxClassificationCode: string | number;
-};
+}
 
-export type Invoice = {
+export interface Invoice {
   id: string;
   totalTaxIncludedAmount: string;
   requestTime: string;
@@ -292,17 +296,25 @@ export type Invoice = {
   additionalInformation?: string;
   pdf: boolean;
   xml: boolean;
-};
-
-type CallbackFn<TArgs extends unknown[], TReturn> = (...args: TArgs) => TReturn;
+}
 
 type HandlerFn<K extends keyof IpcContract> = IpcContract[K] extends {
   args: infer A;
   return: infer R;
 }
   ? (
-      ...args: A extends unknown[] ? [Electron.IpcMainInvokeEvent, ...A] : []
+      ...args: A extends unknown[]
+        ? [Electron.IpcMainInvokeEvent, ...A]
+        : [Electron.IpcMainInvokeEvent]
     ) => Promise<Awaited<R>>
+  : never;
+
+type IPCArgs<TKey extends keyof IpcContract> = IpcContract[TKey] extends {
+  args: infer A;
+}
+  ? A extends unknown[]
+    ? [Electron.IpcMainInvokeEvent, ...A]
+    : [Electron.IpcMainInvokeEvent]
   : never;
 
 type RowsResult<TRow> = {
@@ -310,61 +322,45 @@ type RowsResult<TRow> = {
   rows: TRow[];
 };
 
-type Version = {
+export interface Version {
   version: string;
   electronVersion: string;
   chromeVersion: string;
   nodeVersion: string;
   v8Version: string;
-};
+}
 
-type Log = {
-  id: number;
-  type: string;
-  message: string;
-  date: string;
-};
-
-export const withLog = <TArgs extends unknown[], TReturn>(
-  callback: CallbackFn<TArgs, TReturn>,
-) => {
-  const resultFn = async (...args: TArgs) => {
-    try {
-      // Ensure an error is thrown when the promise is rejected
-      const result = await promiseTry(callback, ...args);
-      return result;
-    } catch (error) {
-      console.error(error);
-
-      // Log the error message
-      const message = calculateErrorMessage(error);
-      log(message, "error");
-      // Throw message instead of error to avoid electron issue #24427
-      throw message;
-    }
-  };
-
-  return resultFn;
-};
-
-export const log = (message: string, type = "info") => {
-  const data: Log = {
-    id: 0,
-    date: new Date().toISOString(),
-    message,
-    type,
-  };
-
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send("LOG", data);
-  });
-};
-
-export const ipcHandle = <TKey extends keyof IpcContract>(
+export type IpcHandle = <TKey extends keyof IpcContract>(
   key: TKey,
   listener: HandlerFn<TKey>,
-) => {
-  return ipcMain.handle(key, withLog(listener));
-};
+) => void;
 
-export type IpcHandle = typeof ipcHandle;
+export class IPCHandle {
+  private logger: logger.Logger;
+
+  constructor(logger: logger.Logger) {
+    this.logger = logger;
+  }
+
+  handle<TKey extends keyof IpcContract>(key: TKey, listener: HandlerFn<TKey>) {
+    return ipcMain.handle(key, async (...args) => {
+      try {
+        // Must await the result to catch the error,
+        // otherwise the error will be unhandled and crash the app
+        const $args = args as IPCArgs<TKey>;
+        const result = await promiseTry(listener, ...$args);
+
+        return result;
+      } catch (error) {
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+
+        throw calculateErrorMessage(error);
+      }
+    });
+  }
+}
