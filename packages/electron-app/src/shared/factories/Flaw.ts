@@ -9,130 +9,115 @@ interface Flaw {
   nAtten: number;
 }
 
-export class FlawQuery<TFlaw extends Flaw> {
-  private data: TFlaw[];
-  public id: string;
+interface FlawGroup {
+  readonly flaws: Flaw[];
+}
 
-  constructor(data: TFlaw[], id?: string) {
-    this.data = data;
+interface BoardGroup {
+  readonly flaws: Flaw[];
+  readonly nBoard: number;
+}
+
+interface ChannelQuery {
+  readonly flaws: Flaw[];
+  readonly nBoard: number;
+  readonly nChannel: number;
+
+  check(): void;
+  flaw(no: number): Flaw | null;
+  flawX(no: number): string;
+  flawAtten(no: number): string;
+}
+
+export class FlawQuery<TFlaw extends Flaw> implements FlawGroup {
+  readonly flaws: TFlaw[];
+  readonly id: string;
+
+  constructor(flaws: TFlaw[], id?: string) {
+    this.flaws = flaws;
     this.id = id || "";
   }
 
-  flaws() {
-    return this.data.slice(0);
-  }
   left() {
-    return new FlawBoardQuery(this, 0);
+    return new FlawBoardQuery(this.flaws, 0);
   }
   right() {
-    return new FlawBoardQuery(this, 1);
+    return new FlawBoardQuery(this.flaws, 1);
   }
 }
 
-class FlawBoardQuery<TFlaw extends Flaw> {
-  public parent: FlawQuery<TFlaw>;
-  public nBoard: number;
+class FlawBoardQuery<TFlaw extends Flaw> implements BoardGroup {
+  readonly flaws: TFlaw[];
+  readonly nBoard: number;
+  readonly id: string;
 
-  constructor(flawQuery: FlawQuery<TFlaw>, nBoard: number) {
-    this.parent = flawQuery;
+  constructor(flaws: TFlaw[], nBoard: number, id?: string) {
+    this.flaws = flaws;
     this.nBoard = nBoard;
+    this.id = id || "";
   }
 
-  flaws() {
-    return this.parent.flaws().filter((flaw) => flaw.nBoard === this.nBoard);
-  }
   lz() {
-    return new FlawLZQuery(this);
+    return new FlawLZQuery(this.flaws, this.nBoard, this.id);
   }
   xhc() {
-    return new FlawXHCQuery(this);
+    return new FlawXHCQuery(this.flaws, this.nBoard, 1, this.id);
   }
   ct() {
-    return new FlawCTQuery(this);
+    return new FlawCTQuery(this.flaws, this.nBoard, 0, this.id);
   }
 }
 
-class FlawLZQuery<TFlaw extends Flaw> {
-  public parent: FlawBoardQuery<TFlaw>;
+class FlawLZQuery<TFlaw extends Flaw> implements BoardGroup {
+  readonly flaws: TFlaw[];
+  readonly nBoard: number;
+  readonly id: string;
 
-  constructor(flawBoardQuery: FlawBoardQuery<TFlaw>) {
-    this.parent = flawBoardQuery;
+  constructor(flaws: TFlaw[], nBoard: number, id?: string) {
+    this.flaws = flaws;
+    this.nBoard = nBoard;
+    this.id = id || "";
   }
 
-  flaws() {
-    return this.parent.parent.flaws().filter((flaw) => {
-      const isLZFlaw = flaw.nChannel === 3 || flaw.nChannel === 4;
-      const boardMatched = flaw.nBoard === this.parent.nBoard;
-
-      return isLZFlaw && boardMatched;
-    });
-  }
-  group() {
-    let key = 0;
-    let previousX = -Infinity;
-    const group = mapGroupBy(
-      this.flaws().toSorted((a, b) => a.fltValueX - b.fltValueX),
-      (flaw) => {
-        if (flaw.fltValueX > previousX + 10) {
-          previousX = flaw.fltValueX;
-          return ++key;
-        }
-
-        return key;
-      },
-    );
-
-    return group;
-  }
-
-  check() {
-    const group = this.group();
-
-    if (group.size < 11) {
-      throw new Error(
-        `${this.parent.parent.id ? `ID: ${this.parent.parent.id}, ` : ""}${this.parent.nBoard ? "右" : "左"}LZ缺陷数量不足，当前数量为${group.size}`,
-      );
-    }
-  }
   deg51() {
-    return new LZDegQuery(this, 3);
+    return new LZDegQuery(this.flaws, this.nBoard, 3, this.id);
   }
   deg44() {
-    return new LZDegQuery(this, 4);
+    return new LZDegQuery(this.flaws, this.nBoard, 4, this.id);
   }
 }
 
-class LZDegQuery<TFlaw extends Flaw> {
-  public parent: FlawLZQuery<TFlaw>;
-  public nChannel: number;
+class LZDegQuery<TFlaw extends Flaw> implements ChannelQuery {
+  readonly flaws: TFlaw[];
+  readonly nBoard: number;
+  readonly nChannel: number;
+  readonly id: string;
 
-  constructor(parent: FlawLZQuery<TFlaw>, nChannel: number) {
-    this.parent = parent;
+  constructor(flaws: TFlaw[], nBoard: number, nChannel: number, id?: string) {
+    this.flaws = flaws;
+    this.nBoard = nBoard;
     this.nChannel = nChannel;
-  }
-
-  flaws() {
-    return this.parent.parent.parent
-      .flaws()
-      .filter(
-        (flaw) =>
-          flaw.nChannel === this.nChannel &&
-          flaw.nBoard === this.parent.parent.nBoard,
-      );
+    this.id = id || "";
   }
 
   check() {
     const excetpedCount = this.nChannel === 3 ? 6 : 5;
     const group = this.group();
 
-    return group.size >= excetpedCount;
+    if (group.size < excetpedCount) {
+      const idPrefix = this.id ? `ID: ${this.id}, ` : "";
+      const direction = this.nBoard ? "右" : "左";
+      const message = `${idPrefix}${direction}LZ${this.nChannel === 3 ? "51" : "44"}缺陷数量不足，当前数量为${group.size}`;
+
+      throw new Error(message);
+    }
   }
 
   group() {
     let key = 0;
     let previousX = -Infinity;
     const group = mapGroupBy(
-      this.flaws().toSorted((a, b) => a.fltValueX - b.fltValueX),
+      this.flaws.toSorted((a, b) => a.fltValueX - b.fltValueX),
       (flaw) => {
         if (flaw.fltValueX > previousX + 10) {
           previousX = flaw.fltValueX;
@@ -181,35 +166,34 @@ class LZDegQuery<TFlaw extends Flaw> {
   }
 }
 
-class FlawXHCQuery<TFlaw extends Flaw> {
-  public parent: FlawBoardQuery<TFlaw>;
+class FlawXHCQuery<TFlaw extends Flaw> implements ChannelQuery {
+  readonly flaws: TFlaw[];
+  readonly nBoard: number;
+  readonly nChannel: number;
+  readonly id: string;
 
-  constructor(flawQuery: FlawBoardQuery<TFlaw>) {
-    this.parent = flawQuery;
+  constructor(flaws: TFlaw[], nBoard: number, nChannel: number, id?: string) {
+    this.flaws = flaws;
+    this.nBoard = nBoard;
+    this.nChannel = nChannel;
+    this.id = id || "";
   }
 
-  flaws() {
-    // Performance optimization:
-    // filter XHC flaws directly from the root node,
-    // instead of filtering from all flaws in the parent query.
-    return this.parent.parent
-      .flaws()
-      .filter(
-        (flaw) => flaw.nChannel === 1 && flaw.nBoard === this.parent.nBoard,
-      );
-  }
   check() {
-    const flaws = this.flaws();
+    const flaws = this.flaws;
     const xhcFlaws = calculateXHCFlaws(flaws);
 
     if (xhcFlaws.length < 3) {
+      const idPrefix = this.id ? `ID: ${this.id}, ` : "";
+      const direction = this.nBoard ? "右" : "左";
+
       throw new Error(
-        `${this.parent.parent.id ? `ID: ${this.parent.parent.id}, ` : ""}${this.parent.nBoard ? "右" : "左"}XHC缺陷数量不足，当前数量为${xhcFlaws.length}`,
+        `${idPrefix}${direction}XHC缺陷数量不足，当前数量为${xhcFlaws.length}`,
       );
     }
   }
   flaw(no: number) {
-    const xhcFlaws = this.flaws();
+    const xhcFlaws = this.flaws;
     const validFlaws = calculateXHCFlaws(xhcFlaws);
 
     return validFlaws.at(no - 1) || null;
@@ -236,35 +220,33 @@ class FlawXHCQuery<TFlaw extends Flaw> {
   }
 }
 
-class FlawCTQuery<TFlaw extends Flaw> {
-  public parent: FlawBoardQuery<TFlaw>;
+class FlawCTQuery<TFlaw extends Flaw> implements ChannelQuery {
+  readonly flaws: TFlaw[];
+  readonly nBoard: number;
+  readonly nChannel: number;
+  readonly id: string;
 
-  constructor(boardQuery: FlawBoardQuery<TFlaw>) {
-    this.parent = boardQuery;
+  constructor(flaws: TFlaw[], nBoard: number, nChannel: number, id?: string) {
+    this.flaws = flaws;
+    this.nBoard = nBoard;
+    this.nChannel = nChannel;
+    this.id = id || "";
   }
 
-  flaws() {
-    // Performance optimization:
-    // filter CT flaws directly from the parent board flaws,
-    // instead of filtering from all flaws in the parent query.
-    return this.parent.parent
-      .flaws()
-      .filter(
-        (flaw) => flaw.nChannel === 0 && flaw.nBoard === this.parent.nBoard,
-      );
-  }
   check() {
-    const flaws = this.flaws();
+    const flaws = this.flaws;
 
     if (flaws.length < 1) {
-      throw new Error(
-        `${this.parent.parent.id ? `ID: ${this.parent.parent.id}, ` : ""}${this.parent.nBoard ? "右" : "左"}CT缺陷数量不足，当前数量为${flaws.length}`,
-      );
+      const idPrefix = this.id ? `ID: ${this.id}, ` : "";
+      const direction = this.nBoard ? "右" : "左";
+      const message = `${idPrefix}${direction}CT缺陷数量不足，当前数量为${flaws.length}`;
+
+      throw new Error(message);
     }
   }
 
   flaw(no: number = 1) {
-    const flaws = this.flaws();
+    const flaws = this.flaws;
 
     return flaws.at(no - 1) || null;
   }

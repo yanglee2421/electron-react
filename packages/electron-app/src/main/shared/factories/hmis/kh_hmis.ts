@@ -9,7 +9,6 @@ import type {
 } from "#main/lib/ipc";
 import { log } from "#main/lib/ipc";
 import type {
-  Detecotor,
   MDBDB,
   Quartor,
   QuartorData,
@@ -542,22 +541,22 @@ export class KH extends HMIS<KH_HMIS> {
   async resolveCHR501InputParams(
     record: VerifyWithData,
   ): Promise<CHR501InputParams> {
-    const store = this.getStore();
-    const corporation = await this.mdb.getCorporation();
     const flawQuery = new FlawQuery(record.with);
-    flawQuery.left().lz().check();
-    flawQuery.right().lz().check();
+
+    // 检查当前校验记录是否合格，如果不合格则无法上传CHR501
     flawQuery.left().xhc().check();
     flawQuery.right().xhc().check();
     flawQuery.left().ct().check();
     flawQuery.right().ct().check();
-    const detectors = await this.mdb.getDataFromAppDB<Detecotor>({
-      tableName: "detectors",
-      filters: [
-        { type: "equal", field: "szwheel", value: record.szWHModel || "" },
-      ],
-    });
-    const detectorMap = new DetectorMap(detectors.rows);
+    flawQuery.left().lz().deg51().check();
+    flawQuery.right().lz().deg51().check();
+    flawQuery.left().lz().deg44().check();
+    flawQuery.right().lz().deg44().check();
+
+    const store = this.getStore();
+    const corporation = await this.mdb.getCorporation();
+    const detectors = await this.mdb.getDetectors(record.szWHModel || "");
+    const detectorMap = new DetectorMap(detectors);
 
     return {
       xrsj: dayjs(record.tmNow).format("YYYY-MM-DD HH:mm:ss"),
@@ -840,14 +839,12 @@ export class KH extends HMIS<KH_HMIS> {
     const queries = [q1, q2, q3, q4, q5];
 
     queries.forEach((q) => {
-      q.left().xhc().check();
-      q.right().xhc().check();
-      q.left().lz().check();
-      q.left().lz().deg51().check();
-      q.left().lz().deg44().check();
-      q.right().lz().check();
       q.left().ct().check();
       q.right().ct().check();
+      q.left().xhc().check();
+      q.right().xhc().check();
+      q.left().lz().deg51().check();
+      q.left().lz().deg44().check();
     });
 
     const zjgb_11_z = q1.left().xhc().flawAtten(1);

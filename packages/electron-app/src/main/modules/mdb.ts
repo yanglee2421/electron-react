@@ -450,37 +450,13 @@ export class MDBDB {
 
     return corporation;
   }
-  async getDetector(nChannel: number, nBoard: number, szwheel: string) {
+  async getDetectors(szwheel: string) {
     const data = await this.getDataFromAppDB<Detecotor>({
       tableName: "detectors",
-      filters: [
-        {
-          type: "equal",
-          field: "nChannel",
-          value: nChannel,
-        },
-        {
-          type: "equal",
-          field: "nBoard",
-          value: nBoard,
-        },
-        {
-          type: "equal",
-          field: "szwheel",
-          value: szwheel,
-        },
-      ],
+      filters: [{ type: "equal", field: "szwheel", value: szwheel }],
     });
 
-    const [record] = data.rows;
-
-    if (!record) {
-      throw new Error(
-        `未找到探头[nBoard=${nBoard}, nChannel=${nChannel}, szwheel=${szwheel}]的记录`,
-      );
-    }
-
-    return record;
+    return data.rows;
   }
 
   dispose() {

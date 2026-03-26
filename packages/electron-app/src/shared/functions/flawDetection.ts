@@ -44,34 +44,6 @@ export const calculatePlace = (nChannel: number) => {
   }
 };
 
-export const isLeftFlaw = (nBoard: number) => {
-  return calculateDirection(nBoard) === "左";
-};
-
-export const isRightFlaw = (nBoard: number) => {
-  return calculateDirection(nBoard) === "右";
-};
-
-export const isLZFlaw = (nChannel: number) => {
-  const place = calculatePlace(nChannel);
-
-  switch (place) {
-    case "内":
-    case "外":
-      return true;
-    default:
-      return false;
-  }
-};
-
-export const isXHCFlaw = (nChannel: number) => {
-  return calculatePlace(nChannel) === "卸荷槽";
-};
-
-export const isCTFlaw = (nChannel: number) => {
-  return calculatePlace(nChannel) === "穿透";
-};
-
 export const tmnowToTSSJ = (tmnow: string) => {
   return dayjs(tmnow).format("YYYY-MM-DD HH:mm:ss");
 };
