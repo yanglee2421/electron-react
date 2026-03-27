@@ -9,7 +9,7 @@ interface LoggerOptions {
   json?: string;
 }
 
-interface ListOptions {
+export interface ListOptions {
   level?: string;
   startDate: string;
   endDate: string;
@@ -80,6 +80,15 @@ export class Logger {
 
     return { count, rows };
   }
+  handleDelete(id: number) {
+    return this.db
+      .delete(schema.logTable)
+      .where(sql.eq(schema.logTable.id, id))
+      .returning();
+  }
+  handleClear() {
+    return this.db.delete(schema.logTable).returning();
+  }
 }
 
 export interface IPC {
@@ -87,10 +96,24 @@ export interface IPC {
     args: [ListOptions];
     return: ReturnType<Logger["handleList"]>;
   };
+  "logger/delete": {
+    args: [number];
+    return: ReturnType<Logger["handleDelete"]>;
+  };
+  "logger/clear": {
+    args: [];
+    return: ReturnType<Logger["handleClear"]>;
+  };
 }
 
 export const bindIPC = (logger: Logger, ipcHandle: IpcHandle) => {
   ipcHandle("logger/list", (_, options) => {
     return logger.handleList(options);
+  });
+  ipcHandle("logger/delete", (_, id) => {
+    return logger.handleDelete(id);
+  });
+  ipcHandle("logger/clear", () => {
+    return logger.handleClear();
   });
 };

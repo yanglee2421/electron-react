@@ -3,21 +3,6 @@ import * as schema from "#main/db/schema";
 import type { IpcHandle } from "#main/lib/ipc";
 import * as sql from "drizzle-orm";
 
-export interface IpcContract {
-  "kv/get": {
-    args: [string];
-    return: string | null;
-  };
-  "kv/set": {
-    args: [string, string];
-    return: void;
-  };
-  "kv/remove": {
-    args: [string];
-    return: void;
-  };
-}
-
 export class KV {
   #handles: Set<(key: string) => void> = new Set();
   db: SQLiteDBType;
@@ -66,6 +51,21 @@ export class KV {
 
     this.emit(key);
   }
+}
+
+export interface IpcContract {
+  "kv/get": {
+    args: [string];
+    return: string | null;
+  };
+  "kv/set": {
+    args: [string, string];
+    return: void;
+  };
+  "kv/remove": {
+    args: [string];
+    return: void;
+  };
 }
 
 export const bindIpc = (kv: KV, ipcHandle: IpcHandle) => {

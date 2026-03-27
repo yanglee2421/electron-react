@@ -152,29 +152,6 @@ const normalizeDHResponse = (data: DH_Response) => {
 
 const emit = createEmit("api_set");
 
-export interface Ipc {
-  "HMIS/jtv_hmis_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: ReturnType<typeof JTV.prototype.handleReadRecord>;
-  };
-  "HMIS/jtv_hmis_sqlite_delete": {
-    args: [number];
-    return: ReturnType<typeof JTV.prototype.handleDeleteRecord>;
-  };
-  "HMIS/jtv_hmis_sqlite_insert": {
-    args: [InsertRecordParams];
-    return: ReturnType<typeof JTV.prototype.handleInsertRecord>;
-  };
-  "HMIS/jtv_hmis_api_get": {
-    args: [string, boolean?];
-    return: ReturnType<typeof JTV.prototype.handleFetch>;
-  };
-  "HMIS/jtv_hmis_api_set": {
-    args: [number];
-    return: ReturnType<typeof JTV.prototype.handleUpload>;
-  };
-}
-
 export class JTV extends HMIS<JTV_HMIS> {
   private db: SQLiteDBType;
   private mdb: MDBDB;
@@ -483,6 +460,29 @@ export class JTV extends HMIS<JTV_HMIS> {
   }
 }
 
+export interface Ipc {
+  "HMIS/jtv_hmis_sqlite_get": {
+    args: [SQLiteGetParams];
+    return: ReturnType<JTV["handleReadRecord"]>;
+  };
+  "HMIS/jtv_hmis_sqlite_delete": {
+    args: [number];
+    return: ReturnType<JTV["handleDeleteRecord"]>;
+  };
+  "HMIS/jtv_hmis_sqlite_insert": {
+    args: [InsertRecordParams];
+    return: ReturnType<JTV["handleInsertRecord"]>;
+  };
+  "HMIS/jtv_hmis_api_get": {
+    args: [string, boolean?];
+    return: ReturnType<JTV["handleFetch"]>;
+  };
+  "HMIS/jtv_hmis_api_set": {
+    args: [number];
+    return: ReturnType<JTV["handleUpload"]>;
+  };
+}
+
 export const bindIpcHandlers = (hmis: JTV, ipcHandle: IpcHandle) => {
   ipcHandle("HMIS/jtv_hmis_sqlite_get", (_, params) => {
     return hmis.handleReadRecord(params);
@@ -500,7 +500,6 @@ export const bindIpcHandlers = (hmis: JTV, ipcHandle: IpcHandle) => {
     return hmis.handleUpload(id);
   });
 };
-// Tongxing
 
 export interface JTVNormalizeResponse {
   DH: string;

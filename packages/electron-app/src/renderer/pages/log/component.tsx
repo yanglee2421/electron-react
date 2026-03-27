@@ -1,5 +1,6 @@
 import type { Log } from "#main/db/schema";
 import { useExportDB } from "#renderer/api/app";
+import { useClearLog } from "#renderer/api/logger";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
@@ -195,6 +196,7 @@ export const Component = () => {
   const count = 0;
 
   const exportDBMutation = useExportDB();
+  const clearLogs = useClearLog();
 
   return (
     <Card>
