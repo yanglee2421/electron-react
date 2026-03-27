@@ -301,6 +301,12 @@ const bootstrap = async () => {
   const ipch = new IPCHandle(logger);
   const ipcHandle = ipch.handle.bind(ipch);
 
+  logger.on(() => {
+    BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.send("logUpdated");
+    });
+  });
+
   ipcHandle("DB/EXPORT", async () => {
     const result = await dialog.showSaveDialog({
       title: "导出数据库",

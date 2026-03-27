@@ -1,188 +1,52 @@
-import type { Log } from "#main/db/schema";
-import { useExportDB } from "#renderer/api/app";
-import { useClearLog } from "#renderer/api/logger";
+import { fetchLog, useClearLog, useLogUpdate } from "#renderer/api/logger";
 import { ScrollToTopButton } from "#renderer/components/scroll";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import { ClearAllOutlined, Refresh } from "@mui/icons-material";
 import {
-  AddOutlined,
-  ClearAllOutlined,
-  DeleteOutlined,
-  RemoveOutlined,
-} from "@mui/icons-material";
-import {
+  Box,
   Card,
   CardContent,
   CardHeader,
-  Chip,
   Grid,
   IconButton,
-  Link,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableFooter,
-  TableHead,
-  TablePagination,
-  TableRow,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getExpandedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
+import { codeToHtml } from "shiki";
 
 const initDayjs = () => dayjs();
 
-const columnHelper = createColumnHelper<Log>();
-
-const columns = [
-  columnHelper.display({
-    id: "expand",
-    cell: ({ row }) => (
-      <IconButton onClick={row.getToggleExpandedHandler()}>
-        {!row.getIsExpanded() ? <RemoveOutlined /> : <AddOutlined />}
-      </IconButton>
-    ),
-  }),
-  columnHelper.accessor("id", {
-    cell: ({ getValue }) => <Link>#{getValue()}</Link>,
-    header: "ID",
-    footer: "ID",
-  }),
-  columnHelper.accessor("date", {
-    cell: ({ getValue }) => {
-      const val = getValue();
-
-      return val && new Date(val).toLocaleString();
+const CodeBlock = ({ code }: { code: string }) => {
+  const codeQuery = useQuery({
+    queryKey: ["code", code],
+    queryFn: async () => {
+      return codeToHtml(JSON.stringify(JSON.parse(code), null, 2), {
+        lang: "json",
+        theme: "dark-plus",
+      });
     },
-    header: "日期",
-    footer: "日期",
-  }),
-  columnHelper.accessor("level", {
-    cell: ({ getValue }) => (
-      <Chip label={getValue()} sx={{ textTransform: "uppercase" }} />
-    ),
-    header: "类型",
-    footer: "类型",
-  }),
-  columnHelper.display({
-    id: "actions",
-    cell: ({ row }) => (
-      <>
-        <IconButton onClick={() => {}}>
-          <DeleteOutlined color="error" />
-        </IconButton>
-      </>
-    ),
-    header: "操作",
-    footer: "操作",
-  }),
-];
-
-type DataGridProps = {
-  count: number;
-  data?: Log[];
-};
-
-const DataGrid = (props: DataGridProps) => {
-  "use no memo";
-
-  const { count, data: logs } = props;
-
-  const data = React.useMemo(() => logs || [], [logs]);
-
-  const table = useReactTable({
-    data,
-    columns,
-    getRowId: (row) => row.id.toString(),
-    rowCount: count,
-    getCoreRowModel: getCoreRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    getRowCanExpand: () => true,
   });
 
-  const renderRow = () => {
-    if (!table.getRowCount()) {
-      return (
-        <TableRow>
-          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            暂无数据
-          </TableCell>
-        </TableRow>
-      );
-    }
+  if (codeQuery.isPending) {
+    return null;
+  }
 
-    return table.getRowModel().rows.map((row) => (
-      <React.Fragment key={row.id}>
-        <TableRow>
-          {row.getVisibleCells().map((cell) => (
-            <TableCell
-              key={cell.id}
-              padding={cellPaddingMap.get(cell.column.id)}
-            >
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </TableCell>
-          ))}
-        </TableRow>
-        {row.getIsExpanded() || (
-          <TableRow>
-            <TableCell colSpan={table.getAllLeafColumns().length}>
-              {row.original.message}
-            </TableCell>
-          </TableRow>
-        )}
-      </React.Fragment>
-    ));
-  };
+  if (codeQuery.isError) {
+    return null;
+  }
 
   return (
-    <>
-      <TableContainer>
-        <Table sx={{ minWidth: 720 }}>
-          <TableHead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>{renderRow()}</TableBody>
-          <TableFooter>
-            {table.getFooterGroups().map((footerGroup) => (
-              <TableRow key={footerGroup.id}>
-                {footerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.footer,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableFooter>
-        </Table>
-      </TableContainer>
-    </>
+    <Box
+      sx={{
+        "& pre.shiki": {
+          whiteSpace: "pre-wrap",
+        },
+      }}
+      dangerouslySetInnerHTML={{
+        __html: codeQuery.data,
+      }}
+    ></Box>
   );
 };
 
@@ -192,11 +56,51 @@ export const Component = () => {
   const [startDate, setStartDate] = React.useState(initDayjs);
   const [endDate, setEndDate] = React.useState(initDayjs);
 
-  const logs = [] as Log[];
-  const count = 0;
-
-  const exportDBMutation = useExportDB();
   const clearLogs = useClearLog();
+  const logQuery = useQuery(
+    fetchLog({
+      pageIndex,
+      pageSize,
+      startDate: dayjs(startDate).startOf("day").toISOString(),
+      endDate: dayjs(endDate).endOf("day").toISOString(),
+    }),
+  );
+
+  useLogUpdate();
+
+  const renderLogs = () => {
+    if (logQuery.isPending) {
+      return <div>加载中...</div>;
+    }
+
+    if (logQuery.isError) {
+      return <div>加载日志失败</div>;
+    }
+
+    if (logQuery.data.rows.length === 0) {
+      return <div>暂无日志</div>;
+    }
+
+    return (
+      <>
+        {logQuery.data.rows
+          .slice()
+          .reverse()
+          .map((log) => (
+            <Grid size={12} key={log.id}>
+              <Card variant="outlined">
+                <CardHeader
+                  title={log.title}
+                  subheader={log.date?.toLocaleString()}
+                />
+                <CardContent>{log.message}</CardContent>
+                {log.json && <CodeBlock code={log.json} />}
+              </Card>
+            </Grid>
+          ))}
+      </>
+    );
+  };
 
   return (
     <Card>
@@ -204,13 +108,23 @@ export const Component = () => {
       <CardHeader
         title="日志"
         action={
-          <IconButton
-            onClick={() => {
-              exportDBMutation.mutate();
-            }}
-          >
-            <ClearAllOutlined />
-          </IconButton>
+          <>
+            <IconButton
+              onClick={() => {
+                void logQuery.refetch();
+              }}
+              disabled={logQuery.isRefetching}
+            >
+              <Refresh />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                clearLogs.mutate();
+              }}
+            >
+              <ClearAllOutlined />
+            </IconButton>
+          </>
         }
       />
       <CardContent>
@@ -247,24 +161,9 @@ export const Component = () => {
               }}
             />
           </Grid>
+          {renderLogs()}
         </Grid>
       </CardContent>
-      <DataGrid count={count || 0} data={logs} />
-      <TablePagination
-        component={"div"}
-        page={pageIndex}
-        count={count || 0}
-        rowsPerPage={pageSize}
-        rowsPerPageOptions={rowsPerPageOptions}
-        onPageChange={(e, page) => {
-          void e;
-          setPageIndex(page);
-        }}
-        onRowsPerPageChange={(e) => {
-          setPageSize(Number.parseInt(e.target.value, 10));
-        }}
-        labelRowsPerPage="每页行数"
-      />
     </Card>
   );
 };

@@ -1,4 +1,5 @@
 import type { ListOptions } from "#main/shared/factories/Logger";
+import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { ipc } from "#renderer/shared/instances/ipc";
 import {
   queryOptions,
@@ -27,5 +28,13 @@ export const useClearLog = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
+  });
+};
+
+export const useLogUpdate = () => {
+  const queryClient = useQueryClient();
+
+  useSubscribe("logUpdated", () => {
+    void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
   });
 };

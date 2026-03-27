@@ -19,26 +19,45 @@ export interface ListOptions {
 
 export class Logger {
   private db: SQLiteDBType;
+  private handlers: Set<() => void> = new Set();
 
   constructor(db: SQLiteDBType) {
     this.db = db;
   }
 
-  error({ title, message, json }: LoggerOptions) {
-    this.db.insert(schema.logTable).values({
+  on(handler: () => void) {
+    this.handlers.add(handler);
+
+    return () => {
+      this.off(handler);
+    };
+  }
+  off(handler: () => void) {
+    this.handlers.delete(handler);
+  }
+  emit() {
+    this.handlers.forEach((handler) => handler());
+  }
+
+  async error({ title, message, json }: LoggerOptions) {
+    await this.db.insert(schema.logTable).values({
       level: "error",
       title,
       message,
       json,
     });
+
+    this.emit();
   }
-  log({ title, message, json }: LoggerOptions) {
-    this.db.insert(schema.logTable).values({
+  async log({ title, message, json }: LoggerOptions) {
+    await this.db.insert(schema.logTable).values({
       level: "log",
       title,
       message,
       json,
     });
+
+    this.emit();
   }
 
   async handleList({
