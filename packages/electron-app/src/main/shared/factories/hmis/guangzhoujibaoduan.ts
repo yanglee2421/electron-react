@@ -24,27 +24,6 @@ import type { Logger } from "../Logger";
 import type { Net } from "./hmis";
 import { HMIS } from "./hmis";
 
-interface ZH_Item {
-  DH: string;
-  ZH: string;
-  ZX: string;
-  CZZZRQ: string;
-  CZZZDW: string;
-  SCZZRQ: string;
-  SCZZDW: string;
-  MCZZRQ: string;
-  MCZZDW: string;
-
-  ZTX?: boolean;
-  YTX?: boolean;
-}
-
-interface ZH_Response {
-  code: string;
-  msg: string;
-  data: ZH_Item[];
-}
-
 interface PostItem {
   eq_ip: string; // 设备IP
   eq_bh: string; // 设备编号
@@ -102,28 +81,6 @@ export interface NormalizeResponse {
   ZTX?: boolean;
   YTX?: boolean;
 }
-
-const normalizeZHResponse = (data: ZH_Response) => {
-  if (data.code !== "200") {
-    throw new Error(data.msg);
-  }
-
-  return data.data.map((record) => {
-    return {
-      DH: record.DH,
-      ZH: record.ZH,
-      ZX: record.ZX,
-      CZZZDW: record.CZZZDW,
-      CZZZRQ: record.CZZZRQ,
-      MCZZDW: record.MCZZDW,
-      MCZZRQ: record.MCZZRQ,
-      SCZZDW: record.SCZZDW,
-      SCZZRQ: record.SCZZRQ,
-      ZTX: record.ZTX,
-      YTX: record.YTX,
-    };
-  });
-};
 
 const normalizeDHResponse = (data: DH_Response) => {
   if (data.code !== "200") {
@@ -224,7 +181,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     const url = this.resolveFetchURL(dh);
 
     url.searchParams.set("type", "csbts");
-    this.logger.log({ title: `请求单号数据:`, message: url.href });
+    void this.logger.log({ title: `请求单号数据:`, message: url.href });
 
     const res = await this.net.fetch(url.href, { method: "GET" });
 
@@ -233,29 +190,10 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     }
 
     const data: DH_Response = await res.json();
-    this.logger.log({ title: `返回单号数据:`, json: JSON.stringify(data) });
-
-    if (data.code !== "200") {
-      throw new Error(data.msg);
-    }
-
-    return data;
-  }
-
-  async fetchAxleInfoByZH(zh: string) {
-    const url = this.resolveFetchURL(zh);
-
-    url.searchParams.set("type", "csbtszh");
-    this.logger.log({ title: `请求轴号数据:`, message: url.href });
-
-    const res = await this.net.fetch(url.href, { method: "GET" });
-
-    if (!res.ok) {
-      throw new Error(`接口异常[${res.status}]:${res.statusText}`);
-    }
-
-    const data: ZH_Response = await res.json();
-    this.logger.log({ title: `返回轴号数据:`, json: JSON.stringify(data) });
+    void this.logger.log({
+      title: `返回单号数据:`,
+      json: JSON.stringify(data),
+    });
 
     if (data.code !== "200") {
       throw new Error(data.msg);
@@ -366,7 +304,7 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
 
     url.searchParams.set("method", "saveData");
     url.searchParams.set("type", "csbts");
-    this.logger.log({ title: `请求数据:`, message: url.href, json: body });
+    void this.logger.log({ title: `请求数据:`, message: url.href, json: body });
 
     const res = await this.net.fetch(url.href, {
       method: "POST",
@@ -381,23 +319,16 @@ export class JTV_HMIS_Guangzhoujibaoduan extends HMIS<Guangzhoujibaoduan> {
     }
 
     const data: boolean = await res.json();
-    this.logger.log({ title: `返回数据:`, json: JSON.stringify(data) });
+    void this.logger.log({ title: `返回数据:`, json: JSON.stringify(data) });
 
     return data;
   }
 
-  async handleFetch(barcode: string, isZhMode?: boolean) {
-    if (isZhMode) {
-      const data = await this.fetchAxleInfoByZH(barcode);
-      const result = normalizeZHResponse(data);
+  async handleFetch(barcode: string) {
+    const data = await this.fetchAxleInfoByDH(barcode);
+    const result = normalizeDHResponse(data);
 
-      return result;
-    } else {
-      const data = await this.fetchAxleInfoByDH(barcode);
-      const result = normalizeDHResponse(data);
-
-      return result;
-    }
+    return result;
   }
   async handleUpload(id: number) {
     const [record] = await this.db
@@ -492,7 +423,7 @@ export interface IpcContract {
     >;
   };
   "hmis_guangzhoujibaoduan/fetch_axle_info": {
-    args: [string, boolean?];
+    args: [string];
     return: ReturnType<
       typeof JTV_HMIS_Guangzhoujibaoduan.prototype.handleFetch
     >;
@@ -521,12 +452,9 @@ export const bindIpc = (
     return hmis.handleRecordInsert(params);
   });
 
-  ipcHandle(
-    "hmis_guangzhoujibaoduan/fetch_axle_info",
-    async (_, barcode, isZhMode) => {
-      return hmis.handleFetch(barcode, isZhMode);
-    },
-  );
+  ipcHandle("hmis_guangzhoujibaoduan/fetch_axle_info", async (_, barcode) => {
+    return hmis.handleFetch(barcode);
+  });
 
   ipcHandle("hmis_guangzhoujibaoduan/upload_data", async (_, id) => {
     return hmis.handleUpload(id);

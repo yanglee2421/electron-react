@@ -115,7 +115,7 @@ export const Component = () => {
         const path = paths?.[0];
         if (!path) return;
         profileForm.setFieldValue("appPath", path);
-        profileForm.validateField("appPath", "change");
+        void profileForm.validateField("appPath", "change");
       },
     });
   };
@@ -131,12 +131,12 @@ export const Component = () => {
             onSubmit={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              profileForm.handleSubmit();
+              void profileForm.handleSubmit();
             }}
             onReset={() => profileForm.reset()}
           >
             <Grid spacing={3} container>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <profileForm.AppField name="appPath">
                   {(appPathField) => (
                     <appPathField.TextField
@@ -176,7 +176,7 @@ export const Component = () => {
                   )}
                 </profileForm.AppField>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <profileForm.AppField name="encoding">
                   {(encodingField) => (
                     <encodingField.TextField

@@ -1,14 +1,13 @@
 import { useMobileMode } from "#renderer/api/fetch_preload";
+import { useLogUpdate } from "#renderer/api/logger";
 import { useProfileStore } from "#renderer/shared/hooks/ui/useProfileStore";
 import {
   CalendarMonthOutlined,
   CalendarTodayOutlined,
   CalendarViewMonthOutlined,
-  ChatOutlined,
   CodeOutlined,
   DarkModeOutlined,
   DesktopWindowsOutlined,
-  HelpOutlined,
   InfoOutlined,
   LightModeOutlined,
   Memory,
@@ -287,11 +286,6 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
       icon: <SettingsOutlined />,
     },
     {
-      segment: calculateSegment("help"),
-      title: "帮助",
-      icon: <HelpOutlined />,
-    },
-    {
       segment: calculateSegment("plc"),
       title: "PLC",
       icon: <Memory />,
@@ -300,11 +294,6 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
 
   if (shouldAdd) {
     result.push(
-      {
-        segment: calculateSegment("xlsx"),
-        title: "xlsx设置",
-        icon: <SettingsOutlined />,
-      },
       {
         segment: calculateSegment("md5_compute"),
         title: "MD5计算",
@@ -334,11 +323,6 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
         segment: calculateSegment("qrcode"),
         title: "QRCode",
         icon: <QrCodeOutlined />,
-      },
-      {
-        segment: calculateSegment("chat"),
-        title: "Chat",
-        icon: <ChatOutlined />,
       },
     );
   }
@@ -487,6 +471,7 @@ export const DashLayout = () => {
 
 export const RootRoute = () => {
   const theme = useTheme();
+  useLogUpdate();
 
   const NAVIGATION = createNavigation(import.meta.env.DEV);
 

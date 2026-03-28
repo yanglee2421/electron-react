@@ -38,3 +38,16 @@ export const useLogUpdate = () => {
     void queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
   });
 };
+
+export const useDeleteLog = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => {
+      return ipc.invoke("logger/delete", id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+  });
+};

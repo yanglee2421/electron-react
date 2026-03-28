@@ -51,18 +51,8 @@ export const useFetchGuangzhouJibaoduanAxle = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      barcode,
-      isZhMode,
-    }: {
-      barcode: string;
-      isZhMode?: boolean;
-    }) => {
-      return ipc.invoke(
-        "hmis_guangzhoujibaoduan/fetch_axle_info",
-        barcode,
-        isZhMode,
-      );
+    mutationFn: ({ barcode }: { barcode: string }) => {
+      return ipc.invoke("hmis_guangzhoujibaoduan/fetch_axle_info", barcode);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

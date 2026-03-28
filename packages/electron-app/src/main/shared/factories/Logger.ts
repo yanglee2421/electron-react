@@ -1,6 +1,7 @@
 import type { SQLiteDBType } from "#main/db";
 import * as schema from "#main/db/schema";
 import type { IpcHandle } from "#main/lib/ipc";
+import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 
 interface LoggerOptions {
@@ -40,6 +41,10 @@ export class Logger {
   }
 
   async error({ title, message, json }: LoggerOptions) {
+    if (Math.random() < 0.01) {
+      void this.handleClearExpired();
+    }
+
     await this.db.insert(schema.logTable).values({
       level: "error",
       title,
@@ -50,6 +55,10 @@ export class Logger {
     this.emit();
   }
   async log({ title, message, json }: LoggerOptions) {
+    if (Math.random() < 0.01) {
+      void this.handleClearExpired();
+    }
+
     await this.db.insert(schema.logTable).values({
       level: "log",
       title,
@@ -67,6 +76,10 @@ export class Logger {
     pageIndex,
     pageSize,
   }: ListOptions) {
+    if (Math.random() < 0.01) {
+      void this.handleClearExpired();
+    }
+
     const [{ count }] = await this.db
       .select({ count: sql.count() })
       .from(schema.logTable)
@@ -100,6 +113,10 @@ export class Logger {
     return { count, rows };
   }
   handleDelete(id: number) {
+    if (Math.random() < 0.01) {
+      void this.handleClearExpired();
+    }
+
     return this.db
       .delete(schema.logTable)
       .where(sql.eq(schema.logTable.id, id))
@@ -107,6 +124,15 @@ export class Logger {
   }
   handleClear() {
     return this.db.delete(schema.logTable).returning();
+  }
+  async handleClearExpired() {
+    // Drizzle use Thenable to execute SQL
+    // So we must await it to trigger the delete operation
+    await this.db
+      .delete(schema.logTable)
+      .where(
+        sql.lt(schema.logTable.date, dayjs().subtract(30, "day").toDate()),
+      );
   }
 }
 

@@ -1,12 +1,5 @@
-import {
-  int,
-  numeric,
-  sqliteTable,
-  text,
-  unique,
-} from "drizzle-orm/sqlite-core";
+import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-export type XlsxSize = typeof xlsxSizeTable.$inferSelect;
 export type KhBarcode = typeof khBarcodeTable.$inferSelect;
 export type HxzyBarcode = typeof hxzyBarcodeTable.$inferSelect;
 export type JTVBarcode = typeof jtvBarcodeTable.$inferSelect;
@@ -56,24 +49,6 @@ export const khBarcodeTable = sqliteTable("kh_barcode", {
   date: int("date", { mode: "timestamp" }),
   isUploaded: int("isUploaded", { mode: "boolean" }),
 });
-
-export const xlsxSizeTable = sqliteTable(
-  "xlsxSize",
-  {
-    id: int("id").primaryKey({ autoIncrement: true }),
-    type: text("type"),
-    index: text("index"),
-    size: numeric("size", { mode: "number" }),
-    xlsxName: text("xlsxName"),
-  },
-  (table) => [
-    unique("xlsxName_position_unique").on(
-      table.xlsxName,
-      table.type,
-      table.index,
-    ),
-  ],
-);
 
 export const jtvGuangzhoubeiBarcodeTable = sqliteTable(
   "jtv_guangzhoubei_barcode",

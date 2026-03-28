@@ -16,7 +16,7 @@ export const profile = z.object({
 
 export type Profile = z.infer<typeof profile>;
 
-const portSchema = z.number().int().min(1).max(65535).default(0);
+const portSchema = z.number().int().min(1).max(65535).default(80);
 
 export const kh_hmis = z.object({
   ip: z.ipv4().default(""),
@@ -84,9 +84,9 @@ export const jtv_hmis_guangzhoubei = z.object({
 export type JTV_HMIS_Guangzhoubei = z.infer<typeof jtv_hmis_guangzhoubei>;
 
 export const guangzhoujibaoduan = z.object({
-  get_ip: z.ipv4().default("0.0.0.0"),
+  get_ip: z.ipv4().default(""),
   get_port: portSchema,
-  post_ip: z.ipv4().default("0.0.0.0"),
+  post_ip: z.ipv4().default(""),
   post_port: portSchema,
   unitCode: z.string().default(""),
   signature_prefix: z.string().default("W"),

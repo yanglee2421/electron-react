@@ -28,14 +28,12 @@ import {
   CardHeader,
   CircularProgress,
   Divider,
-  FormControlLabel,
   Grid,
   IconButton,
   InputAdornment,
   LinearProgress,
   Link,
   Stack,
-  Switch,
   Table,
   TableBody,
   TableCell,
@@ -445,7 +443,6 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
 };
 
 export const Component = () => {
-  const zhMode = useSessionStore((store) => store.isZhMode);
   const pageIndex = useSessionStore((store) => store.pageIndex);
   const pageSize = useSessionStore((store) => store.pageSize);
   const dateIso = useSessionStore((store) => store.date);
@@ -479,7 +476,7 @@ export const Component = () => {
     validators: { onChange: schema },
     onSubmit: async ({ value }) => {
       const data = await getData.mutateAsync(
-        { barcode: value.barCode, isZhMode: zhMode },
+        { barcode: value.barCode },
         {
           onError: (error) => {
             snackbar.show(error.message, { severity: "error" });
@@ -505,7 +502,7 @@ export const Component = () => {
   });
 
   useSubscribe("api_set", () => {
-    barcode.refetch();
+    void barcode.refetch();
   });
 
   const sendDataItemToWindow = async (dataItem: NormalizeResponse) => {
@@ -560,12 +557,6 @@ export const Component = () => {
     });
   };
 
-  const setZhMode = (value: boolean) => {
-    useSessionStore.setState((draft) => {
-      draft.isZhMode = value;
-    });
-  };
-
   const handleRowSelect = async (dataItem: NormalizeResponse) => {
     await inserDataItemToDB(dataItem);
     await sendDataItemToWindow(dataItem);
@@ -576,22 +567,9 @@ export const Component = () => {
       <ScrollToTopButton />
       <Stack spacing={3}>
         <Card>
-          <CardHeader title="京天威HMIS" subheader="广州机保段" />
+          <CardHeader title="广州机保段" subheader="HMIS" />
           <CardContent>
             <Grid container spacing={6}>
-              <Grid size={12}>
-                <FormControlLabel
-                  label="轴号模式"
-                  control={
-                    <Switch
-                      checked={zhMode}
-                      onChange={(e) => {
-                        setZhMode(e.target.checked);
-                      }}
-                    />
-                  }
-                />
-              </Grid>
               <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
                 <form
                   ref={formRef}
@@ -600,7 +578,7 @@ export const Component = () => {
                   autoComplete="off"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    form.handleSubmit();
+                    void form.handleSubmit();
                   }}
                   onReset={() => form.reset()}
                 >
@@ -611,7 +589,6 @@ export const Component = () => {
                         onChange={(e) => {
                           field.handleChange(e.target.value);
 
-                          if (zhMode) return;
                           clearTimeout(debounceRef.current);
                           debounceRef.current = setTimeout(() => {
                             formRef.current?.requestSubmit();
@@ -661,10 +638,8 @@ export const Component = () => {
                             autoFocus: true,
                           },
                         }}
-                        label={zhMode ? "轴号" : "条形码/二维码"}
-                        placeholder={
-                          zhMode ? "请输入轴号" : "请扫描条形码或二维码"
-                        }
+                        label="条形码/二维码"
+                        placeholder="请扫描条形码或二维码"
                       />
                     )}
                   </form.Field>
@@ -681,7 +656,7 @@ export const Component = () => {
             action={
               <IconButton
                 onClick={() => {
-                  barcode.refetch();
+                  void barcode.refetch();
                 }}
                 disabled={barcode.isFetching}
               >

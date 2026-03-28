@@ -1,6 +1,7 @@
-import { fetchLog, useClearLog, useLogUpdate } from "#renderer/api/logger";
+import { fetchLog, useClearLog, useDeleteLog } from "#renderer/api/logger";
 import { ScrollToTopButton } from "#renderer/components/scroll";
-import { ClearAllOutlined, Refresh } from "@mui/icons-material";
+import { useColorScheme } from "#renderer/hooks/dom/useColorScheme";
+import { ClearAllOutlined, Delete, Refresh } from "@mui/icons-material";
 import {
   Box,
   Card,
@@ -8,6 +9,9 @@ import {
   CardHeader,
   Grid,
   IconButton,
+  MenuItem,
+  Pagination,
+  TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -18,12 +22,14 @@ import { codeToHtml } from "shiki";
 const initDayjs = () => dayjs();
 
 const CodeBlock = ({ code }: { code: string }) => {
+  const isDark = useColorScheme();
+
   const codeQuery = useQuery({
-    queryKey: ["code", code],
+    queryKey: ["code", code, isDark],
     queryFn: async () => {
       return codeToHtml(JSON.stringify(JSON.parse(code), null, 2), {
         lang: "json",
-        theme: "dark-plus",
+        theme: isDark ? "dark-plus" : "light-plus",
       });
     },
   });
@@ -41,6 +47,8 @@ const CodeBlock = ({ code }: { code: string }) => {
       sx={{
         "& pre.shiki": {
           whiteSpace: "pre-wrap",
+          fontSize: "20px",
+          fontFamily: "Consolas, 'Courier New', monospace",
         },
       }}
       dangerouslySetInnerHTML={{
@@ -50,9 +58,29 @@ const CodeBlock = ({ code }: { code: string }) => {
   );
 };
 
+interface DeleteButtonProps {
+  id: number;
+}
+
+const DeleteButton = ({ id }: DeleteButtonProps) => {
+  const deleteLog = useDeleteLog();
+
+  return (
+    <IconButton
+      onClick={() => {
+        deleteLog.mutate(id);
+      }}
+      disabled={deleteLog.isPending}
+    >
+      <Delete />
+    </IconButton>
+  );
+};
+
 export const Component = () => {
   const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(100);
+  const [pageSize] = React.useState(20);
+  const [level, setLevel] = React.useState("all");
   const [startDate, setStartDate] = React.useState(initDayjs);
   const [endDate, setEndDate] = React.useState(initDayjs);
 
@@ -63,22 +91,21 @@ export const Component = () => {
       pageSize,
       startDate: dayjs(startDate).startOf("day").toISOString(),
       endDate: dayjs(endDate).endOf("day").toISOString(),
+      level: level === "all" ? void 0 : level,
     }),
   );
 
-  useLogUpdate();
-
   const renderLogs = () => {
     if (logQuery.isPending) {
-      return <div>加载中...</div>;
+      return <Grid size={12}>加载中...</Grid>;
     }
 
     if (logQuery.isError) {
-      return <div>加载日志失败</div>;
+      return <Grid size={12}>{logQuery.error.message}</Grid>;
     }
 
     if (logQuery.data.rows.length === 0) {
-      return <div>暂无日志</div>;
+      return <Grid size={12}>暂无日志</Grid>;
     }
 
     return (
@@ -92,8 +119,13 @@ export const Component = () => {
                 <CardHeader
                   title={log.title}
                   subheader={log.date?.toLocaleString()}
+                  action={<DeleteButton id={log.id} />}
                 />
-                <CardContent>{log.message}</CardContent>
+                <CardContent
+                  sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                >
+                  {log.message}
+                </CardContent>
                 {log.json && <CodeBlock code={log.json} />}
               </Card>
             </Grid>
@@ -158,6 +190,28 @@ export const Component = () => {
                   fullWidth: true,
                   label: "结束日期",
                 },
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              select
+              fullWidth
+              label="级别"
+              value={level}
+              onChange={(e) => setLevel(e.target.value)}
+            >
+              <MenuItem value="all">全部</MenuItem>
+              <MenuItem value="log">信息</MenuItem>
+              <MenuItem value="error">错误</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid size={12}>
+            <Pagination
+              page={pageIndex + 1}
+              count={Math.ceil((logQuery.data?.count || 0) / pageSize)}
+              onChange={(_, page) => {
+                setPageIndex(page - 1);
               }}
             />
           </Grid>
