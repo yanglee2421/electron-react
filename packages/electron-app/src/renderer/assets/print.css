@@ -1,0 +1,42 @@
+.a4 {
+  box-sizing: border-box;
+  display: none;
+  width: 210mm;
+  height: 297mm;
+
+  margin: 0;
+
+  background: white;
+
+  break-after: page;
+
+  color: #000;
+  font-size: 10pt;
+
+  /* > * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  } */
+
+  &::before,
+  &::after {
+    content: "";
+    clear: both;
+    display: table;
+  }
+}
+
+@media print {
+  #root {
+    display: none;
+  }
+  .a4 {
+    display: block;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}

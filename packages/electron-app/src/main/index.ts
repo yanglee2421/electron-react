@@ -8,7 +8,7 @@ import * as hxzy from "#main/shared/factories/hmis/hxzy";
 import * as jtv from "#main/shared/factories/hmis/jtv";
 import * as kh from "#main/shared/factories/hmis/kh_hmis";
 import * as xuzhoubei from "#main/shared/factories/hmis/xuzhoubei";
-import { bindIpc, KV } from "#main/shared/factories/KV";
+import * as kv from "#main/shared/factories/KV";
 import * as log from "#main/shared/factories/Logger";
 import { Profile } from "#main/shared/factories/Profile";
 import type { ThemeMode } from "#shared/instances/schema";
@@ -20,7 +20,6 @@ import {
   Menu,
   nativeTheme,
   net,
-  protocol,
   shell,
 } from "electron";
 import fs from "node:fs";
@@ -258,23 +257,23 @@ const bootstrap = async () => {
     databasePath,
     migrationsFolder: path.resolve(__dirname, "../../drizzle"),
   });
-  const kv = new KV(sqliteDB);
-  const profile = new Profile(kv);
+  const kvInstance = new kv.KV(sqliteDB);
+  const profile = new Profile(kvInstance);
   const mdbDB = new mdb.MDBDB(profile);
   const logger = new log.Logger(sqliteDB);
-  const hxzyHmis = new hxzy.Hxzy(sqliteDB, kv, mdbDB, net, logger);
-  const khHmis = new kh.KH(sqliteDB, kv, mdbDB, net, logger);
-  const jtvHmis = new jtv.JTV(sqliteDB, kv, mdbDB, net, logger);
+  const hxzyHmis = new hxzy.Hxzy(sqliteDB, kvInstance, mdbDB, net, logger);
+  const khHmis = new kh.KH(sqliteDB, kvInstance, mdbDB, net, logger);
+  const jtvHmis = new jtv.JTV(sqliteDB, kvInstance, mdbDB, net, logger);
   const xuzhoubeiHmis = new xuzhoubei.Xuzhoubei(
     sqliteDB,
-    kv,
+    kvInstance,
     mdbDB,
     net,
     logger,
   );
   const guangzhoubeiHmis = new guangzhoubei.Guangzhoubei(
     sqliteDB,
-    kv,
+    kvInstance,
     mdbDB,
     net,
     logger,
@@ -282,7 +281,7 @@ const bootstrap = async () => {
   const jtv_hmis_guangzhoujibaoduan =
     new guangzhouJibaoduan.JTV_HMIS_Guangzhoujibaoduan(
       sqliteDB,
-      kv,
+      kvInstance,
       mdbDB,
       net,
       logger,
@@ -319,9 +318,7 @@ const bootstrap = async () => {
 
     const outputPath = result.filePath;
 
-    if (!outputPath) {
-      return;
-    }
+    if (!outputPath) return;
 
     await fs.promises.copyFile(databasePath, result.filePath);
   });
@@ -336,7 +333,7 @@ const bootstrap = async () => {
   xml.bindIpcHandlers(ipcHandle);
   log.bindIPC(logger, ipcHandle);
 
-  bindIpc(kv, ipcHandle);
+  kv.bindIpc(kvInstance, ipcHandle);
   kh.bindIpcHandlers(khHmis, ipcHandle);
   jtv.bindIpcHandlers(jtvHmis, ipcHandle);
   hxzy.bindIPCHandlers(hxzyHmis, ipcHandle);
@@ -347,7 +344,6 @@ const bootstrap = async () => {
   profile.on((state, previous) => {
     diffMode(previous.mode, state.mode);
     diffAlwaysOnTop(previous.alwaysOnTop, state.alwaysOnTop);
-    diffAppPath(previous.appPath, state.appPath, profile);
   });
 
   await createWindow(profile.getState().alwaysOnTop);
@@ -366,21 +362,5 @@ const diffAlwaysOnTop = (prev: boolean, next: boolean) => {
 
   BrowserWindow.getAllWindows().forEach((win) => {
     win.setAlwaysOnTop(next);
-  });
-};
-
-const diffAppPath = (prev: string, next: string, profile: Profile) => {
-  if (Object.is(prev, next)) return;
-
-  if (protocol.isProtocolHandled("atom")) {
-    protocol.unhandle("atom");
-  }
-
-  protocol.handle("atom", async (request) => {
-    const fileName = request.url.replace(/^atom:\/\//, "");
-    const rootPath = await profile.getRootPath();
-    const fetchURL = path.join(rootPath, "_data", fileName);
-
-    return net.fetch(`file://${fetchURL}`);
   });
 };

@@ -37,6 +37,7 @@ import {
 } from "@tanstack/react-table";
 import React from "react";
 import { useParams } from "react-router";
+import { PrintCHR501 } from "./PrintCHR501";
 
 const columnHelper = createColumnHelper<VerifyData>();
 const columns = [
@@ -324,6 +325,9 @@ export const Component = () => {
             </Grid>
           </CardContent>
           <Divider />
+          <CardContent>
+            <PrintCHR501 />
+          </CardContent>
           <TableContainer>
             <Table sx={{ minWidth: 720 }}>
               <TableHead>

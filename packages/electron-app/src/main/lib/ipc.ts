@@ -1,6 +1,6 @@
-import type { XlsxSize } from "#main/db/schema";
 import type * as win from "#main/modules/cmd";
 import type { MDBPayload } from "#main/modules/mdb";
+import * as printer from "#main/modules/Printer";
 import type * as guangzhoubei from "#main/shared/factories/hmis/guangzhoubei";
 import type * as guangzhoujibaoduan from "#main/shared/factories/hmis/guangzhoujibaoduan";
 import type * as hxzy from "#main/shared/factories/hmis/hxzy";
@@ -23,7 +23,8 @@ export interface IpcContract
     guangzhoujibaoduan.IpcContract,
     xuzhoubei.Ipc,
     win.Ipc,
-    logger.IPC {
+    logger.IPC,
+    printer.IPC {
   "VERSION/GET": {
     args: [];
     return: Version;
@@ -95,34 +96,6 @@ export interface IpcContract
   "MD5/MD5_COMPUTE": {
     args: [string];
     return: Record<string, string>;
-  };
-  "XLSX/XLSX_CHR501": {
-    args: [string];
-    return: void;
-  };
-  "XLSX/xlsx_chr_502": {
-    args: [];
-    return: void;
-  };
-  "XLSX/xlsx_chr_53a": {
-    args: [string[]];
-    return: void;
-  };
-  "XLSX/sqlite_xlsx_size_c": {
-    args: [SqliteXlsxSizeCParams];
-    return: XlsxSize[];
-  };
-  "XLSX/sqlite_xlsx_size_u": {
-    args: [SqliteXlsxSizeUParams];
-    return: XlsxSize[];
-  };
-  "XLSX/sqlite_xlsx_size_r": {
-    args: [SqliteXlsxSizeRParams?];
-    return: RowsResult<XlsxSize>;
-  };
-  "XLSX/sqlite_xlsx_size_d": {
-    args: [number];
-    return: XlsxSize[];
   };
   "DB/EXPORT": {
     args: [];
@@ -321,11 +294,6 @@ type IPCArgs<TKey extends keyof IpcContract> = IpcContract[TKey] extends {
     : [Electron.IpcMainInvokeEvent]
   : never;
 
-type RowsResult<TRow> = {
-  count: number;
-  rows: TRow[];
-};
-
 export interface Version {
   version: string;
   electronVersion: string;
@@ -357,7 +325,7 @@ export class IPCHandle {
         return result;
       } catch (error) {
         if (error instanceof Error) {
-          this.logger.error({
+          void this.logger.error({
             title: error.message,
             message: error.stack,
           });
