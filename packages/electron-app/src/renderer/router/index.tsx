@@ -57,32 +57,6 @@ const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/qrcode/component"),
           },
           {
-            path: "xlsx",
-            children: [
-              {
-                index: true,
-                lazy: () => import("#renderer/pages/xlsx"),
-              },
-              {
-                path: "new",
-                lazy: () => import("#renderer/pages/xlsx_new/component"),
-              },
-              {
-                path: ":id",
-                children: [
-                  {
-                    index: true,
-                    lazy: () => import("#renderer/pages/xlsx_show/component"),
-                  },
-                  {
-                    path: "edit",
-                    lazy: () => import("#renderer/pages/xlsx_edit/component"),
-                  },
-                ],
-              },
-            ],
-          },
-          {
             children: [
               {
                 path: "detection",

@@ -135,7 +135,7 @@ export const Component = () => {
             }}
             onReset={() => profileForm.reset()}
           >
-            <Grid spacing={3} container>
+            <Grid spacing={1.5} container>
               <Grid size={{ xs: 12, md: 6 }}>
                 <profileForm.AppField name="appPath">
                   {(appPathField) => (

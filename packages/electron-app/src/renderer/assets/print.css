@@ -1,29 +1,29 @@
-.a4 {
+[data-a4] {
   box-sizing: border-box;
-  display: none;
   width: 210mm;
   height: 297mm;
 
+  padding: 16mm 14mm;
   margin: 0;
-
-  background: white;
 
   break-after: page;
 
-  color: #000;
+  text-align: center;
+  color: black;
+  font-family: "SimSun", "宋体", serif;
   font-size: 10pt;
-
-  /* > * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  } */
 
   &::before,
   &::after {
     content: "";
-    clear: both;
     display: table;
+    clear: both;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    table-layout: fixed;
   }
 }
 
@@ -31,12 +31,12 @@
   #root {
     display: none;
   }
-  .a4 {
+  [data-a4] {
     display: block;
   }
 }
 
 @page {
-  size: A4;
+  size: A4 portrait;
   margin: 0;
 }

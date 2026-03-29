@@ -1,0 +1,75 @@
+[data-caption] {
+  font-size: 16pt;
+  font-weight: 600;
+}
+
+.hidden {
+  table {
+    > thead {
+      > tr {
+        > td,
+        > th {
+          > table {
+            > tbody {
+              > tr {
+                > td,
+                > th {
+                  padding: 3pt;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    > tbody {
+      > tr {
+        > td,
+        > th {
+          padding: 2pt;
+
+          border: solid black;
+          border-width: 1pt 1pt 0 0;
+
+          &:has(> table) {
+            padding: 0;
+            border: 0;
+          }
+
+          > table {
+            td,
+            th {
+              padding: 2pt;
+            }
+          }
+        }
+      }
+    }
+    > tfoot {
+      > tr {
+        > td,
+        > th {
+          > table {
+            > tbody {
+              > tr {
+                > td,
+                > th {
+                  padding: 3pt;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  table:has(tbody) {
+    border: solid black;
+    border-width: 0 0 1pt 1pt;
+  }
+
+  td > table {
+    border: 0;
+  }
+}
