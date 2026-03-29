@@ -1,10 +1,4 @@
-import type {
-  IpcContract,
-  PLCWritePayload,
-  SqliteXlsxSizeCParams,
-  SqliteXlsxSizeRParams,
-  SqliteXlsxSizeUParams,
-} from "#main/lib/ipc";
+import type { IpcContract, PLCWritePayload } from "#main/lib/ipc";
 import type { AutoInputToVCParams } from "#main/modules/cmd";
 import type { MDBPayload } from "#main/modules/mdb";
 import {
@@ -110,77 +104,9 @@ export const useMobileMode = () => {
   });
 };
 
-export const fetchSqliteXlsxSize = (params?: SqliteXlsxSizeRParams) =>
-  queryOptions({
-    queryKey: ["XLSX/sqlite_xlsx_size_r", params],
-    queryFn() {
-      return invoke("XLSX/sqlite_xlsx_size_r", params);
-    },
-  });
-
-export const useXlsxSizeCreate = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn(params: SqliteXlsxSizeCParams) {
-      return invoke("XLSX/sqlite_xlsx_size_c", params);
-    },
-    async onSuccess() {
-      await queryClient.invalidateQueries({
-        queryKey: fetchSqliteXlsxSize().queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useXlsxSizeUpdate = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn(params: SqliteXlsxSizeUParams) {
-      return invoke("XLSX/sqlite_xlsx_size_u", params);
-    },
-    async onSuccess() {
-      await queryClient.invalidateQueries({
-        queryKey: fetchSqliteXlsxSize().queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useXlsxSizeDelete = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn(id: number) {
-      return invoke("XLSX/sqlite_xlsx_size_d", id);
-    },
-    async onSuccess() {
-      await queryClient.invalidateQueries({
-        queryKey: fetchSqliteXlsxSize().queryKey.slice(0, 1),
-      });
-    },
-  });
-};
-
-export const useChr53aExport = () => {
-  return useMutation({
-    mutationFn: async (params: string[]) => {
-      const data = await invoke("XLSX/xlsx_chr_53a", params);
-      return data;
-    },
-  });
-};
-
 type Result<TRow> = {
   total: number;
   rows: TRow[];
-};
-
-export const useChr501Export = () => {
-  return useMutation({
-    async mutationFn(id: string) {
-      const result = await invoke("XLSX/XLSX_CHR501", id);
-      return result;
-    },
-  });
 };
 
 export const useSelectDirectory = () => {

@@ -1,23 +1,20 @@
 import type { Verify } from "#main/modules/mdb";
 import type { Filter } from "#main/modules/mdb.worker";
+import type { MDBUser } from "#renderer/api/fetch_preload";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
-  type MDBUser,
-  useChr501Export,
 } from "#renderer/api/fetch_preload";
 import { Loading } from "#renderer/components/Loading";
 import { ScrollToTop } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { PrintOutlined, RefreshOutlined } from "@mui/icons-material";
+import { RefreshOutlined } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
-  Button,
   Card,
   CardContent,
   CardHeader,
-  CircularProgress,
   Divider,
   Grid,
   IconButton,
@@ -42,7 +39,6 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useNotifications } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
 import { Link as RouterLink } from "react-router";
@@ -101,8 +97,6 @@ const DataGrid = (props: DataGridProps) => {
   "use no memo";
   const [selected, setSelected] = React.useState("");
 
-  const toast = useNotifications();
-  const exportXlsx = useChr501Export();
   const data = React.useMemo(() => props.data || [], [props.data]);
 
   const table = useReactTable({
@@ -171,43 +165,8 @@ const DataGrid = (props: DataGridProps) => {
     ));
   };
 
-  const getSelectedId = () => {
-    if (!selected) return;
-    return table
-      .getRowModel()
-      .flatRows.find((row) => Object.is(row.id, selected))?.id;
-  };
-
-  const selectedId = getSelectedId();
-
   return (
     <>
-      <CardContent>
-        <Button
-          startIcon={
-            exportXlsx.isPending ? (
-              <CircularProgress color="inherit" size={20} />
-            ) : (
-              <PrintOutlined />
-            )
-          }
-          onClick={() => {
-            if (!selectedId) {
-              toast.show("请选中一行数据再继续！", { severity: "error" });
-              return;
-            }
-            exportXlsx.mutate(selectedId, {
-              onError(error) {
-                toast.show(error.message, { severity: "error" });
-              },
-            });
-          }}
-          variant="outlined"
-          disabled={!selectedId}
-        >
-          Excel
-        </Button>
-      </CardContent>
       {props.isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>

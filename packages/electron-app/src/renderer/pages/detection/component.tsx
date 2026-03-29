@@ -4,7 +4,6 @@ import type { MDBUser } from "#renderer/api/fetch_preload";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
-  useChr53aExport,
 } from "#renderer/api/fetch_preload";
 import { Loading } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
@@ -12,21 +11,14 @@ import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
   CheckBoxOutlineBlankOutlined,
   CheckBoxOutlined,
-  PrintOutlined,
   RefreshOutlined,
 } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
-  Button,
   Card,
   CardContent,
   CardHeader,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   Grid,
   IconButton,
@@ -42,10 +34,8 @@ import {
   TablePagination,
   TableRow,
   TextField,
-  type DialogProps,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
-import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
@@ -53,11 +43,9 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useDialogs } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
 import { Link as RouterLink } from "react-router";
-import { z } from "zod";
 import { useSessionStore } from "./hooks";
 
 const renderCheckBoxIcon = (value: boolean | null) => {
@@ -141,9 +129,6 @@ const DataGrid = ({
 }: DataGridProps) => {
   "use no memo";
 
-  const chr53a = useChr53aExport();
-  const dialogs = useDialogs();
-
   const table = useReactTable({
     columns,
     data,
@@ -205,24 +190,6 @@ const DataGrid = ({
 
   return (
     <>
-      <CardContent>
-        <Button
-          onClick={() => {
-            void dialogs.open(ExportToXlsx);
-          }}
-          disabled={chr53a.isPending}
-          startIcon={
-            chr53a.isPending ? (
-              <CircularProgress size={20} />
-            ) : (
-              <PrintOutlined />
-            )
-          }
-          variant="outlined"
-        >
-          Excel
-        </Button>
-      </CardContent>
       {isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: (theme) => theme.breakpoints.values.lg }}>
@@ -465,96 +432,5 @@ export const Component = () => {
         />
       </Card>
     </>
-  );
-};
-
-const exportToXlsxSchema = z.object({
-  username: z.string().min(1),
-  date: z.iso.datetime(),
-});
-
-const ExportToXlsx = (props: DialogProps) => {
-  const formId = React.useId();
-
-  const date = useSessionStore((s) => s.date);
-  const username = useSessionStore((s) => s.username);
-  const form = useForm({
-    defaultValues: {
-      username,
-      date,
-    },
-    validators: {
-      onChange: exportToXlsxSchema,
-    },
-    onSubmit() {},
-  });
-
-  return (
-    <Dialog open={props.open} onClose={props.onClose} fullWidth>
-      <DialogTitle>探伤作业表</DialogTitle>
-      <DialogContent>
-        <form
-          id={formId}
-          onSubmit={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            void form.handleSubmit();
-          }}
-          onReset={(e) => {
-            form.reset();
-            props.onClose?.(e, "backdropClick");
-          }}
-        >
-          <Grid container spacing={3}>
-            <Grid size={12}>
-              <form.Field name="date">
-                {(dateField) => (
-                  <DatePicker
-                    value={dayjs(dateField.state.value)}
-                    onChange={(value) => {
-                      const nextValue = value?.toISOString();
-                      if (nextValue) {
-                        dateField.handleChange(nextValue);
-                      }
-                    }}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error: !!dateField.state.meta.errors.length,
-                        helperText: dateField.state.meta.errors.at(0)?.message,
-                      },
-                    }}
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={12}>
-              <form.Field name="username">
-                {(userNameField) => (
-                  <TextField
-                    value={userNameField.state.value}
-                    onChange={(e) => {
-                      userNameField.handleChange(e.target.value);
-                    }}
-                    onBlur={userNameField.handleBlur}
-                    fullWidth
-                    error={!!userNameField.state.meta.errors.length}
-                    helperText={userNameField.state.meta.errors.at(0)?.message}
-                  />
-                )}
-              </form.Field>
-            </Grid>
-          </Grid>
-        </form>
-      </DialogContent>
-      <DialogActions>
-        <Button form={formId} type="reset">
-          Cancel
-        </Button>
-        <Button form={formId} type="submit">
-          Confirm
-        </Button>
-      </DialogActions>
-    </Dialog>
   );
 };

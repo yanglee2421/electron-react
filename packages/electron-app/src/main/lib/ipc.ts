@@ -1,6 +1,6 @@
 import type * as win from "#main/modules/cmd";
 import type { MDBPayload } from "#main/modules/mdb";
-import * as printer from "#main/modules/Printer";
+import type * as printer from "#main/modules/Printer";
 import type * as guangzhoubei from "#main/shared/factories/hmis/guangzhoubei";
 import type * as guangzhoujibaoduan from "#main/shared/factories/hmis/guangzhoujibaoduan";
 import type * as hxzy from "#main/shared/factories/hmis/hxzy";
@@ -115,31 +115,6 @@ export interface InsertRecordParams {
   ZH: string;
   CZZZDW: string;
   CZZZRQ: string;
-}
-
-export interface SqliteXlsxSizeRParams {
-  id?: number;
-  xlsxName?: string;
-  type?: string;
-  pageIndex?: number;
-  pageSize?: number;
-}
-
-export interface SqliteXlsxSizeCParam {
-  xlsxName: string;
-  type: string;
-  index: string;
-  size: number;
-}
-
-export type SqliteXlsxSizeCParams = SqliteXlsxSizeCParam[];
-
-export interface SqliteXlsxSizeUParams {
-  id: number;
-  xlsxName?: string;
-  type: string;
-  index: string;
-  size: number;
 }
 
 export interface PLCReadResult {

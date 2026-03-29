@@ -1,9 +1,13 @@
+[data-print-container] {
+  display: none;
+}
+
 [data-a4] {
   box-sizing: border-box;
   width: 210mm;
   height: 297mm;
 
-  padding: 16mm 14mm;
+  padding: 14mm;
   margin: 0;
 
   break-after: page;
@@ -19,19 +23,13 @@
     display: table;
     clear: both;
   }
-
-  table {
-    width: 100%;
-    border-collapse: separate;
-    table-layout: fixed;
-  }
 }
 
 @media print {
   #root {
     display: none;
   }
-  [data-a4] {
+  [data-print-container] {
     display: block;
   }
 }
