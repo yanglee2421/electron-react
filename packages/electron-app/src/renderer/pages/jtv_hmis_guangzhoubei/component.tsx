@@ -506,7 +506,7 @@ export const Component = () => {
   });
 
   useSubscribe("api_set", () => {
-    barcode.refetch();
+    void barcode.refetch();
   });
 
   const sendDataItemToWindow = async (dataItem: NormalizeResponse) => {
@@ -577,7 +577,7 @@ export const Component = () => {
       <ScrollToTopButton />
       <Stack spacing={3}>
         <Card>
-          <CardHeader title="京天威HMIS" subheader="广州北" />
+          <CardHeader title="广州北车辆段" subheader="京天威HMIS" />
           <CardContent>
             <Grid container spacing={6}>
               <Grid size={12}>
@@ -601,7 +601,7 @@ export const Component = () => {
                   autoComplete="off"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    form.handleSubmit();
+                    void form.handleSubmit();
                   }}
                   onReset={() => form.reset()}
                 >
@@ -673,7 +673,7 @@ export const Component = () => {
             action={
               <IconButton
                 onClick={() => {
-                  barcode.refetch();
+                  void barcode.refetch();
                 }}
                 disabled={barcode.isFetching}
               >

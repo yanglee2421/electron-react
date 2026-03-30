@@ -1,4 +1,4 @@
-import { type IpcHandle } from "#main/lib/ipc";
+import type { IpcHandle } from "#main/lib/ipc";
 import type { Profile } from "#main/shared/factories/Profile";
 import dayjs from "dayjs";
 import os from "node:os";

@@ -1,9 +1,7 @@
 import { NumberField } from "#renderer/components/number";
 import { useGuangzhoubei } from "#renderer/shared/hooks/ui/useGuangzhoubei";
-import {
-  jtv_hmis_guangzhoubei,
-  type JTV_HMIS_Guangzhoubei,
-} from "#shared/instances/schema";
+import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
+import { jtv_hmis_guangzhoubei } from "#shared/instances/schema";
 import { SaveOutlined } from "@mui/icons-material";
 import {
   Button,
@@ -79,7 +77,7 @@ export const Component = () => {
           autoComplete="off"
           onSubmit={(e) => {
             e.preventDefault();
-            form.handleSubmit();
+            void form.handleSubmit();
           }}
         >
           <Grid container spacing={1.5}>
