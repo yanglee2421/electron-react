@@ -1,7 +1,6 @@
 import {
   fetchIsRunAsAdmin,
   fetchOpenAtLogin,
-  fetchVersion,
   useOpenAtLogin,
   useOpenDevTools,
   useSelectDirectory,
@@ -102,7 +101,6 @@ export const Component = () => {
 
   const queryClient = useQueryClient();
   const updateOpenAtLogin = useOpenAtLogin();
-  const version = useQuery(fetchVersion());
   const openAtLogin = useQuery(fetchOpenAtLogin());
   const isRunAsAdmin = useQuery(fetchIsRunAsAdmin());
   const openDevTools = useOpenDevTools();
@@ -118,6 +116,10 @@ export const Component = () => {
         void profileForm.validateField("appPath", "change");
       },
     });
+  };
+
+  const handleOpenDevTools = () => {
+    openDevTools.mutate();
   };
 
   const renderForm = () => {
@@ -234,11 +236,7 @@ export const Component = () => {
         <CardHeader
           title="设置"
           action={
-            <IconButton
-              onClick={async () => {
-                openDevTools.mutate();
-              }}
-            >
+            <IconButton onClick={handleOpenDevTools}>
               <BugReportOutlined />
             </IconButton>
           }
@@ -251,8 +249,7 @@ export const Component = () => {
             secondaryAction={
               <Switch
                 checked={openAtLogin.data}
-                onChange={(e, checked) => {
-                  void e;
+                onChange={(_, checked) => {
                   queryClient.setQueryData(
                     fetchOpenAtLogin().queryKey,
                     checked,
@@ -281,19 +278,23 @@ export const Component = () => {
             >
               <ListItemText primary="管理员权限" />
             </ListItem>
-            <ListItem secondaryAction={version.data?.version}>
+            <ListItem
+              secondaryAction={window.electron.process.env.npm_package_version}
+            >
               <ListItemText primary="版本" />
             </ListItem>
-            <ListItem secondaryAction={version.data?.electronVersion}>
+            <ListItem
+              secondaryAction={window.electron.process.versions.electron}
+            >
               <ListItemText primary="Electron" />
             </ListItem>
-            <ListItem secondaryAction={version.data?.chromeVersion}>
+            <ListItem secondaryAction={window.electron.process.versions.chrome}>
               <ListItemText primary="Chrome" />
             </ListItem>
-            <ListItem secondaryAction={version.data?.nodeVersion}>
+            <ListItem secondaryAction={window.electron.process.versions.node}>
               <ListItemText primary="Node" />
             </ListItem>
-            <ListItem secondaryAction={version.data?.v8Version}>
+            <ListItem secondaryAction={window.electron.process.versions.v8}>
               <ListItemText primary="V8" />
             </ListItem>
           </List>

@@ -25,10 +25,6 @@ export interface IpcContract
     win.Ipc,
     logger.IPC,
     printer.IPC {
-  "VERSION/GET": {
-    args: [];
-    return: Version;
-  };
   "APP/OPEN_AT_LOGIN": {
     args: [boolean?];
     return: boolean;

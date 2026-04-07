@@ -135,14 +135,6 @@ const bindAppEventListeners = (profile: Profile) => {
 };
 
 const bindIpcHandles = (ipcHandle: IpcHandle) => {
-  ipcHandle("VERSION/GET", async () => ({
-    version: app.getVersion(),
-    electronVersion: process.versions.electron,
-    chromeVersion: process.versions.chrome,
-    nodeVersion: process.versions.node,
-    v8Version: process.versions.v8,
-  }));
-
   ipcHandle("APP/OPEN_AT_LOGIN", async (_, openAtLogin?: boolean) => {
     if (platform.isLinux) {
       return false;

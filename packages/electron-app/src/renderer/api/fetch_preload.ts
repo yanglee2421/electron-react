@@ -87,15 +87,6 @@ export const useOpenDevTools = () => {
   });
 };
 
-export const fetchVersion = () =>
-  queryOptions({
-    queryKey: ["VERSION/GET"],
-    queryFn: async () => {
-      const data = await invoke("VERSION/GET");
-      return data;
-    },
-  });
-
 export const useMobileMode = () => {
   return useMutation({
     mutationFn: async (mobile: boolean) => {

@@ -1,6 +1,6 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "electron-vite";
-import * as url from "node:url";
+import url from "node:url";
 
 const alias = {
   "#main": url.fileURLToPath(new URL("./src/main", import.meta.url)),
