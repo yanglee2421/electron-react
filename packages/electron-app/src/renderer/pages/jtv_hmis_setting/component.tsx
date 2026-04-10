@@ -32,6 +32,7 @@ export const Component = () => {
   );
   const unitCode = useJTVHmisStore((store) => store.unitCode);
   const signature_prefix = useJTVHmisStore((store) => store.signature_prefix);
+  const isZhMode = useJTVHmisStore((store) => store.isZhMode);
 
   const form = useForm({
     defaultValues: {
@@ -42,6 +43,7 @@ export const Component = () => {
       autoUploadInterval,
       unitCode,
       signature_prefix,
+      isZhMode,
     } as JTV_HMIS,
     validators: {
       onChange: jtv_hmis.required(),

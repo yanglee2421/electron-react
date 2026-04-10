@@ -66,7 +66,6 @@ import { immer } from "zustand/middleware/immer";
 
 const storeInitializer = () => {
   return {
-    isZhMode: true,
     showFilter: false,
     pageIndex: 0,
     pageSize: 100,
@@ -442,7 +441,6 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
 };
 
 export const Component = () => {
-  const zhMode = useSessionStore((store) => store.isZhMode);
   const pageIndex = useSessionStore((store) => store.pageIndex);
   const pageSize = useSessionStore((store) => store.pageSize);
   const dateIso = useSessionStore((store) => store.date);
@@ -468,6 +466,7 @@ export const Component = () => {
   const insertBarcode = useInsertGuangzhoubeiRecord();
   const barcode = useQuery(fetchGuangzhoubeiRecord(params));
   const isAutoInput = useGuangzhoubei((store) => store.autoInput);
+  const zhMode = useGuangzhoubei((store) => store.isZhMode);
 
   const form = useForm({
     defaultValues: {
@@ -562,7 +561,7 @@ export const Component = () => {
   };
 
   const setZhMode = (value: boolean) => {
-    useSessionStore.setState((draft) => {
+    useGuangzhoubei.setState((draft) => {
       draft.isZhMode = value;
     });
   };

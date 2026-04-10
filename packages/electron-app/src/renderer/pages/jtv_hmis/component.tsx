@@ -66,7 +66,6 @@ import { immer } from "zustand/middleware/immer";
 
 const storeInitializer = () => {
   return {
-    isZhMode: true,
     showFilter: false,
     pageIndex: 0,
     pageSize: 100,
@@ -445,7 +444,6 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
 };
 
 export const Component = () => {
-  const zhMode = useSessionStore((store) => store.isZhMode);
   const pageIndex = useSessionStore((store) => store.pageIndex);
   const pageSize = useSessionStore((store) => store.pageSize);
   const dateIso = useSessionStore((store) => store.date);
@@ -466,6 +464,7 @@ export const Component = () => {
 
   const getData = useFetchAxleInfo();
   const snackbar = useNotifications();
+  const zhMode = useJTVHmisStore((store) => store.isZhMode);
   const isAutoInput = useJTVHmisStore((store) => store.autoInput);
   const autoInput = useAutoInputToVC();
   const inputRef = useAutoFocusInputRef();
@@ -565,7 +564,7 @@ export const Component = () => {
   };
 
   const setZhMode = (value: boolean) => {
-    useSessionStore.setState((draft) => {
+    useJTVHmisStore.setState((draft) => {
       draft.isZhMode = value;
     });
   };

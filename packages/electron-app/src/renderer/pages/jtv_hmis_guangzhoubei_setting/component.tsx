@@ -35,6 +35,7 @@ export const Component = () => {
   );
   const unitCode = useGuangzhoubei((store) => store.unitCode);
   const signature_prefix = useGuangzhoubei((store) => store.signature_prefix);
+  const isZhMode = useGuangzhoubei((store) => store.isZhMode);
 
   const form = useForm({
     defaultValues: {
@@ -47,6 +48,7 @@ export const Component = () => {
       autoUploadInterval,
       unitCode,
       signature_prefix,
+      isZhMode,
     } as JTV_HMIS_Guangzhoubei,
     validators: {
       onChange: jtv_hmis_guangzhoubei.required(),
