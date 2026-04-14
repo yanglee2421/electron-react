@@ -13,11 +13,7 @@
     "build": "tsdown",
     "build:node": "cmake-js compile --cmake-path \"C:\\Users\\lee\\android_sdk\\cmake\\3.22.1\\bin\\cmake.exe\""
   },
-  "dependencies": {
-    "node-addon-api": "^8.5.0"
-  },
   "devDependencies": {
-    "cmake-js": "^8.0.0",
-    "tsdown": "0.21.0-beta.2"
+    "cmake-js": "^8.0.0"
   }
 }

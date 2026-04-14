@@ -42,12 +42,7 @@
     "gyp:configure": "node-gyp configure",
     "gyp:build": "node-gyp build"
   },
-  "dependencies": {
-    "node-addon-api": "^8.5.0"
-  },
   "devDependencies": {
-    "@electron/rebuild": "^4.0.3",
-    "node-gyp": "^12.2.0",
-    "tsdown": "0.21.0-beta.2"
+    "node-gyp": "^12.2.0"
   }
 }

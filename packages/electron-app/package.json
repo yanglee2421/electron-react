@@ -1,6 +1,6 @@
 {
   "name": "@yanglee2421/electron-app",
-  "version": "0.6.11",
+  "version": "0.6.12",
   "private": true,
   "description": "WuTie ZiYun ToolKit",
   "keywords": [
@@ -49,7 +49,6 @@
     "@yanglee2421/cpp-addon": "workspace:*",
     "@yotulee/run": "npm:@jsr/yotulee__run@^0.0.15",
     "better-sqlite3": "^12.5.0",
-    "drizzle-orm": "1.0.0-beta.15-859cf75",
     "fast-xml-parser": "^5.3.3",
     "iconv-lite": "^0.7.1",
     "ini": "^6.0.0",
@@ -84,7 +83,6 @@
     "@vitejs/plugin-react": "^5.1.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "dayjs": "^1.11.19",
-    "drizzle-kit": "1.0.0-beta.15-859cf75",
     "electron": "^38.7.2",
     "electron-builder": "^26.0.12",
     "electron-vite": "^5.0.0",

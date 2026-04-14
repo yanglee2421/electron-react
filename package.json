@@ -41,10 +41,14 @@
     "db:generate": "pnpm -F electron-app db:generate"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
     "@types/node": "^25.3.0",
-    "oxfmt": "^0.40.0",
-    "oxlint": "^1.55.0",
-    "typescript": "^5.9.3",
-    "vite-plus": "^0.1.11"
+    "drizzle-kit": "1.0.0-beta.21",
+    "tsdown": "0.21.0-beta.2",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "drizzle-orm": "1.0.0-beta.21",
+    "node-addon-api": "^8.5.0"
   }
 }
