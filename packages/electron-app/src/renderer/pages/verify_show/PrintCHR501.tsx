@@ -1,6 +1,8 @@
 import { Print } from "@mui/icons-material";
 import { Button, styled } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
+import { useParams } from "react-router";
 
 const StyledCol = styled("col")({});
 const StyledP = styled("p")({
@@ -49,6 +51,13 @@ export const PrintCHR501 = () => {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+  });
+
+  const params = useParams();
+
+  const query = useQuery({
+    queryKey: ["print-chr-501", params.id],
+    queryFn: async () => {},
   });
 
   return (

@@ -5,7 +5,7 @@
     "source.fixAll.oxc": "explicit",
   },
   "editor.fontSize": 20,
-  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
   "editor.linkedEditing": true,
@@ -21,10 +21,4 @@
 
   // Language specific settings
   "js/ts.experimental.useTsgo": true,
-  "[jsonc]": {
-    "editor.defaultFormatter": "oxc.oxc-vscode",
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "oxc.oxc-vscode",
-  },
 }

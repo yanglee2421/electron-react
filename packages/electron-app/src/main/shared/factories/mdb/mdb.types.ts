@@ -1,11 +1,3 @@
-import type { IpcHandle } from "#main/lib/ipc";
-import type { Profile } from "#main/shared/factories/Profile";
-import dayjs from "dayjs";
-import os from "node:os";
-import { Piscina } from "piscina";
-import type { MDBWorkerData } from "./mdb.worker";
-import workerPath from "./mdb.worker?modulePath";
-
 export interface Detecotor {
   id: number;
   nwheel: number;
@@ -179,22 +171,6 @@ export interface Corporation {
   prodate: string | null;
 }
 
-interface GetDetectionForJTVParams {
-  zh: string;
-  startDate: string;
-  endDate: string;
-  CZZZDW: string;
-  CZZZRQ: string;
-}
-
-interface GetDataForCHR502Params {
-  ids: string[];
-}
-
-type QuartorWithData = Quartor & {
-  with: QuartorData[];
-};
-
 export interface QuartorYearlyData {
   szIDs: string;
   nBoard: number;
@@ -280,208 +256,18 @@ export interface QuartorYearlyData {
   tmNow: string; // 若需直接用日期对象，可改为 Date，如：tmNow: Date;
 }
 
-export type MDBPayload = Omit<MDBWorkerData, "databasePath">;
-
-export class MDBDB {
-  private profile: Profile;
-  private piscina: Piscina;
-
-  constructor(profile: Profile) {
-    this.profile = profile;
-    this.piscina = new Piscina({
-      filename: workerPath,
-      minThreads: 1,
-      maxThreads: os.cpus().length,
-    });
-  }
-
-  getDataByWorker<TRow>(payload: MDBWorkerData): Promise<{
-    total: number;
-    rows: TRow[];
-  }> {
-    // return new Promise<{
-    //   total: number;
-    //   rows: TRow[];
-    // }>((resolve, reject) => {
-    //   const worker = createMDBWorker({
-    //     workerData: payload,
-    //   });
-    //   worker.once("message", (data) => {
-    //     resolve(data);
-    //     void worker.terminate();
-    //   });
-    //   worker.once("error", (error) => {
-    //     reject(error);
-    //     void worker.terminate();
-    //   });
-    // });
-
-    return this.piscina.run(payload);
-  }
-  async getDataForCHR502({ ids }: GetDataForCHR502Params): Promise<{
-    previous: Quartor | null;
-    rows: QuartorWithData[];
-  }> {
-    const databasePath = await this.profile.getRootDBPath();
-
-    return this.piscina.run({ ids, databasePath }, { name: "handleCHR502" });
-  }
-
-  async getDataFromAppDB<TRow>(data: MDBPayload) {
-    const databasePath = this.profile.getAppDBPath();
-
-    return this.getDataByWorker<TRow>({
-      ...data,
-      databasePath,
-    });
-  }
-  async getDataFromRootDB<TRow>(data: MDBPayload) {
-    const databasePath = await this.profile.getRootDBPath();
-
-    return this.getDataByWorker<TRow>({
-      ...data,
-      databasePath,
-    });
-  }
-  async getDetectionByZH(params: {
-    zh: string;
-    startDate: string;
-    endDate: string;
-  }) {
-    const startDate = dayjs(params.startDate).toISOString();
-    const endDate = dayjs(params.endDate).toISOString();
-
-    const {
-      rows: [detection],
-    } = await this.getDataFromRootDB<Detection>({
-      tableName: "detections",
-      filters: [
-        {
-          type: "equal",
-          field: "szIDsWheel",
-          value: params.zh,
-        },
-        {
-          type: "date",
-          field: "tmnow",
-          startAt: startDate,
-          endAt: endDate,
-        },
-      ],
-    });
-
-    if (!detection) {
-      throw new Error(`未找到轴号[${params.zh}]的detections记录`);
-    }
-
-    return detection;
-  }
-  async getDetectionDatasByOPID(opid: string) {
-    const detectionDatas = await this.getDataFromRootDB<DetectionData>({
-      tableName: "detections_data",
-      filters: [
-        {
-          type: "equal",
-          field: "opid",
-          value: opid,
-        },
-      ],
-    });
-
-    return detectionDatas.rows;
-  }
-  async getDetectionForJTV(params: GetDetectionForJTVParams) {
-    const startDate = dayjs(params.startDate).toISOString();
-    const endDate = dayjs(params.endDate).toISOString();
-
-    const {
-      rows: [detection],
-    } = await this.getDataFromRootDB<Detection>({
-      tableName: "detections",
-      filters: [
-        {
-          type: "equal",
-          field: "szIDsWheel",
-          value: params.zh,
-        },
-        {
-          type: "equal",
-          field: "szIDsMake",
-          value: params.CZZZDW,
-        },
-        {
-          type: "equal",
-          field: "szTMMake",
-          value: dayjs(params.CZZZRQ).format("YYYYMM"),
-        },
-        {
-          type: "date",
-          field: "tmnow",
-          startAt: startDate,
-          endAt: endDate,
-        },
-      ],
-    });
-
-    if (!detection) {
-      throw new Error(`未找到轴号[${params.zh}]的detections记录`);
-    }
-
-    return detection;
-  }
-  async getYearlyData(id: string) {
-    const query = await this.getDataFromRootDB<QuartorYearlyData>({
-      tableName: "Quartor",
-      filters: [{ type: "equal", field: "szIDs", value: id }],
-    });
-
-    return query;
-  }
-  async getCorporation() {
-    const {
-      rows: [corporation],
-    } = await this.getDataFromAppDB<Corporation>({
-      tableName: "corporation",
-    });
-
-    if (!corporation) {
-      throw new Error("未找到公司信息");
-    }
-
-    return corporation;
-  }
-  async getDetectors(szwheel: string) {
-    const data = await this.getDataFromAppDB<Detecotor>({
-      tableName: "detectors",
-      filters: [{ type: "equal", field: "szwheel", value: szwheel }],
-    });
-
-    return data.rows;
-  }
-
-  dispose() {
-    void this.piscina.destroy();
-  }
+export interface FilterValue {
+  key: unknown;
+  value: unknown;
 }
 
-export interface IpcContract {
-  "MDB/MDB_ROOT_GET": {
-    args: [MDBPayload];
-    return: { total: number; rows: unknown[] };
-  };
-  "MDB/MDB_APP_GET": {
-    args: [MDBPayload];
-    return: { total: number; rows: unknown[] };
-  };
+export interface FilterInValues {
+  key: unknown;
+  values: unknown[];
 }
 
-export const bindIpcHandlers = (mdb: MDBDB, ipcHandle: IpcHandle) => {
-  ipcHandle("MDB/MDB_ROOT_GET", async (_, data: MDBPayload) => {
-    const result = await mdb.getDataFromRootDB(data);
-    return result;
-  });
-  ipcHandle("MDB/MDB_APP_GET", async (_, data: MDBPayload) => {
-    const result = await mdb.getDataFromAppDB(data);
-    return result;
-  });
-};
+export interface FilterDateValue {
+  key: unknown;
+  startAt: Date;
+  endAt: Date;
+}

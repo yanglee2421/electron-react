@@ -1,5 +1,5 @@
 import type * as win from "#main/modules/cmd";
-import type { MDBPayload } from "#main/modules/mdb";
+import type * as mdb from "#main/modules/mdb";
 import type * as printer from "#main/modules/Printer";
 import type * as guangzhoubei from "#main/shared/factories/hmis/guangzhoubei";
 import type * as guangzhoujibaoduan from "#main/shared/factories/hmis/guangzhoujibaoduan";
@@ -9,13 +9,13 @@ import type * as kh from "#main/shared/factories/hmis/kh_hmis";
 import type * as xuzhoubei from "#main/shared/factories/hmis/xuzhoubei";
 import type * as kv from "#main/shared/factories/KV";
 import type * as logger from "#main/shared/factories/Logger";
+import type { MDBIPC } from "#main/shared/factories/mdb";
 import { calculateErrorMessage } from "#shared/functions/error";
 import { promiseTry } from "@yotulee/run";
 import { ipcMain } from "electron";
 
 export interface IpcContract
-  extends
-    kv.IpcContract,
+  extends kv.IpcContract,
     hxzy.Ipc,
     kh.Ipc,
     jtv.Ipc,
@@ -24,7 +24,9 @@ export interface IpcContract
     xuzhoubei.Ipc,
     win.Ipc,
     logger.IPC,
-    printer.IPC {
+    printer.IPC,
+    mdb.IpcContract,
+    MDBIPC {
   "APP/OPEN_AT_LOGIN": {
     args: [boolean?];
     return: boolean;
@@ -64,14 +66,6 @@ export interface IpcContract
   "PLC/serialport_list": {
     args: [];
     return: Array<{ path: string }>;
-  };
-  "MDB/MDB_ROOT_GET": {
-    args: [MDBPayload];
-    return: { total: number; rows: unknown[] };
-  };
-  "MDB/MDB_APP_GET": {
-    args: [MDBPayload];
-    return: { total: number; rows: unknown[] };
   };
   "XML/XML": {
     args: [string];
