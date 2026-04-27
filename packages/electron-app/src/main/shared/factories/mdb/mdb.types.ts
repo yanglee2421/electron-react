@@ -271,3 +271,8 @@ export interface FilterDateValue {
   startAt: Date;
   endAt: Date;
 }
+
+export type TableQueryResult<TRow> = {
+  rows: TRow[];
+  count: number;
+};

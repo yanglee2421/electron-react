@@ -1,7 +1,13 @@
 import dayjs from "dayjs";
+import type { Value } from "mdb-reader";
 import MDBReader from "mdb-reader";
 import fs from "node:fs";
-import type { FilterDateValue, FilterInValues, FilterValue } from "./mdb.types";
+import type {
+  FilterDateValue,
+  FilterInValues,
+  FilterValue,
+  TableQueryResult,
+} from "./mdb.types";
 
 const fixMDBDate = (value: Date) => {
   return dayjs(value).add(value.getTimezoneOffset(), "minute").toDate();
@@ -26,7 +32,13 @@ interface GetDataFromMDBOptions {
   dates: FilterDateValue[];
 }
 
-const getDataFromMDB = async (options: GetDataFromMDBOptions) => {
+interface Row {
+  [key: string]: Value;
+}
+
+const getDataFromMDB = async (
+  options: GetDataFromMDBOptions,
+): Promise<TableQueryResult<Row>> => {
   const { databasePath, tableName, offset, limit, equals, likes, ins, dates } =
     options;
   const buffer = await fs.promises.readFile(databasePath);
@@ -84,7 +96,7 @@ const getDataFromMDB = async (options: GetDataFromMDBOptions) => {
     return isLikeMatch && isEqualMatch && isInMatch && isDateMatch;
   });
   const filteredCount = filteredRows.length;
-  const pagedData = filteredRows.slice(offset, limit);
+  const pagedData = filteredRows.slice(offset, offset + limit);
   const resultRows = pagedData.map((row) => {
     return Object.fromEntries(
       Object.entries(row).map(([key, value]) => {
