@@ -3,9 +3,17 @@ import { Piscina } from "piscina";
 import { QueryPromise } from "../query-promise/query-promise";
 import type {
   Corporation,
+  Detection,
+  DetectionData,
   FilterDateValue,
   FilterInValues,
   FilterValue,
+  Quartor,
+  QuartorData,
+  QuartorYearlyData,
+  TableQueryResult,
+  Verify,
+  VerifyData,
 } from "./mdb.types";
 import workerPath from "./mdb.worker?modulePath";
 
@@ -15,7 +23,10 @@ interface TableQueryBuilderOptions {
   tableName: string;
 }
 
-class TableQueryBuilder<T> extends QueryPromise<T> {
+class TableQueryBuilder<
+  TRow,
+  TResult = TableQueryResult<TRow>,
+> extends QueryPromise<TResult> {
   private piscina: Piscina;
   private databasePath: string;
   private tableName: string;
@@ -46,28 +57,28 @@ class TableQueryBuilder<T> extends QueryPromise<T> {
 
     return this;
   }
-  like<TKey extends keyof T>(key: TKey, value: T[TKey]) {
+  like<TKey extends keyof TRow>(key: TKey, value: TRow[TKey]) {
     this.likes.push({ key, value });
 
     return this;
   }
-  equal<TKey extends keyof T>(key: TKey, value: T[TKey]) {
+  equal<TKey extends keyof TRow>(key: TKey, value: TRow[TKey]) {
     this.equals.push({ key, value });
 
     return this;
   }
-  in<TKey extends keyof T>(key: TKey, values: T[TKey][]) {
+  in<TKey extends keyof TRow>(key: TKey, values: TRow[TKey][]) {
     this.ins.push({ key, values });
 
     return this;
   }
-  date<TKey extends keyof T>(key: TKey, startAt: Date, endAt: Date) {
+  date<TKey extends keyof TRow>(key: TKey, startAt: Date, endAt: Date) {
     this.dates.push({ key, startAt, endAt });
 
     return this;
   }
 
-  execute(): Promise<T> {
+  execute(): Promise<TResult> {
     return this.piscina.run({
       databasePath: this.databasePath,
       tableName: this.tableName,
@@ -90,8 +101,8 @@ class Database {
     this.databasePath = databasePath;
   }
 
-  private table(tableName: string) {
-    return new TableQueryBuilder({
+  private table<T>(tableName: string) {
+    return new TableQueryBuilder<T>({
       piscina: this.piscina,
       databasePath: this.databasePath,
       tableName,
@@ -113,19 +124,19 @@ class Database {
    * @description 现车作业
    */
   detections() {
-    return this.table("detections");
+    return this.table<Detection>("detections");
   }
   /**
    * @description 现车作业检出的伤
    */
   detections_data() {
-    return this.table("detections_data");
+    return this.table<DetectionData>("detections_data");
   }
   /**
    * @description 年度校验
    */
   Quartor() {
-    return this.table("Quartor");
+    return this.table<QuartorYearlyData>("Quartor");
   }
   /**
    * @description 年度校验的参数
@@ -137,25 +148,25 @@ class Database {
    * @description 季度校验
    */
   quartors() {
-    return this.table("quartors");
+    return this.table<Quartor>("quartors");
   }
   /**
    * @description 季度校验检出的伤
    */
   quartors_data() {
-    return this.table("quartors_data");
+    return this.table<QuartorData>("quartors_data");
   }
   /**
    * @description 日常校验
    */
   verifyes() {
-    return this.table("verifyes");
+    return this.table<Verify>("verifyes");
   }
   /**
    * @description 日常校验检出的伤
    */
   verifyes_data() {
-    return this.table("verifyes_data");
+    return this.table<VerifyData>("verifyes_data");
   }
 }
 
