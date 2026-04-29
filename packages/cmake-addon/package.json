@@ -10,8 +10,9 @@
     "require": "./dist/main.cjs"
   },
   "scripts": {
+    "dev": "node ./src/main.ts",
     "build": "tsdown",
-    "build:node": "cmake-js compile --cmake-path \"C:\\Users\\lee\\android_sdk\\cmake\\3.22.1\\bin\\cmake.exe\""
+    "build:node": "cmake-js compile --cmake-path \"C:\\Users\\yangl\\android_sdk\\cmake\\3.22.1\\bin\\cmake.exe\""
   },
   "devDependencies": {
     "cmake-js": "^8.0.0"

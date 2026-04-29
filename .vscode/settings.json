@@ -2,7 +2,7 @@
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit",
     // "source.fixAll": "explicit",
-    "source.fixAll.oxc": "explicit",
+    "source.fixAll.oxc": "explicit"
   },
   "editor.fontSize": 20,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -21,4 +21,7 @@
 
   // Language specific settings
   "js/ts.experimental.useTsgo": true,
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  }
 }
