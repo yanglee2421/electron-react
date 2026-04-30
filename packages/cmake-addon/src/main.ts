@@ -39,14 +39,3 @@ export const WindowsMessages = {
   WM_LBUTTONDOWN: 0x0201,
   WM_LBUTTONUP: 0x0202,
 } as const;
-
-console.log(
-  cmakeAddon,
-  cmakeAddon.enumChildWindows(
-    cmakeAddon.findWindow(null, "Clash Verge"),
-    (hwnd) => {
-      console.log("Child window:", hwnd);
-      return true;
-    },
-  ),
-);
