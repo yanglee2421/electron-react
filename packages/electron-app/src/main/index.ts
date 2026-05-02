@@ -11,8 +11,8 @@ import * as xuzhoubei from "#main/shared/factories/hmis/xuzhoubei";
 import * as kv from "#main/shared/factories/KV";
 import * as log from "#main/shared/factories/Logger";
 import { Profile } from "#main/shared/factories/Profile";
-import type { ThemeMode } from "#shared/instances/schema";
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
+import { asValue } from "awilix";
 import {
   app,
   BrowserWindow,
@@ -22,33 +22,175 @@ import {
   net,
   shell,
 } from "electron";
-import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
-import * as cmd from "./modules/cmd";
+import {
+  defer,
+  filter,
+  from,
+  fromEventPattern,
+  map,
+  of,
+  partition,
+  switchMap,
+  take,
+  tap,
+} from "rxjs";
+import { container } from "./features";
+import * as cmdIPC from "./features/cmd/ipc";
+import * as dbIPC from "./features/db/ipc";
+import * as kvIPC from "./features/kv/ipc";
+import * as mdbIPC from "./features/mdb/ipc";
+import * as plcIPC from "./features/plc/ipc";
+import * as profileIPC from "./features/profile/ipc";
 import * as md5 from "./modules/image";
-import * as plc from "./modules/plc";
 import * as xml from "./modules/xml";
 
-const createWindow = async (alwaysOnTop: boolean) => {
-  const win = new BrowserWindow({
-    webPreferences: {
-      preload: path.join(__dirname, "../preload/index.mjs"),
-      nodeIntegration: false,
-      sandbox: false,
-      webSecurity: false,
-    },
+if (is.dev) {
+  const devUserDataPath = path.resolve(
+    app.getPath("appData"),
+    `./${app.getName()}-dev`,
+  );
+  app.setPath("userData", devUserDataPath);
+}
 
-    autoHideMenuBar: false,
-    alwaysOnTop,
+// Define rxjs observable
+const instanceLock$ = defer(() => of(app.requestSingleInstanceLock()));
+const whenReady$ = from(app.whenReady());
+const willQuit$ = fromEventPattern(
+  (handler) => app.on("will-quit", handler),
+  (handler) => app.off("will-quit", handler),
+);
+const activate$ = fromEventPattern(
+  (handler) => app.on("activate", handler),
+  (handler) => app.off("activate", handler),
+);
+const secondInstance$ = fromEventPattern(
+  (handler) => app.on("second-instance", handler),
+  (handler) => app.off("second-instance", handler),
+);
+const windowAllClosed$ = fromEventPattern(
+  (handler) => app.on("window-all-closed", handler),
+  (handler) => app.off("window-all-closed", handler),
+);
+const browserWindowCreated$ = fromEventPattern<[Electron.Event, BrowserWindow]>(
+  (handler) => app.on("browser-window-created", handler),
+  (handler) => app.off("browser-window-created", handler),
+);
+const [primaryInstance$, duplicateInstance$] = partition(
+  instanceLock$,
+  (hasLock) => hasLock,
+);
 
-    width: 1024,
-    height: 768,
-    minWidth: 380,
-    show: false,
+duplicateInstance$.subscribe(() => {
+  if (is.dev) {
+    console.warn(
+      "Another instance of the app is already running. This instance will be closed.",
+    );
+  }
+
+  app.quit();
+});
+
+primaryInstance$
+  .pipe(
+    switchMap(() => whenReady$),
+    map(() => {
+      // =============
+      // Dependency injection and module initialization
+      // =============
+
+      const dbPath = path.resolve(app.getPath("userData"), "db.db");
+
+      container.register({ dbPath: asValue(dbPath) });
+
+      const { cmd, db, kv, mdb, plc, profile } = container.cradle;
+
+      const cmdUnIPC = cmdIPC.registerIPCHandlers(cmd);
+      const dbUnIPC = dbIPC.registerIPCHandlers(db);
+      const kvUnIPC = kvIPC.registerIPCHandlers(kv);
+      const mdbUnIPC = mdbIPC.registerIPCHandlers(mdb);
+      const plcUnIPC = plcIPC.bindIpcHandlers(plc);
+      const profileUnIPC = profileIPC.registerIPCHandlers(profile);
+
+      return [
+        () => {
+          db.dispose();
+        },
+        cmdUnIPC,
+        dbUnIPC,
+        kvUnIPC,
+        mdbUnIPC,
+        plcUnIPC,
+        profileUnIPC,
+      ];
+    }),
+    tap(() => {
+      const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+      const migrationsFolder = path.resolve(__dirname, "../../drizzle");
+      const { db, profile } = container.cradle;
+
+      db.migrate(migrationsFolder);
+      profile.state$.subscribe((state) => {
+        nativeTheme.themeSource = state.mode;
+
+        BrowserWindow.getAllWindows().forEach((win) => {
+          win.setAlwaysOnTop(state.alwaysOnTop);
+        });
+      });
+    }),
+  )
+  .subscribe((cleanups) => {
+    Menu.setApplicationMenu(null);
+
+    if (platform.isWindows) {
+      // Set app user model id for windows
+      electronApp.setAppUserModelId("com.electron");
+    }
+
+    void bootstrap();
+    void createWindow();
+
+    willQuit$
+      .pipe(
+        filter(() => !platform.isMacOS),
+        take(1),
+      )
+      .subscribe(() => {
+        cleanups.forEach((cleanup) => cleanup());
+      });
   });
 
-  win.menuBarVisible = false;
+activate$
+  .pipe(filter(() => BrowserWindow.getAllWindows().length === 0))
+  .subscribe(() => {
+    void createWindow();
+  });
+
+secondInstance$.subscribe(() => {
+  const win = BrowserWindow.getAllWindows().at(0);
+  if (!win) return;
+
+  if (win.isMinimized()) {
+    win.restore();
+  }
+
+  win.focus();
+});
+
+windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
+  app.quit();
+});
+
+browserWindowCreated$.subscribe((args) => {
+  const [, win] = args;
+
+  optimizer.watchWindowShortcuts(win);
+
+  win.webContents.setWindowOpenHandler((details) => {
+    void shell.openExternal(details.url);
+    return { action: "deny" };
+  });
 
   win.on("focus", () => {
     win.webContents.send("windowFocus");
@@ -68,70 +210,46 @@ const createWindow = async (alwaysOnTop: boolean) => {
   win.webContents.on("did-finish-load", () => {
     win.webContents.send("windowShow");
   });
-  win.webContents.setWindowOpenHandler((details) => {
-    void shell.openExternal(details.url);
-    return { action: "deny" };
+});
+
+const createWindow = async () => {
+  const { profile } = container.cradle;
+  const alwaysOnTop = profile.state.alwaysOnTop;
+
+  const win = new BrowserWindow({
+    webPreferences: {
+      preload: path.join(__dirname, "../preload/index.mjs"),
+      nodeIntegration: false,
+      sandbox: false,
+      webSecurity: false,
+    },
+
+    autoHideMenuBar: false,
+    alwaysOnTop,
+
+    width: 1024,
+    height: 768,
+    minWidth: 380,
+    show: false,
   });
+
+  win.menuBarVisible = false;
 
   // Adding ready-to-show listener must be before loadURL or loadFile
-  win.once("ready-to-show", () => win.show());
+  const readyToShow$ = fromEventPattern(
+    (handler) => win.once("ready-to-show", handler),
+    (handler) => win.off("ready-to-show", handler),
+  );
 
-  if (!is.dev) {
-    await win.loadFile(path.join(__dirname, "../renderer/index.html"));
-    return;
-  }
+  readyToShow$.pipe(take(1)).subscribe(() => {
+    win.show();
+  });
 
-  const ELECTRON_RENDERER_URL = process.env["ELECTRON_RENDERER_URL"];
-
-  if (!ELECTRON_RENDERER_URL) {
-    await dialog.showMessageBox({
-      title: "错误",
-      message: "环境变量ELECTRON_RENDERER_URL不是一个有效的URL",
-      type: "error",
-    });
-
-    return;
-  }
+  const ELECTRON_RENDERER_URL = is.dev
+    ? process.env["ELECTRON_RENDERER_URL"]!
+    : path.join(__dirname, "../renderer/index.html");
 
   await win.loadURL(ELECTRON_RENDERER_URL);
-};
-
-const bindAppEventListeners = (profile: Profile) => {
-  // Quit when all windows are closed, except on macOS. There, it's common
-  // for applications and their menu bar to stay active until the user quits
-  // explicitly with Cmd + Q.
-  app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") {
-      app.quit();
-    }
-  });
-
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  app.on("activate", async () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      void createWindow(profile.getState().alwaysOnTop);
-    }
-  });
-
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on("browser-window-created", (_, window) => {
-    optimizer.watchWindowShortcuts(window);
-  });
-
-  app.on("second-instance", () => {
-    const win = BrowserWindow.getAllWindows().at(0);
-    if (!win) return;
-
-    // Someone tried to run a second instance, we should focus our window.
-    if (win.isMinimized()) {
-      win.restore();
-    }
-
-    win.focus();
-  });
 };
 
 const bindIpcHandles = (ipcHandle: IpcHandle) => {
@@ -209,40 +327,6 @@ const hydrateModules = async (...modules: HydratableModule[]) => {
 };
 
 const bootstrap = async () => {
-  if (import.meta.env.DEV) {
-    app.setPath(
-      "userData",
-      path.resolve(app.getPath("appData"), `./${app.getName()}-dev`),
-    );
-  }
-
-  /**
-   * @description true: No other instances exist
-   * @description false: Other instances exist
-   */
-  const gotTheLock = app.requestSingleInstanceLock();
-  if (!gotTheLock) {
-    if (import.meta.env.DEV) {
-      console.warn("Other instances exist");
-    }
-
-    app.quit();
-    return;
-  }
-
-  /**
-   * Performace optimization
-   * @link https://www.electronjs.org/docs/latest/tutorial/performance#8-call-menusetapplicationmenunull-when-you-do-not-need-a-default-menu
-   */
-  Menu.setApplicationMenu(null);
-
-  if (platform.isWindows) {
-    // Set app user model id for windows
-    electronApp.setAppUserModelId("com.electron");
-  }
-
-  await app.whenReady();
-
   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
   const databasePath = path.resolve(app.getPath("userData"), "db.db");
   const sqliteDB = createSQLiteDB({
@@ -288,7 +372,6 @@ const bootstrap = async () => {
     jtvHmis,
   );
 
-  nativeTheme.themeSource = profile.getState().mode;
   const ipch = new IPCHandle(logger);
   const ipcHandle = ipch.handle.bind(ipch);
 
@@ -298,61 +381,16 @@ const bootstrap = async () => {
     });
   });
 
-  ipcHandle("DB/EXPORT", async () => {
-    const result = await dialog.showSaveDialog({
-      title: "导出数据库",
-      defaultPath: `${app.getPath("desktop")}/db-${Date.now()}.db`,
-      filters: [
-        { name: "数据库文件", extensions: ["db"] },
-        { name: "所有文件", extensions: ["*"] },
-      ],
-    });
-
-    const outputPath = result.filePath;
-
-    if (!outputPath) return;
-
-    await fs.promises.copyFile(databasePath, result.filePath);
-  });
-
-  bindAppEventListeners(profile);
   bindIpcHandles(ipcHandle);
 
   mdb.bindIpcHandlers(mdbDB, ipcHandle);
-  cmd.bindIpcHandlers(ipcHandle);
-  plc.bindIpcHandlers(ipcHandle);
   md5.bindIpcHandlers(imageModule, ipcHandle);
   xml.bindIpcHandlers(ipcHandle);
   log.bindIPC(logger, ipcHandle);
-
-  kv.bindIpc(kvInstance, ipcHandle);
   kh.bindIpcHandlers(khHmis, ipcHandle);
   jtv.bindIpcHandlers(jtvHmis, ipcHandle);
   hxzy.bindIPCHandlers(hxzyHmis, ipcHandle);
   xuzhoubei.bindIpcHandlers(xuzhoubeiHmis, ipcHandle);
   guangzhoubei.bindIpcHandlers(guangzhoubeiHmis, ipcHandle);
   guangzhouJibaoduan.bindIpc(jtv_hmis_guangzhoujibaoduan, ipcHandle);
-
-  profile.on((state, previous) => {
-    diffMode(previous.mode, state.mode);
-    diffAlwaysOnTop(previous.alwaysOnTop, state.alwaysOnTop);
-  });
-
-  await createWindow(profile.getState().alwaysOnTop);
-};
-
-void bootstrap();
-
-const diffMode = (prev: ThemeMode, next: ThemeMode) => {
-  if (Object.is(prev, next)) return;
-
-  nativeTheme.themeSource = next;
-};
-
-const diffAlwaysOnTop = (prev: boolean, next: boolean) => {
-  if (Object.is(prev, next)) return;
-
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.setAlwaysOnTop(next);
-  });
 };

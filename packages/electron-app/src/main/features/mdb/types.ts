@@ -276,3 +276,7 @@ export type TableQueryResult<TRow> = {
   rows: TRow[];
   count: number;
 };
+
+export type DatabaseType = "app" | "root";
+
+export interface IPCContract {}

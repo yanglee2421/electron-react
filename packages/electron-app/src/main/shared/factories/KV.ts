@@ -1,6 +1,5 @@
 import { type SQLiteDBType } from "#main/db";
 import * as schema from "#main/db/schema";
-import type { IpcHandle } from "#main/lib/ipc";
 import * as sql from "drizzle-orm";
 
 export class KV {
@@ -52,30 +51,3 @@ export class KV {
     this.emit(key);
   }
 }
-
-export interface IpcContract {
-  "kv/get": {
-    args: [string];
-    return: string | null;
-  };
-  "kv/set": {
-    args: [string, string];
-    return: void;
-  };
-  "kv/remove": {
-    args: [string];
-    return: void;
-  };
-}
-
-export const bindIpc = (kv: KV, ipcHandle: IpcHandle) => {
-  ipcHandle("kv/get", async (_, key: string) => {
-    return await kv.getItem(key);
-  });
-  ipcHandle("kv/set", async (_, key: string, value: string) => {
-    await kv.setItem(key, value);
-  });
-  ipcHandle("kv/remove", async (_, key: string) => {
-    await kv.removeItem(key);
-  });
-};

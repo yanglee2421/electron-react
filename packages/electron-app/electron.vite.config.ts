@@ -1,6 +1,7 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "electron-vite";
 import url from "node:url";
+import type { Plugin } from "vite";
 
 const alias = {
   "#main": url.fileURLToPath(new URL("./src/main", import.meta.url)),
@@ -15,27 +16,19 @@ const ReactCompilerConfig = {
   target: "19",
 };
 
-/**
- * @description
- * Vite plugin to remove the React DevTools script tag in production build.
- *
- *
- * This is a workaround for the issue that React DevTools script tag is not removed in production build.
- *
- *
- * Remove all empty lines in the HTML file.
- */
-const htmlPlugin = (isBuild: boolean) => ({
-  name: "html-transform",
-  transformIndexHtml: (html: string) => {
-    if (!isBuild) {
-      return html;
-    }
-    return html
-      .replace(/<script src="http:\/\/localhost:8097"><\/script>/, "")
-      .replace(/^\s*[\r\n]/gm, "");
-  },
-});
+const reactDevtoolsPlugin = (): Plugin => {
+  return {
+    name: "vite-plugin-react-devtools-injector",
+    transformIndexHtml: () => [
+      {
+        tag: "script",
+        attrs: { src: "http://localhost:8097" },
+        injectTo: "head-prepend",
+      },
+    ],
+    apply: "serve",
+  };
+};
 
 export default defineConfig((config) => ({
   main: {
@@ -55,7 +48,7 @@ export default defineConfig((config) => ({
           plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
         },
       }),
-      htmlPlugin(config.command === "build"),
+      reactDevtoolsPlugin(),
     ],
     resolve: { alias },
     build: {},

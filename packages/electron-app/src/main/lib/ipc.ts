@@ -1,32 +1,24 @@
-import type * as win from "#main/modules/cmd";
 import type * as mdb from "#main/modules/mdb";
-import type * as printer from "#main/modules/Printer";
 import type * as guangzhoubei from "#main/shared/factories/hmis/guangzhoubei";
 import type * as guangzhoujibaoduan from "#main/shared/factories/hmis/guangzhoujibaoduan";
 import type * as hxzy from "#main/shared/factories/hmis/hxzy";
 import type * as jtv from "#main/shared/factories/hmis/jtv";
 import type * as kh from "#main/shared/factories/hmis/kh_hmis";
 import type * as xuzhoubei from "#main/shared/factories/hmis/xuzhoubei";
-import type * as kv from "#main/shared/factories/KV";
 import type * as logger from "#main/shared/factories/Logger";
-import type { MDBIPC } from "#main/shared/factories/mdb";
 import { calculateErrorMessage } from "#shared/functions/error";
 import { promiseTry } from "@yotulee/run";
 import { ipcMain } from "electron";
 
 export interface IpcContract
-  extends kv.IpcContract,
-    hxzy.Ipc,
+  extends hxzy.Ipc,
     kh.Ipc,
     jtv.Ipc,
     guangzhoubei.Ipc,
     guangzhoujibaoduan.IpcContract,
     xuzhoubei.Ipc,
-    win.Ipc,
     logger.IPC,
-    printer.IPC,
-    mdb.IpcContract,
-    MDBIPC {
+    mdb.IpcContract {
   "APP/OPEN_AT_LOGIN": {
     args: [boolean?];
     return: boolean;
@@ -54,18 +46,6 @@ export interface IpcContract
   "APP/SHOW_OPEN_DIALOG": {
     args: [Electron.OpenDialogOptions];
     return: string[];
-  };
-  "PLC/read_test": {
-    args: [string];
-    return: PLCReadResult;
-  };
-  "PLC/write_test": {
-    args: [PLCWritePayload];
-    return: void;
-  };
-  "PLC/serialport_list": {
-    args: [];
-    return: Array<{ path: string }>;
   };
   "XML/XML": {
     args: [string];
@@ -105,30 +85,6 @@ export interface InsertRecordParams {
   ZH: string;
   CZZZDW: string;
   CZZZRQ: string;
-}
-
-export interface PLCReadResult {
-  D20: number;
-  D21: number;
-  D22: number;
-  D23: number;
-  D300: number;
-  D301: number;
-  D302: number;
-  D303: number;
-  D308: number;
-  D309: number;
-}
-
-export interface PLCWritePayload {
-  path: string;
-
-  D300: number;
-  D301: number;
-  D302: number;
-  D303: number;
-  D308: number;
-  D309: number;
 }
 
 export interface XMLJSONData {

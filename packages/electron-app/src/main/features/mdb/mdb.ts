@@ -1,8 +1,15 @@
+import iconv from "iconv-lite";
+import ini from "ini";
+import fs from "node:fs";
 import os from "node:os";
+import path from "node:path";
 import { Piscina } from "piscina";
+import type { Profile } from "../profile";
 import { QueryPromise } from "../query-promise/query-promise";
+import type { AppCradle } from "../types";
 import type {
   Corporation,
+  DatabaseType,
   Detection,
   DetectionData,
   FilterDateValue,
@@ -14,12 +21,43 @@ import type {
   TableQueryResult,
   Verify,
   VerifyData,
-} from "./mdb.types";
-import workerPath from "./mdb.worker?modulePath";
+} from "./types";
+import workerPath from "./worker?modulePath";
+
+const resolveAppDBPath = (appPath: string) => {
+  return path.resolve(appPath, "Data", "local.mdb");
+};
+
+const resolveRootDBPath = async (appPath: string, encoding: string) => {
+  const iniPath = path.resolve(appPath, "usprofile.ini");
+  const iniBuffer = await fs.promises.readFile(iniPath);
+  const iniText = iconv.decode(iniBuffer, encoding);
+  const userProfile = ini.parse(iniText);
+  const rootPath = userProfile.FileSystem.Root as string;
+
+  return rootPath;
+};
+
+const resolveDBPath = async (
+  appPath: string,
+  encoding: string,
+  type: DatabaseType,
+) => {
+  switch (type) {
+    case "app":
+      return resolveAppDBPath(appPath);
+    case "root":
+      const rootPath = await resolveRootDBPath(appPath, encoding);
+      return path.resolve(rootPath, "local.mdb");
+    default:
+      throw new Error(`Unsupported database type: ${type}`);
+  }
+};
 
 interface TableQueryBuilderOptions {
   piscina: Piscina;
-  databasePath: string;
+  profile: Profile;
+  databaseType: DatabaseType;
   tableName: string;
 }
 
@@ -28,7 +66,8 @@ class TableQueryBuilder<
   TResult = TableQueryResult<TRow>,
 > extends QueryPromise<TResult> {
   private piscina: Piscina;
-  private databasePath: string;
+  private profile: Profile;
+  private databaseType: DatabaseType;
   private tableName: string;
   private offsetValue: number = 0;
   private limitValue: number = 20;
@@ -40,10 +79,11 @@ class TableQueryBuilder<
   constructor(options: TableQueryBuilderOptions) {
     super();
 
-    const { piscina, databasePath, tableName } = options;
+    const { piscina, profile, databaseType, tableName } = options;
 
     this.piscina = piscina;
-    this.databasePath = databasePath;
+    this.profile = profile;
+    this.databaseType = databaseType;
     this.tableName = tableName;
   }
 
@@ -78,9 +118,15 @@ class TableQueryBuilder<
     return this;
   }
 
-  execute(): Promise<TResult> {
+  async execute(): Promise<TResult> {
+    const databasePath = await resolveDBPath(
+      this.profile.state.appPath,
+      this.profile.state.encoding,
+      this.databaseType,
+    );
+
     return this.piscina.run({
-      databasePath: this.databasePath,
+      databasePath,
       tableName: this.tableName,
       offset: this.offsetValue,
       limit: this.limitValue,
@@ -94,17 +140,20 @@ class TableQueryBuilder<
 
 class Database {
   private piscina: Piscina;
-  private databasePath: string;
+  private profile: Profile;
+  private databaseType: DatabaseType;
 
-  constructor(piscina: Piscina, databasePath: string) {
+  constructor(piscina: Piscina, profile: Profile, databaseType: DatabaseType) {
     this.piscina = piscina;
-    this.databasePath = databasePath;
+    this.profile = profile;
+    this.databaseType = databaseType;
   }
 
   private table<T>(tableName: string) {
     return new TableQueryBuilder<T>({
       piscina: this.piscina,
-      databasePath: this.databasePath,
+      profile: this.profile,
+      databaseType: this.databaseType,
       tableName,
     });
   }
@@ -114,7 +163,11 @@ class Database {
    */
   async corporation(): Promise<Corporation> {
     const [result]: [Corporation] = await this.piscina.run({
-      databasePath: this.databasePath,
+      databasePath: path.resolve(
+        this.profile.state.appPath,
+        "Data",
+        "local.mdb",
+      ),
       tableName: "corporation",
     });
 
@@ -170,49 +223,31 @@ class Database {
   }
 }
 
-interface MDBConstructorOptions {
-  appDBPath: string;
-  rootDBPath: string;
-}
-
 export class MDB {
   private piscina: Piscina;
-  private appDBPath: string;
-  private rootDBPath: string;
-  private databasePath: string;
+  private databaseType: DatabaseType = "app";
+  private profile: Profile;
 
-  constructor(options: MDBConstructorOptions) {
+  constructor({ profile }: AppCradle) {
     this.piscina = new Piscina({
       filename: workerPath,
       minThreads: 1,
       maxThreads: os.cpus().length,
     });
-
-    const { appDBPath, rootDBPath } = options;
-
-    this.appDBPath = appDBPath;
-    this.rootDBPath = rootDBPath;
-    this.databasePath = appDBPath;
-  }
-
-  setAppDBPath(path: string) {
-    this.appDBPath = path;
-  }
-  setRootDBPath(path: string) {
-    this.rootDBPath = path;
+    this.profile = profile;
   }
 
   private database() {
-    return new Database(this.piscina, this.databasePath);
+    return new Database(this.piscina, this.profile, this.databaseType);
   }
 
   app() {
-    this.databasePath = this.appDBPath;
+    this.databaseType = "app";
 
     return this.database();
   }
   root() {
-    this.databasePath = this.rootDBPath;
+    this.databaseType = "root";
 
     return this.database();
   }
