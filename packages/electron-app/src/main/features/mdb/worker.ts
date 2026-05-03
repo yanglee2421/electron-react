@@ -7,7 +7,7 @@ import type {
   FilterInValues,
   FilterValue,
   TableQueryResult,
-} from "./mdb.types";
+} from "./types";
 
 const fixMDBDate = (value: Date) => {
   return dayjs(value).add(value.getTimezoneOffset(), "minute").toDate();
