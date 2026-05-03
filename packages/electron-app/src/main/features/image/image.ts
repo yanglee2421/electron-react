@@ -1,12 +1,11 @@
 import { ls } from "#main/lib/fs";
-import { type IpcHandle } from "#main/lib/ipc";
 import { chunk } from "@yotulee/run";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import pLimit from "p-limit";
 import { Piscina } from "piscina";
-import workerPath from "./image.worker?modulePath";
+import workerPath from "./worker?modulePath";
 
 export class ImageModule {
   private piscina: Piscina;
@@ -20,21 +19,6 @@ export class ImageModule {
   }
 
   computeMD5(files: string[]): Promise<Record<string, string>> {
-    // const worker = createImageWorker({
-    //   workerData: { files },
-    // });
-
-    // return new Promise<Record<string, string>>((resolve, reject) => {
-    //   worker.once("message", (data) => {
-    //     resolve(data);
-    //     worker.terminate();
-    //   });
-    //   worker.once("error", (error) => {
-    //     reject(error);
-    //     worker.terminate();
-    //   });
-    // });
-
     return this.piscina.run({ files });
   }
   async deduplicate(pathSet: string[]) {
@@ -92,16 +76,4 @@ const copyFile = async (
     const destination = path.resolve(outputDirectory, `${md5}${extname}`);
     await fs.promises.cp(filePath, destination);
   }
-};
-
-export const bindIpcHandlers = (
-  imageModule: ImageModule,
-  ipcHandle: IpcHandle,
-) => {
-  ipcHandle("MD5/MD5_BACKUP_IMAGE", (_, payload: string) => {
-    return imageModule.handleImageBackup(payload);
-  });
-  ipcHandle("MD5/MD5_COMPUTE", (_, payload: string) => {
-    return imageModule.computeMD5([payload]);
-  });
 };

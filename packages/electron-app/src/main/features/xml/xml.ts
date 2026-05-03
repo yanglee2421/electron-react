@@ -1,18 +1,11 @@
 import { ls } from "#main/lib/fs";
-import type {
-  Invoice,
-  IpcHandle,
-  IssuItemInformation,
-  XMLJSONData,
-} from "#main/lib/ipc";
 import loaderWASM from "#resources/zxing_full.wasm?loader";
-import { mapGroupBy } from "@yotulee/run";
 import { XMLParser } from "fast-xml-parser";
 import fs from "node:fs";
-import path from "node:path";
 import { PDFParse } from "pdf-parse";
 import { getPath } from "pdf-parse/worker";
 import { prepareZXingModule, readBarcodes } from "zxing-wasm";
+import type { Invoice, IssuItemInformation, XMLJSONData } from "./types";
 
 PDFParse.setWorker(getPath());
 
@@ -29,7 +22,7 @@ prepareZXingModule({
   },
 });
 
-const xmlPathToJSONData = async (xmlPath: string) => {
+export const xmlPathToJSONData = async (xmlPath: string) => {
   const xmlText = await fs.promises.readFile(xmlPath, "utf-8");
   const xmlParser = new XMLParser();
   const jsonData: XMLJSONData = xmlParser.parse(xmlText);
@@ -114,7 +107,7 @@ const pdfPathToInvoices = async (pdfPath: string) => {
   return rows;
 };
 
-const collectAllFilePaths = async (paths: string[]) => {
+export const collectAllFilePaths = async (paths: string[]) => {
   let result: string[] = [];
 
   for (const path of paths) {
@@ -125,7 +118,7 @@ const collectAllFilePaths = async (paths: string[]) => {
   return result;
 };
 
-const collectXMLResult = async (
+export const collectXMLResult = async (
   filePath: string,
   result: Map<string, Invoice>,
 ) => {
@@ -140,7 +133,7 @@ const collectXMLResult = async (
   result.set(data.id, data);
 };
 
-const collectPDFResult = async (
+export const collectPDFResult = async (
   filePath: string,
   result: Map<string, Invoice>,
 ) => {
@@ -156,52 +149,4 @@ const collectPDFResult = async (
 
     result.set(data.id, data);
   }
-};
-
-export const bindIpcHandlers = (ipcHandle: IpcHandle) => {
-  ipcHandle("XML/XML", async (_, payload: string) => {
-    const xmlPath = payload;
-    const data = await xmlPathToJSONData(xmlPath);
-    return data;
-  });
-
-  /**
-   * @param filePath A array includes filePath & directory
-   * @returns All .pdf & .xml
-   */
-  ipcHandle(
-    "XML/SELECT_XML_PDF_FROM_FOLDER",
-    async (_, filePaths: string[]) => {
-      const allFilePaths = await collectAllFilePaths(filePaths);
-      const fileteredFilePaths = [...allFilePaths].filter((filePath) => {
-        const extname = path.extname(filePath);
-        switch (extname) {
-          case ".pdf":
-          case ".xml":
-            return true;
-          default:
-            return false;
-        }
-      });
-      return fileteredFilePaths;
-    },
-  );
-  ipcHandle("XML/XML_PDF_COMPUTE", async (_, filePaths: string[]) => {
-    const resultMap = new Map<string, Invoice>();
-    const fileGroup = mapGroupBy(filePaths, (filePath) =>
-      path.extname(filePath),
-    );
-    const pdfGroup = fileGroup.get(".pdf") || [];
-    const xmlGroup = fileGroup.get(".xml") || [];
-
-    for (const pdf of pdfGroup) {
-      await collectPDFResult(pdf, resultMap);
-    }
-
-    for (const xml of xmlGroup) {
-      await collectXMLResult(xml, resultMap);
-    }
-
-    return [...resultMap.values()];
-  });
 };

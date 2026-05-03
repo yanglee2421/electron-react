@@ -1,7 +1,7 @@
 import { ipcHandle, ipcRemoveHandle } from "#main/ipc";
 import type { PLC } from "./plc";
 
-export const bindIpcHandlers = (plc: PLC) => {
+export const registerIPCHandlers = (plc: PLC) => {
   ipcHandle("PLC/read_test", (_, path) => {
     return plc.handleReadState(path);
   });

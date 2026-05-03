@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
-import workerThreads from "node:worker_threads";
 import pLimit from "p-limit";
 
 const computeMD5 = (filePath: string) => {
@@ -41,10 +40,3 @@ export const resolveFiles = async (workerData: WrokerData) => {
 };
 
 export default resolveFiles;
-
-export const bootstrap = async () => {
-  const data: WrokerData = workerThreads.workerData;
-  const result = await resolveFiles(data);
-
-  workerThreads.parentPort?.postMessage(result);
-};

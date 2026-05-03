@@ -1,7 +1,10 @@
-import type { SQLiteDBType } from "#main/db";
-import * as schema from "#main/db/schema";
+import * as schema from "#main/features/db/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
+import { Subject } from "rxjs";
+import type { DBClient } from "../db/types";
+import type { AppCradle } from "../types";
+import type { ListOptions } from "./types";
 
 interface LoggerOptions {
   title: string;
@@ -9,34 +12,16 @@ interface LoggerOptions {
   json?: string;
 }
 
-export interface ListOptions {
-  level?: string;
-  startDate: string;
-  endDate: string;
-  pageIndex: number;
-  pageSize: number;
-}
-
 export class Logger {
-  private db: SQLiteDBType;
-  private handlers: Set<() => void> = new Set();
+  readonly event$ = new Subject<void>();
+  private db: DBClient;
 
-  constructor(db: SQLiteDBType) {
-    this.db = db;
+  constructor({ db }: AppCradle) {
+    this.db = db.client;
   }
 
-  on(handler: () => void) {
-    this.handlers.add(handler);
-
-    return () => {
-      this.off(handler);
-    };
-  }
-  off(handler: () => void) {
-    this.handlers.delete(handler);
-  }
-  emit() {
-    this.handlers.forEach((handler) => handler());
+  private emit() {
+    this.event$.next();
   }
 
   async error({ title, message, json }: LoggerOptions) {

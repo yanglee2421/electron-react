@@ -29,22 +29,24 @@ import {
   filter,
   from,
   fromEventPattern,
-  map,
+  NEVER,
   of,
   partition,
+  startWith,
   switchMap,
   take,
-  tap,
+  using,
 } from "rxjs";
 import { container } from "./features";
 import * as cmdIPC from "./features/cmd/ipc";
 import * as dbIPC from "./features/db/ipc";
+import * as imageIPC from "./features/image/ipc";
 import * as kvIPC from "./features/kv/ipc";
+import * as logIPC from "./features/logger/ipc";
 import * as mdbIPC from "./features/mdb/ipc";
 import * as plcIPC from "./features/plc/ipc";
 import * as profileIPC from "./features/profile/ipc";
-import * as md5 from "./modules/image";
-import * as xml from "./modules/xml";
+import * as xmlIPC from "./features/xml/ipc";
 
 if (is.dev) {
   const devUserDataPath = path.resolve(
@@ -53,164 +55,6 @@ if (is.dev) {
   );
   app.setPath("userData", devUserDataPath);
 }
-
-// Define rxjs observable
-const instanceLock$ = defer(() => of(app.requestSingleInstanceLock()));
-const whenReady$ = from(app.whenReady());
-const willQuit$ = fromEventPattern(
-  (handler) => app.on("will-quit", handler),
-  (handler) => app.off("will-quit", handler),
-);
-const activate$ = fromEventPattern(
-  (handler) => app.on("activate", handler),
-  (handler) => app.off("activate", handler),
-);
-const secondInstance$ = fromEventPattern(
-  (handler) => app.on("second-instance", handler),
-  (handler) => app.off("second-instance", handler),
-);
-const windowAllClosed$ = fromEventPattern(
-  (handler) => app.on("window-all-closed", handler),
-  (handler) => app.off("window-all-closed", handler),
-);
-const browserWindowCreated$ = fromEventPattern<[Electron.Event, BrowserWindow]>(
-  (handler) => app.on("browser-window-created", handler),
-  (handler) => app.off("browser-window-created", handler),
-);
-const [primaryInstance$, duplicateInstance$] = partition(
-  instanceLock$,
-  (hasLock) => hasLock,
-);
-
-duplicateInstance$.subscribe(() => {
-  if (is.dev) {
-    console.warn(
-      "Another instance of the app is already running. This instance will be closed.",
-    );
-  }
-
-  app.quit();
-});
-
-primaryInstance$
-  .pipe(
-    switchMap(() => whenReady$),
-    map(() => {
-      // =============
-      // Dependency injection and module initialization
-      // =============
-
-      const dbPath = path.resolve(app.getPath("userData"), "db.db");
-
-      container.register({ dbPath: asValue(dbPath) });
-
-      const { cmd, db, kv, mdb, plc, profile } = container.cradle;
-
-      const cmdUnIPC = cmdIPC.registerIPCHandlers(cmd);
-      const dbUnIPC = dbIPC.registerIPCHandlers(db);
-      const kvUnIPC = kvIPC.registerIPCHandlers(kv);
-      const mdbUnIPC = mdbIPC.registerIPCHandlers(mdb);
-      const plcUnIPC = plcIPC.bindIpcHandlers(plc);
-      const profileUnIPC = profileIPC.registerIPCHandlers(profile);
-
-      return [
-        () => {
-          db.dispose();
-        },
-        cmdUnIPC,
-        dbUnIPC,
-        kvUnIPC,
-        mdbUnIPC,
-        plcUnIPC,
-        profileUnIPC,
-      ];
-    }),
-    tap(() => {
-      const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-      const migrationsFolder = path.resolve(__dirname, "../../drizzle");
-      const { db, profile } = container.cradle;
-
-      db.migrate(migrationsFolder);
-      profile.state$.subscribe((state) => {
-        nativeTheme.themeSource = state.mode;
-
-        BrowserWindow.getAllWindows().forEach((win) => {
-          win.setAlwaysOnTop(state.alwaysOnTop);
-        });
-      });
-    }),
-  )
-  .subscribe((cleanups) => {
-    Menu.setApplicationMenu(null);
-
-    if (platform.isWindows) {
-      // Set app user model id for windows
-      electronApp.setAppUserModelId("com.electron");
-    }
-
-    void bootstrap();
-    void createWindow();
-
-    willQuit$
-      .pipe(
-        filter(() => !platform.isMacOS),
-        take(1),
-      )
-      .subscribe(() => {
-        cleanups.forEach((cleanup) => cleanup());
-      });
-  });
-
-activate$
-  .pipe(filter(() => BrowserWindow.getAllWindows().length === 0))
-  .subscribe(() => {
-    void createWindow();
-  });
-
-secondInstance$.subscribe(() => {
-  const win = BrowserWindow.getAllWindows().at(0);
-  if (!win) return;
-
-  if (win.isMinimized()) {
-    win.restore();
-  }
-
-  win.focus();
-});
-
-windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
-  app.quit();
-});
-
-browserWindowCreated$.subscribe((args) => {
-  const [, win] = args;
-
-  optimizer.watchWindowShortcuts(win);
-
-  win.webContents.setWindowOpenHandler((details) => {
-    void shell.openExternal(details.url);
-    return { action: "deny" };
-  });
-
-  win.on("focus", () => {
-    win.webContents.send("windowFocus");
-  });
-  win.on("blur", () => {
-    win.webContents.send("windowBlur");
-  });
-  // Only fire when the win.show is called on Windows
-  win.on("show", () => {
-    win.webContents.send("windowShow");
-  });
-  // Only fire when the win.hide is called on Windows
-  win.on("hide", () => {
-    win.webContents.send("windowHide");
-  });
-
-  win.webContents.on("did-finish-load", () => {
-    win.webContents.send("windowShow");
-  });
-});
 
 const createWindow = async () => {
   const { profile } = container.cradle;
@@ -251,6 +95,172 @@ const createWindow = async () => {
 
   await win.loadURL(ELECTRON_RENDERER_URL);
 };
+
+// Define rxjs observable
+const singleInstanceLock$ = defer(() => of(app.requestSingleInstanceLock()));
+const [primaryInstance$, duplicateInstance$] = partition(
+  singleInstanceLock$,
+  (hasLock) => hasLock,
+);
+const whenReady$ = from(app.whenReady());
+const willQuit$ = fromEventPattern(
+  (handler) => app.on("will-quit", handler),
+  (handler) => app.off("will-quit", handler),
+);
+const activate$ = fromEventPattern(
+  (handler) => app.on("activate", handler),
+  (handler) => app.off("activate", handler),
+);
+const secondInstance$ = fromEventPattern(
+  (handler) => app.on("second-instance", handler),
+  (handler) => app.off("second-instance", handler),
+);
+const browserWindowCreated$ = fromEventPattern<[Electron.Event, BrowserWindow]>(
+  (handler) => app.on("browser-window-created", handler),
+  (handler) => app.off("browser-window-created", handler),
+);
+const windowAllClosed$ = fromEventPattern(
+  (handler) => app.on("window-all-closed", handler),
+  (handler) => app.off("window-all-closed", handler),
+);
+const using$ = using(
+  () => {
+    const dbPath = path.resolve(app.getPath("userData"), "db.db");
+    container.register({ dbPath: asValue(dbPath) });
+
+    const { db } = container.cradle;
+    const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+    const migrationsFolder = path.resolve(__dirname, "../../drizzle");
+    db.migrate(migrationsFolder);
+
+    const { cmd, kv, mdb, plc, profile, image, logger } = container.cradle;
+    const cmdUnIPC = cmdIPC.registerIPCHandlers(cmd);
+    const dbUnIPC = dbIPC.registerIPCHandlers(db);
+    const imageUnIPC = imageIPC.registerIPCHandlers(image);
+    const kvUnIPC = kvIPC.registerIPCHandlers(kv);
+    const logUnIPC = logIPC.registerIPCHandlers(logger);
+    const mdbUnIPC = mdbIPC.registerIPCHandlers(mdb);
+    const plcUnIPC = plcIPC.registerIPCHandlers(plc);
+    const profileUnIPC = profileIPC.registerIPCHandlers(profile);
+    const xmlUnIPC = xmlIPC.registerIPCHandlers();
+
+    profile.state$.subscribe((state) => {
+      nativeTheme.themeSource = state.mode;
+
+      BrowserWindow.getAllWindows().forEach((win) => {
+        win.setAlwaysOnTop(state.alwaysOnTop);
+      });
+    });
+
+    logger.event$.subscribe(() => {
+      BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("logUpdated");
+      });
+    });
+
+    return {
+      unsubscribe: () => {
+        db.dispose();
+        image.dispose();
+
+        cmdUnIPC();
+        dbUnIPC();
+        imageUnIPC();
+        kvUnIPC();
+        logUnIPC();
+        mdbUnIPC();
+        plcUnIPC();
+        profileUnIPC();
+        xmlUnIPC();
+      },
+    };
+  },
+  // Must emit a value to trigger the callback function that pass to subscribe,
+  // but we don't actually need it
+  () => NEVER.pipe(startWith(null)),
+);
+
+duplicateInstance$.subscribe(() => {
+  if (is.dev) {
+    console.warn(
+      "Another instance of the app is already running. This instance will be closed.",
+    );
+  }
+
+  app.quit();
+});
+
+const primarySubscription = primaryInstance$
+  .pipe(
+    switchMap(() => whenReady$),
+    switchMap(() => using$),
+  )
+  .subscribe(() => {
+    Menu.setApplicationMenu(null);
+
+    if (platform.isWindows) {
+      // Set app user model id for windows
+      electronApp.setAppUserModelId("com.electron");
+    }
+
+    void bootstrap();
+    void createWindow();
+  });
+
+willQuit$.pipe(take(1)).subscribe(() => {
+  primarySubscription.unsubscribe();
+});
+
+activate$
+  .pipe(filter(() => BrowserWindow.getAllWindows().length === 0))
+  .subscribe(() => {
+    void createWindow();
+  });
+
+secondInstance$.subscribe(() => {
+  const win = BrowserWindow.getAllWindows().at(0);
+  if (!win) return;
+
+  if (win.isMinimized()) {
+    win.restore();
+  }
+
+  win.focus();
+});
+
+browserWindowCreated$.subscribe((args) => {
+  const [, win] = args;
+
+  optimizer.watchWindowShortcuts(win);
+
+  win.webContents.setWindowOpenHandler((details) => {
+    void shell.openExternal(details.url);
+    return { action: "deny" };
+  });
+
+  win.on("focus", () => {
+    win.webContents.send("windowFocus");
+  });
+  win.on("blur", () => {
+    win.webContents.send("windowBlur");
+  });
+  // Only fire when the win.show is called on Windows
+  win.on("show", () => {
+    win.webContents.send("windowShow");
+  });
+  // Only fire when the win.hide is called on Windows
+  win.on("hide", () => {
+    win.webContents.send("windowHide");
+  });
+
+  win.webContents.on("did-finish-load", () => {
+    win.webContents.send("windowShow");
+  });
+});
+
+windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
+  app.quit();
+});
 
 const bindIpcHandles = (ipcHandle: IpcHandle) => {
   ipcHandle("APP/OPEN_AT_LOGIN", async (_, openAtLogin?: boolean) => {
@@ -362,7 +372,6 @@ const bootstrap = async () => {
       net,
       logger,
     );
-  const imageModule = new md5.ImageModule();
 
   await hydrateModules(
     profile,
@@ -375,18 +384,9 @@ const bootstrap = async () => {
   const ipch = new IPCHandle(logger);
   const ipcHandle = ipch.handle.bind(ipch);
 
-  logger.on(() => {
-    BrowserWindow.getAllWindows().forEach((win) => {
-      win.webContents.send("logUpdated");
-    });
-  });
-
   bindIpcHandles(ipcHandle);
 
   mdb.bindIpcHandlers(mdbDB, ipcHandle);
-  md5.bindIpcHandlers(imageModule, ipcHandle);
-  xml.bindIpcHandlers(ipcHandle);
-  log.bindIPC(logger, ipcHandle);
   kh.bindIpcHandlers(khHmis, ipcHandle);
   jtv.bindIpcHandlers(jtvHmis, ipcHandle);
   hxzy.bindIPCHandlers(hxzyHmis, ipcHandle);
