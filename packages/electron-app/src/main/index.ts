@@ -282,10 +282,12 @@ const bootstrap = async () => {
 
   await hydrateModules(
     profile,
-    jtv_hmis_guangzhoujibaoduan,
     hxzyHmis,
-    khHmis,
     jtvHmis,
+    xuzhoubeiHmis,
+    guangzhoubeiHmis,
+    jtv_hmis_guangzhoujibaoduan,
+    khHmis,
   );
 
   nativeTheme.themeSource = profile.getState().mode;
