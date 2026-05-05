@@ -279,4 +279,51 @@ export type TableQueryResult<TRow> = {
 
 export type DatabaseType = "app" | "root";
 
-export interface IPCContract {}
+interface LikeFilter {
+  type: "like";
+  field: string;
+  value: string;
+}
+
+interface DateFilter {
+  type: "date";
+  field: string;
+  startAt: string;
+  endAt: string;
+}
+
+interface InFilter {
+  type: "in";
+  field: string;
+  value: string[];
+}
+
+interface EqualFilter {
+  type: "equal";
+  field: string;
+  value: string | number | boolean;
+}
+
+export type Filter = LikeFilter | DateFilter | InFilter | EqualFilter;
+
+export interface MDBWorkerData {
+  databasePath: string;
+  tableName: string;
+  pageIndex?: number;
+  pageSize?: number;
+  filters?: Filter[];
+  with?: boolean;
+}
+
+export type MDBPayload = Omit<MDBWorkerData, "databasePath">;
+
+export interface IPCContract {
+  "MDB/MDB_ROOT_GET": {
+    args: [MDBPayload];
+    return: { total: number; rows: unknown[] };
+  };
+  "MDB/MDB_APP_GET": {
+    args: [MDBPayload];
+    return: { total: number; rows: unknown[] };
+  };
+}

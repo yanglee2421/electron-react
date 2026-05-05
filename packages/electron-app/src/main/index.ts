@@ -1,27 +1,6 @@
-import { createSQLiteDB } from "#main/db";
-import type { IpcHandle } from "#main/lib/ipc";
-import { IPCHandle } from "#main/lib/ipc";
-import * as mdb from "#main/modules/mdb";
-import * as guangzhoubei from "#main/shared/factories/hmis/guangzhoubei";
-import * as guangzhouJibaoduan from "#main/shared/factories/hmis/guangzhoujibaoduan";
-import * as hxzy from "#main/shared/factories/hmis/hxzy";
-import * as jtv from "#main/shared/factories/hmis/jtv";
-import * as kh from "#main/shared/factories/hmis/kh_hmis";
-import * as xuzhoubei from "#main/shared/factories/hmis/xuzhoubei";
-import * as kv from "#main/shared/factories/KV";
-import * as log from "#main/shared/factories/Logger";
-import { Profile } from "#main/shared/factories/Profile";
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
-import {
-  app,
-  BrowserWindow,
-  dialog,
-  Menu,
-  nativeTheme,
-  net,
-  shell,
-} from "electron";
+import { app, BrowserWindow, Menu, nativeTheme, shell } from "electron";
 import path from "node:path";
 import url from "node:url";
 import {
@@ -47,6 +26,7 @@ import * as mdbIPC from "./features/mdb/ipc";
 import * as plcIPC from "./features/plc/ipc";
 import * as profileIPC from "./features/profile/ipc";
 import * as xmlIPC from "./features/xml/ipc";
+import * as infraIPC from "./infra/ipc";
 
 if (is.dev) {
   const devUserDataPath = path.resolve(
@@ -143,6 +123,7 @@ const using$ = using(
     const plcUnIPC = plcIPC.registerIPCHandlers(plc);
     const profileUnIPC = profileIPC.registerIPCHandlers(profile);
     const xmlUnIPC = xmlIPC.registerIPCHandlers();
+    const infraUnIPC = infraIPC.registerIPCHandlers();
 
     profile.state$.subscribe((state) => {
       nativeTheme.themeSource = state.mode;
@@ -172,6 +153,7 @@ const using$ = using(
         plcUnIPC();
         profileUnIPC();
         xmlUnIPC();
+        infraUnIPC();
       },
     };
   },
@@ -203,7 +185,7 @@ const primarySubscription = primaryInstance$
       electronApp.setAppUserModelId("com.electron");
     }
 
-    void bootstrap();
+    // void bootstrap();
     void createWindow();
   });
 
@@ -262,135 +244,71 @@ windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
   app.quit();
 });
 
-const bindIpcHandles = (ipcHandle: IpcHandle) => {
-  ipcHandle("APP/OPEN_AT_LOGIN", async (_, openAtLogin?: boolean) => {
-    if (platform.isLinux) {
-      return false;
-    }
+// interface HydratableModule {
+//   hydrate: () => Promise<void>;
+// }
 
-    if (typeof openAtLogin === "boolean") {
-      return electronApp.setAutoLaunch(openAtLogin);
-    }
+// const hydrateModules = async (...modules: HydratableModule[]) => {
+//   await Promise.allSettled(modules.map((module) => module.hydrate()));
+// };
 
-    return app.getLoginItemSettings().openAtLogin;
-  });
+// const bootstrap = async () => {
+//   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+//   const databasePath = path.resolve(app.getPath("userData"), "db.db");
+//   const sqliteDB = createSQLiteDB({
+//     databasePath,
+//     migrationsFolder: path.resolve(__dirname, "../../drizzle"),
+//   });
+//   const kvInstance = new kv.KV(sqliteDB);
+//   const profile = new Profile(kvInstance);
+//   const mdbDB = new mdb.MDBDB(profile);
+//   const logger = new log.Logger(sqliteDB);
+//   const hxzyHmis = new hxzy.Hxzy(sqliteDB, kvInstance, mdbDB, net, logger);
+//   const khHmis = new kh.KH(sqliteDB, kvInstance, mdbDB, net, logger);
+//   const jtvHmis = new jtv.JTV(sqliteDB, kvInstance, mdbDB, net, logger);
+//   const xuzhoubeiHmis = new xuzhoubei.Xuzhoubei(
+//     sqliteDB,
+//     kvInstance,
+//     mdbDB,
+//     net,
+//     logger,
+//   );
+//   const guangzhoubeiHmis = new guangzhoubei.Guangzhoubei(
+//     sqliteDB,
+//     kvInstance,
+//     mdbDB,
+//     net,
+//     logger,
+//   );
+//   const jtv_hmis_guangzhoujibaoduan =
+//     new guangzhouJibaoduan.JTV_HMIS_Guangzhoujibaoduan(
+//       sqliteDB,
+//       kvInstance,
+//       mdbDB,
+//       net,
+//       logger,
+//     );
 
-  ipcHandle("APP/OPEN_DEV_TOOLS", async () => {
-    const win = BrowserWindow.getAllWindows().at(0);
-    if (!win) return;
-    win.webContents.openDevTools();
-  });
+//   await hydrateModules(
+//     profile,
+//     guangzhoubeiHmis,
+//     jtv_hmis_guangzhoujibaoduan,
+//     xuzhoubeiHmis,
+//     hxzyHmis,
+//     khHmis,
+//     jtvHmis,
+//   );
 
-  ipcHandle("APP/OPEN_PATH", async (_, path: string) => {
-    const data = await shell.openPath(path);
-    return data;
-  });
+//   const ipch = new IPCHandle(logger);
+//   const ipcHandle = ipch.handle.bind(ipch);
 
-  ipcHandle("APP/MOBILE_MODE", async (_, mobile: boolean) => {
-    BrowserWindow.getAllWindows().forEach((win) => {
-      if (mobile) {
-        win.setSize(500, 800);
-      } else {
-        win.setSize(1024, 768);
-      }
-      win.center();
-    });
-    return mobile;
-  });
+//   bindIpcHandles(ipcHandle);
 
-  ipcHandle("APP/SELECT_DIRECTORY", async () => {
-    const win = BrowserWindow.getAllWindows().at(0);
-    if (!win) throw new Error("No active window");
-    const result = await dialog.showOpenDialog(win, {
-      properties: ["openDirectory"],
-    });
-    return result.filePaths;
-  });
-
-  ipcHandle("APP/SELECT_FILE", async (_, filters: Electron.FileFilter[]) => {
-    const win = BrowserWindow.getAllWindows().at(0);
-    if (!win) throw new Error("No active window");
-    const result = await dialog.showOpenDialog(win, {
-      properties: ["openFile"],
-      filters,
-    });
-    return result.filePaths;
-  });
-
-  ipcHandle(
-    "APP/SHOW_OPEN_DIALOG",
-    async (_, options: Electron.OpenDialogOptions) => {
-      const win = BrowserWindow.getAllWindows().at(0);
-      if (!win) throw new Error("No active window");
-      const result = await dialog.showOpenDialog(win, options);
-      return result.filePaths;
-    },
-  );
-};
-
-interface HydratableModule {
-  hydrate: () => Promise<void>;
-}
-
-const hydrateModules = async (...modules: HydratableModule[]) => {
-  await Promise.allSettled(modules.map((module) => module.hydrate()));
-};
-
-const bootstrap = async () => {
-  const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-  const databasePath = path.resolve(app.getPath("userData"), "db.db");
-  const sqliteDB = createSQLiteDB({
-    databasePath,
-    migrationsFolder: path.resolve(__dirname, "../../drizzle"),
-  });
-  const kvInstance = new kv.KV(sqliteDB);
-  const profile = new Profile(kvInstance);
-  const mdbDB = new mdb.MDBDB(profile);
-  const logger = new log.Logger(sqliteDB);
-  const hxzyHmis = new hxzy.Hxzy(sqliteDB, kvInstance, mdbDB, net, logger);
-  const khHmis = new kh.KH(sqliteDB, kvInstance, mdbDB, net, logger);
-  const jtvHmis = new jtv.JTV(sqliteDB, kvInstance, mdbDB, net, logger);
-  const xuzhoubeiHmis = new xuzhoubei.Xuzhoubei(
-    sqliteDB,
-    kvInstance,
-    mdbDB,
-    net,
-    logger,
-  );
-  const guangzhoubeiHmis = new guangzhoubei.Guangzhoubei(
-    sqliteDB,
-    kvInstance,
-    mdbDB,
-    net,
-    logger,
-  );
-  const jtv_hmis_guangzhoujibaoduan =
-    new guangzhouJibaoduan.JTV_HMIS_Guangzhoujibaoduan(
-      sqliteDB,
-      kvInstance,
-      mdbDB,
-      net,
-      logger,
-    );
-
-  await hydrateModules(
-    profile,
-    jtv_hmis_guangzhoujibaoduan,
-    hxzyHmis,
-    khHmis,
-    jtvHmis,
-  );
-
-  const ipch = new IPCHandle(logger);
-  const ipcHandle = ipch.handle.bind(ipch);
-
-  bindIpcHandles(ipcHandle);
-
-  mdb.bindIpcHandlers(mdbDB, ipcHandle);
-  kh.bindIpcHandlers(khHmis, ipcHandle);
-  jtv.bindIpcHandlers(jtvHmis, ipcHandle);
-  hxzy.bindIPCHandlers(hxzyHmis, ipcHandle);
-  xuzhoubei.bindIpcHandlers(xuzhoubeiHmis, ipcHandle);
-  guangzhoubei.bindIpcHandlers(guangzhoubeiHmis, ipcHandle);
-  guangzhouJibaoduan.bindIpc(jtv_hmis_guangzhoujibaoduan, ipcHandle);
-};
+//   mdb.bindIpcHandlers(mdbDB, ipcHandle);
+//   kh.bindIpcHandlers(khHmis, ipcHandle);
+//   jtv.bindIpcHandlers(jtvHmis, ipcHandle);
+//   hxzy.bindIPCHandlers(hxzyHmis, ipcHandle);
+//   xuzhoubei.bindIpcHandlers(xuzhoubeiHmis, ipcHandle);
+//   guangzhoubei.bindIpcHandlers(guangzhoubeiHmis, ipcHandle);
+//   guangzhouJibaoduan.bindIpc(jtv_hmis_guangzhoujibaoduan, ipcHandle);
+// };

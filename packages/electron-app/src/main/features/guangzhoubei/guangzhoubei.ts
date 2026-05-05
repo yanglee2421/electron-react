@@ -1,42 +1,20 @@
 // 京天威 广州北
 
-import type { SQLiteDBType } from "#main/db";
-import * as schema from "#main/db/schema";
+import * as schema from "#main/features/db/schema";
+import type { Detection, DetectionData } from "#main/features/mdb/types";
 import { createEmit, getIP } from "#main/lib";
-import type {
-  InsertRecordParams,
-  IpcHandle,
-  SQLiteGetParams,
-} from "#main/lib/ipc";
-import type { Detection, DetectionData, MDBDB } from "#main/modules/mdb";
 import {
   detectionDataToTPlace,
   tmnowToTSSJ,
 } from "#shared/functions/flawDetection";
-import { JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY } from "#shared/instances/constants";
-import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
-import { jtv_hmis_guangzhoubei } from "#shared/instances/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import pLimit from "p-limit";
-import type { KV } from "../KV";
-import type { Logger } from "../Logger";
-import type { Net } from "./hmis";
-import { HMIS } from "./hmis";
-
-export interface NormalizeResponse {
-  DH: string;
-  ZH: string;
-  ZX: string;
-  CZZZDW: string;
-  CZZZRQ: string;
-  MCZZDW: string;
-  MCZZRQ: string;
-  SCZZDW: string;
-  SCZZRQ: string;
-  ZTX: boolean;
-  YTX: boolean;
-}
+import { BehaviorSubject } from "rxjs";
+import type { DBClient } from "../db/types";
+import type { Logger } from "../logger";
+import type { MDB } from "../mdb";
+import type { AppCradle } from "../types";
 
 interface ZH_Item {
   DH: string;
@@ -169,33 +147,21 @@ const normalizeDHResponse = (data: DH_Response) => {
 
 const emit = createEmit("api_set");
 
-export class Guangzhoubei extends HMIS<JTV_HMIS_Guangzhoubei> {
-  private db: SQLiteDBType;
-  private mdb: MDBDB;
-  private net: Net;
+export class Guangzhoubei {
+  readonly state$: BehaviorSubject<>;
+  private db: DBClient;
+  private mdb: MDB;
   private logger: Logger;
 
-  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net, logger: Logger) {
-    super(
-      jtv_hmis_guangzhoubei.parse.bind(jtv_hmis_guangzhoubei),
-      JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY,
-      kv,
-    );
-
-    this.db = db;
+  constructor({ db, mdb, logger, profile }: AppCradle) {
+    this.db = db.client;
     this.mdb = mdb;
-    this.net = net;
     this.logger = logger;
-  }
-
-  async hydrate() {
-    await super.hydrate();
-
-    void this.autoUploadLoop();
+    this.profile = profile;
   }
 
   async autoUploadLoop() {
-    if (!this.getStore().autoUpload) return;
+    if (!this.profile.state.autoUpload) return;
 
     const limit = pLimit(1);
 

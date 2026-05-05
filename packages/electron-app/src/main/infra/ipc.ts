@@ -1,0 +1,1 @@
+export { registerIPCHandlers } from "./infra";
