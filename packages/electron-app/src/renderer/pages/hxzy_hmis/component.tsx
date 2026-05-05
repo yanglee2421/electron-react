@@ -8,10 +8,10 @@ import {
   useInsertHxzyRecord,
   useUploadDetecion,
 } from "#renderer/api/hxzy";
+import { useHxzyHmisStore } from "#renderer/hooks/stores/useHxzyHmisStore";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { useHxzyHmisStore } from "#renderer/shared/hooks/ui/useHxzyHmisStore";
 import {
   CheckOutlined,
   ClearOutlined,

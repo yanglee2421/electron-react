@@ -9,10 +9,10 @@ import {
   useUploadGuangzhouJibaoduanData,
 } from "#renderer/api/guangzhouJibaoduan";
 import { ScrollToTopButton } from "#renderer/components/scroll";
+import { useGuangzhoujibaoduan } from "#renderer/hooks/stores/useGuangzhoujibaoduan";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { useGuangzhoujibaoduan } from "#renderer/shared/hooks/ui/useGuangzhoujibaoduan";
 import {
   CheckOutlined,
   ClearOutlined,

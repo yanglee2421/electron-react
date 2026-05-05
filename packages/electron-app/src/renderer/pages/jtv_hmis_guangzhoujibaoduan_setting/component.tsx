@@ -1,5 +1,5 @@
 import { NumberField } from "#renderer/components/number";
-import { useGuangzhoujibaoduan } from "#renderer/shared/hooks/ui/useGuangzhoujibaoduan";
+import { useGuangzhoujibaoduan } from "#renderer/hooks/stores/useGuangzhoujibaoduan";
 import {
   guangzhoujibaoduan,
   type Guangzhoujibaoduan,

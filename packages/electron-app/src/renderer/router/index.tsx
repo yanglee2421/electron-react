@@ -1,4 +1,4 @@
-import { useProfileStore } from "#renderer/shared/hooks/ui/useProfileStore";
+import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import type { RouteObject } from "react-router";
 import { createHashRouter, RouterProvider } from "react-router";
 import { DashLayout, RootRoute } from "./layout";
@@ -143,7 +143,9 @@ const routes: RouteObject[] = [
                   {
                     path: "setting",
                     lazy: () =>
-                      import("#renderer/pages/jtv_hmis_xuzhoubei_setting/component"),
+                      import(
+                        "#renderer/pages/jtv_hmis_xuzhoubei_setting/component"
+                      ),
                   },
                 ],
                 loader: async () => {},
@@ -159,7 +161,9 @@ const routes: RouteObject[] = [
                   {
                     path: "setting",
                     lazy: () =>
-                      import("#renderer/pages/jtv_hmis_guangzhoubei_setting/component"),
+                      import(
+                        "#renderer/pages/jtv_hmis_guangzhoubei_setting/component"
+                      ),
                   },
                 ],
                 loader: async () => {},
@@ -170,12 +174,16 @@ const routes: RouteObject[] = [
                   {
                     index: true,
                     lazy: () =>
-                      import("#renderer/pages/jtv_hmis_guangzhoujibaoduan/component"),
+                      import(
+                        "#renderer/pages/jtv_hmis_guangzhoujibaoduan/component"
+                      ),
                   },
                   {
                     path: "setting",
                     lazy: () =>
-                      import("#renderer/pages/jtv_hmis_guangzhoujibaoduan_setting/component"),
+                      import(
+                        "#renderer/pages/jtv_hmis_guangzhoujibaoduan_setting/component"
+                      ),
                   },
                 ],
                 loader: async () => {},
@@ -198,7 +206,9 @@ const routes: RouteObject[] = [
                       {
                         path: ":id",
                         lazy: () =>
-                          import("#renderer/pages/kh_hmis_verify_show/component"),
+                          import(
+                            "#renderer/pages/kh_hmis_verify_show/component"
+                          ),
                       },
                     ],
                   },
@@ -213,7 +223,9 @@ const routes: RouteObject[] = [
                       {
                         path: ":id",
                         lazy: () =>
-                          import("#renderer/pages/kh_hmis_quartors_show/component"),
+                          import(
+                            "#renderer/pages/kh_hmis_quartors_show/component"
+                          ),
                       },
                     ],
                   },

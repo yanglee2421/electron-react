@@ -1,5 +1,5 @@
 import { NumberField } from "#renderer/components/number";
-import { useHxzyHmisStore } from "#renderer/shared/hooks/ui/useHxzyHmisStore";
+import { useHxzyHmisStore } from "#renderer/hooks/stores/useHxzyHmisStore";
 import { hxzy_hmis, type HXZY_HMIS } from "#shared/instances/schema";
 import { SaveOutlined } from "@mui/icons-material";
 import {

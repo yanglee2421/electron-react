@@ -1,6 +1,6 @@
 import { useMobileMode } from "#renderer/api/fetch_preload";
 import { useLogUpdate } from "#renderer/api/logger";
-import { useProfileStore } from "#renderer/shared/hooks/ui/useProfileStore";
+import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import {
   CalendarMonthOutlined,
   CalendarTodayOutlined,

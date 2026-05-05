@@ -9,10 +9,10 @@ import {
   useUploadGuangzhoubeiAxleInfo,
 } from "#renderer/api/guangzhoubei";
 import { ScrollToTopButton } from "#renderer/components/scroll";
+import { useGuangzhoubei } from "#renderer/hooks/stores/useGuangzhoubei";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { useGuangzhoubei } from "#renderer/shared/hooks/ui/useGuangzhoubei";
 import {
   CheckOutlined,
   ClearOutlined,

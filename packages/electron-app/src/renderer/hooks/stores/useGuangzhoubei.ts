@@ -1,9 +1,7 @@
-import { ipc } from "#renderer/shared/instances/ipc";
+import { ipc } from "#renderer/lib/ipc";
 import { JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY } from "#shared/instances/constants";
-import {
-  jtv_hmis_guangzhoubei,
-  type JTV_HMIS_Guangzhoubei,
-} from "#shared/instances/schema";
+import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
+import { jtv_hmis_guangzhoubei } from "#shared/instances/schema";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";

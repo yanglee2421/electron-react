@@ -1,5 +1,5 @@
 import { NumberField } from "#renderer/components/number";
-import { useKhHmisStore } from "#renderer/shared/hooks/ui/useKhHmisStore";
+import { useKhHmisStore } from "#renderer/hooks/stores/useKhHmisStore";
 import { kh_hmis } from "#shared/instances/schema";
 import { SaveOutlined } from "@mui/icons-material";
 import {

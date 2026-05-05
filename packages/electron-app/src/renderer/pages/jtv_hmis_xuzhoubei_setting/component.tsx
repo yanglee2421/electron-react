@@ -1,5 +1,5 @@
 import { NumberField } from "#renderer/components/number";
-import { useXuzhoubei } from "#renderer/shared/hooks/ui/useXuzhoubei";
+import { useXuzhoubei } from "#renderer/hooks/stores/useXuzhoubei";
 import { jtv_hmis_xuzhoubei } from "#shared/instances/schema";
 import { SaveOutlined } from "@mui/icons-material";
 import {

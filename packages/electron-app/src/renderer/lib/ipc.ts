@@ -1,6 +1,6 @@
-import type { IpcContract } from "#main/lib/ipc";
+import type { IPCContract } from "#main/ipc/types";
 
-export type Args<TKey extends keyof IpcContract> = IpcContract[TKey] extends {
+type Args<TKey extends keyof IPCContract> = IPCContract[TKey] extends {
   args: infer TArgs;
 }
   ? TArgs extends unknown[]
@@ -8,14 +8,14 @@ export type Args<TKey extends keyof IpcContract> = IpcContract[TKey] extends {
     : []
   : never;
 
-export type Return<TKey extends keyof IpcContract> = IpcContract[TKey] extends {
+type Return<TKey extends keyof IPCContract> = IPCContract[TKey] extends {
   return: infer TReturn;
 }
   ? Promise<Awaited<TReturn>>
   : never;
 
-export class IPC {
-  invoke<TKey extends keyof IpcContract>(
+class IPC {
+  invoke<TKey extends keyof IPCContract>(
     key: TKey,
     ...args: Args<TKey>
   ): Return<TKey> {
@@ -32,3 +32,5 @@ export class IPC {
     return this.invoke("kv/remove", name);
   }
 }
+
+export const ipc = new IPC();

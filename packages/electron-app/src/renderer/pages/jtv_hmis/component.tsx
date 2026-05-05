@@ -9,10 +9,10 @@ import {
   useUploadAxleInfo,
 } from "#renderer/api/jtv";
 import { ScrollToTopButton } from "#renderer/components/scroll";
+import { useJTVHmisStore } from "#renderer/hooks/stores/useJTVHmisStore";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { useJTVHmisStore } from "#renderer/shared/hooks/ui/useJTVHmisStore";
 import {
   CheckOutlined,
   ClearOutlined,

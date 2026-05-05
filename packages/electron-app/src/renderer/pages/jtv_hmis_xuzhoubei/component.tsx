@@ -8,10 +8,10 @@ import {
   useInsertXuzhoubeiRecord,
   useUploadXuzhoubeiAxleInfo,
 } from "#renderer/api/xuzhoubei";
+import { useXuzhoubei } from "#renderer/hooks/stores/useXuzhoubei";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { useXuzhoubei } from "#renderer/shared/hooks/ui/useXuzhoubei";
 import {
   CheckOutlined,
   ClearOutlined,

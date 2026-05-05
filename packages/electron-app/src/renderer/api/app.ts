@@ -1,4 +1,4 @@
-import { ipc } from "#renderer/shared/instances/ipc";
+import { ipc } from "#renderer/lib/ipc";
 import { useMutation } from "@tanstack/react-query";
 
 export const useExportDB = () => {

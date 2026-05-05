@@ -8,10 +8,10 @@ import {
   useInsertKhRecord,
   useUploadAxleInfo,
 } from "#renderer/api/kh";
+import { useKhHmisStore } from "#renderer/hooks/stores/useKhHmisStore";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { useKhHmisStore } from "#renderer/shared/hooks/ui/useKhHmisStore";
 import {
   CheckOutlined,
   ClearOutlined,

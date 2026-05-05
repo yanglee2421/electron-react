@@ -5,7 +5,7 @@ import {
   useOpenDevTools,
   useSelectDirectory,
 } from "#renderer/api/fetch_preload";
-import { useProfileStore } from "#renderer/shared/hooks/ui/useProfileStore";
+import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import {
   AdminPanelSettings,
   BugReportOutlined,

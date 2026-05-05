@@ -1,5 +1,5 @@
 import { NumberField } from "#renderer/components/number";
-import { useJTVHmisStore } from "#renderer/shared/hooks/ui/useJTVHmisStore";
+import { useJTVHmisStore } from "#renderer/hooks/stores/useJTVHmisStore";
 import { jtv_hmis, type JTV_HMIS } from "#shared/instances/schema";
 import { SaveOutlined } from "@mui/icons-material";
 import {
