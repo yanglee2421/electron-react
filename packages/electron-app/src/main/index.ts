@@ -20,6 +20,7 @@ import { container } from "./features";
 import * as cmdIPC from "./features/cmd/ipc";
 import * as dbIPC from "./features/db/ipc";
 import * as guangzhoubeiIPC from "./features/guangzhoubei/ipc";
+import * as guangzhoujibaoduanIPC from "./features/guangzhoujibaoduan/ipc";
 import * as imageIPC from "./features/image/ipc";
 import * as jtvIPC from "./features/jtv/ipc";
 import * as kvIPC from "./features/kv/ipc";
@@ -115,11 +116,23 @@ const using$ = using(
     const migrationsFolder = path.resolve(__dirname, "../../drizzle");
     db.migrate(migrationsFolder);
 
-    const { cmd, kv, mdb, plc, profile, guangzhoubei, jtv, image, logger } =
-      container.cradle;
+    const {
+      cmd,
+      kv,
+      mdb,
+      plc,
+      profile,
+      guangzhoubei,
+      guangzhoujibaoduan,
+      jtv,
+      image,
+      logger,
+    } = container.cradle;
     const cmdUnIPC = cmdIPC.registerIPCHandlers(cmd);
     const dbUnIPC = dbIPC.registerIPCHandlers(db);
     const guangzhoubeiUnIPC = guangzhoubeiIPC.registerIPCHandlers(guangzhoubei);
+    const guangzhoujibaoduanUnIPC =
+      guangzhoujibaoduanIPC.registerIPCHandlers(guangzhoujibaoduan);
     const jtvUnIPC = jtvIPC.registerIPCHandlers(jtv);
     const imageUnIPC = imageIPC.registerIPCHandlers(image);
     const kvUnIPC = kvIPC.registerIPCHandlers(kv);
@@ -149,6 +162,7 @@ const using$ = using(
         cmdUnIPC();
         dbUnIPC();
         guangzhoubeiUnIPC();
+        guangzhoujibaoduanUnIPC();
         jtvUnIPC();
         imageUnIPC();
         kvUnIPC();
@@ -159,13 +173,7 @@ const using$ = using(
         xmlUnIPC();
         infraUnIPC();
 
-        db.dispose();
-        guangzhoubei.dispose();
-        jtv.dispose();
-        image.dispose();
-        mdb.dispose();
-        profile.dispose();
-
+        container.dispose();
         profileSubscription.unsubscribe();
         loggerSubscription.unsubscribe();
       },

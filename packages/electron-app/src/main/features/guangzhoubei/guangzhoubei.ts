@@ -376,7 +376,10 @@ export class Guangzhoubei {
       .equal("szTMMake", record.CZZZRQ)
       .date("tmnow", new Date(startDate), new Date(endDate));
 
-    const detection = atFirstOrThrow(detections.rows);
+    const detection = atFirstOrThrow(
+      detections.rows,
+      () => new Error(`记录#${id}对应的检测数据不存在`),
+    );
     let detectionDatas: DetectionData[] = [];
 
     switch (detection.szResult) {

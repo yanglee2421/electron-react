@@ -1,4 +1,5 @@
-import { type TextFieldProps, TextField } from "@mui/material";
+import type { TextFieldProps } from "@mui/material";
+import { TextField } from "@mui/material";
 import { clamp } from "@yotulee/run";
 import React from "react";
 
@@ -52,6 +53,10 @@ export const NumberField = (props: NumberFieldProps) => {
 
     field.onChange(nextValue);
   };
+
+  React.useEffect(() => {
+    console.log(focused);
+  }, []);
 
   return (
     <TextField

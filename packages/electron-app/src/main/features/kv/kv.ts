@@ -13,6 +13,10 @@ export class KV {
     this.db = db.client;
   }
 
+  dispose() {
+    this.events$.complete();
+  }
+
   getItem(key: string): string | null {
     const result = this.db
       .select()

@@ -30,7 +30,7 @@ const reactDevtoolsPlugin = (): Plugin => {
   };
 };
 
-export default defineConfig((config) => ({
+export default defineConfig(() => ({
   main: {
     resolve: { alias },
     build: { watch: {} },

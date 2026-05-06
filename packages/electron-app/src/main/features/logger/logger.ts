@@ -20,6 +20,10 @@ export class Logger {
     this.db = db.client;
   }
 
+  dispose() {
+    this.event$.complete();
+  }
+
   private emit() {
     this.event$.next();
   }

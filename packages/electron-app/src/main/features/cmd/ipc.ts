@@ -1,5 +1,5 @@
 import { ipcHandle, ipcRemoveHandle } from "#main/ipc";
-import { Cmd } from "./cmd";
+import type { Cmd } from "./cmd";
 
 export const registerIPCHandlers = (cmd: Cmd) => {
   ipcHandle("WIN/autoInputToVC", (_, params) => {

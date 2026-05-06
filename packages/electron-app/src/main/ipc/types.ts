@@ -1,6 +1,7 @@
 import type * as cmd from "#main/features/cmd/types";
 import type * as db from "#main/features/db/types";
 import type * as guangzhoubei from "#main/features/guangzhoubei/types";
+import type * as guangzhoujibaoduan from "#main/features/guangzhoujibaoduan/types";
 import type * as image from "#main/features/image/types";
 import type * as jtv from "#main/features/jtv/types";
 import type * as kv from "#main/features/kv/types";
@@ -16,6 +17,7 @@ export interface IPCContract
     db.IPCContract,
     image.IPCContract,
     guangzhoubei.IPCContract,
+    guangzhoujibaoduan.IPCContract,
     jtv.IPCContract,
     kv.IPCContract,
     logger.IPCContract,
