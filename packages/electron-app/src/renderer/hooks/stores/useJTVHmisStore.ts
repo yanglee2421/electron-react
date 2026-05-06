@@ -1,4 +1,4 @@
-import { ipc } from "#renderer/shared/instances/ipc";
+import { ipc } from "#renderer/lib/ipc";
 import { JTV_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import { jtv_hmis, type JTV_HMIS } from "#shared/instances/schema";
 import { create } from "zustand";

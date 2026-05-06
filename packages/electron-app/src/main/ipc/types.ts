@@ -1,6 +1,8 @@
 import type * as cmd from "#main/features/cmd/types";
 import type * as db from "#main/features/db/types";
+import type * as guangzhoubei from "#main/features/guangzhoubei/types";
 import type * as image from "#main/features/image/types";
+import type * as jtv from "#main/features/jtv/types";
 import type * as kv from "#main/features/kv/types";
 import type * as logger from "#main/features/logger/types";
 import type * as mdb from "#main/features/mdb/types";
@@ -13,6 +15,8 @@ export interface IPCContract
   extends cmd.IPCContract,
     db.IPCContract,
     image.IPCContract,
+    guangzhoubei.IPCContract,
+    jtv.IPCContract,
     kv.IPCContract,
     logger.IPCContract,
     mdb.IPCContract,

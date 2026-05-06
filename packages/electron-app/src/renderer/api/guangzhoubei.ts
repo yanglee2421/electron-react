@@ -1,15 +1,15 @@
-import type { InsertRecordParams, SQLiteGetParams } from "#main/lib/ipc";
-import { ipc } from "#renderer/shared/instances/ipc";
+import { ipc } from "#renderer/lib/ipc";
+import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
 import {
   queryOptions,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
 
-type JTVZHGetPayload = {
+interface JTVZHGetPayload {
   barcode: string;
   isZhMode?: boolean;
-};
+}
 
 const QUERY_KEY = "jtv_hmis_guangzhoubei";
 

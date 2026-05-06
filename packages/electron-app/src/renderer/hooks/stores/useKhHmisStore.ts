@@ -1,4 +1,4 @@
-import { ipc } from "#renderer/shared/instances/ipc";
+import { ipc } from "#renderer/lib/ipc";
 import { KH_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import { type KH_HMIS, kh_hmis } from "#shared/instances/schema";
 import { create } from "zustand";

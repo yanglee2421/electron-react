@@ -1,16 +1,12 @@
-import {
-  Box,
-  type BoxProps,
-  CircularProgress,
-  type CircularProgressProps,
-} from "@mui/material";
+import type { BoxProps, CircularProgressProps } from "@mui/material";
+import { Box, CircularProgress } from "@mui/material";
 
-type LoadingProps = {
+interface LoadingProps {
   slotProps?: {
     box?: BoxProps;
     circularProgress?: CircularProgressProps;
   };
-};
+}
 
 export const Loading = (props: LoadingProps) => {
   const { slotProps = {} } = props;

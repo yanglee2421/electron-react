@@ -1,6 +1,6 @@
-import type { ListOptions } from "#main/shared/factories/Logger";
+import type { ListOptions } from "#main/features/logger/types";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
-import { ipc } from "#renderer/shared/instances/ipc";
+import { ipc } from "#renderer/lib/ipc";
 import {
   queryOptions,
   useMutation,

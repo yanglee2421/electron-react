@@ -1,5 +1,5 @@
-import type { InsertRecordParams, SQLiteGetParams } from "#main/lib/ipc";
-import { ipc } from "#renderer/shared/instances/ipc";
+import { ipc } from "#renderer/lib/ipc";
+import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
 import {
   queryOptions,
   useMutation,

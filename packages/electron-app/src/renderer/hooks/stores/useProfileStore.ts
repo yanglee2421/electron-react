@@ -1,4 +1,4 @@
-import { ipc } from "#renderer/shared/instances/ipc";
+import { ipc } from "#renderer/lib/ipc";
 import { PROFILE_STORAGE_KEY } from "#shared/instances/constants";
 import { profile, type Profile } from "#shared/instances/schema";
 import { create } from "zustand";

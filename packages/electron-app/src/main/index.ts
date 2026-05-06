@@ -19,7 +19,9 @@ import {
 import { container } from "./features";
 import * as cmdIPC from "./features/cmd/ipc";
 import * as dbIPC from "./features/db/ipc";
+import * as guangzhoubeiIPC from "./features/guangzhoubei/ipc";
 import * as imageIPC from "./features/image/ipc";
+import * as jtvIPC from "./features/jtv/ipc";
 import * as kvIPC from "./features/kv/ipc";
 import * as logIPC from "./features/logger/ipc";
 import * as mdbIPC from "./features/mdb/ipc";
@@ -113,9 +115,12 @@ const using$ = using(
     const migrationsFolder = path.resolve(__dirname, "../../drizzle");
     db.migrate(migrationsFolder);
 
-    const { cmd, kv, mdb, plc, profile, image, logger } = container.cradle;
+    const { cmd, kv, mdb, plc, profile, guangzhoubei, jtv, image, logger } =
+      container.cradle;
     const cmdUnIPC = cmdIPC.registerIPCHandlers(cmd);
     const dbUnIPC = dbIPC.registerIPCHandlers(db);
+    const guangzhoubeiUnIPC = guangzhoubeiIPC.registerIPCHandlers(guangzhoubei);
+    const jtvUnIPC = jtvIPC.registerIPCHandlers(jtv);
     const imageUnIPC = imageIPC.registerIPCHandlers(image);
     const kvUnIPC = kvIPC.registerIPCHandlers(kv);
     const logUnIPC = logIPC.registerIPCHandlers(logger);
@@ -125,7 +130,7 @@ const using$ = using(
     const xmlUnIPC = xmlIPC.registerIPCHandlers();
     const infraUnIPC = infraIPC.registerIPCHandlers();
 
-    profile.state$.subscribe((state) => {
+    const profileSubscription = profile.state$.subscribe((state) => {
       nativeTheme.themeSource = state.mode;
 
       BrowserWindow.getAllWindows().forEach((win) => {
@@ -133,7 +138,7 @@ const using$ = using(
       });
     });
 
-    logger.event$.subscribe(() => {
+    const loggerSubscription = logger.event$.subscribe(() => {
       BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("logUpdated");
       });
@@ -141,11 +146,10 @@ const using$ = using(
 
     return {
       unsubscribe: () => {
-        db.dispose();
-        image.dispose();
-
         cmdUnIPC();
         dbUnIPC();
+        guangzhoubeiUnIPC();
+        jtvUnIPC();
         imageUnIPC();
         kvUnIPC();
         logUnIPC();
@@ -154,6 +158,16 @@ const using$ = using(
         profileUnIPC();
         xmlUnIPC();
         infraUnIPC();
+
+        db.dispose();
+        guangzhoubei.dispose();
+        jtv.dispose();
+        image.dispose();
+        mdb.dispose();
+        profile.dispose();
+
+        profileSubscription.unsubscribe();
+        loggerSubscription.unsubscribe();
       },
     };
   },
@@ -181,11 +195,9 @@ const primarySubscription = primaryInstance$
     Menu.setApplicationMenu(null);
 
     if (platform.isWindows) {
-      // Set app user model id for windows
       electronApp.setAppUserModelId("com.electron");
     }
 
-    // void bootstrap();
     void createWindow();
   });
 
@@ -195,9 +207,7 @@ willQuit$.pipe(take(1)).subscribe(() => {
 
 activate$
   .pipe(filter(() => BrowserWindow.getAllWindows().length === 0))
-  .subscribe(() => {
-    void createWindow();
-  });
+  .subscribe(() => createWindow());
 
 secondInstance$.subscribe(() => {
   const win = BrowserWindow.getAllWindows().at(0);
@@ -243,72 +253,3 @@ browserWindowCreated$.subscribe((args) => {
 windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
   app.quit();
 });
-
-// interface HydratableModule {
-//   hydrate: () => Promise<void>;
-// }
-
-// const hydrateModules = async (...modules: HydratableModule[]) => {
-//   await Promise.allSettled(modules.map((module) => module.hydrate()));
-// };
-
-// const bootstrap = async () => {
-//   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-//   const databasePath = path.resolve(app.getPath("userData"), "db.db");
-//   const sqliteDB = createSQLiteDB({
-//     databasePath,
-//     migrationsFolder: path.resolve(__dirname, "../../drizzle"),
-//   });
-//   const kvInstance = new kv.KV(sqliteDB);
-//   const profile = new Profile(kvInstance);
-//   const mdbDB = new mdb.MDBDB(profile);
-//   const logger = new log.Logger(sqliteDB);
-//   const hxzyHmis = new hxzy.Hxzy(sqliteDB, kvInstance, mdbDB, net, logger);
-//   const khHmis = new kh.KH(sqliteDB, kvInstance, mdbDB, net, logger);
-//   const jtvHmis = new jtv.JTV(sqliteDB, kvInstance, mdbDB, net, logger);
-//   const xuzhoubeiHmis = new xuzhoubei.Xuzhoubei(
-//     sqliteDB,
-//     kvInstance,
-//     mdbDB,
-//     net,
-//     logger,
-//   );
-//   const guangzhoubeiHmis = new guangzhoubei.Guangzhoubei(
-//     sqliteDB,
-//     kvInstance,
-//     mdbDB,
-//     net,
-//     logger,
-//   );
-//   const jtv_hmis_guangzhoujibaoduan =
-//     new guangzhouJibaoduan.JTV_HMIS_Guangzhoujibaoduan(
-//       sqliteDB,
-//       kvInstance,
-//       mdbDB,
-//       net,
-//       logger,
-//     );
-
-//   await hydrateModules(
-//     profile,
-//     guangzhoubeiHmis,
-//     jtv_hmis_guangzhoujibaoduan,
-//     xuzhoubeiHmis,
-//     hxzyHmis,
-//     khHmis,
-//     jtvHmis,
-//   );
-
-//   const ipch = new IPCHandle(logger);
-//   const ipcHandle = ipch.handle.bind(ipch);
-
-//   bindIpcHandles(ipcHandle);
-
-//   mdb.bindIpcHandlers(mdbDB, ipcHandle);
-//   kh.bindIpcHandlers(khHmis, ipcHandle);
-//   jtv.bindIpcHandlers(jtvHmis, ipcHandle);
-//   hxzy.bindIPCHandlers(hxzyHmis, ipcHandle);
-//   xuzhoubei.bindIpcHandlers(xuzhoubeiHmis, ipcHandle);
-//   guangzhoubei.bindIpcHandlers(guangzhoubeiHmis, ipcHandle);
-//   guangzhouJibaoduan.bindIpc(jtv_hmis_guangzhoujibaoduan, ipcHandle);
-// };

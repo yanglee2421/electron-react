@@ -20,8 +20,9 @@ export const registerIPCHandlers = () => {
     "XML/SELECT_XML_PDF_FROM_FOLDER",
     async (_, filePaths: string[]) => {
       const allFilePaths = await collectAllFilePaths(filePaths);
+      console.log("allFilePaths", allFilePaths);
       const fileteredFilePaths = [...allFilePaths].filter((filePath) => {
-        const extname = path.extname(filePath);
+        const extname = path.extname(filePath).toLowerCase();
         switch (extname) {
           case ".pdf":
           case ".xml":
@@ -30,13 +31,14 @@ export const registerIPCHandlers = () => {
             return false;
         }
       });
+      console.log("fileteredFilePaths", fileteredFilePaths);
       return fileteredFilePaths;
     },
   );
   ipcHandle("XML/XML_PDF_COMPUTE", async (_, filePaths: string[]) => {
     const resultMap = new Map<string, Invoice>();
     const fileGroup = mapGroupBy(filePaths, (filePath) =>
-      path.extname(filePath),
+      path.extname(filePath).toLowerCase(),
     );
     const pdfGroup = fileGroup.get(".pdf") || [];
     const xmlGroup = fileGroup.get(".xml") || [];

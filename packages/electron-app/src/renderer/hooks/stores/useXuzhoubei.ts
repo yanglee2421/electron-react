@@ -1,4 +1,4 @@
-import { ipc } from "#renderer/shared/instances/ipc";
+import { ipc } from "#renderer/lib/ipc";
 import { JTV_HMIS_XUZHOUBEI_STORAGE_KEY } from "#shared/instances/constants";
 import {
   jtv_hmis_xuzhoubei,

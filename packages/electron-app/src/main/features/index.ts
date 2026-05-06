@@ -1,7 +1,9 @@
 import { asClass, createContainer } from "awilix";
 import { Cmd } from "./cmd";
 import { DB } from "./db";
+import { Guangzhoubei } from "./guangzhoubei";
 import { ImageModule } from "./image";
+import { JTV } from "./jtv";
 import { KV } from "./kv";
 import { Logger } from "./logger";
 import { MDB } from "./mdb";
@@ -14,6 +16,8 @@ export const container = createContainer<AppCradle>();
 container.register({
   cmd: asClass(Cmd).singleton(),
   db: asClass(DB).singleton(),
+  guangzhoubei: asClass(Guangzhoubei).singleton(),
+  jtv: asClass(JTV).singleton(),
   image: asClass(ImageModule).singleton(),
   kv: asClass(KV).singleton(),
   logger: asClass(Logger).singleton(),

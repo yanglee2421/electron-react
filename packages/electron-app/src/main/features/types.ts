@@ -1,6 +1,8 @@
 import type { DB } from "#main/features/db";
 import type { Cmd } from "./cmd";
+import type { Guangzhoubei } from "./guangzhoubei";
 import type { ImageModule } from "./image";
+import type { JTV } from "./jtv";
 import type { KV } from "./kv";
 import type { Logger } from "./logger";
 import type { MDB } from "./mdb";
@@ -11,10 +13,12 @@ export interface AppCradle {
   dbPath: string;
   cmd: Cmd;
   db: DB;
+  guangzhoubei: Guangzhoubei;
   image: ImageModule;
   kv: KV;
   logger: Logger;
   mdb: MDB;
   plc: PLC;
   profile: Profile;
+  jtv: JTV;
 }

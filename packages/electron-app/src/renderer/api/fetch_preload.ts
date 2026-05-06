@@ -1,22 +1,23 @@
-import type { IpcContract, PLCWritePayload } from "#main/lib/ipc";
-import type { AutoInputToVCParams } from "#main/modules/cmd";
-import type { MDBPayload } from "#main/modules/mdb";
+import type { AutoInputToVCParams } from "#main/features/cmd/types";
+import type { MDBPayload } from "#main/features/mdb/types";
+import type { PLCWritePayload } from "#main/features/plc/types";
+import type { IPCContract } from "#main/ipc/types";
 import {
   queryOptions,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
 
-export type MDBUser = {
+export interface MDBUser {
   szUid: string;
   szPasswd: string | null;
   bAdmin: boolean;
   lastLogin: string;
   szMemo: string | null;
   userCode: string | null;
-};
+}
 
-type Args<TKey extends keyof IpcContract> = IpcContract[TKey] extends {
+type Args<TKey extends keyof IPCContract> = IPCContract[TKey] extends {
   args: infer TArgs;
 }
   ? TArgs extends unknown[]
@@ -24,13 +25,13 @@ type Args<TKey extends keyof IpcContract> = IpcContract[TKey] extends {
     : []
   : never;
 
-type Return<TKey extends keyof IpcContract> = IpcContract[TKey] extends {
+type Return<TKey extends keyof IPCContract> = IPCContract[TKey] extends {
   return: infer TReturn;
 }
   ? Promise<TReturn>
   : never;
 
-const invoke = <TKey extends keyof IpcContract>(
+const invoke = <TKey extends keyof IPCContract>(
   channel: TKey,
   ...args: Args<TKey>
 ): Return<TKey> => {

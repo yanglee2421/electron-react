@@ -1,4 +1,4 @@
-import { ipc } from "#renderer/shared/instances/ipc";
+import { ipc } from "#renderer/lib/ipc";
 import { GUANGZHOU_JIBAODUAN_STORAGE_KEY } from "#shared/instances/constants";
 import {
   guangzhoujibaoduan,

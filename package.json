@@ -36,8 +36,6 @@
   "scripts": {
     "dev": "pnpm -F electron-app dev",
     "build": "pnpm -F electron-app build",
-    "rebuild": "pnpm -F cpp-addon rebuild",
-    "rebuild:electron": "pnpm -F cpp-addon rebuild:electron -v 38.7.2",
     "db:generate": "pnpm -F electron-app db:generate"
   },
   "devDependencies": {

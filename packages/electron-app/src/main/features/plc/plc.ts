@@ -17,8 +17,6 @@ export class PLC {
     "D309",
   ];
 
-  constructor() {}
-
   createPLCClient(path: string = this.DEFAULT_PATH) {
     const port = new TransportSerial({
       path,

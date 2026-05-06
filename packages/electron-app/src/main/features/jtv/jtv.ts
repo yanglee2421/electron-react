@@ -1,14 +1,10 @@
 // 京天威 统型
 
-import type { SQLiteDBType } from "#main/db";
-import * as schema from "#main/db/schema";
+import * as schema from "#main/features/db/schema";
+import type { DBClient } from "#main/features/db/types";
+import type { Logger } from "#main/features/logger";
+import type { Detection, DetectionData } from "#main/features/mdb/types";
 import { createEmit, getIP } from "#main/lib";
-import type {
-  InsertRecordParams,
-  IpcHandle,
-  SQLiteGetParams,
-} from "#main/lib/ipc";
-import type { Detection, DetectionData, MDBDB } from "#main/modules/mdb";
 import {
   detectionDataToTPlace,
   tmnowToTSSJ,
@@ -16,13 +12,16 @@ import {
 import { JTV_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { JTV_HMIS } from "#shared/instances/schema";
 import { jtv_hmis } from "#shared/instances/schema";
+import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
+import { atFirstOrThrow } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
+import { net } from "electron";
 import pLimit from "p-limit";
-import type { KV } from "../KV";
-import type { Logger } from "../Logger";
-import type { Net } from "./hmis";
-import { HMIS } from "./hmis";
+import type { Subscription } from "rxjs";
+import { BehaviorSubject } from "rxjs";
+import type { MDB } from "../mdb";
+import type { AppCradle } from "../types";
 
 interface ZH_Item {
   DH: string;
@@ -152,29 +151,52 @@ const normalizeDHResponse = (data: DH_Response) => {
 
 const emit = createEmit("api_set");
 
-export class JTV extends HMIS<JTV_HMIS> {
-  private db: SQLiteDBType;
-  private mdb: MDBDB;
-  private net: Net;
+export class JTV {
+  private state$: BehaviorSubject<JTV_HMIS>;
+  private db: DBClient;
+  private mdb: MDB;
   private logger: Logger;
+  private subscription: Subscription;
 
-  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net, logger: Logger) {
-    super(jtv_hmis.parse.bind(jtv_hmis), JTV_HMIS_STORAGE_KEY, kv);
-
-    this.db = db;
+  constructor({ db, mdb, logger, kv }: AppCradle) {
+    this.db = db.client;
     this.mdb = mdb;
-    this.net = net;
     this.logger = logger;
+
+    const stateJson = kv.getItem(JTV_HMIS_STORAGE_KEY);
+    const state = stateJson ? JSON.parse(stateJson).state : {};
+    const initialState = jtv_hmis.parse(state);
+    this.state$ = new BehaviorSubject<JTV_HMIS>(initialState);
+
+    this.subscription = kv.events$.subscribe((event) => {
+      if (event.key !== JTV_HMIS_STORAGE_KEY) {
+        return;
+      }
+
+      switch (event.action) {
+        case "set":
+          this.state$.next(
+            jtv_hmis.parse(event.value ? JSON.parse(event.value).state : {}),
+          );
+          break;
+        case "remove":
+        case "clear":
+          this.state$.next(jtv_hmis.parse({}));
+          break;
+      }
+    });
   }
 
-  async hydrate() {
-    await super.hydrate();
+  dispose() {
+    this.subscription.unsubscribe();
+  }
 
-    void this.autoUploadLoop();
+  get state() {
+    return this.state$.getValue();
   }
 
   async autoUploadLoop() {
-    if (!this.getStore().autoUpload) {
+    if (!this.state.autoUpload) {
       return;
     }
 
@@ -199,7 +221,7 @@ export class JTV extends HMIS<JTV_HMIS> {
         barcodes.map((barcode) => limit(() => this.handleUpload(barcode.id))),
       );
     } finally {
-      const store = this.getStore();
+      const store = this.state;
       const timeout = store.autoUploadInterval * 1000;
 
       setTimeout(this.autoUploadLoop.bind(this), timeout);
@@ -207,7 +229,7 @@ export class JTV extends HMIS<JTV_HMIS> {
   }
 
   makeDataRequestURL(dh: string) {
-    const store = this.getStore();
+    const store = this.state;
     const host = store.ip + ":" + store.port;
     const unitCode = store.unitCode;
     const url = new URL(`http://${host}/api/getData`);
@@ -223,7 +245,7 @@ export class JTV extends HMIS<JTV_HMIS> {
     url.searchParams.set("type", "csbtszh");
     this.logger.log({ title: `请求轴号数据:`, message: url.href });
 
-    const res = await this.net.fetch(url.href, { method: "GET" });
+    const res = await net.fetch(url.href, { method: "GET" });
 
     if (!res.ok) {
       throw new Error(`接口异常[${res.status}]:${res.statusText}`);
@@ -245,7 +267,7 @@ export class JTV extends HMIS<JTV_HMIS> {
     url.searchParams.set("type", "csbts");
     this.logger.log({ title: `请求单号数据:`, message: url.href });
 
-    const res = await this.net.fetch(url.href, { method: "GET" });
+    const res = await net.fetch(url.href, { method: "GET" });
 
     if (!res.ok) {
       throw new Error(`接口异常[${res.status}]:${res.statusText}`);
@@ -262,7 +284,7 @@ export class JTV extends HMIS<JTV_HMIS> {
   }
 
   async sendPostRequest(request: PostItem[]) {
-    const store = this.getStore();
+    const store = this.state;
     const host = store.ip + ":" + store.port;
     const url = new URL(`http://${host}/api/saveData`);
     const body = JSON.stringify(request);
@@ -274,7 +296,7 @@ export class JTV extends HMIS<JTV_HMIS> {
       json: body,
     });
 
-    const res = await this.net.fetch(url.href, {
+    const res = await net.fetch(url.href, {
       method: "POST",
       body,
       headers: {
@@ -303,7 +325,7 @@ export class JTV extends HMIS<JTV_HMIS> {
     detection: Detection,
     detectionData?: DetectionData,
   ) {
-    const store = this.getStore();
+    const store = this.state;
     const user = detection.szUsername || "";
     const signature_prefix = store.signature_prefix;
     const signature = signature_prefix + user;
@@ -342,29 +364,35 @@ export class JTV extends HMIS<JTV_HMIS> {
       throw new Error(`记录#${id}条形码不存在`);
     }
 
-    const corporation = await this.mdb.getCorporation();
+    const corporation = await this.mdb.app().corporation();
     const eq_bh = corporation.DeviceNO || "";
     const eq_ip = getIP();
     const startDate = dayjs(record.date).toISOString();
     const endDate = dayjs(record.date).endOf("day").toISOString();
 
-    const detection = await this.mdb.getDetectionForJTV({
-      zh: record.zh,
-      startDate,
-      endDate,
-      CZZZDW: record.CZZZDW || "",
-      CZZZRQ: record.CZZZRQ || "",
-    });
+    const detections = await this.mdb
+      .root()
+      .detections()
+      .equal("szIDsWheel", record.zh)
+      .equal("szIDsMake", record.CZZZDW)
+      .equal("szTMMake", record.CZZZRQ)
+      .date("tmnow", new Date(startDate), new Date(endDate));
 
+    const detection = atFirstOrThrow(
+      detections.rows,
+      () => new Error(`记录#${id}对应的检测数据不存在`),
+    );
     let detectionDatas: DetectionData[] = [];
 
     switch (detection.szResult) {
       case "故障":
       case "有故障":
       case "疑似故障":
-        detectionDatas = await this.mdb.getDetectionDatasByOPID(
-          detection.szIDs,
-        );
+        detectionDatas = await this.mdb
+          .root()
+          .detections_data()
+          .equal("opid", detection.szIDs)
+          .then((r) => r.rows);
         break;
       default:
     }
@@ -458,57 +486,4 @@ export class JTV extends HMIS<JTV_HMIS> {
       })
       .returning();
   }
-}
-
-export interface Ipc {
-  "HMIS/jtv_hmis_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: ReturnType<JTV["handleReadRecord"]>;
-  };
-  "HMIS/jtv_hmis_sqlite_delete": {
-    args: [number];
-    return: ReturnType<JTV["handleDeleteRecord"]>;
-  };
-  "HMIS/jtv_hmis_sqlite_insert": {
-    args: [InsertRecordParams];
-    return: ReturnType<JTV["handleInsertRecord"]>;
-  };
-  "HMIS/jtv_hmis_api_get": {
-    args: [string, boolean?];
-    return: ReturnType<JTV["handleFetch"]>;
-  };
-  "HMIS/jtv_hmis_api_set": {
-    args: [number];
-    return: ReturnType<JTV["handleUpload"]>;
-  };
-}
-
-export const bindIpcHandlers = (hmis: JTV, ipcHandle: IpcHandle) => {
-  ipcHandle("HMIS/jtv_hmis_sqlite_get", (_, params) => {
-    return hmis.handleReadRecord(params);
-  });
-  ipcHandle("HMIS/jtv_hmis_sqlite_delete", (_, id) => {
-    return hmis.handleDeleteRecord(id);
-  });
-  ipcHandle("HMIS/jtv_hmis_sqlite_insert", (_, data) => {
-    return hmis.handleInsertRecord(data);
-  });
-  ipcHandle("HMIS/jtv_hmis_api_get", (_, dh, isZhMode) => {
-    return hmis.handleFetch(dh, isZhMode);
-  });
-  ipcHandle("HMIS/jtv_hmis_api_set", (_, id) => {
-    return hmis.handleUpload(id);
-  });
-};
-
-export interface JTVNormalizeResponse {
-  DH: string;
-  ZH: string;
-  ZX: string;
-  CZZZDW: string;
-  CZZZRQ: string;
-  MCZZDW: string;
-  MCZZRQ: string;
-  SCZZDW: string;
-  SCZZRQ: string;
 }

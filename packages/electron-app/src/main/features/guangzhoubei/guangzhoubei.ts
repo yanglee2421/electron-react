@@ -1,5 +1,4 @@
 // 京天威 广州北
-
 import * as schema from "#main/features/db/schema";
 import type { Detection, DetectionData } from "#main/features/mdb/types";
 import { createEmit, getIP } from "#main/lib";
@@ -7,9 +6,16 @@ import {
   detectionDataToTPlace,
   tmnowToTSSJ,
 } from "#shared/functions/flawDetection";
+import { JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY } from "#shared/instances/constants";
+import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
+import { jtv_hmis_guangzhoubei } from "#shared/instances/schema";
+import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
+import { atFirstOrThrow } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
+import { net } from "electron";
 import pLimit from "p-limit";
+import type { Subscription } from "rxjs";
 import { BehaviorSubject } from "rxjs";
 import type { DBClient } from "../db/types";
 import type { Logger } from "../logger";
@@ -148,20 +154,53 @@ const normalizeDHResponse = (data: DH_Response) => {
 const emit = createEmit("api_set");
 
 export class Guangzhoubei {
-  readonly state$: BehaviorSubject<>;
+  readonly state$: BehaviorSubject<JTV_HMIS_Guangzhoubei>;
   private db: DBClient;
   private mdb: MDB;
   private logger: Logger;
+  private subscription: Subscription;
 
-  constructor({ db, mdb, logger, profile }: AppCradle) {
+  constructor({ db, mdb, logger, kv }: AppCradle) {
     this.db = db.client;
     this.mdb = mdb;
     this.logger = logger;
-    this.profile = profile;
+
+    const stateJson = kv.getItem(JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY);
+    const state = jtv_hmis_guangzhoubei.parse(
+      stateJson ? JSON.parse(stateJson).state : {},
+    );
+    this.state$ = new BehaviorSubject<JTV_HMIS_Guangzhoubei>(state);
+
+    this.subscription = kv.events$.subscribe((event) => {
+      if (event.key !== JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY) {
+        return;
+      }
+
+      switch (event.action) {
+        case "set":
+          const newState = jtv_hmis_guangzhoubei.parse(
+            event.value ? JSON.parse(event.value).state : {},
+          );
+          this.state$.next(newState);
+          break;
+        case "remove":
+        case "clear":
+          this.state$.next(jtv_hmis_guangzhoubei.parse({}));
+          break;
+      }
+    });
+  }
+
+  dispose() {
+    this.subscription.unsubscribe();
+  }
+
+  get state() {
+    return this.state$.getValue();
   }
 
   async autoUploadLoop() {
-    if (!this.profile.state.autoUpload) return;
+    if (!this.state.autoUpload) return;
 
     const limit = pLimit(1);
 
@@ -184,7 +223,7 @@ export class Guangzhoubei {
         barcodes.map((dh) => limit(() => this.handleUpload(dh.id))),
       );
     } finally {
-      const store = this.getStore();
+      const store = this.state;
       const delay = store.autoUploadInterval * 1000;
 
       setTimeout(this.autoUploadLoop.bind(this), delay);
@@ -192,7 +231,7 @@ export class Guangzhoubei {
   }
 
   makeDataRequestURL(dh: string) {
-    const store = this.getStore();
+    const store = this.state;
     const host = store.get_ip + ":" + store.get_port;
     const unitCode = store.unitCode;
     const url = new URL(`http://${host}/api/getData`);
@@ -208,7 +247,7 @@ export class Guangzhoubei {
     url.searchParams.set("type", "csbtszh");
     this.logger.log({ title: `请求轴号数据:${url.href}` });
 
-    const res = await this.net.fetch(url.href, { method: "GET" });
+    const res = await net.fetch(url.href, { method: "GET" });
 
     if (!res.ok) {
       throw new Error(`接口异常[${res.status}]:${res.statusText}`);
@@ -230,7 +269,7 @@ export class Guangzhoubei {
     url.searchParams.set("type", "csbts");
     this.logger.error({ title: `请求单号数据:`, message: url.href });
 
-    const res = await this.net.fetch(url.href, { method: "GET" });
+    const res = await net.fetch(url.href, { method: "GET" });
 
     if (!res.ok) {
       throw new Error(`接口异常[${res.status}]:${res.statusText}`);
@@ -247,7 +286,7 @@ export class Guangzhoubei {
   }
 
   async sendDataToServer(request: PostItem[]) {
-    const store = this.getStore();
+    const store = this.state;
     const host = store.post_ip + ":" + store.post_port;
     const url = new URL(`http://${host}/pmss/example.do`);
     const body = JSON.stringify(request);
@@ -259,7 +298,7 @@ export class Guangzhoubei {
       json: JSON.stringify({ url: url.href, body }),
     });
 
-    const res = await this.net.fetch(url.href, {
+    const res = await net.fetch(url.href, {
       method: "POST",
       body,
       headers: {
@@ -284,7 +323,7 @@ export class Guangzhoubei {
     detection: Detection,
     detectionData?: DetectionData,
   ) {
-    const store = this.getStore();
+    const store = this.state;
     const user = detection.szUsername || "";
     const signature_prefix = store.signature_prefix;
     const signature = signature_prefix + user;
@@ -323,29 +362,32 @@ export class Guangzhoubei {
       throw new Error(`记录#${id}条形码不存在`);
     }
 
-    const corporation = await this.mdb.getCorporation();
+    const corporation = await this.mdb.app().corporation();
     const eq_bh = corporation.DeviceNO || "";
     const eq_ip = getIP();
     const startDate = dayjs(record.date).toISOString();
     const endDate = dayjs(record.date).endOf("day").toISOString();
 
-    const detection = await this.mdb.getDetectionForJTV({
-      zh: record.zh,
-      startDate,
-      endDate,
-      CZZZDW: record.CZZZDW || "",
-      CZZZRQ: record.CZZZRQ || "",
-    });
+    const detections = await this.mdb
+      .root()
+      .detections()
+      .equal("szIDsWheel", record.zh)
+      .equal("szIDsMake", record.CZZZDW)
+      .equal("szTMMake", record.CZZZRQ)
+      .date("tmnow", new Date(startDate), new Date(endDate));
 
+    const detection = atFirstOrThrow(detections.rows);
     let detectionDatas: DetectionData[] = [];
 
     switch (detection.szResult) {
       case "故障":
       case "有故障":
       case "疑似故障":
-        detectionDatas = await this.mdb.getDetectionDatasByOPID(
-          detection.szIDs,
-        );
+        detectionDatas = await this.mdb
+          .root()
+          .detections_data()
+          .equal("opid", detection.szIDs)
+          .then((r) => r.rows);
         break;
       default:
     }
@@ -445,44 +487,3 @@ export class Guangzhoubei {
       .returning();
   }
 }
-
-export interface Ipc {
-  "HMIS/jtv_hmis_guangzhoubei_api_get": {
-    args: [string, boolean?];
-    return: ReturnType<typeof Guangzhoubei.prototype.handleFetch>;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_api_set": {
-    args: [number];
-    return: ReturnType<typeof Guangzhoubei.prototype.handleUpload>;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: ReturnType<typeof Guangzhoubei.prototype.handleReadRecord>;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_sqlite_delete": {
-    args: [number];
-    return: ReturnType<typeof Guangzhoubei.prototype.handleDeleteRecord>;
-  };
-  "HMIS/jtv_hmis_guangzhoubei_sqlite_insert": {
-    args: [InsertRecordParams];
-    return: ReturnType<typeof Guangzhoubei.prototype.handleInsertRecord>;
-  };
-}
-
-export const bindIpcHandlers = (hmis: Guangzhoubei, ipcHandle: IpcHandle) => {
-  ipcHandle("HMIS/jtv_hmis_guangzhoubei_sqlite_get", (_, params) => {
-    return hmis.handleReadRecord(params);
-  });
-  ipcHandle("HMIS/jtv_hmis_guangzhoubei_sqlite_delete", (_, id) => {
-    return hmis.handleDeleteRecord(id);
-  });
-  ipcHandle("HMIS/jtv_hmis_guangzhoubei_sqlite_insert", (_, data) => {
-    return hmis.handleInsertRecord(data);
-  });
-  ipcHandle("HMIS/jtv_hmis_guangzhoubei_api_get", (_, barcode, isZhMode) => {
-    return hmis.handleFetch(barcode, isZhMode);
-  });
-  ipcHandle("HMIS/jtv_hmis_guangzhoubei_api_set", (_, id) => {
-    return hmis.handleUpload(id);
-  });
-}; // Guangzhoubei
