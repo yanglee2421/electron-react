@@ -20,7 +20,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 # Include directories: cmake-js headers and node-addon-api headers
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_JS_INC} "${NODE_ADDON_API_DIR}")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_JS_LIB})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_JS_LIB} imm32)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 
 if(MSVC)

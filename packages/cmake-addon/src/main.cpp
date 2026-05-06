@@ -1,5 +1,6 @@
 #include <napi.h>
 #include <windows.h>
+#include <imm.h>
 #include <string>
 
 Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
@@ -129,6 +130,39 @@ Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
   return Napi::Number::New(env, static_cast<double>(dwResult));
 }
 
+Napi::Value ImmDisableIMEWrapped(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  DWORD id = static_cast<DWORD>(-1);
+  if (info.Length() >= 1 && info[0].IsNumber()) {
+    id = static_cast<DWORD>(info[0].As<Napi::Number>().Uint32Value());
+  }
+
+  BOOL result = ImmDisableIME(id);
+  return Napi::Boolean::New(env, result);
+}
+
+Napi::Value ImmAssociateContextWrapped(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  if (info.Length() < 2 || !info[0].IsNumber()) {
+    Napi::TypeError::New(env, "expected 2 arguments: hwnd (number), himc (number|null)")
+        .ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  HWND hwnd = reinterpret_cast<HWND>(
+      static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
+      
+  HIMC himc = NULL;
+  if (info[1].IsNumber()) {
+    himc = reinterpret_cast<HIMC>(
+      static_cast<uintptr_t>(info[1].As<Napi::Number>().DoubleValue()));
+  }
+
+  HIMC prevContext = ImmAssociateContext(hwnd, himc);
+  return Napi::Number::New(
+      env, static_cast<double>(reinterpret_cast<uintptr_t>(prevContext)));
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set(
       Napi::String::New(env, "findWindow"),
@@ -142,6 +176,12 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set(
       Napi::String::New(env, "sendMessage"),
       Napi::Function::New(env, SendMessageWrapped));
+  exports.Set(
+      Napi::String::New(env, "immDisableIME"),
+      Napi::Function::New(env, ImmDisableIMEWrapped));
+  exports.Set(
+      Napi::String::New(env, "immAssociateContext"),
+      Napi::Function::New(env, ImmAssociateContextWrapped));
 
   return exports;
 }

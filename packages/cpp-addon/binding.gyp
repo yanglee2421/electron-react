@@ -12,14 +12,14 @@
         [
           "OS=='win'",
           {
-            "libraries": ["-luser32.lib"],
+            "libraries": ["-luser32.lib", "-limm32.lib"],
             "msvs_settings": {
               "VCCLCompilerTool": {
                 "ExceptionHandling": 1,
                 "AdditionalOptions": ["/utf-8"]
               },
               "VCLinkerTool": {
-                "AdditionalDependencies": ["user32.lib"]
+                "AdditionalDependencies": ["user32.lib", "imm32.lib"]
               }
             }
           }
