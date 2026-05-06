@@ -1,5 +1,5 @@
 import type { HxzyBarcode } from "#main/db/schema";
-import type { HxzyGetResponse } from "#main/shared/factories/hmis/hxzy";
+import type { HxzyGetResponse } from "#main/features/hxzy/hxzy";
 import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
   fetchHxzyRecord,

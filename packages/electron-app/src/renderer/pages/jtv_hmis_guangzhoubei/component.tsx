@@ -1,5 +1,5 @@
-import type { JTVGuangzhoubeiBarcode } from "#main/db/schema";
-import type { NormalizeResponse } from "#main/shared/factories/hmis/guangzhoubei";
+import type { JTVGuangzhoubeiBarcode } from "#main/features/db/schema";
+import type { NormalizeResponse } from "#main/features/guangzhoubei/types";
 import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
   fetchGuangzhoubeiRecord,
@@ -515,12 +515,12 @@ export const Component = () => {
       {
         zx: dataItem.ZX,
         zh: dataItem.ZH,
-        czzzdw: dataItem.CZZZDW,
-        sczzdw: dataItem.SCZZDW,
-        mczzdw: dataItem.MCZZDW,
-        czzzrq: dataItem.CZZZRQ,
-        sczzrq: dataItem.SCZZRQ,
-        mczzrq: dataItem.MCZZRQ,
+        czzzdw: dataItem.CZZZDW || "",
+        sczzdw: dataItem.SCZZDW || "",
+        mczzdw: dataItem.MCZZDW || "",
+        czzzrq: dataItem.CZZZRQ || "",
+        sczzrq: dataItem.SCZZRQ || "",
+        mczzrq: dataItem.MCZZRQ || "",
         ztx: dataItem.ZTX ? "0" : "1",
         ytx: dataItem.YTX ? "0" : "1",
       },

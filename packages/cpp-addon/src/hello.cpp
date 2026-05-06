@@ -188,6 +188,21 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
         .ThrowAsJavaScriptException();
     return env.Null();
   }
+
+  for (int i = 0; i < 8; i++) {
+    if (!info[i].IsString()) {
+      std::string errorMessage =
+          "Argument " + std::to_string(i) + " must be a string";
+      Napi::TypeError::New(env, errorMessage).ThrowAsJavaScriptException();
+      return env.Null();
+    }
+  }
+  if (!info[8].IsNumber() || !info[9].IsNumber()) {
+    Napi::TypeError::New(env, "Arguments 8-9 must be numbers")
+        .ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
   std::u16string zx = info[0].As<Napi::String>().Utf16Value();
   std::u16string zh = info[1].As<Napi::String>().Utf16Value();
   std::u16string czzzdw = info[2].As<Napi::String>().Utf16Value();
@@ -198,15 +213,6 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
   std::u16string mczzrq = info[7].As<Napi::String>().Utf16Value();
   int ztx = info[8].As<Napi::Number>().Int32Value();
   int ytx = info[9].As<Napi::Number>().Int32Value();
-
-  // std::wstring wzx = Utf8ToW(zx);
-  // std::wstring wzh = Utf8ToW(zh);
-  // std::wstring wczzzdw = Utf8ToW(czzzdw);
-  // std::wstring wsczzdw = Utf8ToW(sczzdw);
-  // std::wstring wmczzdw = Utf8ToW(mczzdw);
-  // std::wstring wczzzrq = Utf8ToW(czzzrq);
-  // std::wstring wsczzrq = Utf8ToW(sczzrq);
-  // std::wstring wmczzrq = Utf8ToW(mczzrq);
 
   class AutoInputWorker : public Napi::AsyncWorker {
    public:
@@ -345,14 +351,21 @@ static BOOL CALLBACK EnumChildWindowsCallbackProc(HWND hwnd, LPARAM lParam) {
   EnumChildWindowsContext* ctx =
       reinterpret_cast<EnumChildWindowsContext*>(lParam);
 
-  Napi::Value hwndObj = Napi::Number::New(
-      ctx->env, static_cast<double>(reinterpret_cast<uintptr_t>(hwnd)));
-  Napi::Value result = ctx->callback.Call({hwndObj});
+  try {
+    Napi::Env env = ctx->env;
+    Napi::HandleScope scope(env);
+    double hwndDouble = static_cast<double>(reinterpret_cast<uintptr_t>(hwnd));
+    Napi::Value hwndObj = Napi::Number::New(env, hwndDouble);
+    Napi::Value result = ctx->callback.Call({hwndObj});
 
-  if (result.IsBoolean() && !result.As<Napi::Boolean>().Value()) {
+    if (env.IsExceptionPending()) {
+      return FALSE;
+    }
+
+    return result.ToBoolean().Value();
+  } catch (...) {
     return FALSE;
   }
-  return TRUE;
 }
 
 Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {

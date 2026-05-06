@@ -10,6 +10,7 @@ import type { AppCradle } from "../types";
 import type {
   Corporation,
   DatabaseType,
+  Detecotor,
   Detection,
   DetectionData,
   FilterDateValue,
@@ -185,6 +186,9 @@ class Database {
   detections_data() {
     return this.table<DetectionData>("detections_data");
   }
+  detectors() {
+    return this.table<Detecotor>("detectors");
+  }
   /**
    * @description 年度校验
    */
@@ -237,6 +241,10 @@ export class MDB {
     this.profile = profile;
   }
 
+  dispose() {
+    this.piscina.destroy();
+  }
+
   private database() {
     return new Database(this.piscina, this.profile, this.databaseType);
   }
@@ -250,8 +258,5 @@ export class MDB {
     this.databaseType = "root";
 
     return this.database();
-  }
-  dispose() {
-    this.piscina.destroy();
   }
 }

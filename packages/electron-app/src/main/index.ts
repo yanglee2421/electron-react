@@ -21,6 +21,7 @@ import * as cmdIPC from "./features/cmd/ipc";
 import * as dbIPC from "./features/db/ipc";
 import * as guangzhoubeiIPC from "./features/guangzhoubei/ipc";
 import * as guangzhoujibaoduanIPC from "./features/guangzhoujibaoduan/ipc";
+import * as hxzyIPC from "./features/hxzy/ipc";
 import * as imageIPC from "./features/image/ipc";
 import * as jtvIPC from "./features/jtv/ipc";
 import * as kvIPC from "./features/kv/ipc";
@@ -124,6 +125,7 @@ const using$ = using(
       profile,
       guangzhoubei,
       guangzhoujibaoduan,
+      hxzy,
       jtv,
       image,
       logger,
@@ -133,6 +135,7 @@ const using$ = using(
     const guangzhoubeiUnIPC = guangzhoubeiIPC.registerIPCHandlers(guangzhoubei);
     const guangzhoujibaoduanUnIPC =
       guangzhoujibaoduanIPC.registerIPCHandlers(guangzhoujibaoduan);
+    const hxzyUnIPC = hxzyIPC.registerIPCHandlers(hxzy);
     const jtvUnIPC = jtvIPC.registerIPCHandlers(jtv);
     const imageUnIPC = imageIPC.registerIPCHandlers(image);
     const kvUnIPC = kvIPC.registerIPCHandlers(kv);

@@ -1,44 +1,23 @@
 // 成都北 华兴致远
-
-import type { SQLiteDBType } from "#main/db";
-import * as schema from "#main/db/schema";
+import * as schema from "#main/features/db/schema";
+import type { Logger } from "#main/features/logger";
+import type { DetectionData } from "#main/features/mdb/types";
 import { createEmit, getIP } from "#main/lib";
-import type {
-  InsertRecordParams,
-  IpcHandle,
-  SQLiteGetParams,
-} from "#main/lib/ipc";
-import type { DetectionData, MDBDB } from "#main/modules/mdb";
 import { HXZY_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { HXZY_HMIS } from "#shared/instances/schema";
 import { hxzy_hmis } from "#shared/instances/schema";
+import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
+import { atFirstOrThrow } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
+import { net } from "electron";
 import pLimit from "p-limit";
-import type { KV } from "../KV";
-import type { Logger } from "../Logger";
-import type { Net } from "./hmis";
-import { HMIS } from "./hmis";
-
-export interface HxzyGetResponse {
-  code: "200";
-  msg: "数据读取成功";
-  data: [
-    {
-      CZZZDW: "048";
-      CZZZRQ: "2009-10";
-      MCZZDW: "131";
-      MCZZRQ: "2018-07-09 00:00:00";
-      SCZZDW: "131";
-      SCZZRQ: "2018-07-09 00:00:00";
-      DH: "91022070168";
-      ZH: "67444";
-      ZX: "RE2B";
-      SRYY: "厂修";
-      SRDW: "588";
-    },
-  ];
-}
+import type { Subscription } from "rxjs";
+import { BehaviorSubject } from "rxjs";
+import type { DBClient } from "../db/types";
+import type { MDB } from "../mdb";
+import type { AppCradle } from "../types";
+import type { HxzyGetResponse } from "./types";
 
 interface PostRequestItem {
   EQ_IP: string; // 设备IP
@@ -70,29 +49,54 @@ interface PostResponse {
 
 const emit = createEmit("api_set");
 
-export class Hxzy extends HMIS<HXZY_HMIS> {
-  private db: SQLiteDBType;
-  private mdb: MDBDB;
-  private net: Net;
+export class Hxzy {
+  readonly state$: BehaviorSubject<HXZY_HMIS>;
+  private db: DBClient;
+  private mdb: MDB;
   private logger: Logger;
+  private subscription: Subscription;
 
-  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net, logger: Logger) {
-    super(hxzy_hmis.parse.bind(hxzy_hmis), HXZY_HMIS_STORAGE_KEY, kv);
-
-    this.db = db;
+  constructor({ db, mdb, logger, kv }: AppCradle) {
+    this.db = db.client;
     this.mdb = mdb;
-    this.net = net;
     this.logger = logger;
+
+    const stateJSON = kv.getItem(HXZY_HMIS_STORAGE_KEY);
+    const data = stateJSON ? JSON.parse(stateJSON).state : {};
+    const state = hxzy_hmis.parse(data);
+    this.state$ = new BehaviorSubject(state);
+
+    this.subscription = kv.events$.subscribe((e) => {
+      if (e.key !== HXZY_HMIS_STORAGE_KEY) {
+        return;
+      }
+
+      switch (e.action) {
+        case "set":
+          const stateJSON = e.value;
+          const data = stateJSON ? JSON.parse(stateJSON).state : {};
+          const state = hxzy_hmis.parse(data);
+          this.state$.next(state);
+          break;
+        case "remove":
+        case "clear":
+          this.state$.next(hxzy_hmis.parse({}));
+          break;
+      }
+    });
   }
 
-  async hydrate() {
-    await super.hydrate();
+  dispose() {
+    this.subscription.unsubscribe();
+    this.state$.complete();
+  }
 
-    void this.autoUploadLoop();
+  get state() {
+    return this.state$.getValue();
   }
 
   async autoUploadLoop() {
-    if (!this.getStore().autoUpload) {
+    if (!this.state.autoUpload) {
       return;
     }
 
@@ -117,7 +121,7 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
         barcodes.map((dh) => limit(() => this.handleUpload(dh.id))),
       );
     } finally {
-      const store = this.getStore();
+      const store = this.state;
       const delay = store.autoUploadInterval * 1000;
 
       setTimeout(this.autoUploadLoop.bind(this), delay);
@@ -125,7 +129,7 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
   }
 
   async sendPostRequest(request: PostRequestItem[]) {
-    const state = this.getStore();
+    const state = this.state;
     const host = state.ip + ":" + state.port;
     const body = JSON.stringify(request);
 
@@ -140,7 +144,7 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
       message: url.href,
     });
 
-    const res = await this.net.fetch(url.href, {
+    const res = await net.fetch(url.href, {
       method: "POST",
       body,
       headers: {
@@ -175,20 +179,24 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
       throw new Error(`记录#${id}条形码不存在`);
     }
 
-    const store = this.getStore();
-    const corporation = await this.mdb.getCorporation();
+    const store = this.state;
+    const corporation = await this.mdb.app().corporation();
     const EQ_IP = corporation.DeviceNO || "";
     const EQ_BH = getIP();
     const GD = store.gd;
     const startDate = dayjs(record.date).toISOString();
     const endDate = dayjs(record.date).endOf("day").toISOString();
 
-    const detection = await this.mdb.getDetectionByZH({
-      zh: record.zh,
-      startDate,
-      endDate,
-    });
+    const detections = await this.mdb
+      .root()
+      .detections()
+      .equal("szIDsMake", record.zh)
+      .date("tmnow", new Date(startDate), new Date(endDate));
 
+    const detection = atFirstOrThrow(
+      detections.rows,
+      () => new Error(`记录#${id}对应的检测数据不存在`),
+    );
     const user = detection.szUsername || "";
     let detectionDatas: DetectionData[] = [];
     let TFLAW_PLACE = "";
@@ -202,11 +210,12 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
         TFLAW_PLACE = "车轴";
         TFLAW_TYPE = "裂纹";
         TVIEW = "人工复探";
-        detectionDatas = await this.mdb.getDetectionDatasByOPID(
-          detection.szIDs,
-        );
+        detectionDatas = await this.mdb
+          .root()
+          .detections_data()
+          .equal("opid", detection.szIDs)
+          .then((r) => r.rows);
         break;
-      default:
     }
 
     detectionDatas.forEach((detectionData) => {
@@ -292,7 +301,7 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
       .returning();
   }
   async handleFetch(dh: string) {
-    const state = this.getStore();
+    const state = this.state;
     const host = state.ip + ":" + state.port;
 
     const url = new URL(
@@ -303,7 +312,7 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
     url.searchParams.set("param", dh);
     this.logger.error({ title: `请求数据:`, message: url.href });
 
-    const res = await this.net.fetch(url.href, { method: "GET" });
+    const res = await net.fetch(url.href, { method: "GET" });
 
     if (!res.ok) {
       throw `接口异常[${res.status}]:${res.statusText}`;
@@ -342,44 +351,3 @@ export class Hxzy extends HMIS<HXZY_HMIS> {
     return result;
   }
 }
-
-export interface Ipc {
-  "HMIS/hxzy_hmis_api_get": {
-    args: [string];
-    return: ReturnType<typeof Hxzy.prototype.handleFetch>;
-  };
-  "HMIS/hxzy_hmis_api_set": {
-    args: [number];
-    return: ReturnType<typeof Hxzy.prototype.handleUpload>;
-  };
-  "HMIS/hxzy_hmis_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: ReturnType<typeof Hxzy.prototype.handleRecordRead>;
-  };
-  "HMIS/hxzy_hmis_sqlite_delete": {
-    args: [number];
-    return: ReturnType<typeof Hxzy.prototype.handleRecordDelete>;
-  };
-  "HMIS/hxzy_hmis_sqlite_insert": {
-    args: [InsertRecordParams];
-    return: ReturnType<typeof Hxzy.prototype.handleRecordInsert>;
-  };
-}
-
-export const bindIPCHandlers = (hmis: Hxzy, ipcHandle: IpcHandle) => {
-  ipcHandle("HMIS/hxzy_hmis_api_get", (_, barcode) => {
-    return hmis.handleFetch(barcode);
-  });
-  ipcHandle("HMIS/hxzy_hmis_api_set", (_, id) => {
-    return hmis.handleUpload(id);
-  });
-  ipcHandle("HMIS/hxzy_hmis_sqlite_get", (_, params) => {
-    return hmis.handleRecordRead(params);
-  });
-  ipcHandle("HMIS/hxzy_hmis_sqlite_delete", (_, id) => {
-    return hmis.handleRecordDelete(id);
-  });
-  ipcHandle("HMIS/hxzy_hmis_sqlite_insert", (_, params) => {
-    return hmis.handleRecordInsert(params);
-  });
-};

@@ -192,6 +192,7 @@ export class Guangzhoubei {
   }
 
   dispose() {
+    this.state$.complete();
     this.subscription.unsubscribe();
   }
 

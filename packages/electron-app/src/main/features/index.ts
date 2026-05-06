@@ -3,6 +3,7 @@ import { Cmd } from "./cmd";
 import { DB } from "./db";
 import { Guangzhoubei } from "./guangzhoubei";
 import { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
+import { Hxzy } from "./hxzy/hxzy";
 import { ImageModule } from "./image";
 import { JTV } from "./jtv";
 import { KV } from "./kv";
@@ -23,6 +24,9 @@ container.register({
     .singleton()
     .disposer((instance) => instance.dispose()),
   guangzhoujibaoduan: asClass(JTV_HMIS_Guangzhoujibaoduan)
+    .singleton()
+    .disposer((instance) => instance.dispose()),
+  hxzy: asClass(Hxzy)
     .singleton()
     .disposer((instance) => instance.dispose()),
   jtv: asClass(JTV)

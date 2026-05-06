@@ -17,6 +17,7 @@ import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
 import pLimit from "p-limit";
+import type { Subscription } from "rxjs";
 import { BehaviorSubject } from "rxjs";
 import type { DBClient } from "../db/types";
 import type { AppCradle } from "../types";
@@ -104,10 +105,11 @@ const normalizeDHResponse = (data: DH_Response) => {
 const emit = createEmit("api_set");
 
 export class JTV_HMIS_Guangzhoujibaoduan {
-  private state$: BehaviorSubject<Guangzhoujibaoduan>;
+  readonly state$: BehaviorSubject<Guangzhoujibaoduan>;
   private db: DBClient;
   private mdb: MDB;
   private logger: Logger;
+  private subscription: Subscription;
 
   constructor({ db, mdb, logger, kv }: AppCradle) {
     this.db = db.client;
@@ -119,9 +121,30 @@ export class JTV_HMIS_Guangzhoujibaoduan {
     const state = guangzhoujibaoduan.parse(data);
 
     this.state$ = new BehaviorSubject(state);
+    this.subscription = kv.events$.subscribe((e) => {
+      if (e.key !== GUANGZHOU_JIBAODUAN_STORAGE_KEY) {
+        return;
+      }
+
+      switch (e.action) {
+        case "set":
+          const stateJSON = e.value;
+          const data = stateJSON ? JSON.parse(stateJSON).state : {};
+          const state = guangzhoujibaoduan.parse(data);
+          this.state$.next(state);
+          break;
+        case "remove":
+        case "clear":
+          this.state$.next(guangzhoujibaoduan.parse({}));
+          break;
+      }
+    });
   }
 
-  dispose() {}
+  dispose() {
+    this.state$.complete();
+    this.subscription.unsubscribe();
+  }
 
   get state() {
     return this.state$.getValue();

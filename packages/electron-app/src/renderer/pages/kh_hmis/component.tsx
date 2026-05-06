@@ -1,5 +1,5 @@
-import type { KhBarcode } from "#main/db/schema";
-import type { KHGetResponse } from "#main/shared/factories/hmis/kh_hmis";
+import type { KhBarcode } from "#main/features/db/schema";
+import type { KHGetResponse } from "#main/features/kh_hmis/kh_hmis";
 import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
   fetchKhRecord,

@@ -152,7 +152,7 @@ const normalizeDHResponse = (data: DH_Response) => {
 const emit = createEmit("api_set");
 
 export class JTV {
-  private state$: BehaviorSubject<JTV_HMIS>;
+  readonly state$: BehaviorSubject<JTV_HMIS>;
   private db: DBClient;
   private mdb: MDB;
   private logger: Logger;
@@ -188,6 +188,7 @@ export class JTV {
   }
 
   dispose() {
+    this.state$.complete();
     this.subscription.unsubscribe();
   }
 

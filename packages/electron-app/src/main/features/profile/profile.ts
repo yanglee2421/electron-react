@@ -35,6 +35,7 @@ export class Profile {
   }
 
   dispose() {
+    this.state$.complete();
     this.subscription.unsubscribe();
   }
 

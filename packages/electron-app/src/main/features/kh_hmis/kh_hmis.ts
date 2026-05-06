@@ -1,23 +1,15 @@
 // 康华 安康
-import type { SQLiteDBType } from "#main/db";
-import * as schema from "#main/db/schema";
-import { createEmit } from "#main/lib";
+import * as schema from "#main/features/db/schema";
+
+import type { Logger } from "#main/features/logger";
 import type {
-  InsertRecordParams,
-  IpcHandle,
-  SQLiteGetParams,
-} from "#main/lib/ipc";
-import type {
-  MDBDB,
   Quartor,
   QuartorData,
   QuartorYearlyData,
   Verify,
   VerifyData,
-} from "#main/modules/mdb";
-import type { Net } from "#main/shared/factories/hmis/hmis";
-import { HMIS } from "#main/shared/factories/hmis/hmis";
-import type { KV } from "#main/shared/factories/KV";
+} from "#main/features/mdb/types";
+import { createEmit } from "#main/lib";
 import { DetectorMap } from "#shared/factories/DetectorMap";
 import { FlawQuery } from "#shared/factories/Flaw";
 import {
@@ -31,11 +23,18 @@ import {
 import { KH_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { KH_HMIS } from "#shared/instances/schema";
 import { kh_hmis } from "#shared/instances/schema";
+import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
+import { atFirstOrThrow } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
+import { net } from "electron";
 import * as mathjs from "mathjs";
 import pLimit from "p-limit";
-import type { Logger } from "../Logger";
+import type { Subscription } from "rxjs";
+import { BehaviorSubject } from "rxjs";
+import type { DBClient } from "../db/types";
+import type { MDB } from "../mdb";
+import type { AppCradle } from "../types";
 import type { CHR501InputParams } from "./kh501";
 import type { CHR502InputParams } from "./kh502";
 import type { CHR503InputParams } from "./kh503";
@@ -132,29 +131,54 @@ type QuartorWithData = Quartor & {
 
 const emit = createEmit("api_set");
 
-export class KH extends HMIS<KH_HMIS> {
-  private db: SQLiteDBType;
-  private mdb: MDBDB;
-  private net: Net;
+export class KH {
+  readonly state$: BehaviorSubject<KH_HMIS>;
+  private db: DBClient;
+  private mdb: MDB;
   private logger: Logger;
+  private subscription: Subscription;
 
-  constructor(db: SQLiteDBType, kv: KV, mdb: MDBDB, net: Net, logger: Logger) {
-    super(kh_hmis.parse.bind(kh_hmis), KH_HMIS_STORAGE_KEY, kv);
-
-    this.db = db;
+  constructor({ db, mdb, logger, kv }: AppCradle) {
+    this.db = db.client;
     this.mdb = mdb;
-    this.net = net;
     this.logger = logger;
+
+    const stateJSON = kv.getItem(KH_HMIS_STORAGE_KEY);
+    const data = stateJSON ? JSON.parse(stateJSON).state : {};
+    const state = kh_hmis.parse(data);
+    this.state$ = new BehaviorSubject(state);
+
+    this.subscription = kv.events$.subscribe((e) => {
+      if (e.key !== KH_HMIS_STORAGE_KEY) {
+        return;
+      }
+
+      switch (e.action) {
+        case "set":
+          const stateJSON = e.value;
+          const data = stateJSON ? JSON.parse(stateJSON).state : {};
+          const state = kh_hmis.parse(data);
+          this.state$.next(state);
+          break;
+        case "remove":
+        case "clear":
+          this.state$.next(kh_hmis.parse({}));
+          break;
+      }
+    });
   }
 
-  async hydrate() {
-    await super.hydrate();
+  dispose() {
+    this.state$.complete();
+    this.subscription.unsubscribe();
+  }
 
-    void this.autoUploadLoop();
+  get state() {
+    return this.state$.getValue();
   }
 
   async autoUploadLoop() {
-    if (!this.getStore().autoUpload) {
+    if (!this.state.autoUpload) {
       return;
     }
 
@@ -179,7 +203,7 @@ export class KH extends HMIS<KH_HMIS> {
         barcodes.map((barcode) => limit(() => this.handleUpload(barcode.id))),
       );
     } finally {
-      const store = this.getStore();
+      const store = this.state;
       const delay = store.autoUploadInterval * 1000;
 
       setTimeout(this.autoUploadLoop.bind(this), delay);
@@ -187,7 +211,7 @@ export class KH extends HMIS<KH_HMIS> {
   }
 
   async sendQxToServer(params: QXDataParams) {
-    const store = this.getStore();
+    const store = this.state;
     const host = store.ip + ":" + store.port;
     const url = new URL(`http://${host}/api/lzdx_csbtsj_whzy_tsjgqx/save`);
     const body = JSON.stringify(params);
@@ -197,7 +221,7 @@ export class KH extends HMIS<KH_HMIS> {
       json: body,
     });
 
-    const res = await this.net.fetch(url.href, {
+    const res = await net.fetch(url.href, {
       method: "POST",
       body,
       headers: {
@@ -237,16 +261,19 @@ export class KH extends HMIS<KH_HMIS> {
       throw new Error(`记录#${id}条形码不存在`);
     }
 
-    const store = this.getStore();
+    const store = this.state;
     const startDate = dayjs(record.date).toISOString();
     const endDate = dayjs(record.date).endOf("day").toISOString();
-    const corporation = await this.mdb.getCorporation();
-    const detection = await this.mdb.getDetectionByZH({
-      zh: record.zh,
-      startDate,
-      endDate,
-    });
-
+    const corporation = await this.mdb.app().corporation();
+    const detections = await this.mdb
+      .root()
+      .detections()
+      .equal("szIDsMake", record.zh)
+      .date("tmnow", new Date(startDate), new Date(endDate));
+    const detection = atFirstOrThrow(
+      detections.rows,
+      () => new Error(`未找到记录#${id}对应的检测数据`),
+    );
     const JCJG = detection.szResult === "合格" ? "1" : "0";
 
     const basicBody: PostRequestItem = {
@@ -286,7 +313,7 @@ export class KH extends HMIS<KH_HMIS> {
     };
   }
   async sendDataToServer(params: PostRequestItem) {
-    const store = this.getStore();
+    const store = this.state;
     const host = store.ip + ":" + store.port;
     const url = new URL(`http://${host}/api/lzdx_csbtsj_tsjg/save`);
     const body = JSON.stringify(params);
@@ -297,7 +324,7 @@ export class KH extends HMIS<KH_HMIS> {
       json: body,
     });
 
-    const res = await this.net.fetch(url.href, {
+    const res = await net.fetch(url.href, {
       method: "POST",
       body,
       headers: {
@@ -323,7 +350,7 @@ export class KH extends HMIS<KH_HMIS> {
     return data;
   }
   async sendCHR501ToServer(params: CHR501InputParams) {
-    const store = this.getStore();
+    const store = this.state;
     const host = store.ip + ":" + store.port;
     const url = new URL(`http://${host}/api/csbts_501/save`);
     const body = JSON.stringify(params);
@@ -334,7 +361,7 @@ export class KH extends HMIS<KH_HMIS> {
       json: body,
     });
 
-    const res = await this.net.fetch(url.href, {
+    const res = await net.fetch(url.href, {
       method: "POST",
       body,
       headers: {
@@ -360,7 +387,7 @@ export class KH extends HMIS<KH_HMIS> {
     return data;
   }
   async sendCHR502ToServer(params: CHR502InputParams) {
-    const store = this.getStore();
+    const store = this.state;
     const host = store.ip + ":" + store.port;
     const url = new URL(`http://${host}/api/csbts_502/save`);
     const body = JSON.stringify(params);
@@ -371,7 +398,7 @@ export class KH extends HMIS<KH_HMIS> {
       json: body,
     });
 
-    const res = await this.net.fetch(url.href, {
+    const res = await net.fetch(url.href, {
       method: "POST",
       body,
       headers: {
@@ -397,7 +424,7 @@ export class KH extends HMIS<KH_HMIS> {
     return data;
   }
   async sendCHR503ToServer(params: CHR503InputParams) {
-    const store = this.getStore();
+    const store = this.state;
     const host = store.ip + ":" + store.port;
     const url = new URL(`http://${host}/api/csbts_503/save`);
     const body = JSON.stringify(params);
@@ -408,7 +435,7 @@ export class KH extends HMIS<KH_HMIS> {
       json: body,
     });
 
-    const res = await this.net.fetch(url.href, {
+    const res = await net.fetch(url.href, {
       method: "POST",
       body,
       headers: {
@@ -435,7 +462,7 @@ export class KH extends HMIS<KH_HMIS> {
   }
 
   async handleFetch(dh: string) {
-    const store = this.getStore();
+    const store = this.state;
     const host = store.ip + ":" + store.port;
     const url = new URL(`http://${host}/api/lzdx_csbtsj_get/get`);
     const body = JSON.stringify({ mesureId: dh });
@@ -446,7 +473,7 @@ export class KH extends HMIS<KH_HMIS> {
       json: body,
     });
 
-    const res = await this.net.fetch(url.href, {
+    const res = await net.fetch(url.href, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -580,7 +607,7 @@ export class KH extends HMIS<KH_HMIS> {
     return this.sendCHR502ToServer(chr502Params);
   }
   async handleUploadCHR503(id: string) {
-    const query = await this.mdb.getYearlyData(id);
+    const query = await this.mdb.root().Quartor().equal("szIDs", id);
     const chr503Params = await this.resolveCHR503InputParams(query.rows);
 
     return this.sendCHR503ToServer(chr503Params);
@@ -601,10 +628,14 @@ export class KH extends HMIS<KH_HMIS> {
     flawQuery.left().lz().deg44().check();
     flawQuery.right().lz().deg44().check();
 
-    const store = this.getStore();
-    const corporation = await this.mdb.getCorporation();
-    const detectors = await this.mdb.getDetectors(record.szWHModel || "");
-    const detectorMap = new DetectorMap(detectors);
+    const store = this.state;
+    const corporation = await this.mdb.app().corporation();
+    const detectors = await this.mdb
+      .app()
+      .detectors()
+      .equal("szwheel", record.szWHModel || "");
+
+    const detectorMap = new DetectorMap(detectors.rows);
 
     return {
       xrsj: dayjs(record.tmNow).format("YYYY-MM-DD HH:mm:ss"),
@@ -876,8 +907,8 @@ export class KH extends HMIS<KH_HMIS> {
       throw new Error(`CHR502接口需要5条记录，当前${records.length}条`);
     }
 
-    const store = this.getStore();
-    const corporation = await this.mdb.getCorporation();
+    const store = this.state;
+    const corporation = await this.mdb.app().corporation();
     const tsg = records[0].szUsername || "";
     const q1 = new FlawQuery(records[0].with, records[0].szIDs);
     const q2 = new FlawQuery(records[1].with, records[1].szIDs);
@@ -1475,8 +1506,8 @@ export class KH extends HMIS<KH_HMIS> {
   async resolveCHR503InputParams(
     rows: QuartorYearlyData[],
   ): Promise<CHR503InputParams> {
-    const store = this.getStore();
-    const corporation = await this.mdb.getCorporation();
+    const store = this.state;
+    const corporation = await this.mdb.app().corporation();
     const channelGroup = createNChannelGroup(rows);
     const left1 = channelGroup.left1[0];
     const left2 = channelGroup.left2[0];
@@ -1619,55 +1650,3 @@ export class KH extends HMIS<KH_HMIS> {
     };
   }
 }
-
-export interface Ipc {
-  "HMIS/kh_hmis_api_get": {
-    args: [string];
-    return: ReturnType<typeof KH.prototype.handleFetch>;
-  };
-  "HMIS/kh_hmis_api_set": {
-    args: [number];
-    return: ReturnType<typeof KH.prototype.handleUpload>;
-  };
-  "HMIS/kh_hmis_sqlite_get": {
-    args: [SQLiteGetParams];
-    return: ReturnType<typeof KH.prototype.handleReadRecord>;
-  };
-  "HMIS/kh_hmis_sqlite_delete": {
-    args: [number];
-    return: ReturnType<typeof KH.prototype.handleDeleteRecord>;
-  };
-  "HMIS/kh_hmis_sqlite_insert": {
-    args: [InsertRecordParams];
-    return: ReturnType<typeof KH.prototype.handleInsertRecord>;
-  };
-  "HMIS/kh_hmis_chr501": {
-    args: [string];
-    return: ReturnType<typeof KH.prototype.handleUploadCHR501>;
-  };
-  "HMIS/kh_hmis_chr502": {
-    args: [string[]];
-    return: ReturnType<typeof KH.prototype.handleUploadCHR502>;
-  };
-  "HMIS/kh_hmis_chr503": {
-    args: [string];
-    return: ReturnType<typeof KH.prototype.handleUploadCHR503>;
-  };
-}
-
-export const bindIpcHandlers = (hmis: KH, ipcHandle: IpcHandle) => {
-  ipcHandle("HMIS/kh_hmis_sqlite_get", (_, params) => {
-    return hmis.handleReadRecord(params);
-  });
-  ipcHandle("HMIS/kh_hmis_sqlite_delete", (_, id) => {
-    return hmis.handleDeleteRecord(id);
-  });
-  ipcHandle("HMIS/kh_hmis_sqlite_insert", (_, params) => {
-    return hmis.handleInsertRecord(params);
-  });
-  ipcHandle("HMIS/kh_hmis_api_get", (_, barcode) => hmis.handleFetch(barcode));
-  ipcHandle("HMIS/kh_hmis_api_set", (_, id) => hmis.handleUpload(id));
-  ipcHandle("HMIS/kh_hmis_chr501", (_, id) => hmis.handleUploadCHR501(id));
-  ipcHandle("HMIS/kh_hmis_chr502", (_, id) => hmis.handleUploadCHR502(id));
-  ipcHandle("HMIS/kh_hmis_chr503", (_, id) => hmis.handleUploadCHR503(id));
-};

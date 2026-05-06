@@ -18,6 +18,10 @@ export class ImageModule {
     });
   }
 
+  dispose() {
+    this.piscina.destroy();
+  }
+
   computeMD5(files: string[]): Promise<Record<string, string>> {
     return this.piscina.run({ files });
   }
@@ -48,10 +52,6 @@ export class ImageModule {
 
     const outputDirectory = await getOutputDirectory(source);
     await copyFile(md5ToFilePath, outputDirectory);
-  }
-
-  dispose() {
-    void this.piscina.destroy();
   }
 }
 
