@@ -49,17 +49,17 @@ struct EnumChildWindowsContext {
 };
 
 static BOOL CALLBACK EnumChildWindowsCallbackProc(HWND hwnd, LPARAM lParam) {
-  EnumChildWindowsContext* ctx =
-      reinterpret_cast<EnumChildWindowsContext*>(lParam);
+  try {
+    EnumChildWindowsContext* ctx =
+        reinterpret_cast<EnumChildWindowsContext*>(lParam);
+    Napi::Value hwndObj = Napi::Number::New(
+        ctx->env, static_cast<double>(reinterpret_cast<uintptr_t>(hwnd)));
+    Napi::Value result = ctx->callback.Call({hwndObj});
 
-  Napi::Value hwndObj = Napi::Number::New(
-      ctx->env, static_cast<double>(reinterpret_cast<uintptr_t>(hwnd)));
-  Napi::Value result = ctx->callback.Call({hwndObj});
-
-  if (result.IsBoolean() && !result.As<Napi::Boolean>().Value()) {
+    return result.ToBoolean().Value();
+  } catch (...) {
     return FALSE;
   }
-  return TRUE;
 }
 
 Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {
@@ -146,5 +146,4 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
   return exports;
 }
 
-// 注册模块。第一个参数是模块名（需与 binding.gyp 一致），第二个是初始化函数
 NODE_API_MODULE(cmake_addon, Init)

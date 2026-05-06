@@ -15,12 +15,13 @@ import type * as xml from "#main/features/xml/types";
 import type * as infra from "#main/infra/types";
 
 export interface IPCContract
-  extends cmd.IPCContract,
+  extends infra.IPCContract,
+    cmd.IPCContract,
     db.IPCContract,
-    image.IPCContract,
     guangzhoubei.IPCContract,
     guangzhoujibaoduan.IPCContract,
     hxzy.IPCContract,
+    image.IPCContract,
     jtv.IPCContract,
     kh.IPCContract,
     kv.IPCContract,
@@ -28,5 +29,4 @@ export interface IPCContract
     mdb.IPCContract,
     plc.IPCContract,
     profile.IPCContract,
-    xml.IPCContract,
-    infra.IPCContract {}
+    xml.IPCContract {}
