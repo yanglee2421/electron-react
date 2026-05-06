@@ -32,6 +32,6 @@ const main = async () => {
   return root;
 };
 
-void main().catch((error) => {
+main().catch((error) => {
   console.error("Error in main:", error);
 });

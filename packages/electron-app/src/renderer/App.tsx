@@ -34,8 +34,6 @@ const calculateTheme = (isDark: boolean) => {
   return lightTheme;
 };
 
-
-
 type MuiProviderProps = React.PropsWithChildren;
 
 const MuiProvider = (props: MuiProviderProps) => {
@@ -54,8 +52,6 @@ const MuiProvider = (props: MuiProviderProps) => {
 };
 
 export const App = () => {
-
-
   return (
     <QueryProvider>
       <MuiProvider>

@@ -24,6 +24,7 @@ import * as guangzhoujibaoduanIPC from "./features/guangzhoujibaoduan/ipc";
 import * as hxzyIPC from "./features/hxzy/ipc";
 import * as imageIPC from "./features/image/ipc";
 import * as jtvIPC from "./features/jtv/ipc";
+import * as khIPC from "./features/kh_hmis/ipc";
 import * as kvIPC from "./features/kv/ipc";
 import * as logIPC from "./features/logger/ipc";
 import * as mdbIPC from "./features/mdb/ipc";
@@ -119,32 +120,35 @@ const using$ = using(
 
     const {
       cmd,
-      kv,
-      mdb,
-      plc,
-      profile,
       guangzhoubei,
       guangzhoujibaoduan,
       hxzy,
-      jtv,
       image,
+      jtv,
+      kh,
+      kv,
       logger,
+      mdb,
+      plc,
+      profile,
     } = container.cradle;
+    const infraUnIPC = infraIPC.registerIPCHandlers();
+
     const cmdUnIPC = cmdIPC.registerIPCHandlers(cmd);
     const dbUnIPC = dbIPC.registerIPCHandlers(db);
     const guangzhoubeiUnIPC = guangzhoubeiIPC.registerIPCHandlers(guangzhoubei);
     const guangzhoujibaoduanUnIPC =
       guangzhoujibaoduanIPC.registerIPCHandlers(guangzhoujibaoduan);
     const hxzyUnIPC = hxzyIPC.registerIPCHandlers(hxzy);
-    const jtvUnIPC = jtvIPC.registerIPCHandlers(jtv);
     const imageUnIPC = imageIPC.registerIPCHandlers(image);
+    const jtvUnIPC = jtvIPC.registerIPCHandlers(jtv);
+    const khUnIPC = khIPC.registerIPCHandlers(kh);
     const kvUnIPC = kvIPC.registerIPCHandlers(kv);
     const logUnIPC = logIPC.registerIPCHandlers(logger);
     const mdbUnIPC = mdbIPC.registerIPCHandlers(mdb);
     const plcUnIPC = plcIPC.registerIPCHandlers(plc);
     const profileUnIPC = profileIPC.registerIPCHandlers(profile);
     const xmlUnIPC = xmlIPC.registerIPCHandlers();
-    const infraUnIPC = infraIPC.registerIPCHandlers();
 
     const profileSubscription = profile.state$.subscribe((state) => {
       nativeTheme.themeSource = state.mode;
@@ -162,19 +166,22 @@ const using$ = using(
 
     return {
       unsubscribe: () => {
+        infraUnIPC();
+
         cmdUnIPC();
         dbUnIPC();
         guangzhoubeiUnIPC();
         guangzhoujibaoduanUnIPC();
-        jtvUnIPC();
+        hxzyUnIPC();
         imageUnIPC();
+        jtvUnIPC();
+        khUnIPC();
         kvUnIPC();
         logUnIPC();
         mdbUnIPC();
         plcUnIPC();
         profileUnIPC();
         xmlUnIPC();
-        infraUnIPC();
 
         container.dispose();
         profileSubscription.unsubscribe();
@@ -209,7 +216,7 @@ const primarySubscription = primaryInstance$
       electronApp.setAppUserModelId("com.electron");
     }
 
-    void createWindow();
+    createWindow();
   });
 
 willQuit$.pipe(take(1)).subscribe(() => {
@@ -237,7 +244,7 @@ browserWindowCreated$.subscribe((args) => {
   optimizer.watchWindowShortcuts(win);
 
   win.webContents.setWindowOpenHandler((details) => {
-    void shell.openExternal(details.url);
+    shell.openExternal(details.url);
     return { action: "deny" };
   });
 
@@ -261,6 +268,11 @@ browserWindowCreated$.subscribe((args) => {
   });
 });
 
-windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
-  app.quit();
-});
+windowAllClosed$
+  .pipe(
+    filter(() => !platform.isMacOS),
+    take(1),
+  )
+  .subscribe(() => {
+    app.quit();
+  });

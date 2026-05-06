@@ -279,26 +279,26 @@ export type TableQueryResult<TRow> = {
 
 export type DatabaseType = "app" | "root";
 
-interface LikeFilter {
+export interface LikeFilter {
   type: "like";
   field: string;
   value: string;
 }
 
-interface DateFilter {
+export interface DateFilter {
   type: "date";
   field: string;
   startAt: string;
   endAt: string;
 }
 
-interface InFilter {
+export interface InFilter {
   type: "in";
   field: string;
   value: string[];
 }
 
-interface EqualFilter {
+export interface EqualFilter {
   type: "equal";
   field: string;
   value: string | number | boolean;

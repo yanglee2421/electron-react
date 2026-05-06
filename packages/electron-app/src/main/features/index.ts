@@ -6,6 +6,7 @@ import { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
 import { Hxzy } from "./hxzy/hxzy";
 import { ImageModule } from "./image";
 import { JTV } from "./jtv";
+import { KH } from "./kh_hmis";
 import { KV } from "./kv";
 import { Logger } from "./logger";
 import { MDB } from "./mdb";
@@ -29,12 +30,15 @@ container.register({
   hxzy: asClass(Hxzy)
     .singleton()
     .disposer((instance) => instance.dispose()),
-  jtv: asClass(JTV)
-    .singleton()
-    .disposer((instance) => instance.dispose()),
   image: asClass(ImageModule)
     .singleton()
     .disposer((image) => image.dispose()),
+  jtv: asClass(JTV)
+    .singleton()
+    .disposer((instance) => instance.dispose()),
+  kh: asClass(KH)
+    .singleton()
+    .disposer((instance) => instance.dispose()),
   kv: asClass(KV)
     .singleton()
     .disposer((kv) => kv.dispose()),
