@@ -11,6 +11,7 @@ import { KV } from "./kv";
 import { Logger } from "./logger";
 import { MDB } from "./mdb";
 import { PLC } from "./plc";
+import { Printer } from "./printer";
 import { Profile } from "./profile";
 import type { AppCradle } from "./types";
 
@@ -49,6 +50,7 @@ container.register({
     .singleton()
     .disposer((mdb) => mdb.dispose()),
   plc: asClass(PLC).singleton(),
+  printer: asClass(Printer).singleton(),
   profile: asClass(Profile)
     .singleton()
     .disposer((profile) => profile.dispose()),

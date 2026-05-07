@@ -37,7 +37,7 @@ const resolveRootDBPath = async (appPath: string, encoding: string) => {
   const userProfile = ini.parse(iniText);
   const rootPath = userProfile.FileSystem.Root as string;
 
-  return rootPath;
+  return path.resolve(rootPath, "local.mdb");
 };
 
 const resolveDBPath = async (
@@ -50,7 +50,7 @@ const resolveDBPath = async (
       return resolveAppDBPath(appPath);
     case "root":
       const rootPath = await resolveRootDBPath(appPath, encoding);
-      return path.resolve(rootPath, "local.mdb");
+      return rootPath;
     default:
       throw new Error(`Unsupported database type: ${type}`);
   }
@@ -72,7 +72,7 @@ class TableQueryBuilder<
   private databaseType: DatabaseType;
   private tableName: string;
   private offsetValue: number = 0;
-  private limitValue: number = 20;
+  private limitValue: number = 32;
   private likes: FilterValue[] = [];
   private equals: FilterValue[] = [];
   private ins: FilterInValues[] = [];
@@ -164,14 +164,12 @@ class Database {
    * @description 单位
    */
   async corporation(): Promise<Corporation> {
-    const [result]: [Corporation] = await this.piscina.run({
-      databasePath: path.resolve(
-        this.profile.state.appPath,
-        "Data",
-        "local.mdb",
-      ),
-      tableName: "corporation",
-    });
+    const query = await this.table<Corporation>("corporation");
+    const [result] = query.rows;
+
+    if (!result) {
+      throw new Error("未找到单位信息");
+    }
 
     return result;
   }
@@ -217,14 +215,14 @@ class Database {
   /**
    * @description 日常校验
    */
-  verifyes() {
-    return this.table<Verify>("verifyes");
+  verifies() {
+    return this.table<Verify>("verifies");
   }
   /**
    * @description 日常校验检出的伤
    */
-  verifyes_data() {
-    return this.table<VerifyData>("verifyes_data");
+  verifies_data() {
+    return this.table<VerifyData>("verifies_data");
   }
 }
 
@@ -280,6 +278,20 @@ export class MDB {
       this.profile.state.appPath,
       this.profile.state.encoding,
     );
+
+    return this.piscina.run(
+      {
+        ...data,
+        databasePath,
+      },
+      { name: "getDataFromMDB" },
+    );
+  }
+  getDataFromAppDB<TRow>(data: MDBPayload): Promise<{
+    total: number;
+    rows: TRow[];
+  }> {
+    const databasePath = resolveAppDBPath(this.profile.state.appPath);
 
     return this.piscina.run(
       {

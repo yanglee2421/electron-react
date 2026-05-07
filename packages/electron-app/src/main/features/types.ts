@@ -10,6 +10,7 @@ import type { KV } from "./kv";
 import type { Logger } from "./logger";
 import type { MDB } from "./mdb";
 import type { PLC } from "./plc";
+import type { Printer } from "./printer";
 import type { Profile } from "./profile";
 
 export interface AppCradle {
@@ -27,5 +28,6 @@ export interface AppCradle {
   logger: Logger;
   mdb: MDB;
   plc: PLC;
+  printer: Printer;
   profile: Profile;
 }

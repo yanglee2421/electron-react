@@ -29,6 +29,7 @@ import * as kvIPC from "./features/kv/ipc";
 import * as logIPC from "./features/logger/ipc";
 import * as mdbIPC from "./features/mdb/ipc";
 import * as plcIPC from "./features/plc/ipc";
+import * as printerIPC from "./features/printer/ipc";
 import * as profileIPC from "./features/profile/ipc";
 import * as xmlIPC from "./features/xml/ipc";
 import * as infraIPC from "./infra/ipc";
@@ -130,6 +131,7 @@ const using$ = using(
       logger,
       mdb,
       plc,
+      printer,
       profile,
     } = container.cradle;
     const infraUnIPC = infraIPC.registerIPCHandlers();
@@ -147,6 +149,7 @@ const using$ = using(
     const logUnIPC = logIPC.registerIPCHandlers(logger);
     const mdbUnIPC = mdbIPC.registerIPCHandlers(mdb);
     const plcUnIPC = plcIPC.registerIPCHandlers(plc);
+    const printerUnIPC = printerIPC.registerIPCHandlers(printer);
     const profileUnIPC = profileIPC.registerIPCHandlers(profile);
     const xmlUnIPC = xmlIPC.registerIPCHandlers();
 
@@ -180,6 +183,7 @@ const using$ = using(
         logUnIPC();
         mdbUnIPC();
         plcUnIPC();
+        printerUnIPC();
         profileUnIPC();
         xmlUnIPC();
 

@@ -63,7 +63,6 @@ const resolveQueryBuilder = async (
     const isLikeMatch = likes.every((filter) => {
       const fieldValue = Reflect.get(row, String(filter.key));
 
-      // 如果字段值不存在，则认为不进行过滤，直接匹配成功
       if (!fieldValue) {
         return true;
       }

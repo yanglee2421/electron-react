@@ -1,389 +1,502 @@
-import type { VerifyData } from "#main/modules/mdb";
-import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
-import { Loading } from "#renderer/components/Loading";
-import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import {
-  calculateDirection,
-  calculatePlace,
-} from "#shared/functions/flawDetection";
-import {
-  Alert,
-  AlertTitle,
-  Card,
-  CardActionArea,
-  CardContent,
-  CardHeader,
-  Divider,
-  Grid,
-  MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableFooter,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { fetchCHR501Data } from "#renderer/api/printer";
+import { DetectorQuery } from "#shared/factories/detector-query";
+import { FlawQuery } from "#shared/factories/Flaw";
+import { Box, styled } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import React from "react";
+import dayjs from "dayjs";
 import { useParams } from "react-router";
-import { PrintCHR501 } from "./PrintCHR501";
 
-const columnHelper = createColumnHelper<VerifyData>();
-const columns = [
-  columnHelper.accessor("nBoard", {
-    cell: ({ getValue }) => calculateDirection(getValue()),
-    header: "方向",
-    footer: "方向",
-  }),
-  columnHelper.accessor("nChannel", {
-    cell: ({ getValue }) => calculatePlace(getValue()),
-    header: "位置",
-    footer: "位置",
-  }),
-  columnHelper.accessor("fltValueX", {
-    header: "横距",
-    footer: "横距",
-  }),
-  columnHelper.accessor("fltValueY", {
-    header: "纵距",
-    footer: "纵距",
-  }),
-  columnHelper.accessor("nAtten", {
-    header: "灵敏度",
-    footer: "灵敏度",
-  }),
-];
+const StyledCol = styled("col")({});
+const StyledP = styled("p")({
+  margin: 0,
+  fontSize: "12pt",
+  textAlign: "right",
+});
+const StyledTr = styled("tr")({
+  padding: "2pt",
+});
+const StyledTable = styled("table")({
+  tableLayout: "fixed",
+  borderCollapse: "separate",
 
-const check = (current: string, excepted: string) => {
-  if (!excepted) return true;
-  return Object.is(excepted, current);
-};
+  width: "100%",
+});
+const StyledTh = styled("th")({
+  border: "1px solid #000",
+  borderWidth: "1px 1px 0 0",
+
+  height: "22pt",
+
+  padding: "2pt",
+});
+const StyledTd = styled("td")({
+  border: "1px solid #000",
+  borderWidth: "1px 1px 0 0",
+
+  height: "22pt",
+});
+const StyledImageTD = styled("td")({
+  height: "144pt",
+
+  padding: 0,
+
+  border: "1px solid #000",
+  borderWidth: "1px 1px 0 0",
+});
+const StyledH1 = styled("h1")({
+  fontSize: "16pt",
+  fontWeight: 600,
+});
 
 export const Component = () => {
-  "use no memo";
-  const [direction, setDirection] = React.useState("");
-  const [place, setPlace] = React.useState("");
-
   const params = useParams();
-  const query = useQuery(
-    fetchDataFromRootDB<VerifyData>({
-      tableName: "verifies_data",
-      filters: [
-        {
-          type: "equal",
-          field: "opid",
-          value: params.id || "",
-        },
-      ],
-    }),
-  );
+  const query = useQuery(fetchCHR501Data(params.id!));
 
-  const data = React.useMemo(() => {
-    const rows = query.data?.rows || [];
-    return rows.filter(
-      (row) =>
-        check(calculateDirection(row.nBoard), direction) &&
-        check(calculatePlace(row.nChannel), place),
-    );
-  }, [query.data, direction, place]);
-
-  const table = useReactTable({
-    getCoreRowModel: getCoreRowModel(),
-    columns,
-    data,
-    // getRowId: (row) => JSON.stringify(row),
-    getPaginationRowModel: getPaginationRowModel(),
-  });
-
-  const map = (query.data?.rows || []).reduce((result, row) => {
-    const direction = calculateDirection(row.nBoard);
-    const place = calculatePlace(row.nChannel);
-    const key = direction + place;
-    const prev = result.get(key) || new Set();
-    result.set(key, prev.add(row));
-
-    return result;
-  }, new Map<string, Set<VerifyData>>());
-
-  const renderRow = () => {
+  const renderQuery = () => {
     if (query.isPending) {
-      return (
-        <TableRow>
-          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            <Loading
-              slotProps={{
-                box: {
-                  padding: 0,
-                },
-              }}
-            />
-          </TableCell>
-        </TableRow>
-      );
+      return <div>加载中...</div>;
     }
 
     if (query.isError) {
-      return (
-        <TableRow>
-          <TableCell colSpan={table.getAllLeafColumns().length}>
-            <Alert severity="error" variant="filled">
-              <AlertTitle>错误</AlertTitle>
-              {query.error.message}
-            </Alert>
-          </TableCell>
-        </TableRow>
-      );
+      return <div>加载失败: {(query.error as Error).message}</div>;
     }
 
-    if (!table.getRowCount()) {
-      return (
-        <TableRow>
-          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            暂无数据
-          </TableCell>
-        </TableRow>
-      );
-    }
+    const { record, corporation, datas, detectors } = query.data;
+    const flaw = new FlawQuery(datas);
+    const detector = new DetectorQuery(detectors);
 
-    return table.getRowModel().rows.map((row) => (
-      <TableRow key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </TableCell>
-        ))}
-      </TableRow>
-    ));
+    return (
+      <Box sx={{ backgroundColor: "#fff" }}>
+        <article>
+          <section data-a4>
+            <StyledP>辆货统-501</StyledP>
+            <StyledH1>
+              铁路货车轮轴多通道超声波自动探伤系统日常性能校验记录表
+            </StyledH1>
+            <StyledTable cellSpacing="0">
+              <colgroup>
+                <StyledCol sx={{ width: "80pt" }} />
+                <col />
+                <StyledCol sx={{ width: "80pt" }} />
+                <col />
+              </colgroup>
+              <thead>
+                <StyledTr sx={{ fontSize: "12pt" }}>
+                  <th>单位名称</th>
+                  <td className="underline underline-offset-3">
+                    {corporation.Factory}
+                  </td>
+                  <th className="">检验时间</th>
+                  <td className="underline underline-offset-3">
+                    {dayjs(record.tmNow).format("YYYY年MM月DD日 HH:mm:ss")}
+                  </td>
+                </StyledTr>
+              </thead>
+            </StyledTable>
+            <StyledTable
+              cellSpacing="0"
+              sx={{
+                border: "1px solid #000",
+                borderWidth: "0 0 0 1px",
+              }}
+            >
+              <tbody>
+                <StyledTr sx={{ fontSize: "12pt" }}>
+                  <StyledTh>设备型号</StyledTh>
+                  <StyledTd>{corporation.DeviceType}</StyledTd>
+                  <StyledTh>设备编号</StyledTh>
+                  <StyledTd>{corporation.DeviceNO}</StyledTd>
+                  <StyledTh>实物试块型号</StyledTh>
+                  <StyledTd>
+                    {[record.szWHModel, record.szIDsWheel].join("_")}
+                  </StyledTd>
+                </StyledTr>
+              </tbody>
+            </StyledTable>
+            <StyledTable
+              cellSpacing="0"
+              sx={{
+                border: "1px solid #000",
+                borderWidth: "0 0 0 1px",
+              }}
+            >
+              <colgroup>
+                <StyledCol sx={{ width: "28pt" }} />
+                <col
+                  style={{ width: `calc((210mm - 28pt - 28mm - 1px) / 10)` }}
+                />
+                <col
+                  style={{ width: `calc((210mm - 28pt - 28mm - 1px) / 10)` }}
+                />
+                <col
+                  style={{ width: `calc((210mm - 28pt - 28mm - 1px) / 10)` }}
+                />
+                <col
+                  style={{ width: `calc((210mm - 28pt - 28mm - 1px) / 10)` }}
+                />
+                <col
+                  style={{ width: `calc((210mm - 28pt - 28mm - 1px) / 10)` }}
+                />
+                <col
+                  style={{ width: `calc((210mm - 28pt - 28mm - 1px) / 10)` }}
+                />
+                <col
+                  style={{ width: `calc((210mm - 28pt - 28mm - 1px) / 10)` }}
+                />
+                <col
+                  style={{ width: `calc((210mm - 28pt - 28mm - 1px) / 10)` }}
+                />
+                <col
+                  style={{ width: `calc((210mm - 28pt - 28mm - 1px) / 10)` }}
+                />
+                <col
+                  style={{ width: `calc((210mm - 28pt - 28mm - 1px) / 10)` }}
+                />
+              </colgroup>
+              <tbody>
+                <StyledTr>
+                  <StyledTh rowSpan={20}>
+                    R
+                    <br />D <br />2 <br />试 <br />样 <br />轴 <br />轮 <br />座{" "}
+                    <br />人 <br />工 <br />缺 <br />陷 <br />编 <br />号
+                  </StyledTh>
+                  <StyledTh colSpan={5}>左轮座探头晶片编号及灵敏度</StyledTh>
+                  <StyledTh colSpan={5}>右轮座探头晶片编号及灵敏度</StyledTh>
+                </StyledTr>
+                <StyledTr>
+                  <StyledTh colSpan={2}>通道编号</StyledTh>
+                  <StyledTh>左外</StyledTh>
+                  <StyledTh>左内</StyledTh>
+                  <StyledTh>左A3</StyledTh>
+                  <StyledTh colSpan={2}>通道编号</StyledTh>
+                  <StyledTh>右外</StyledTh>
+                  <StyledTh>右内</StyledTh>
+                  <StyledTh>右A3</StyledTh>
+                </StyledTr>
+                <StyledTr>
+                  <StyledTh colSpan={2}>折射角（度）</StyledTh>
+                  <StyledTh>51</StyledTh>
+                  <StyledTh>44</StyledTh>
+                  <StyledTh>22.5</StyledTh>
+                  <StyledTh colSpan={2}>折射角（度）</StyledTh>
+                  <StyledTh>51</StyledTh>
+                  <StyledTh>44</StyledTh>
+                  <StyledTh>22.5</StyledTh>
+                </StyledTr>
+                <StyledTr>
+                  <StyledTh rowSpan={3}>灵敏度（dB）</StyledTh>
+                  <StyledTh>校验（80%）</StyledTh>
+                  <StyledTd>{flaw.left().lz().deg51().flawAtten(1)}</StyledTd>
+                  <StyledTd>{flaw.left().lz().deg44().flawAtten(7)}</StyledTd>
+                  <StyledTd></StyledTd>
+                  <StyledTh rowSpan={3}>灵敏度（dB）</StyledTh>
+                  <StyledTh>校验（80%）</StyledTh>
+                  <StyledTd>{flaw.right().lz().deg51().flawAtten(1)}</StyledTd>
+                  <StyledTd>{flaw.right().lz().deg44().flawAtten(7)}</StyledTd>
+                  <StyledTd></StyledTd>
+                </StyledTr>
+                <StyledTr>
+                  <StyledTh>补偿</StyledTh>
+                  <StyledTd>{detector.l01()?.bc}</StyledTd>
+                  <StyledTd>{detector.l02()?.bc}</StyledTd>
+                  <StyledTd>{detector.lA03()?.bc}</StyledTd>
+                  <StyledTh>补偿</StyledTh>
+                  <StyledTd>{detector.r01()?.bc}</StyledTd>
+                  <StyledTd>{detector.r02()?.bc}</StyledTd>
+                  <StyledTd>{detector.rA03()?.bc}</StyledTd>
+                </StyledTr>
+                <StyledTr>
+                  <StyledTh>探伤</StyledTh>
+                  <StyledTd></StyledTd>
+                  <StyledTd></StyledTd>
+                  <StyledTd></StyledTd>
+                  <StyledTh>探伤</StyledTh>
+                  <StyledTd></StyledTd>
+                  <StyledTd></StyledTd>
+                  <StyledTd></StyledTd>
+                </StyledTr>
+                {Array.from({ length: 13 }, (_, index) => index + 1).map(
+                  (item) => {
+                    return (
+                      <StyledTr key={item} className="*:text-[12pt]">
+                        <StyledTh colSpan={2}>{item}</StyledTh>
+                        <StyledTd></StyledTd>
+                        <StyledTd></StyledTd>
+                        <StyledTd></StyledTd>
+                        <StyledTh colSpan={2}>{item}</StyledTh>
+                        <StyledTd></StyledTd>
+                        <StyledTd></StyledTd>
+                        <StyledTd></StyledTd>
+                      </StyledTr>
+                    );
+                  },
+                )}
+                <StyledTr>
+                  <StyledTd colSpan={5} sx={{ padding: 0, border: 0 }}>
+                    <StyledTable cellSpacing="0">
+                      <colgroup>
+                        <StyledCol sx={{ width: "22pt" }} />
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                      </colgroup>
+                      <tbody>
+                        <StyledTr>
+                          <StyledTh rowSpan={2}>左</StyledTh>
+                          <StyledTh rowSpan={2}>通道编号</StyledTh>
+                          <StyledTh rowSpan={2}>拆射角度</StyledTh>
+                          <StyledTh colSpan={3}>灵敏度(dB)</StyledTh>
+                          <StyledTh colSpan={3}>缺陷编号</StyledTh>
+                        </StyledTr>
+                        <StyledTr>
+                          <StyledTh>
+                            校验
+                            <br />
+                            (80%)
+                          </StyledTh>
+                          <StyledTh>补偿</StyledTh>
+                          <StyledTh>探伤</StyledTh>
+                          <StyledTh>1</StyledTh>
+                          <StyledTh>2</StyledTh>
+                          <StyledTh>3</StyledTh>
+                        </StyledTr>
+                        <StyledTr>
+                          <StyledTh rowSpan={3} className="text-[12pt]">
+                            轴
+                            <br />颈
+                          </StyledTh>
+                          <StyledTh>CT</StyledTh>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd colSpan={3}></StyledTd>
+                        </StyledTr>
+                        <StyledTr>
+                          <StyledTh>A1</StyledTh>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                        </StyledTr>
+                        <StyledTr>
+                          <StyledTh>A2</StyledTh>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                        </StyledTr>
+                      </tbody>
+                    </StyledTable>
+                  </StyledTd>
+                  <StyledTd colSpan={5} sx={{ padding: 0, border: 0 }}>
+                    <StyledTable cellSpacing="0">
+                      <colgroup>
+                        <StyledCol sx={{ width: "22pt" }} />
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                      </colgroup>
+                      <tbody>
+                        <StyledTr>
+                          <StyledTh rowSpan={2}>右</StyledTh>
+                          <StyledTh rowSpan={2}>通道编号</StyledTh>
+                          <StyledTh rowSpan={2}>拆射角度</StyledTh>
+                          <StyledTh colSpan={3}>灵敏度(dB)</StyledTh>
+                          <StyledTh colSpan={3}>缺陷编号</StyledTh>
+                        </StyledTr>
+                        <StyledTr>
+                          <StyledTh>
+                            校验
+                            <br />
+                            (80%)
+                          </StyledTh>
+                          <StyledTh>补偿</StyledTh>
+                          <StyledTh>探伤</StyledTh>
+                          <StyledTh>1</StyledTh>
+                          <StyledTh>2</StyledTh>
+                          <StyledTh>3</StyledTh>
+                        </StyledTr>
+                        <StyledTr>
+                          <StyledTh rowSpan={3} className="text-[12pt]">
+                            轴
+                            <br />颈
+                          </StyledTh>
+                          <StyledTh>CT</StyledTh>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd colSpan={3}></StyledTd>
+                        </StyledTr>
+                        <StyledTr>
+                          <StyledTh>A1</StyledTh>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                        </StyledTr>
+                        <StyledTr>
+                          <StyledTh>A2</StyledTh>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                          <StyledTd></StyledTd>
+                        </StyledTr>
+                      </tbody>
+                    </StyledTable>
+                  </StyledTd>
+                </StyledTr>
+              </tbody>
+            </StyledTable>
+            <StyledTable
+              cellSpacing="0"
+              sx={{
+                fontSize: "12pt",
+                border: "1px solid #000",
+                borderWidth: "0 0 1px 1px",
+              }}
+            >
+              <tbody>
+                <StyledTr>
+                  <StyledTh rowSpan={2}>签字签章</StyledTh>
+                  <StyledTh>探伤工</StyledTh>
+                  <StyledTd></StyledTd>
+                  <StyledTh>探伤工长</StyledTh>
+                  <StyledTd></StyledTd>
+                </StyledTr>
+                <StyledTr>
+                  <StyledTh>质检员</StyledTh>
+                  <StyledTd></StyledTd>
+                  <StyledTh>验收员</StyledTh>
+                  <StyledTd></StyledTd>
+                </StyledTr>
+                <StyledTr>
+                  <StyledTh sx={{ padding: "6pt" }}>备注</StyledTh>
+                  <StyledTd colSpan={4} sx={{ padding: "6pt" }}></StyledTd>
+                </StyledTr>
+              </tbody>
+            </StyledTable>
+            <StyledP
+              sx={{
+                textAlign: "right",
+                fontSize: "12pt",
+              }}
+            >
+              第 1 页
+            </StyledP>
+          </section>
+          <section data-a4>
+            <StyledP
+              sx={{
+                textAlign: "right",
+                fontSize: "12pt",
+                margin: 0,
+              }}
+            >
+              辆货统-501
+            </StyledP>
+            <StyledH1>
+              铁路货车轮轴超声波自动探伤系统日常性能校验记录表（第2页）
+            </StyledH1>
+            <StyledTable
+              cellSpacing="0"
+              sx={{
+                fontSize: "12pt",
+              }}
+            >
+              <colgroup>
+                <StyledCol sx={{ width: "80pt" }} />
+                <col />
+                <StyledCol sx={{ width: "80pt" }} />
+                <col />
+              </colgroup>
+              <thead>
+                <StyledTr className="text-[12pt]">
+                  <th>样板轮型号</th>
+                  <td className="underline underline-offset-3">
+                    江岸车辆段武南轮厂轮轴车间
+                  </td>
+                  <th className="">校验时间</th>
+                  <td className="underline underline-offset-3"></td>
+                </StyledTr>
+              </thead>
+            </StyledTable>
+            <StyledTable
+              cellSpacing="0"
+              sx={{ border: "1px solid #000", borderWidth: "0 0 1px 1px" }}
+            >
+              <tbody>
+                <StyledTr>
+                  <StyledTd sx={{ fontSize: "12pt" }}>
+                    左轴颈根部扫描图
+                  </StyledTd>
+                  <StyledTd sx={{ fontSize: "12pt" }}>
+                    右轴颈根部扫描图
+                  </StyledTd>
+                </StyledTr>
+                <StyledTr>
+                  <StyledImageTD></StyledImageTD>
+                  <StyledImageTD></StyledImageTD>
+                </StyledTr>
+                <StyledTr>
+                  <StyledTd sx={{ fontSize: "12pt" }}>
+                    左轴颈根部扫描图
+                  </StyledTd>
+                  <StyledTd sx={{ fontSize: "12pt" }}>
+                    右轴颈根部扫描图
+                  </StyledTd>
+                </StyledTr>
+                <StyledTr>
+                  <StyledImageTD></StyledImageTD>
+                  <StyledImageTD></StyledImageTD>
+                </StyledTr>
+                <StyledTr>
+                  <StyledTd colSpan={2} sx={{ fontSize: "12pt" }}>
+                    左穿透扫描图
+                  </StyledTd>
+                </StyledTr>
+                <StyledTr>
+                  <StyledImageTD colSpan={2}></StyledImageTD>
+                </StyledTr>
+                <StyledTr>
+                  <StyledTd colSpan={2} sx={{ fontSize: "12pt" }}>
+                    右穿透扫描图
+                  </StyledTd>
+                </StyledTr>
+                <StyledTr>
+                  <StyledImageTD colSpan={2}></StyledImageTD>
+                </StyledTr>
+              </tbody>
+            </StyledTable>
+            <StyledP>第 2 页</StyledP>
+          </section>
+        </article>
+      </Box>
+    );
   };
 
-  return (
-    <Grid container spacing={1.5}>
-      <Grid size={6}>
-        <Card>
-          <CardActionArea
-            onClick={() => {
-              setDirection("左");
-              setPlace("穿透");
-            }}
-          >
-            <CardContent>
-              <Typography variant="h4">{map.get("左穿透")?.size}</Typography>
-              <Typography>左穿透</Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-      </Grid>
-      <Grid size={6}>
-        <Card>
-          <CardActionArea
-            onClick={() => {
-              setDirection("右");
-              setPlace("穿透");
-            }}
-          >
-            <CardContent>
-              <Typography variant="h4">{map.get("右穿透")?.size}</Typography>
-              <Typography>右穿透</Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-      </Grid>
-      <Grid size={6}>
-        <Card>
-          <CardActionArea
-            onClick={() => {
-              setDirection("左");
-              setPlace("卸荷槽");
-            }}
-          >
-            <CardContent>
-              <Typography variant="h4">{map.get("左卸荷槽")?.size}</Typography>
-              <Typography>左卸荷槽</Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-      </Grid>
-      <Grid size={6}>
-        <Card>
-          <CardActionArea
-            onClick={() => {
-              setDirection("右");
-              setPlace("卸荷槽");
-            }}
-          >
-            <CardContent>
-              <Typography variant="h4">{map.get("右卸荷槽")?.size}</Typography>
-              <Typography>右卸荷槽</Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-      </Grid>
-      <Grid size={6}>
-        <Card>
-          <CardActionArea
-            onClick={() => {
-              setDirection("左");
-              setPlace("内");
-            }}
-          >
-            <CardContent>
-              <Typography variant="h4">{map.get("左内")?.size}</Typography>
-              <Typography>左内</Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-      </Grid>
-      <Grid size={6}>
-        <Card>
-          <CardActionArea
-            onClick={() => {
-              setDirection("右");
-              setPlace("内");
-            }}
-          >
-            <CardContent>
-              <Typography variant="h4">{map.get("右内")?.size}</Typography>
-              <Typography>右内</Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-      </Grid>
-      <Grid size={6}>
-        <Card>
-          <CardActionArea
-            onClick={() => {
-              setDirection("左");
-              setPlace("外");
-            }}
-          >
-            <CardContent>
-              <Typography variant="h4">{map.get("左外")?.size}</Typography>
-              <Typography>左外</Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-      </Grid>
-      <Grid size={6}>
-        <Card>
-          <CardActionArea
-            onClick={() => {
-              setDirection("右");
-              setPlace("外");
-            }}
-          >
-            <CardContent>
-              <Typography variant="h4">{map.get("右外")?.size}</Typography>
-              <Typography>右外</Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-      </Grid>
-      <Grid size={12}>
-        <Card>
-          <CardHeader title="详情" />
-          <CardContent>
-            <Grid container spacing={1.5}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  value={direction}
-                  onChange={(e) => setDirection(e.target.value)}
-                  select
-                  fullWidth
-                  label="方向"
-                >
-                  <MenuItem value="">无</MenuItem>
-                  <MenuItem value="左">左</MenuItem>
-                  <MenuItem value="右">右</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  value={place}
-                  onChange={(e) => setPlace(e.target.value)}
-                  select
-                  fullWidth
-                  label="位置"
-                >
-                  <MenuItem value="">无</MenuItem>
-                  <MenuItem value="穿透">穿透</MenuItem>
-                  <MenuItem value="卸荷槽">卸荷槽</MenuItem>
-                  <MenuItem value="内">内</MenuItem>
-                  <MenuItem value="外">外</MenuItem>
-                </TextField>
-              </Grid>
-            </Grid>
-          </CardContent>
-          <Divider />
-          <CardContent>
-            <PrintCHR501 />
-          </CardContent>
-          <TableContainer>
-            <Table sx={{ minWidth: 720 }}>
-              <TableHead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableCell
-                        key={header.id}
-                        padding={cellPaddingMap.get(header.column.id)}
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHead>
-              <TableBody>{renderRow()}</TableBody>
-              <TableFooter>
-                {table.getFooterGroups().map((footerGroup) => (
-                  <TableRow key={footerGroup.id}>
-                    {footerGroup.headers.map((header) => (
-                      <TableCell
-                        key={header.id}
-                        padding={cellPaddingMap.get(header.column.id)}
-                      >
-                        {flexRender(
-                          header.column.columnDef.footer,
-                          header.getContext(),
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableFooter>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            component={"div"}
-            page={table.getState().pagination.pageIndex}
-            count={table.getRowCount()}
-            rowsPerPage={table.getState().pagination.pageSize}
-            rowsPerPageOptions={rowsPerPageOptions}
-            onPageChange={(e, page) => {
-              void e;
-              table.setPageIndex(page);
-            }}
-            onRowsPerPageChange={(e) => {
-              table.setPageSize(Number.parseInt(e.target.value, 10));
-            }}
-            labelRowsPerPage="每页行数"
-          />
-        </Card>
-      </Grid>
-    </Grid>
-  );
+  return <>{renderQuery()}</>;
 };

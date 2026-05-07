@@ -1,4 +1,4 @@
-import type { Detecotor } from "#main/modules/mdb";
+import type { Detecotor } from "#main/features/mdb/types";
 import * as mathjs from "mathjs";
 
 export class DetectorMap {

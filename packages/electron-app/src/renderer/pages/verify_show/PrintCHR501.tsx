@@ -60,6 +60,8 @@ export const PrintCHR501 = () => {
     queryFn: async () => {},
   });
 
+  void query;
+
   return (
     <>
       <Button
