@@ -19,11 +19,14 @@ interface CmakeAddonParams {
     lParam: number | string,
     timeoutMs?: number,
   ): number;
+  testError(): void;
 }
 
 export const cmakeAddon = require(
   path.join(__dirname, "../build/Release/cmake-addon.node"),
 ) as CmakeAddonParams;
+
+export default cmakeAddon;
 
 export const WindowsMessages = {
   WM_SETTEXT: 0x000c,
@@ -39,3 +42,11 @@ export const WindowsMessages = {
   WM_LBUTTONDOWN: 0x0201,
   WM_LBUTTONUP: 0x0202,
 } as const;
+
+try {
+  cmakeAddon.testError();
+} catch (error) {
+  console.error(error);
+
+  console.log("process continue");
+}

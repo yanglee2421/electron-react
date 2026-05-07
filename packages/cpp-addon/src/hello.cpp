@@ -1,7 +1,34 @@
-#include <napi.h>
 #include <windows.h>
-#include <imm.h>
 #include <string>
+#define NAPI_CPP_EXCEPTIONS
+#include <napi.h>
+
+template <typename Fn>
+static Napi::Value JsSafeCall(const Napi::Env& env, Fn&& func) {
+  try {
+    return func();
+  } catch (Napi::Error& e) {
+    e.ThrowAsJavaScriptException();
+  } catch (const std::exception& ex) {
+    Napi::Error::New(env, ex.what()).ThrowAsJavaScriptException();
+  } catch (...) {
+    Napi::Error::New(env, "An unknown error occurred")
+        .ThrowAsJavaScriptException();
+  }
+
+  return env.Null();
+}
+
+template <typename Fn, typename ErrorCallback>
+static void SafeExecute(Fn&& func, ErrorCallback&& onError) {
+  try {
+    func();
+  } catch (const std::exception& ex) {
+    onError(ex.what());
+  } catch (...) {
+    onError("An unknown error occurred");
+  }
+}
 
 struct AutoInputParams {
   std::u16string zx, zh, czzzdw, sczzdw, mczzdw, czzzrq, sczzrq, mczzrq;
@@ -91,34 +118,26 @@ bool AutoInputToVC(
 Napi::Value Add(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
 
-  if (info.Length() < 2) {
-    Napi::TypeError::New(env, "Wrong number of arguments")
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
+  return JsSafeCall(env, [&]() -> Napi::Value {
+    if (info.Length() < 2) {
+      Napi::TypeError::New(env, "Wrong number of arguments")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
 
-  if (!info[0].IsNumber() || !info[1].IsNumber()) {
-    Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
-    return env.Null();
-  }
+    if (!info[0].IsNumber() || !info[1].IsNumber()) {
+      Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+      return env.Null();
+    }
 
-  double value1 = info[0].As<Napi::Number>().DoubleValue();
-  double value2 = info[1].As<Napi::Number>().DoubleValue();
-  Napi::Number sum = Napi::Number::New(env, value1 + value2);
+    double value1 = info[0].As<Napi::Number>().DoubleValue();
+    double value2 = info[1].As<Napi::Number>().DoubleValue();
 
-  return sum;
+    return Napi::Number::New(env, value1 + value2);
+  });
 }
 
 Napi::Value ShowAlert(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
-
-  if (info.Length() < 2 || !info[0].IsString() || !info[1].IsString()) {
-    Napi::TypeError::New(env, "String expected for both arguments")
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  // Async worker to run MessageBoxW without blocking the event loop
   class AlertWorker : public Napi::AsyncWorker {
    public:
     AlertWorker(
@@ -133,12 +152,15 @@ Napi::Value ShowAlert(const Napi::CallbackInfo& info) {
           result_(0) {}
 
     void Execute() override {
-      // 调用 Windows API (阻塞操作)
-      result_ = MessageBoxW(
-          NULL,
-          (LPCWSTR)message_.c_str(),
-          (LPCWSTR)title_.c_str(),
-          MB_OKCANCEL | MB_ICONINFORMATION);
+      SafeExecute(
+          [&]() {
+            result_ = MessageBoxW(
+                NULL,
+                (LPCWSTR)message_.c_str(),
+                (LPCWSTR)title_.c_str(),
+                MB_OKCANCEL | MB_ICONINFORMATION);
+          },
+          [&](const std::string& err) { SetError(err); });
     }
     void OnOK() override {
       deferred_.Resolve(Napi::Number::New(Env(), result_));
@@ -153,58 +175,38 @@ Napi::Value ShowAlert(const Napi::CallbackInfo& info) {
     int result_;
   };
 
-  // 2. 将 JS 字符串转换为 UTF-16 (std::u16string)
-  std::u16string message = info[0].As<Napi::String>().Utf16Value();
-  std::u16string title = info[1].As<Napi::String>().Utf16Value();
-  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
-  Napi::Function cb =
-      Napi::Function::New(env, [](const Napi::CallbackInfo&) {});
-  AlertWorker* worker = new AlertWorker(
-      cb, (LPCWSTR)message.c_str(), (LPCWSTR)title.c_str(), deferred);
-  worker->Queue();
+  Napi::Env env = info.Env();
 
-  return deferred.Promise();
+  return JsSafeCall(env, [&]() -> Napi::Value {
+    if (info.Length() < 2 || !info[0].IsString() || !info[1].IsString()) {
+      Napi::TypeError::New(env, "String expected for both arguments")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+
+    std::u16string message = info[0].As<Napi::String>().Utf16Value();
+    std::u16string title = info[1].As<Napi::String>().Utf16Value();
+    Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
+    Napi::Function cb =
+        Napi::Function::New(env, [](const Napi::CallbackInfo&) {});
+    AlertWorker* worker = new AlertWorker(
+        cb, (LPCWSTR)message.c_str(), (LPCWSTR)title.c_str(), deferred);
+    worker->Queue();
+
+    return deferred.Promise();
+  });
 }
 
 Napi::Value IsRunAsAdminWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  bool isAdmin = IsRunAsAdmin();
-  return Napi::Boolean::New(env, isAdmin);
+
+  return JsSafeCall(env, [&]() -> Napi::Value {
+    bool isAdmin = IsRunAsAdmin();
+    return Napi::Boolean::New(env, isAdmin);
+  });
 }
 
 Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
-  if (info.Length() < 10) {
-    Napi::TypeError::New(env, "expected 10 arguments")
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  for (int i = 0; i < 8; i++) {
-    if (!info[i].IsString()) {
-      std::string errorMessage =
-          "Argument " + std::to_string(i) + " must be a string";
-      Napi::TypeError::New(env, errorMessage).ThrowAsJavaScriptException();
-      return env.Null();
-    }
-  }
-  if (!info[8].IsNumber() || !info[9].IsNumber()) {
-    Napi::TypeError::New(env, "Arguments 8-9 must be numbers")
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  std::u16string zx = info[0].As<Napi::String>().Utf16Value();
-  std::u16string zh = info[1].As<Napi::String>().Utf16Value();
-  std::u16string czzzdw = info[2].As<Napi::String>().Utf16Value();
-  std::u16string sczzdw = info[3].As<Napi::String>().Utf16Value();
-  std::u16string mczzdw = info[4].As<Napi::String>().Utf16Value();
-  std::u16string czzzrq = info[5].As<Napi::String>().Utf16Value();
-  std::u16string sczzrq = info[6].As<Napi::String>().Utf16Value();
-  std::u16string mczzrq = info[7].As<Napi::String>().Utf16Value();
-  int ztx = info[8].As<Napi::Number>().Int32Value();
-  int ytx = info[9].As<Napi::Number>().Int32Value();
-
   class AutoInputWorker : public Napi::AsyncWorker {
    public:
     AutoInputWorker(
@@ -234,29 +236,31 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
           deferred_(deferred) {}
 
     void Execute() override {
-      if (!IsRunAsAdmin()) {
-        SetError(
-            "Administrator privileges required to interact with the target "
-            "window.");
-        return;
-      }
+      SafeExecute(
+          [&]() {
+            if (!IsRunAsAdmin()) {
+              SetError("自动填充需要管理员权限，请以管理员身份运行程序!");
+              return;
+            }
 
-      std::string err;
-      bool ok = AutoInputToVC(
-          zx_,
-          zh_,
-          czzzdw_,
-          sczzdw_,
-          mczzdw_,
-          czzzrq_,
-          sczzrq_,
-          mczzrq_,
-          ztx_,
-          ytx_,
-          err);
-      if (!ok) {
-        SetError(err);
-      }
+            std::string err;
+            bool ok = AutoInputToVC(
+                zx_,
+                zh_,
+                czzzdw_,
+                sczzdw_,
+                mczzdw_,
+                czzzrq_,
+                sczzrq_,
+                mczzrq_,
+                ztx_,
+                ytx_,
+                err);
+            if (!ok) {
+              SetError(err);
+            }
+          },
+          [&](const std::string& err) { SetError(err); });
     }
     void OnOK() override {
       deferred_.Resolve(Napi::Boolean::New(Env(), true));
@@ -272,65 +276,107 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
     Napi::Promise::Deferred deferred_;
   };
 
-  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
-  Napi::Function cb =
-      Napi::Function::New(env, [](const Napi::CallbackInfo&) {});
-  AutoInputWorker* worker = new AutoInputWorker(
-      cb,
-      zx,
-      zh,
-      czzzdw,
-      sczzdw,
-      mczzdw,
-      czzzrq,
-      sczzrq,
-      mczzrq,
-      ztx,
-      ytx,
-      deferred);
-  worker->Queue();
-  return deferred.Promise();
+  Napi::Env env = info.Env();
+
+  return JsSafeCall(env, [&]() -> Napi::Value {
+    if (info.Length() < 10) {
+      Napi::TypeError::New(env, "expected 10 arguments")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+
+    for (int i = 0; i < 8; i++) {
+      if (!info[i].IsString()) {
+        std::string errorMessage =
+            "Argument " + std::to_string(i) + " must be a string";
+        Napi::TypeError::New(env, errorMessage).ThrowAsJavaScriptException();
+        return env.Null();
+      }
+    }
+
+    if (!info[8].IsNumber() || !info[9].IsNumber()) {
+      Napi::TypeError::New(env, "Arguments 8-9 must be numbers")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+
+    std::u16string zx = info[0].As<Napi::String>().Utf16Value();
+    std::u16string zh = info[1].As<Napi::String>().Utf16Value();
+    std::u16string czzzdw = info[2].As<Napi::String>().Utf16Value();
+    std::u16string sczzdw = info[3].As<Napi::String>().Utf16Value();
+    std::u16string mczzdw = info[4].As<Napi::String>().Utf16Value();
+    std::u16string czzzrq = info[5].As<Napi::String>().Utf16Value();
+    std::u16string sczzrq = info[6].As<Napi::String>().Utf16Value();
+    std::u16string mczzrq = info[7].As<Napi::String>().Utf16Value();
+    int ztx = info[8].As<Napi::Number>().Int32Value();
+    int ytx = info[9].As<Napi::Number>().Int32Value();
+
+    Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
+    Napi::Function cb =
+        Napi::Function::New(env, [](const Napi::CallbackInfo&) {});
+    AutoInputWorker* worker = new AutoInputWorker(
+        cb,
+        zx,
+        zh,
+        czzzdw,
+        sczzdw,
+        mczzdw,
+        czzzrq,
+        sczzrq,
+        mczzrq,
+        ztx,
+        ytx,
+        deferred);
+    worker->Queue();
+    return deferred.Promise();
+  });
 }
 
 Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (info.Length() < 2) {
-    Napi::TypeError::New(env, "expected 2 arguments: className, windowName")
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
 
-  LPCWSTR pClassName = NULL;
-  std::u16string classNameStr;
-  if (info[0].IsString()) {
-    classNameStr = info[0].As<Napi::String>().Utf16Value();
-    pClassName = (LPCWSTR)classNameStr.c_str();
-  }
+  return JsSafeCall(env, [&]() -> Napi::Value {
+    if (info.Length() < 2) {
+      Napi::TypeError::New(env, "expected 2 arguments: className, windowName")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
 
-  LPCWSTR pWindowName = NULL;
-  std::u16string windowNameStr;
-  if (info[1].IsString()) {
-    windowNameStr = info[1].As<Napi::String>().Utf16Value();
-    pWindowName = (LPCWSTR)windowNameStr.c_str();
-  }
+    LPCWSTR pClassName = NULL;
+    std::u16string classNameStr;
+    if (info[0].IsString()) {
+      classNameStr = info[0].As<Napi::String>().Utf16Value();
+      pClassName = (LPCWSTR)classNameStr.c_str();
+    }
 
-  HWND hwnd = FindWindowW(pClassName, pWindowName);
-  return Napi::Number::New(
-      env, static_cast<double>(reinterpret_cast<uintptr_t>(hwnd)));
+    LPCWSTR pWindowName = NULL;
+    std::u16string windowNameStr;
+    if (info[1].IsString()) {
+      windowNameStr = info[1].As<Napi::String>().Utf16Value();
+      pWindowName = (LPCWSTR)windowNameStr.c_str();
+    }
+
+    HWND hwnd = FindWindowW(pClassName, pWindowName);
+    return Napi::Number::New(
+        env, static_cast<double>(reinterpret_cast<uintptr_t>(hwnd)));
+  });
 }
 
 Napi::Value SetForegroundWindowWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (info.Length() < 1 || !info[0].IsNumber()) {
-    Napi::TypeError::New(env, "expected 1 argument: hwnd (number)")
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
 
-  HWND hwnd = reinterpret_cast<HWND>(
-      static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
-  BOOL result = SetForegroundWindow(hwnd);
-  return Napi::Boolean::New(env, result);
+  return JsSafeCall(env, [&]() -> Napi::Value {
+    if (info.Length() < 1 || !info[0].IsNumber()) {
+      Napi::TypeError::New(env, "expected 1 argument: hwnd (number)")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+
+    HWND hwnd = reinterpret_cast<HWND>(
+        static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
+    BOOL result = SetForegroundWindow(hwnd);
+    return Napi::Boolean::New(env, result);
+  });
 }
 
 struct EnumChildWindowsContext {
@@ -361,102 +407,78 @@ static BOOL CALLBACK EnumChildWindowsCallbackProc(HWND hwnd, LPARAM lParam) {
 
 Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsFunction()) {
-    Napi::TypeError::New(
-        env, "expected 2 arguments: parentHwnd (number), callback (function)")
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
 
-  HWND parentHwnd = reinterpret_cast<HWND>(
-      static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
+  return JsSafeCall(env, [&]() -> Napi::Value {
+    if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsFunction()) {
+      Napi::TypeError::New(
+          env, "expected 2 arguments: parentHwnd (number), callback (function)")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
 
-  Napi::Function callback = info[1].As<Napi::Function>();
-  EnumChildWindowsContext ctx{env, callback};
+    HWND parentHwnd = reinterpret_cast<HWND>(
+        static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
 
-  BOOL result = EnumChildWindows(
-      parentHwnd, EnumChildWindowsCallbackProc, reinterpret_cast<LPARAM>(&ctx));
+    Napi::Function callback = info[1].As<Napi::Function>();
+    EnumChildWindowsContext ctx{env, callback};
 
-  return Napi::Boolean::New(env, result);
+    BOOL result = EnumChildWindows(
+        parentHwnd,
+        EnumChildWindowsCallbackProc,
+        reinterpret_cast<LPARAM>(&ctx));
+
+    return Napi::Boolean::New(env, result);
+  });
 }
 
 Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (info.Length() < 4 || !info[0].IsNumber() || !info[1].IsNumber() ||
-      !info[2].IsNumber()) {
-    Napi::TypeError::New(
-        env,
-        "expected at least 4 arguments: hwnd (number), msg (number), wParam (number), lParam (number|string)")
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
 
-  HWND hwnd = reinterpret_cast<HWND>(
-      static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
-  UINT msg = static_cast<UINT>(info[1].As<Napi::Number>().Uint32Value());
-  WPARAM wParam = static_cast<WPARAM>(info[2].As<Napi::Number>().Int64Value());
+  return JsSafeCall(env, [&]() -> Napi::Value {
+    if (info.Length() < 4 || !info[0].IsNumber() || !info[1].IsNumber() ||
+        !info[2].IsNumber()) {
+      Napi::TypeError::New(
+          env,
+          "expected at least 4 arguments: hwnd (number), msg (number), wParam (number), lParam (number|string)")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
 
-  UINT timeout = 200;
-  if (info.Length() >= 5 && info[4].IsNumber()) {
-    timeout = static_cast<UINT>(info[4].As<Napi::Number>().Uint32Value());
-  }
+    HWND hwnd = reinterpret_cast<HWND>(
+        static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
+    UINT msg = static_cast<UINT>(info[1].As<Napi::Number>().Uint32Value());
+    WPARAM wParam =
+        static_cast<WPARAM>(info[2].As<Napi::Number>().Int64Value());
 
-  DWORD_PTR dwResult = 0;
-  if (info[3].IsString()) {
-    std::u16string lParamStr = info[3].As<Napi::String>().Utf16Value();
-    SendMessageTimeoutW(
-        hwnd,
-        msg,
-        wParam,
-        reinterpret_cast<LPARAM>(lParamStr.c_str()),
-        SMTO_ABORTIFHUNG,
-        timeout,
-        &dwResult);
-  } else if (info[3].IsNumber()) {
-    LPARAM lParam =
-        static_cast<LPARAM>(info[3].As<Napi::Number>().Int64Value());
-    SendMessageTimeoutW(
-        hwnd, msg, wParam, lParam, SMTO_ABORTIFHUNG, timeout, &dwResult);
-  } else {
-    Napi::TypeError::New(env, "lParam must be string or number")
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
+    UINT timeout = 200;
+    if (info.Length() >= 5 && info[4].IsNumber()) {
+      timeout = static_cast<UINT>(info[4].As<Napi::Number>().Uint32Value());
+    }
 
-  return Napi::Number::New(env, static_cast<double>(dwResult));
-}
+    DWORD_PTR dwResult = 0;
+    if (info[3].IsString()) {
+      std::u16string lParamStr = info[3].As<Napi::String>().Utf16Value();
+      SendMessageTimeoutW(
+          hwnd,
+          msg,
+          wParam,
+          reinterpret_cast<LPARAM>(lParamStr.c_str()),
+          SMTO_ABORTIFHUNG,
+          timeout,
+          &dwResult);
+    } else if (info[3].IsNumber()) {
+      LPARAM lParam =
+          static_cast<LPARAM>(info[3].As<Napi::Number>().Int64Value());
+      SendMessageTimeoutW(
+          hwnd, msg, wParam, lParam, SMTO_ABORTIFHUNG, timeout, &dwResult);
+    } else {
+      Napi::TypeError::New(env, "lParam must be string or number")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
 
-Napi::Value ImmDisableIMEWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
-  DWORD id = static_cast<DWORD>(-1);
-  if (info.Length() >= 1 && info[0].IsNumber()) {
-    id = static_cast<DWORD>(info[0].As<Napi::Number>().Uint32Value());
-  }
-
-  BOOL result = ImmDisableIME(id);
-  return Napi::Boolean::New(env, result);
-}
-
-Napi::Value ImmAssociateContextWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
-  if (info.Length() < 2 || !info[0].IsNumber()) {
-    Napi::TypeError::New(env, "expected 2 arguments: hwnd (number), himc (number|null)")
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  HWND hwnd = reinterpret_cast<HWND>(
-      static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
-      
-  HIMC himc = NULL;
-  if (info[1].IsNumber()) {
-    himc = reinterpret_cast<HIMC>(
-      static_cast<uintptr_t>(info[1].As<Napi::Number>().DoubleValue()));
-  }
-
-  HIMC prevContext = ImmAssociateContext(hwnd, himc);
-  return Napi::Number::New(
-      env, static_cast<double>(reinterpret_cast<uintptr_t>(prevContext)));
+    return Napi::Number::New(env, static_cast<double>(dwResult));
+  });
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
@@ -481,12 +503,6 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set(
       Napi::String::New(env, "sendMessage"),
       Napi::Function::New(env, SendMessageWrapped));
-  exports.Set(
-      Napi::String::New(env, "immDisableIME"),
-      Napi::Function::New(env, ImmDisableIMEWrapped));
-  exports.Set(
-      Napi::String::New(env, "immAssociateContext"),
-      Napi::Function::New(env, ImmAssociateContextWrapped));
 
   return exports;
 }

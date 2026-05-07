@@ -10,7 +10,8 @@ execute_process(COMMAND node -p "require('node-addon-api').include"
 # 去除可能存在的引号
 string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR_RAW})
 
-add_compile_definitions(NAPI_DISABLE_CPP_EXCEPTIONS)
+# add_compile_definitions(NAPI_DISABLE_CPP_EXCEPTIONS)
+# add_compile_definitions(NAPI_CPP_EXCEPTIONS)
 
 file(GLOB SOURCE_FILES "src/*.cpp")
 

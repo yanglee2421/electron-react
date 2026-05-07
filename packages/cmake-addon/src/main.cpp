@@ -1,7 +1,34 @@
-#include <napi.h>
 #include <windows.h>
-#include <imm.h>
 #include <string>
+#define NAPI_CPP_EXCEPTIONS
+#include <napi.h>
+
+template <typename Fn>
+Napi::Value JsSafeCall(const Napi::Env& env, Fn&& func) {
+  try {
+    return func();
+  } catch (Napi::Error& e) {
+    e.ThrowAsJavaScriptException();
+  } catch (const std::exception& ex) {
+    Napi::Error::New(env, ex.what()).ThrowAsJavaScriptException();
+  } catch (...) {
+    Napi::Error::New(env, "An unknown error occurred")
+        .ThrowAsJavaScriptException();
+  }
+
+  return env.Null();
+}
+
+template <typename Fn, typename OnError>
+void SafeExecute(Fn&& func, OnError&& onError) {
+  try {
+    func();
+  } catch (const std::exception& ex) {
+    onError(ex.what());
+  } catch (...) {
+    onError("An unknown error occurred");
+  }
+}
 
 Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
@@ -144,23 +171,37 @@ Napi::Value ImmDisableIMEWrapped(const Napi::CallbackInfo& info) {
 Napi::Value ImmAssociateContextWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
   if (info.Length() < 2 || !info[0].IsNumber()) {
-    Napi::TypeError::New(env, "expected 2 arguments: hwnd (number), himc (number|null)")
+    Napi::TypeError::New(
+        env, "expected 2 arguments: hwnd (number), himc (number|null)")
         .ThrowAsJavaScriptException();
     return env.Null();
   }
 
   HWND hwnd = reinterpret_cast<HWND>(
       static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
-      
+
   HIMC himc = NULL;
   if (info[1].IsNumber()) {
     himc = reinterpret_cast<HIMC>(
-      static_cast<uintptr_t>(info[1].As<Napi::Number>().DoubleValue()));
+        static_cast<uintptr_t>(info[1].As<Napi::Number>().DoubleValue()));
   }
 
   HIMC prevContext = ImmAssociateContext(hwnd, himc);
   return Napi::Number::New(
       env, static_cast<double>(reinterpret_cast<uintptr_t>(prevContext)));
+}
+
+Napi::Value TestError(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+
+  Napi::Error::New(env, "This is a test error1").ThrowAsJavaScriptException();
+  // throw std::exception("This is a test error");
+  return env.Null();
+}
+
+Napi::Value TestErrorWrapped(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  return JsSafeCall(env, [&]() { return TestError(info); });
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
@@ -182,6 +223,10 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set(
       Napi::String::New(env, "immAssociateContext"),
       Napi::Function::New(env, ImmAssociateContextWrapped));
+
+  exports.Set(
+      Napi::String::New(env, "testError"),
+      Napi::Function::New(env, TestErrorWrapped));
 
   return exports;
 }
