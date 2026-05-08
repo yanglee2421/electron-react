@@ -72,7 +72,7 @@ class TableQueryBuilder<
   private databaseType: DatabaseType;
   private tableName: string;
   private offsetValue: number = 0;
-  private limitValue: number = 32;
+  private limitValue: number = Infinity;
   private likes: FilterValue[] = [];
   private equals: FilterValue[] = [];
   private ins: FilterInValues[] = [];

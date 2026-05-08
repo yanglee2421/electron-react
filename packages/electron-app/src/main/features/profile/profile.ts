@@ -11,8 +11,8 @@ export class Profile {
 
   constructor({ kv }: AppCradle) {
     const stateJson = kv.getItem(PROFILE_STORAGE_KEY);
-    const data = stateJson ? JSON.parse(stateJson) : {};
-    const initialState = profile.parse(data.state);
+    const data = stateJson ? JSON.parse(stateJson).state : {};
+    const initialState = profile.parse(data);
     this.state$ = new BehaviorSubject<AppProfile>(initialState);
 
     this.subscription = kv.events$.subscribe((event) => {

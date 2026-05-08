@@ -1,6 +1,7 @@
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import { app, BrowserWindow, Menu, nativeTheme, shell } from "electron";
+import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import {
@@ -11,9 +12,13 @@ import {
   NEVER,
   of,
   partition,
+  retry,
+  shareReplay,
   startWith,
   switchMap,
   take,
+  tap,
+  timer,
   using,
 } from "rxjs";
 import { container } from "./features";
@@ -85,7 +90,7 @@ const createWindow = async () => {
 // Define rxjs observable
 const singleInstanceLock$ = defer(() => of(app.requestSingleInstanceLock()));
 const [primaryInstance$, duplicateInstance$] = partition(
-  singleInstanceLock$,
+  singleInstanceLock$.pipe(shareReplay(1)),
   (hasLock) => hasLock,
 );
 const whenReady$ = from(app.whenReady());
@@ -193,8 +198,8 @@ const using$ = using(
       },
     };
   },
-  // Must emit a value to trigger the callback function that pass to subscribe,
-  // but we don't actually need it
+  // A value must be emitted to trigger the callback function passed to the subscriber,
+  // Even if we don't actually need it
   () => NEVER.pipe(startWith(null)),
 );
 
@@ -208,10 +213,27 @@ duplicateInstance$.subscribe(() => {
   app.quit();
 });
 
+const retryDelay$ = defer(() =>
+  from(container.dispose()).pipe(
+    tap(() => {
+      const dbPath = path.resolve(app.getPath("userData"), "db.db");
+      const desktopDbPath = path.resolve(app.getPath("desktop"), "db.db");
+
+      fs.cpSync(dbPath, desktopDbPath, { recursive: true });
+      fs.rmSync(dbPath, { recursive: true, force: true });
+    }),
+    switchMap(() => timer(200)),
+  ),
+);
+
 const primarySubscription = primaryInstance$
   .pipe(
     switchMap(() => whenReady$),
     switchMap(() => using$),
+    retry({
+      count: 1,
+      delay: () => retryDelay$,
+    }),
   )
   .subscribe(() => {
     Menu.setApplicationMenu(null);

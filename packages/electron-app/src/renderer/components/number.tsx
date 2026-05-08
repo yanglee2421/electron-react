@@ -54,10 +54,6 @@ export const NumberField = (props: NumberFieldProps) => {
     field.onChange(nextValue);
   };
 
-  React.useEffect(() => {
-    console.log(focused);
-  }, []);
-
   return (
     <TextField
       value={renderNumberValue(field.value, focusedValue, focused)}
