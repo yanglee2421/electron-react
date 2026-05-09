@@ -32,6 +32,12 @@
   [data-print-container] {
     display: block;
   }
+  img {
+    /* 确保浏览器在打印时渲染所有图形，包括背景 */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    max-width: 100%;
+  }
 }
 
 @page {

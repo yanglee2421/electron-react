@@ -6,6 +6,7 @@ import {
   useSelectDirectory,
 } from "#renderer/api/fetch_preload";
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
+import { profile as profileSchema } from "#shared/instances/schema";
 import {
   AdminPanelSettings,
   BugReportOutlined,
@@ -36,12 +37,6 @@ import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNotifications } from "@toolpad/core";
 import React from "react";
-import z from "zod";
-
-const profileSchema = z.object({
-  appPath: z.string().min(1),
-  encoding: z.string().min(1),
-});
 
 const { fieldContext, formContext } = createFormHookContexts();
 const { useAppForm } = createFormHook({
@@ -62,10 +57,11 @@ const useProfileForm = () => {
 
   const form = useAppForm({
     defaultValues: {
+      ...useProfileStore.getState(),
       appPath,
       encoding,
     },
-    async onSubmit({ value }) {
+    onSubmit: async ({ value }) => {
       useProfileStore.setState({
         appPath: value.appPath,
         encoding: value.encoding,
@@ -73,7 +69,7 @@ const useProfileForm = () => {
       notifications.show("保存成功", { severity: "success" });
     },
     validators: {
-      onChange: profileSchema,
+      onChange: profileSchema.required(),
     },
   });
 

@@ -5,4 +5,8 @@ export interface IPCContract {
     args: [string];
     return: ReturnType<Printer["getDataForCHR501"]>;
   };
+  "printer/print": {
+    args: [];
+    return: ReturnType<Printer["print"]>;
+  };
 }
