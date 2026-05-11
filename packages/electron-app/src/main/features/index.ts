@@ -50,7 +50,9 @@ container.register({
     .singleton()
     .disposer((mdb) => mdb.dispose()),
   plc: asClass(PLC).singleton(),
-  printer: asClass(Printer).singleton(),
+  printer: asClass(Printer)
+    .singleton()
+    .disposer((printer) => printer.dispose()),
   profile: asClass(Profile)
     .singleton()
     .disposer((profile) => profile.dispose()),

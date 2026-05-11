@@ -1,6 +1,5 @@
 import { atFirstOrThrow } from "@yotulee/run";
 import { app, BrowserWindow } from "electron";
-
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -23,6 +22,15 @@ export class Printer {
     });
   }
 
+  dispose() {
+    const tmpPath = path.resolve(app.getPath("temp"), app.getName());
+
+    // Cleanup temporary files created by worker threads
+    if (fs.existsSync(tmpPath)) {
+      fs.rmSync(tmpPath, { recursive: true, force: true });
+    }
+  }
+
   async getDataForCHR501(id: string) {
     const records = await this.mdb.root().verifies().equal("szIDs", id);
     const record = atFirstOrThrow(
@@ -43,7 +51,9 @@ export class Printer {
     const rlzImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RLZ.bmp`);
     const lxhImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LXH.bmp`);
     const rxhImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RXH.bmp`);
-    const tmpPath = app.getPath("temp");
+    const tmpPath = path.resolve(app.getPath("temp"), app.getName());
+
+    await fs.promises.mkdir(tmpPath, { recursive: true });
 
     const jpegs = await this.piscina.run({
       tmpPath,
