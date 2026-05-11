@@ -80,7 +80,18 @@ const routes: RouteObject[] = [
                   },
                   {
                     path: ":id",
-                    lazy: () => import("#renderer/pages/verify_show"),
+
+                    children: [
+                      {
+                        index: true,
+                        lazy: () => import("#renderer/pages/verify_show"),
+                      },
+                      {
+                        path: "chr501",
+                        lazy: () =>
+                          import("#renderer/pages/verify_501/component"),
+                      },
+                    ],
                   },
                 ],
               },

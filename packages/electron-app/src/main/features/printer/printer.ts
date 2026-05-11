@@ -1,15 +1,26 @@
 import { atFirstOrThrow } from "@yotulee/run";
 import { app, BrowserWindow } from "electron";
+
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import Piscina from "piscina";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
+import workerPath from "./worker?modulePath";
 
 export class Printer {
+  private piscina: Piscina;
   private mdb: MDB;
 
   constructor({ mdb }: AppCradle) {
     this.mdb = mdb;
+
+    this.piscina = new Piscina({
+      filename: workerPath,
+      minThreads: 1,
+      maxThreads: os.cpus().length,
+    });
   }
 
   async getDataForCHR501(id: string) {
@@ -32,20 +43,24 @@ export class Printer {
     const rlzImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RLZ.bmp`);
     const lxhImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LXH.bmp`);
     const rxhImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RXH.bmp`);
+    const tmpPath = app.getPath("temp");
+
+    const jpegs = await this.piscina.run({
+      tmpPath,
+      lct: lctImage,
+      rct: rctImage,
+      llz: llzImage,
+      rlz: rlzImage,
+      lxh: lxhImage,
+      rxh: rxhImage,
+    });
 
     return {
       record: record,
       datas: datas.rows,
       corporation,
       detectors: detectors.rows,
-      images: {
-        lct: lctImage,
-        rct: rctImage,
-        llz: llzImage,
-        rlz: rlzImage,
-        lxh: lxhImage,
-        rxh: rxhImage,
-      },
+      images: jpegs,
     };
   }
 

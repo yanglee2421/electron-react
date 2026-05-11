@@ -46,6 +46,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@react-pdf/renderer": "^4.5.1",
     "@yanglee2421/cpp-addon": "workspace:*",
     "@yotulee/run": "npm:@jsr/yotulee__run@^0.0.15",
     "awilix": "^13.0.3",
@@ -53,6 +54,7 @@
     "fast-xml-parser": "^5.3.3",
     "iconv-lite": "^0.7.1",
     "ini": "^6.0.0",
+    "jimp": "^1.6.1",
     "mdb-reader": "^3.1.0",
     "node-fxplc": "^0.1.6",
     "p-limit": "^7.3.0",
