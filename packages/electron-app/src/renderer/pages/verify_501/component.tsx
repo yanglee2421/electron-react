@@ -1,13 +1,14 @@
 import { fetchCHR501Data } from "#renderer/api/printer";
+import { Loading } from "#renderer/components/Loading";
+import { of } from "#shared/functions/array";
 import { resolveCHR501 } from "#shared/functions/chr501";
-import type { Styles } from "@react-pdf/renderer";
+import { CellHeightContext, cn, styles } from "#shared/instances/styles";
+import { Alert, AlertTitle } from "@mui/material";
 import {
   Document,
-  Font,
   Image,
   Page,
   PDFViewer,
-  StyleSheet,
   Text,
   View,
 } from "@react-pdf/renderer";
@@ -15,192 +16,6 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
 import { useParams } from "react-router";
-
-// 注意：react-pdf 默认不支持中文字体，必须注册中文字体才能正常显示中文。
-// 这里使用一个可用的思源黑体 TTF 字体链接作为示例。在生产环境中建议将字体文件放到 public 目录并使用本地路径。
-Font.register({
-  family: "NotoSansSC",
-  src: "https://cdn.jsdelivr.net/gh/StellarCN/scp_zh@master/fonts/SimHei.ttf",
-});
-
-const styles = StyleSheet.create({
-  page: {
-    padding: "14mm",
-
-    fontFamily: "NotoSansSC",
-    fontSize: 10,
-    textAlign: "center",
-  },
-
-  flexRow: {
-    flexDirection: "row",
-  },
-  flexCol: {
-    flexDirection: "column",
-  },
-  flex1: {
-    flex: 1,
-  },
-  flexCenter: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  justifyCenter: {
-    justifyContent: "center",
-  },
-  itemsCenter: {
-    alignItems: "center",
-  },
-  gap10: {
-    gap: 10,
-  },
-  gap12: {
-    gap: 12,
-  },
-
-  width20: {
-    width: "20%",
-  },
-  width40: {
-    width: "40%",
-  },
-  width80: {
-    width: "80%",
-  },
-
-  padding2: {
-    padding: 2,
-  },
-  padding4: {
-    padding: 4,
-  },
-  padding6: {
-    padding: 6,
-  },
-  padding8: {
-    padding: 8,
-  },
-  paddingY2: {
-    paddingVertical: 2,
-  },
-  paddingY4: {
-    paddingVertical: 4,
-  },
-  paddingY6: {
-    paddingVertical: 6,
-  },
-  paddingY8: {
-    paddingVertical: 8,
-  },
-  paddingT2: {
-    paddingTop: 2,
-  },
-  paddingT4: {
-    paddingTop: 4,
-  },
-  paddingT6: {
-    paddingTop: 6,
-  },
-  paddingT8: {
-    paddingTop: 8,
-  },
-  paddingB2: {
-    paddingBottom: 2,
-  },
-  paddingB4: {
-    paddingBottom: 4,
-  },
-  paddingB6: {
-    paddingBottom: 6,
-  },
-  paddingB8: {
-    paddingBottom: 8,
-  },
-
-  border: {
-    borderWidth: 1,
-    borderColor: "#000",
-    borderStyle: "solid",
-  },
-  borderT: {
-    borderTopWidth: 1,
-    borderColor: "#000",
-    borderStyle: "solid",
-  },
-  borderR: {
-    borderRightWidth: 1,
-    borderColor: "#000",
-    borderStyle: "solid",
-  },
-  borderB: {
-    borderBottomWidth: 1,
-    borderColor: "#000",
-    borderStyle: "solid",
-  },
-  borderL: {
-    borderLeftWidth: 1,
-    borderColor: "#000",
-    borderStyle: "solid",
-  },
-  borderTR: {
-    borderTopWidth: 1,
-    borderRightWidth: 1,
-    borderColor: "#000",
-    borderStyle: "solid",
-  },
-  borderBL: {
-    borderBottomWidth: 1,
-    borderLeftWidth: 1,
-    borderColor: "#000",
-    borderStyle: "solid",
-  },
-
-  font10: {
-    fontSize: 10,
-  },
-  font12: {
-    fontSize: 12,
-  },
-  font16: {
-    fontSize: 16,
-  },
-  fontBold: {
-    fontWeight: "bold",
-  },
-
-  textCenter: {
-    textAlign: "center",
-  },
-  textRight: {
-    textAlign: "right",
-  },
-  textLeft: {
-    textAlign: "left",
-  },
-});
-
-const CellHeightContext = React.createContext(22);
-
-const of = (count: number) => {
-  return Array.from({ length: count }, (_, index) => index + 1);
-};
-
-type Style = Styles[keyof Styles];
-type CnItem = Style | false | undefined | null;
-
-const cn = (...args: CnItem[]) => {
-  return args.filter((i): i is Style => {
-    if (typeof i !== "object") {
-      return false;
-    }
-
-    if (i === null) {
-      return false;
-    }
-
-    return true;
-  });
-};
 
 const Row = (props: React.PropsWithChildren) => {
   return <View style={[styles.flexRow]}>{props.children}</View>;
@@ -664,6 +479,7 @@ interface ReportDocProps {
   imageRXH?: string;
   imageLLZ?: string;
   imageRLZ?: string;
+  asideTip: string;
 }
 
 const ReportDoc = (props: ReportDocProps) => {
@@ -672,6 +488,7 @@ const ReportDoc = (props: ReportDocProps) => {
     tableHeader2,
     equipmentTableProps,
     signatureTableProps,
+    asideTip,
   } = props;
   const IMAGE_HEIGHT = 150;
 
@@ -693,7 +510,7 @@ const ReportDoc = (props: ReportDocProps) => {
               styles.padding6,
             ]}
           >
-            <Text>{"R\nD\n2\n试\n样\n轴\n轮\n座\n人\n工\n缺\n陷\n编\n号"}</Text>
+            <Text>{asideTip}</Text>
           </View>
           {props.children}
         </View>
@@ -815,16 +632,22 @@ export const Component = () => {
 
   const renderQuery = () => {
     if (query.isPending) {
-      return <div>加载中...</div>;
+      return <Loading />;
     }
 
     if (query.isError) {
-      return <div>加载失败: {(query.error as Error).message}</div>;
+      return (
+        <Alert severity="error">
+          <AlertTitle>数据加载失败</AlertTitle>
+          {query.error.message}
+        </Alert>
+      );
     }
 
     const { detectors, datas, record, corporation, images } = query.data;
     const { detectorInfo, flawInfo } = resolveCHR501(datas, detectors);
     const of13 = of(13);
+    const asideTip = record.szWHModel?.split("").join("\n");
 
     return (
       <PDFViewer
@@ -832,6 +655,7 @@ export const Component = () => {
         style={{ width: "100%", height: "100vh", border: 0 }}
       >
         <ReportDoc
+          asideTip={asideTip + "\n试\n样\n轴\n轮\n座\n人\n工\n缺\n陷\n编\n号"}
           tableHeader1={{
             labelL: "单位名称",
             valueL: corporation.Factory || "",

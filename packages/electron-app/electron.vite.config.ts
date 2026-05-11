@@ -16,16 +16,20 @@ const ReactCompilerConfig = {
   target: "19",
 };
 
-const reactDevtoolsPlugin = (): Plugin => {
+const reactDevtoolsPlugin = (enabled?: boolean): Plugin => {
   return {
     name: "vite-plugin-react-devtools-injector",
-    transformIndexHtml: () => [
-      {
-        tag: "script",
-        attrs: { src: "http://localhost:8097" },
-        injectTo: "head-prepend",
-      },
-    ],
+    transformIndexHtml: () => {
+      if (!enabled) return;
+
+      return [
+        {
+          tag: "script",
+          attrs: { src: "http://localhost:8097" },
+          injectTo: "head-prepend",
+        },
+      ];
+    },
     apply: "serve",
   };
 };

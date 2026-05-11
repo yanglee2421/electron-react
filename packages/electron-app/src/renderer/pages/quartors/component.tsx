@@ -1,39 +1,5 @@
-import {
-  Alert,
-  AlertTitle,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Divider,
-  Grid,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableContainer,
-  LinearProgress,
-  Link,
-  Checkbox,
-  TextField,
-  MenuItem,
-} from "@mui/material";
-import {
-  createColumnHelper,
-  getCoreRowModel,
-  useReactTable,
-  flexRender,
-} from "@tanstack/react-table";
-import dayjs from "dayjs";
-import React from "react";
-import { DatePicker } from "@mui/x-date-pickers";
-import { useQuery } from "@tanstack/react-query";
-import { Link as RouterLink } from "react-router";
-import { RefreshOutlined } from "@mui/icons-material";
+import type { Filter, Quartor } from "#main/features/mdb/types";
+import type { MDBUser } from "#renderer/api/fetch_preload";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
@@ -41,10 +7,43 @@ import {
 import { Loading } from "#renderer/components/Loading";
 import { ScrollToTop } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import { Print, RefreshOutlined } from "@mui/icons-material";
+import {
+  Alert,
+  AlertTitle,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Checkbox,
+  Divider,
+  Grid,
+  IconButton,
+  LinearProgress,
+  Link,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableFooter,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
+} from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
+import { useQuery } from "@tanstack/react-query";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import dayjs from "dayjs";
+import React from "react";
+import { Link as RouterLink, useNavigate } from "react-router";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#main/modules/mdb.worker";
-import type { Quartor } from "#main/modules/mdb";
-import type { MDBUser } from "#renderer/api/fetch_preload";
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Quartor>();
@@ -101,17 +100,19 @@ const columns = [
   columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
 ];
 
-type DataGridProps = {
+interface DataGridProps {
   data?: Quartor[];
   isPending?: boolean;
   isError?: boolean;
   error?: Error | null;
   isFetching?: boolean;
-};
+}
 
 const DataGrid = (props: DataGridProps) => {
   "use no memo";
   const data = React.useMemo(() => props.data || [], [props.data]);
+
+  const navigate = useNavigate();
 
   const table = useReactTable({
     columns,
@@ -176,7 +177,15 @@ const DataGrid = (props: DataGridProps) => {
   return (
     <>
       <CardContent>
-        <Button variant="outlined">Excel</Button>
+        <Button
+          variant="outlined"
+          startIcon={<Print />}
+          onClick={() => {
+            navigate("/quartors/chr502");
+          }}
+        >
+          Excel
+        </Button>
       </CardContent>
       {props.isFetching && <LinearProgress />}
       <TableContainer>
@@ -313,7 +322,9 @@ export const Component = () => {
     });
 
   const renderUserSelect = () => {
-    if (!usersQuery.isSuccess) return null;
+    if (!usersQuery.isSuccess) {
+      return null;
+    }
 
     return (
       <Grid size={{ xs: 12, sm: 6 }}>

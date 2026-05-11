@@ -106,6 +106,11 @@ const routes: RouteObject[] = [
                     path: ":id",
                     lazy: () => import("#renderer/pages/quartors_show"),
                   },
+                  {
+                    path: "chr502",
+                    lazy: () =>
+                      import("#renderer/pages/quartors_502/component"),
+                  },
                 ],
               },
               {
