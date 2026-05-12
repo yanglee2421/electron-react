@@ -1,109 +1,35 @@
+import {
+  Cell,
+  Col,
+  PageFooter,
+  PageHeader,
+  ReportTitle,
+  Row,
+} from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
-import { CellHeightContext, cn, styles } from "#shared/instances/styles";
+import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import dayjs from "dayjs";
 import React from "react";
 
-const Row = (props: React.PropsWithChildren) => {
-  return <View style={[styles.flexRow]}>{props.children}</View>;
-};
-
-interface ColProps {
-  children?: React.ReactNode;
-  width?: number | string;
-}
-
-const Col = (props: ColProps) => {
-  const { width } = props;
-
-  return (
-    <View style={[width ? { width } : styles.flex1]}>{props.children}</View>
-  );
-};
-
-const resolveCellHeight = (contextHeight: number, propsHeight?: number) => {
-  if (typeof propsHeight === "number") {
-    return propsHeight;
-  }
-  return contextHeight;
-};
-
-interface CellProps {
-  children?: React.ReactNode;
-  tr?: boolean;
-  bl?: boolean;
-  t?: boolean;
-  r?: boolean;
-  b?: boolean;
-  l?: boolean;
-  font12?: boolean;
-  height?: number;
-}
-
-const Cell = (props: CellProps) => {
-  const { height: propsHeight, tr = true, bl, t, r, b, l, font12 } = props;
-
-  const cellHeight = React.use(CellHeightContext);
-  const height = resolveCellHeight(cellHeight, propsHeight);
-
-  return (
-    <View
-      style={cn(
-        styles.itemsCenter,
-        styles.justifyCenter,
-        tr && styles.borderTR,
-        bl && styles.borderBL,
-        t && styles.borderT,
-        r && styles.borderR,
-        b && styles.borderB,
-        l && styles.borderL,
-        font12 ? styles.font12 : styles.font10,
-        { height },
-      )}
-    >
-      <Text>{props.children}</Text>
-    </View>
-  );
-};
-
-const PageHeader = (props: React.PropsWithChildren) => {
-  return (
-    <View>
-      <Text style={[styles.font12, styles.textRight]}>{props.children}</Text>
-    </View>
-  );
-};
-
-const PageFooter = (props: React.PropsWithChildren) => {
-  return (
-    <View style={[styles.paddingT8]}>
-      <Text style={[styles.textRight, styles.font12]}>{props.children}</Text>
-    </View>
-  );
-};
-
-const ReportTitle = (props: React.PropsWithChildren) => {
-  return (
-    <View style={[styles.paddingY8]}>
-      <Text style={[styles.font16, styles.fontBold]}>{props.children}</Text>
-    </View>
-  );
-};
+const FIRST_COL_WIDTH = 60;
+const LAST_COL_WIDTH = 50;
+const CHANNEL_COL_WIDTH = 90;
 
 interface TableHeaderProps {}
 
 const TableHeader = ({}: TableHeaderProps) => (
   <Row>
-    <Col>
+    <Col width={FIRST_COL_WIDTH}>
       <Cell>单位名称:</Cell>
     </Col>
     <Col>
       <Cell>宁东铁路公司</Cell>
     </Col>
-    <Col>
+    <Col width={40}>
       <Cell>RE2B</Cell>
     </Col>
-    <Col>
+    <Col width={60}>
       <Cell>校验时间:</Cell>
     </Col>
     <Col>
@@ -121,22 +47,22 @@ interface EquipmentTableProps {
 const EquipmentTable = (props: EquipmentTableProps) => {
   return (
     <Row>
-      <Col>
+      <Col width={FIRST_COL_WIDTH}>
         <Cell>设备编号</Cell>
       </Col>
       <Col>
         <Cell>{props.deviceNo}</Cell>
       </Col>
-      <Col>
+      <Col width={FIRST_COL_WIDTH}>
         <Cell>制造时间</Cell>
       </Col>
       <Col>
         <Cell>{props.deviceNo}</Cell>
       </Col>
-      <Col>
+      <Col width={FIRST_COL_WIDTH}>
         <Cell>制造单位</Cell>
       </Col>
-      <Col>
+      <Col width={FIRST_COL_WIDTH}>
         <Cell>紫云公司</Cell>
       </Col>
       <Col>
@@ -160,26 +86,40 @@ const SignatureTable = (props: SignatureTableProps) => {
   return (
     <>
       <Row>
-        <Col>
-          <Cell height={BASIC_ROW_HEIGHT * 2} font12>
-            {"参加\n人员\n签章"}
-          </Cell>
+        <Col width={FIRST_COL_WIDTH}>
+          <Cell height={BASIC_ROW_HEIGHT * 2}>{"参加\n人员\n签章"}</Cell>
         </Col>
         <Col>
-          <Cell font12>探伤工</Cell>
-          <Cell font12>质检员</Cell>
+          <Cell>探伤工</Cell>
+          <Cell>设备维修工</Cell>
         </Col>
         <Col>
-          <Cell font12>{tsg}</Cell>
-          <Cell font12></Cell>
+          <Cell>{tsg}</Cell>
+          <Cell></Cell>
         </Col>
         <Col>
-          <Cell font12>探伤工长</Cell>
-          <Cell font12>验收员</Cell>
+          <Cell>探伤工长</Cell>
+          <Cell>轮轴专职</Cell>
         </Col>
         <Col>
-          <Cell font12></Cell>
-          <Cell font12></Cell>
+          <Cell></Cell>
+          <Cell></Cell>
+        </Col>
+        <Col>
+          <Cell>质检员</Cell>
+          <Cell>设备专职</Cell>
+        </Col>
+        <Col>
+          <Cell></Cell>
+          <Cell></Cell>
+        </Col>
+        <Col>
+          <Cell>验收员</Cell>
+          <Cell>主管领导</Cell>
+        </Col>
+        <Col>
+          <Cell></Cell>
+          <Cell></Cell>
         </Col>
       </Row>
       <Row>
@@ -197,148 +137,156 @@ const SignatureTable = (props: SignatureTableProps) => {
 interface ReportDocProps {}
 
 const ReportDoc = (props: ReportDocProps) => {
-  const CELL_HEIGHT = React.use(CellHeightContext);
-  const RESULT_COL_WIDTH = 50;
-  const CHANNEL_COL_WIDTH = 100;
+  const CELL_HEIGHT = 26;
 
   return (
-    <Document>
+    <Document
+      title="CHR502"
+      creator="超声波自动探伤机"
+      producer="武铁紫云接口面板"
+    >
       <Page size="A4" style={[styles.page, styles.font10, styles.textCenter]}>
         <PageHeader>辆货统-502</PageHeader>
-        <ReportTitle>
-          铁路货车轮轴B/C型显示超声波自动探伤系统季度性能校验记录
-        </ReportTitle>
         <View>
-          <TableHeader />
-          <EquipmentTable />
-          <Row>
-            <Col width={CHANNEL_COL_WIDTH}>
-              <Cell height={CELL_HEIGHT * 3}>通道</Cell>
-            </Col>
-            <Col>
+          <ReportTitle>
+            铁路货车轮轴B/C型显示超声波自动探伤系统季度性能校验记录
+          </ReportTitle>
+          <CellHeightContext value={CELL_HEIGHT}>
+            <View style={[styles.borderBL]}>
+              <TableHeader />
+              <EquipmentTable />
               <Row>
-                <Col>
-                  <Cell>反射波高（dB)</Cell>
+                <Col width={CHANNEL_COL_WIDTH}>
+                  <Cell height={CELL_HEIGHT * 3}>通道</Cell>
                 </Col>
-              </Row>
-              <Row>
-                {of(6).map((count) => {
-                  return (
-                    <Col key={count}>
-                      <Cell>第{count}次</Cell>
+                <Col>
+                  <Row>
+                    <Col>
+                      <Cell>反射波高(dB)</Cell>
                     </Col>
-                  );
-                })}
-              </Row>
-              <Row>
-                {of(12).map((count) => {
-                  return (
-                    <Col key={count}>
-                      <Cell>{count % 2 === 0 ? "左" : "右"}</Cell>
-                    </Col>
-                  );
-                })}
-              </Row>
-            </Col>
-            <Col width={RESULT_COL_WIDTH}>
-              <Cell></Cell>
-              <Cell>结果评定</Cell>
-              <Cell></Cell>
-            </Col>
-          </Row>
-          <Row>
-            <Col width={CHANNEL_COL_WIDTH}>
-              <Row>
-                <Col>
-                  <Cell height={CELL_HEIGHT * 2}>{"轴颈\n根部"}</Cell>
-                </Col>
-                <Col>
-                  <Cell></Cell>
-                  <Cell></Cell>
-                </Col>
-              </Row>
-            </Col>
-            <Col>
-              {of(2).map((_, board) => {
-                return (
-                  <Row key={board}>
-                    {of(12).map((count) => {
+                  </Row>
+                  <Row>
+                    {of(6).map((count) => {
                       return (
                         <Col key={count}>
-                          <Cell>{count}</Cell>
+                          <Cell>第{count}次</Cell>
                         </Col>
                       );
                     })}
                   </Row>
-                );
-              })}
-            </Col>
-            <Col width={RESULT_COL_WIDTH}>
-              <Cell></Cell>
-              <Cell>合格</Cell>
-            </Col>
-          </Row>
-          <Row>
-            <Col width={CHANNEL_COL_WIDTH}>
+                  <Row>
+                    {of(12).map((count) => {
+                      return (
+                        <Col key={count}>
+                          <Cell>{count % 2 === 0 ? "左" : "右"}</Cell>
+                        </Col>
+                      );
+                    })}
+                  </Row>
+                </Col>
+                <Col width={LAST_COL_WIDTH}>
+                  <Cell></Cell>
+                  <Cell>结果评定</Cell>
+                  <Cell></Cell>
+                </Col>
+              </Row>
               <Row>
-                <Col>
-                  <Cell height={CELL_HEIGHT * 12}>
-                    {"轮座镶入部轮座镶入部".split("").join("\n")}
-                  </Cell>
+                <Col width={CHANNEL_COL_WIDTH}>
+                  <Row>
+                    <Col width={FIRST_COL_WIDTH}>
+                      <Cell height={CELL_HEIGHT * 2}>{"轴颈\n根部"}</Cell>
+                    </Col>
+                    <Col>
+                      <Cell></Cell>
+                      <Cell></Cell>
+                    </Col>
+                  </Row>
                 </Col>
                 <Col>
+                  {of(2).map((_, board) => {
+                    return (
+                      <Row key={board}>
+                        {of(12).map((count) => {
+                          return (
+                            <Col key={count}>
+                              <Cell>{count}</Cell>
+                            </Col>
+                          );
+                        })}
+                      </Row>
+                    );
+                  })}
+                </Col>
+                <Col width={LAST_COL_WIDTH}>
+                  <Cell></Cell>
+                  <Cell>合格</Cell>
+                </Col>
+              </Row>
+              <Row>
+                <Col width={CHANNEL_COL_WIDTH}>
+                  <Row>
+                    <Col width={FIRST_COL_WIDTH}>
+                      <Cell height={CELL_HEIGHT * 12}>
+                        {"轮座镶入部轮座镶入部".split("").join("\n")}
+                      </Cell>
+                    </Col>
+                    <Col>
+                      {of(12).map((count) => {
+                        return <Cell key={count}></Cell>;
+                      })}
+                    </Col>
+                  </Row>
+                </Col>
+                <Col>
+                  {of(12).map((count) => {
+                    return (
+                      <Row key={count}>
+                        {of(12).map((count) => {
+                          return (
+                            <Col key={count}>
+                              <Cell>{count}</Cell>
+                            </Col>
+                          );
+                        })}
+                      </Row>
+                    );
+                  })}
+                </Col>
+                <Col width={LAST_COL_WIDTH}>
                   {of(12).map((count) => {
                     return <Cell key={count}></Cell>;
                   })}
                 </Col>
               </Row>
-            </Col>
-            <Col>
-              {of(12).map((count) => {
-                return (
-                  <Row key={count}>
-                    {of(12).map((count) => {
-                      return (
-                        <Col key={count}>
-                          <Cell>{count}</Cell>
-                        </Col>
-                      );
-                    })}
-                  </Row>
-                );
-              })}
-            </Col>
-            <Col width={RESULT_COL_WIDTH}>
-              {of(12).map((count) => {
-                return <Cell key={count}></Cell>;
-              })}
-            </Col>
-          </Row>
-          <Row>
-            <Col width={CHANNEL_COL_WIDTH}>
               <Row>
-                <Col>
-                  <Cell>全轴穿透</Cell>
+                <Col width={CHANNEL_COL_WIDTH}>
+                  <Row>
+                    <Col width={FIRST_COL_WIDTH}>
+                      <Cell>全轴穿透</Cell>
+                    </Col>
+                    <Col>
+                      <Cell>1</Cell>
+                    </Col>
+                  </Row>
                 </Col>
                 <Col>
-                  <Cell>1</Cell>
+                  <Cell></Cell>
+                </Col>
+                <Col width={LAST_COL_WIDTH}>
+                  <Cell></Cell>
                 </Col>
               </Row>
-            </Col>
-            <Col>
-              <Cell></Cell>
-            </Col>
-            <Col width={RESULT_COL_WIDTH}>
-              <Cell></Cell>
-            </Col>
-          </Row>
-          <CellHeightContext value={26}>
-            <SignatureTable tsg="张三丰" />
+              <CellHeightContext value={36}>
+                <SignatureTable />
+              </CellHeightContext>
+            </View>
           </CellHeightContext>
+          <View style={[styles.paddingT8]}>
+            <Text style={[styles.font12]}>
+              注：最大差值(ΔdB)是指五次波幅测量值中最大值与最小值之差，要求ΔdB≤6dB。
+            </Text>
+          </View>
         </View>
-        <Text style={[styles.font12]}>
-          注：最大差值(ΔdB)是指五次波幅测量值中最大值与最小值之差，要求ΔdB≤6dB。
-        </Text>
         <PageFooter>第 1 页</PageFooter>
       </Page>
     </Document>

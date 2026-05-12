@@ -1,8 +1,16 @@
 import { fetchCHR501Data } from "#renderer/api/printer";
 import { Loading } from "#renderer/components/Loading";
+import {
+  Cell,
+  Col,
+  PageFooter,
+  PageHeader,
+  ReportTitle,
+  Row,
+} from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
 import { resolveCHR501 } from "#shared/functions/chr501";
-import { CellHeightContext, cn, styles } from "#shared/instances/styles";
+import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Alert, AlertTitle } from "@mui/material";
 import {
   Document,
@@ -16,92 +24,6 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
 import { useParams } from "react-router";
-
-const Row = (props: React.PropsWithChildren) => {
-  return <View style={[styles.flexRow]}>{props.children}</View>;
-};
-
-interface ColProps {
-  children?: React.ReactNode;
-  width?: number | string;
-}
-
-const Col = (props: ColProps) => {
-  const { width } = props;
-
-  return (
-    <View style={[width ? { width } : styles.flex1]}>{props.children}</View>
-  );
-};
-
-const resolveCellHeight = (contextHeight: number, propsHeight?: number) => {
-  if (typeof propsHeight === "number") {
-    return propsHeight;
-  }
-  return contextHeight;
-};
-
-interface CellProps {
-  children?: React.ReactNode;
-  tr?: boolean;
-  bl?: boolean;
-  t?: boolean;
-  r?: boolean;
-  b?: boolean;
-  l?: boolean;
-  font12?: boolean;
-  height?: number;
-}
-
-const Cell = (props: CellProps) => {
-  const { height: propsHeight, tr = true, bl, t, r, b, l, font12 } = props;
-
-  const cellHeight = React.use(CellHeightContext);
-  const height = resolveCellHeight(cellHeight, propsHeight);
-
-  return (
-    <View
-      style={cn(
-        styles.itemsCenter,
-        styles.justifyCenter,
-        tr && styles.borderTR,
-        bl && styles.borderBL,
-        t && styles.borderT,
-        r && styles.borderR,
-        b && styles.borderB,
-        l && styles.borderL,
-        font12 ? styles.font12 : styles.font10,
-        { height },
-      )}
-    >
-      <Text>{props.children}</Text>
-    </View>
-  );
-};
-
-const PageHeader = (props: React.PropsWithChildren) => {
-  return (
-    <View>
-      <Text style={[styles.font12, styles.textRight]}>{props.children}</Text>
-    </View>
-  );
-};
-
-const PageFooter = (props: React.PropsWithChildren) => {
-  return (
-    <View style={[styles.paddingT8]}>
-      <Text style={[styles.textRight, styles.font12]}>{props.children}</Text>
-    </View>
-  );
-};
-
-const ReportTitle = (props: React.PropsWithChildren) => {
-  return (
-    <View style={[styles.paddingY8]}>
-      <Text style={[styles.font16, styles.fontBold]}>{props.children}</Text>
-    </View>
-  );
-};
 
 interface TableHeaderProps {
   labelL: string;
@@ -496,127 +418,131 @@ const ReportDoc = (props: ReportDocProps) => {
     <Document>
       <Page size="A4" style={[styles.page, styles.font10, styles.textCenter]}>
         <PageHeader>辆货统-501</PageHeader>
-        <ReportTitle>
-          铁路货车轮轴多通道超声波自动探伤系统日常性能校验记录表
-        </ReportTitle>
-        <TableHeader {...tableHeader1} />
-        <EquipmentTable {...equipmentTableProps} />
-        <View style={[styles.flexRow, styles.borderL]}>
-          <View
-            style={[
-              styles.borderTR,
-              styles.itemsCenter,
-              styles.justifyCenter,
-              styles.padding6,
-            ]}
-          >
-            <Text>{asideTip}</Text>
+        <View>
+          <ReportTitle>
+            铁路货车轮轴多通道超声波自动探伤系统日常性能校验记录表
+          </ReportTitle>
+          <TableHeader {...tableHeader1} />
+          <EquipmentTable {...equipmentTableProps} />
+          <View style={[styles.flexRow, styles.borderL]}>
+            <View
+              style={[
+                styles.borderTR,
+                styles.itemsCenter,
+                styles.justifyCenter,
+                styles.padding6,
+              ]}
+            >
+              <Text>{asideTip}</Text>
+            </View>
+            {props.children}
           </View>
-          {props.children}
+          <CellHeightContext value={26}>
+            <SignatureTable {...signatureTableProps} />
+          </CellHeightContext>
         </View>
-        <CellHeightContext value={26}>
-          <SignatureTable {...signatureTableProps} />
-        </CellHeightContext>
         <PageFooter>第 1 页</PageFooter>
       </Page>
 
       <CellHeightContext value={18}>
         <Page size="A4" style={styles.page}>
           <PageHeader>辆货统-501</PageHeader>
-          <ReportTitle>
-            铁路货车轮轴超声波自动探伤系统日常性能校验记录表（第2页）
-          </ReportTitle>
-          <TableHeader {...tableHeader2} />
-          <View style={[styles.borderBL, styles.fontBold]}>
-            <Row>
-              <Col>
-                <Cell font12>左轴颈根部扫描图</Cell>
-              </Col>
-              <Col>
-                <Cell font12>右轴颈根部扫描图</Cell>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <View style={[styles.borderTR]}>
-                  {props.imageLXH ? (
-                    <Image
-                      src={props.imageLXH}
-                      style={[{ height: IMAGE_HEIGHT }]}
-                    />
-                  ) : (
-                    <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                  )}
-                </View>
-              </Col>
-              <Col>
-                <View style={[styles.borderTR]}>
-                  {props.imageRXH ? (
-                    <Image
-                      src={props.imageRXH}
-                      style={[{ height: IMAGE_HEIGHT }]}
-                    />
-                  ) : (
-                    <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                  )}
-                </View>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <Cell font12>左轮座部扫描图</Cell>
-              </Col>
-              <Col>
-                <Cell font12>右轮座部扫描图</Cell>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <View style={[styles.borderTR]}>
-                  {props.imageLLZ ? (
-                    <Image
-                      src={props.imageLLZ}
-                      style={[{ height: IMAGE_HEIGHT }]}
-                    />
-                  ) : (
-                    <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                  )}
-                </View>
-              </Col>
-              <Col>
-                <View style={[styles.flex1, styles.borderTR]}>
-                  {props.imageRLZ ? (
-                    <Image
-                      src={props.imageRLZ}
-                      style={[{ height: IMAGE_HEIGHT }]}
-                    />
-                  ) : (
-                    <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                  )}
-                </View>
-              </Col>
-            </Row>
-            <Cell font12>左穿透扫描图</Cell>
-            <View style={[styles.borderTR]}>
-              {props.imageLCT ? (
-                <Image
-                  src={props.imageLCT}
-                  style={[{ height: IMAGE_HEIGHT }]}
-                />
-              ) : (
-                <View style={[{ height: IMAGE_HEIGHT }]}></View>
-              )}
-            </View>
-            <Cell font12>右穿透扫描图</Cell>
-            <View style={[styles.borderTR]}>
-              {props.imageRCT ? (
-                <Image
-                  src={props.imageRCT}
-                  style={[{ height: IMAGE_HEIGHT }]}
-                />
-              ) : (
-                <View style={[{ height: IMAGE_HEIGHT }]}></View>
-              )}
+          <View>
+            <ReportTitle>
+              铁路货车轮轴超声波自动探伤系统日常性能校验记录表（第2页）
+            </ReportTitle>
+            <TableHeader {...tableHeader2} />
+            <View style={[styles.borderBL, styles.fontBold]}>
+              <Row>
+                <Col>
+                  <Cell font12>左轴颈根部扫描图</Cell>
+                </Col>
+                <Col>
+                  <Cell font12>右轴颈根部扫描图</Cell>
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <View style={[styles.borderTR]}>
+                    {props.imageLXH ? (
+                      <Image
+                        src={props.imageLXH}
+                        style={[{ height: IMAGE_HEIGHT }]}
+                      />
+                    ) : (
+                      <View style={[{ height: IMAGE_HEIGHT }]}></View>
+                    )}
+                  </View>
+                </Col>
+                <Col>
+                  <View style={[styles.borderTR]}>
+                    {props.imageRXH ? (
+                      <Image
+                        src={props.imageRXH}
+                        style={[{ height: IMAGE_HEIGHT }]}
+                      />
+                    ) : (
+                      <View style={[{ height: IMAGE_HEIGHT }]}></View>
+                    )}
+                  </View>
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <Cell font12>左轮座部扫描图</Cell>
+                </Col>
+                <Col>
+                  <Cell font12>右轮座部扫描图</Cell>
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <View style={[styles.borderTR]}>
+                    {props.imageLLZ ? (
+                      <Image
+                        src={props.imageLLZ}
+                        style={[{ height: IMAGE_HEIGHT }]}
+                      />
+                    ) : (
+                      <View style={[{ height: IMAGE_HEIGHT }]}></View>
+                    )}
+                  </View>
+                </Col>
+                <Col>
+                  <View style={[styles.flex1, styles.borderTR]}>
+                    {props.imageRLZ ? (
+                      <Image
+                        src={props.imageRLZ}
+                        style={[{ height: IMAGE_HEIGHT }]}
+                      />
+                    ) : (
+                      <View style={[{ height: IMAGE_HEIGHT }]}></View>
+                    )}
+                  </View>
+                </Col>
+              </Row>
+              <Cell font12>左穿透扫描图</Cell>
+              <View style={[styles.borderTR]}>
+                {props.imageLCT ? (
+                  <Image
+                    src={props.imageLCT}
+                    style={[{ height: IMAGE_HEIGHT }]}
+                  />
+                ) : (
+                  <View style={[{ height: IMAGE_HEIGHT }]}></View>
+                )}
+              </View>
+              <Cell font12>右穿透扫描图</Cell>
+              <View style={[styles.borderTR]}>
+                {props.imageRCT ? (
+                  <Image
+                    src={props.imageRCT}
+                    style={[{ height: IMAGE_HEIGHT }]}
+                  />
+                ) : (
+                  <View style={[{ height: IMAGE_HEIGHT }]}></View>
+                )}
+              </View>
             </View>
           </View>
           <PageFooter>第 2 页</PageFooter>
@@ -705,7 +631,7 @@ export const Component = () => {
                   return (
                     <Row key={flawNo}>
                       <Col width={"40%"}>
-                        <Cell>{flawNo}</Cell>
+                        <Cell>{_}</Cell>
                       </Col>
                       <Col>
                         <Cell>
