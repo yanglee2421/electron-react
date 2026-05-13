@@ -86,4 +86,31 @@ export class Printer {
     );
     await fs.promises.writeFile(filePath, buf);
   }
+
+  async getDataForCHR502() {
+    const records = await this.mdb
+      .root()
+      .quartors()
+      .orderBy("tmnow", "desc")
+      .limit(5);
+    const previousRecord = await this.mdb
+      .root()
+      .quartors()
+      .orderBy("tmnow", "desc")
+      .offset(6)
+      .limit(1);
+    const datas = await this.mdb
+      .root()
+      .quartors_data()
+      .in(
+        "opid",
+        records.rows.map((r) => r.szIDs),
+      );
+
+    return {
+      records: records.rows,
+      flaws: datas.rows,
+      previousRecord: previousRecord.rows[0] || null,
+    };
+  }
 }

@@ -37,6 +37,8 @@ interface ResolveQueryBuilderOptions {
   equals: FilterValue[];
   ins: FilterInValues[];
   dates: FilterDateValue[];
+  orderBy?: string;
+  orderByDirection?: "asc" | "desc";
 }
 
 interface Row {
@@ -59,48 +61,69 @@ const resolveQueryBuilder = async (
 
   const table = reader.getTable(tableName);
   const rows = table.getData();
-  const filteredRows = rows.filter((row) => {
-    const isLikeMatch = likes.every((filter) => {
-      const fieldValue = Reflect.get(row, String(filter.key));
+  const filteredRows = rows
+    .toSorted((a, b) => {
+      const orderBy = options.orderBy;
 
-      if (!fieldValue) {
-        return true;
+      if (!orderBy) {
+        return 0;
       }
 
-      return String(fieldValue)
-        .toLowerCase()
-        .includes(String(filter.value).toLowerCase());
-    });
+      const orderByDirection = options.orderByDirection || "asc";
+      const aValue = Reflect.get(a, orderBy);
+      const bValue = Reflect.get(b, orderBy);
 
-    const isEqualMatch = equals.every((filter) => {
-      const fieldValue = Reflect.get(row, String(filter.key));
-
-      return Object.is(fieldValue, filter.value);
-    });
-
-    const isInMatch = ins.every((filter) => {
-      const fieldValue = Reflect.get(row, String(filter.key));
-
-      return filter.values.includes(fieldValue);
-    });
-
-    const isDateMatch = dates.every((filter) => {
-      const fieldValue = Reflect.get(row, String(filter.key));
-
-      // 如果字段值不存在，则认为不进行过滤，直接匹配成功
-      if (!(fieldValue instanceof Date)) {
-        return true;
+      switch (orderByDirection) {
+        case "asc":
+          return valueToNumber(aValue) - valueToNumber(bValue);
+        case "desc":
+          return valueToNumber(bValue) - valueToNumber(aValue);
+        default:
+          return 0;
       }
+    })
+    .filter((row) => {
+      const isLikeMatch = likes.every((filter) => {
+        const fieldValue = Reflect.get(row, String(filter.key));
 
-      const startTime = filter.startAt.getTime();
-      const endTime = filter.endAt.getTime();
-      const fieldTime = fieldValue.getTime();
+        if (!fieldValue) {
+          return true;
+        }
 
-      return isClamped(fieldTime, startTime, endTime);
+        return String(fieldValue)
+          .toLowerCase()
+          .includes(String(filter.value).toLowerCase());
+      });
+
+      const isEqualMatch = equals.every((filter) => {
+        const fieldValue = Reflect.get(row, String(filter.key));
+
+        return Object.is(fieldValue, filter.value);
+      });
+
+      const isInMatch = ins.every((filter) => {
+        const fieldValue = Reflect.get(row, String(filter.key));
+
+        return filter.values.includes(fieldValue);
+      });
+
+      const isDateMatch = dates.every((filter) => {
+        const fieldValue = Reflect.get(row, String(filter.key));
+
+        // 如果字段值不存在，则认为不进行过滤，直接匹配成功
+        if (!(fieldValue instanceof Date)) {
+          return true;
+        }
+
+        const startTime = filter.startAt.getTime();
+        const endTime = filter.endAt.getTime();
+        const fieldTime = fieldValue.getTime();
+
+        return isClamped(fieldTime, startTime, endTime);
+      });
+
+      return isLikeMatch && isEqualMatch && isInMatch && isDateMatch;
     });
-
-    return isLikeMatch && isEqualMatch && isInMatch && isDateMatch;
-  });
   const filteredCount = filteredRows.length;
   const pagedData = filteredRows.slice(offset, offset + limit);
   const resultRows = pagedData.map((row) => {
@@ -306,4 +329,64 @@ export const handleCHR502 = async (params: HandleCHR502Params) => {
     previous: previousInFirstSelectedRow || null,
     rows: selectedRows,
   };
+};
+
+// string | number | bigint | boolean | Attachment[] | Buffer<ArrayBufferLike> | Date | null
+
+const numberify = (value: Value) => {
+  if (typeof value === "undefined") {
+    return 0;
+  }
+
+  if (typeof value === "boolean") {
+    return value ? 1 : 0;
+  }
+
+  if (typeof value === "number") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const num = Number.parseFloat(value);
+
+    if (Number.isNaN(num)) {
+      return 0;
+    }
+
+    return num;
+  }
+
+  if (typeof value === "bigint") {
+    return Number(value);
+  }
+
+  if (typeof value === "symbol") {
+    return 0;
+  }
+
+  if (typeof value === "function") {
+    return 0;
+  }
+
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+
+  if (typeof value === "object") {
+    return 0;
+  }
+
+  if (value === null) {
+    return 0;
+  }
+
+  return 0;
+};
+
+const nanToZero = (value: number) => {
+  return Number.isNaN(value) ? 0 : value;
+};
+
+const valueToNumber = (value: Value) => {
+  return nanToZero(numberify(value));
 };

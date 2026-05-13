@@ -1,3 +1,5 @@
+import { fetchCHR502Data } from "#renderer/api/printer";
+import { Loading } from "#renderer/components/Loading";
 import {
   Cell,
   Col,
@@ -7,8 +9,11 @@ import {
   Row,
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
+import { resolveCHR502 } from "#shared/functions/chr502";
 import { CellHeightContext, styles } from "#shared/instances/styles";
+import { Alert, AlertTitle } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
+import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
 
@@ -294,7 +299,30 @@ const ReportDoc = (props: ReportDocProps) => {
 };
 
 export const Component = () => {
+  const query = useQuery(fetchCHR502Data());
+
   const renderQuery = () => {
+    if (query.isPending) {
+      return <Loading />;
+    }
+
+    if (query.isError) {
+      return (
+        <Alert severity="error">
+          <AlertTitle>数据加载失败</AlertTitle>
+          {query.error.message}
+        </Alert>
+      );
+    }
+
+    const { flaws, records } = query.data;
+    const { attenMap } = resolveCHR502(flaws);
+    const opids = records
+      .toSorted(
+        (a, b) => new Date(a.tmnow!).getTime() - new Date(b.tmnow!).getTime(),
+      )
+      .map((record) => record.szIDs);
+
     return (
       <PDFViewer
         showToolbar={true}

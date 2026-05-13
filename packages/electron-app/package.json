@@ -34,7 +34,6 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build && electron-builder",
     "build:unpack": "electron-vite build && electron-builder --dir",
-    "lint": "eslint .",
     "preview": "electron-vite preview",
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",

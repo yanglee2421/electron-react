@@ -2,6 +2,7 @@ import { fetchCHR501Data } from "#renderer/api/printer";
 import { Loading } from "#renderer/components/Loading";
 import {
   Cell,
+  CheckOK,
   Col,
   PageFooter,
   PageHeader,
@@ -634,18 +635,24 @@ export const Component = () => {
                         <Cell>{_}</Cell>
                       </Col>
                       <Col>
-                        <Cell>
-                          {flawInfo.get(`${board}-3`)?.at(flawNo)?.value}
+                        <Cell text={false}>
+                          {!!flawInfo.get(`${board}-3`)?.at(flawNo)?.value && (
+                            <CheckOK />
+                          )}
                         </Cell>
                       </Col>
                       <Col>
-                        <Cell>
-                          {flawInfo.get(`${board}-4`)?.at(flawNo)?.value}
+                        <Cell text={false}>
+                          {!!flawInfo.get(`${board}-4`)?.at(flawNo)?.value && (
+                            <CheckOK />
+                          )}
                         </Cell>
                       </Col>
                       <Col>
-                        <Cell>
-                          {flawInfo.get(`${board}-2`)?.at(flawNo)?.value}
+                        <Cell text={false}>
+                          {!!flawInfo.get(`${board}-2`)?.at(flawNo)?.value && (
+                            <CheckOK />
+                          )}
                         </Cell>
                       </Col>
                     </Row>

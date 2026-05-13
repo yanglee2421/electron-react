@@ -3,6 +3,7 @@ import { mapGroupBy } from "@yotulee/run";
 import * as mathjs from "mathjs";
 import { of } from "./array";
 import { calculateXHCFlaws } from "./flawDetection";
+import { divideBy10 } from "./math";
 
 const LZ_FLAW_SPACE = 7;
 
@@ -32,16 +33,6 @@ const listToMap = <TItem>(flaws: TItem[], start = 1): Map<number, TItem> => {
 
 const channelKey = (nBoard: number, nChannel: number) => {
   return `${nBoard}-${nChannel}`;
-};
-
-const divideBy10 = (value: number) => {
-  return mathjs.format(
-    mathjs.divide(mathjs.bignumber(value), mathjs.bignumber(10)),
-    {
-      notation: "fixed",
-      precision: 1,
-    },
-  );
 };
 
 const mathFormat = (value: number, enabled = false) => {

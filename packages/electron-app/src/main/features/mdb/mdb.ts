@@ -102,6 +102,8 @@ class TableQueryBuilder<
   private piscina: Piscina;
   private appPathInfo: AppPathInfo;
   private tableName: string;
+  private orderByKey?: unknown;
+  private orderByDirection?: "asc" | "desc";
 
   constructor(options: TableQueryBuilderOptions) {
     super();
@@ -143,6 +145,15 @@ class TableQueryBuilder<
 
     return this;
   }
+  orderBy<TKey extends keyof TRow>(
+    key: TKey,
+    direction: "asc" | "desc" = "asc",
+  ) {
+    this.orderByKey = key;
+    this.orderByDirection = direction;
+
+    return this;
+  }
 
   async execute(): Promise<TResult> {
     const databasePath = await this.appPathInfo.mdb();
@@ -156,6 +167,8 @@ class TableQueryBuilder<
       equals: this.equals,
       ins: this.ins,
       dates: this.dates,
+      orderBy: this.orderBy,
+      orderByDirection: this.orderByDirection,
     });
   }
 }
