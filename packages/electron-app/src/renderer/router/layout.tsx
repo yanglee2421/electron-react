@@ -131,146 +131,158 @@ const calculateSegment = (...args: string[]) => {
 };
 
 const createNavigation = (shouldAdd: boolean): Navigation => {
-  const result: Navigation = [
-    {
-      kind: "header",
-      title: "HMIS",
-    },
-    {
-      title: "华兴致远",
-      children: [
-        {
-          segment: calculateSegment("hxzy"),
-          title: "HMIS",
-          icon: <QrCodeScannerOutlined />,
-        },
-        {
-          segment: calculateSegment("hxzy", "verifies"),
-          title: "日常校验",
-          icon: <CalendarTodayOutlined />,
-        },
-        {
-          segment: calculateSegment("hxzy", "setting"),
-          title: "设置",
-          icon: <TuneOutlined />,
-        },
-      ],
-    },
-    {
-      title: "京天威",
-      children: [
-        {
-          segment: calculateSegment("jtv"),
-          title: "HMIS",
-          icon: <QrCodeScannerOutlined />,
-        },
-        {
-          segment: calculateSegment("jtv", "setting"),
-          title: "设置",
-          icon: <TuneOutlined />,
-        },
-      ],
-    },
-    {
-      title: "徐州北",
-      children: [
-        {
-          segment: calculateSegment("jtv_xuzhoubei"),
-          title: "HMIS",
-          icon: <QrCodeScannerOutlined />,
-        },
-        {
-          segment: calculateSegment("jtv_xuzhoubei", "setting"),
-          title: "设置",
-          icon: <TuneOutlined />,
-        },
-      ],
-    },
-    {
-      title: "广州北",
-      children: [
-        {
-          segment: calculateSegment("jtv_guangzhoubei"),
-          title: "HMIS",
-          icon: <QrCodeScannerOutlined />,
-        },
-        {
-          segment: calculateSegment("jtv_guangzhoubei", "setting"),
-          title: "设置",
-          icon: <TuneOutlined />,
-        },
-      ],
-    },
-    {
-      title: "广州机保段",
-      children: [
-        {
-          segment: calculateSegment("jtv_guangzhoujibaoduan"),
-          title: "HMIS",
-          icon: <QrCodeScannerOutlined />,
-        },
-        {
-          segment: calculateSegment("jtv_guangzhoujibaoduan", "setting"),
-          title: "设置",
-          icon: <TuneOutlined />,
-        },
-      ],
-    },
-    {
-      title: "康华",
-      children: [
-        {
-          segment: calculateSegment("kh"),
-          title: "HMIS",
-          icon: <QrCodeScannerOutlined />,
-        },
-        {
-          segment: calculateSegment("kh", "verify"),
-          title: "日常校验",
-          icon: <CalendarTodayOutlined />,
-        },
-        {
-          segment: calculateSegment("kh", "quartor"),
-          title: "季度校验",
-          icon: <CalendarMonthOutlined />,
-        },
-        {
-          segment: calculateSegment("kh", "annual"),
-          title: "年度校验",
-          icon: <CalendarViewMonthOutlined />,
-        },
-        {
-          segment: calculateSegment("kh", "setting"),
-          title: "设置",
-          icon: <TuneOutlined />,
-        },
-      ],
-    },
-    {
-      kind: "divider",
-    },
-    {
-      kind: "header",
-      title: "常规",
-    },
-    {
-      segment: calculateSegment("detection"),
-      title: "现车作业",
-      icon: <TrainOutlined />,
-    },
-    {
-      segment: calculateSegment("verify"),
-      title: "日常校验",
-      icon: <CalendarTodayOutlined />,
-    },
-    {
-      segment: calculateSegment("quartors"),
-      title: "季度校验",
-      icon: <CalendarMonthOutlined />,
-    },
-    {
-      kind: "divider",
-    },
+  const result: Navigation = [];
+
+  if (shouldAdd) {
+    result.push(
+      {
+        kind: "header",
+        title: "HMIS",
+      },
+      {
+        title: "华兴致远",
+        children: [
+          {
+            segment: calculateSegment("hxzy"),
+            title: "HMIS",
+            icon: <QrCodeScannerOutlined />,
+          },
+          {
+            segment: calculateSegment("hxzy", "verifies"),
+            title: "日常校验",
+            icon: <CalendarTodayOutlined />,
+          },
+          {
+            segment: calculateSegment("hxzy", "setting"),
+            title: "设置",
+            icon: <TuneOutlined />,
+          },
+        ],
+      },
+      {
+        title: "京天威",
+        children: [
+          {
+            segment: calculateSegment("jtv"),
+            title: "HMIS",
+            icon: <QrCodeScannerOutlined />,
+          },
+          {
+            segment: calculateSegment("jtv", "setting"),
+            title: "设置",
+            icon: <TuneOutlined />,
+          },
+        ],
+      },
+      {
+        title: "徐州北",
+        children: [
+          {
+            segment: calculateSegment("jtv_xuzhoubei"),
+            title: "HMIS",
+            icon: <QrCodeScannerOutlined />,
+          },
+          {
+            segment: calculateSegment("jtv_xuzhoubei", "setting"),
+            title: "设置",
+            icon: <TuneOutlined />,
+          },
+        ],
+      },
+      {
+        title: "广州北",
+        children: [
+          {
+            segment: calculateSegment("jtv_guangzhoubei"),
+            title: "HMIS",
+            icon: <QrCodeScannerOutlined />,
+          },
+          {
+            segment: calculateSegment("jtv_guangzhoubei", "setting"),
+            title: "设置",
+            icon: <TuneOutlined />,
+          },
+        ],
+      },
+      {
+        title: "广州机保段",
+        children: [
+          {
+            segment: calculateSegment("jtv_guangzhoujibaoduan"),
+            title: "HMIS",
+            icon: <QrCodeScannerOutlined />,
+          },
+          {
+            segment: calculateSegment("jtv_guangzhoujibaoduan", "setting"),
+            title: "设置",
+            icon: <TuneOutlined />,
+          },
+        ],
+      },
+      {
+        title: "康华",
+        children: [
+          {
+            segment: calculateSegment("kh"),
+            title: "HMIS",
+            icon: <QrCodeScannerOutlined />,
+          },
+          {
+            segment: calculateSegment("kh", "verify"),
+            title: "日常校验",
+            icon: <CalendarTodayOutlined />,
+          },
+          {
+            segment: calculateSegment("kh", "quartor"),
+            title: "季度校验",
+            icon: <CalendarMonthOutlined />,
+          },
+          {
+            segment: calculateSegment("kh", "annual"),
+            title: "年度校验",
+            icon: <CalendarViewMonthOutlined />,
+          },
+          {
+            segment: calculateSegment("kh", "setting"),
+            title: "设置",
+            icon: <TuneOutlined />,
+          },
+        ],
+      },
+      {
+        kind: "divider",
+      },
+    );
+  }
+
+  if (shouldAdd) {
+    result.push(
+      {
+        kind: "header",
+        title: "常规",
+      },
+      {
+        segment: calculateSegment("detection"),
+        title: "现车作业",
+        icon: <TrainOutlined />,
+      },
+      {
+        segment: calculateSegment("verify"),
+        title: "日常校验",
+        icon: <CalendarTodayOutlined />,
+      },
+      {
+        segment: calculateSegment("quartors"),
+        title: "季度校验",
+        icon: <CalendarMonthOutlined />,
+      },
+      {
+        kind: "divider",
+      },
+    );
+  }
+
+  result.push(
     {
       kind: "header",
       title: "其它",
@@ -290,7 +302,7 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
       title: "PLC",
       icon: <Memory />,
     },
-  ];
+  );
 
   if (shouldAdd) {
     result.push(
