@@ -101,6 +101,8 @@ interface LZInfoTableProps {
   zsj2?: string;
 }
 
+const SECOND_WIDTH = 80;
+
 const LZInfoTable = (props: LZInfoTableProps) => {
   const BASIC_ROW_HEIGHT = React.use(CellHeightContext);
   const direction = props.board ? "右" : "左";
@@ -109,35 +111,9 @@ const LZInfoTable = (props: LZInfoTableProps) => {
     <>
       <Cell>{direction}轮座探头晶片编号及灵敏度</Cell>
       <Row>
-        <Col width={"40%"}>
+        <Col width={SECOND_WIDTH}>
           <Cell>通道编号</Cell>
-        </Col>
-        <Col>
-          <Cell>{direction}外</Cell>
-        </Col>
-        <Col>
-          <Cell>{direction}内</Cell>
-        </Col>
-        <Col>
-          <Cell>{direction}A3</Cell>
-        </Col>
-      </Row>
-      <Row>
-        <Col width={"40%"}>
           <Cell>折射角（度）</Cell>
-        </Col>
-        <Col>
-          <Cell>{props.zsj3}</Cell>
-        </Col>
-        <Col>
-          <Cell>{props.zsj4}</Cell>
-        </Col>
-        <Col>
-          <Cell>{props.zsj2}</Cell>
-        </Col>
-      </Row>
-      <Row>
-        <Col width={"40%"}>
           <Row>
             <Col>
               <Cell height={BASIC_ROW_HEIGHT * 4}>灵敏度{"\n"}（dB）</Cell>
@@ -150,39 +126,25 @@ const LZInfoTable = (props: LZInfoTableProps) => {
           </Row>
         </Col>
         <Col>
-          <Row>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 2}>{props.jy3}</Cell>
-            </Col>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 2}>{props.jy4}</Cell>
-            </Col>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 2}>{props.jy2}</Cell>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <Cell>{props.bc3}</Cell>
-            </Col>
-            <Col>
-              <Cell>{props.bc4}</Cell>
-            </Col>
-            <Col>
-              <Cell>{props.bc2}</Cell>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <Cell>{props.ts3}</Cell>
-            </Col>
-            <Col>
-              <Cell>{props.ts4}</Cell>
-            </Col>
-            <Col>
-              <Cell>{props.ts2}</Cell>
-            </Col>
-          </Row>
+          <Cell>{direction}外</Cell>
+          <Cell>{props.zsj3}</Cell>
+          <Cell height={BASIC_ROW_HEIGHT * 2}>{props.jy3}</Cell>
+          <Cell>{props.bc3}</Cell>
+          <Cell>{props.ts3}</Cell>
+        </Col>
+        <Col>
+          <Cell>{direction}内</Cell>
+          <Cell>{props.zsj4}</Cell>
+          <Cell height={BASIC_ROW_HEIGHT * 2}>{props.jy4}</Cell>
+          <Cell>{props.bc4}</Cell>
+          <Cell>{props.ts4}</Cell>
+        </Col>
+        <Col>
+          <Cell>{direction}A3</Cell>
+          <Cell>{props.zsj2}</Cell>
+          <Cell height={BASIC_ROW_HEIGHT * 2}>{props.jy2}</Cell>
+          <Cell>{props.bc2}</Cell>
+          <Cell>{props.ts2}</Cell>
         </Col>
       </Row>
     </>
@@ -214,134 +176,76 @@ const XHCTable = (props: XHCTableProps) => {
   const direction = board ? "右" : "左";
 
   return (
-    <>
-      <Row>
-        <Col>
-          <Row>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 3}>{direction}</Cell>
-            </Col>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 3}>通道{"\n"}编号</Cell>
-            </Col>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 3}>拆射{"\n"}角度</Cell>
-            </Col>
-          </Row>
-        </Col>
-        <Col>
-          <Cell>灵敏度(dB)</Cell>
-          <Row>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 2}>{"校验\n(80%)"}</Cell>
-            </Col>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 2}>补偿</Cell>
-            </Col>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 2}>探伤</Cell>
-            </Col>
-          </Row>
-        </Col>
-        <Col>
-          <Cell>缺陷编号</Cell>
-          <Row>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 2}>1</Cell>
-            </Col>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 2}>2</Cell>
-            </Col>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 2}>3</Cell>
-            </Col>
-          </Row>
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <Row>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 3}>{"轴\n颈"}</Cell>
-            </Col>
-            <Col>
-              <Cell>{direction}CT</Cell>
-              <Cell>{props.xhChannelName}</Cell>
-              <Cell></Cell>
-            </Col>
-            <Col>
-              <Cell>{props.ctZsj}</Cell>
-              <Cell>{props.xhZsj}</Cell>
-              <Cell></Cell>
-            </Col>
-          </Row>
-        </Col>
-        <Col>
-          <Row>
-            <Col>
-              <Cell>{props.ctJy}</Cell>
-            </Col>
-            <Col>
-              <Cell>{props.ctBc}</Cell>
-            </Col>
-            <Col>
-              <Cell>{props.ctTs}</Cell>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <Cell>{props.xhJy}</Cell>
-            </Col>
-            <Col>
-              <Cell>{props.xhBc}</Cell>
-            </Col>
-            <Col>
-              <Cell>{props.xhTs}</Cell>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <Cell></Cell>
-            </Col>
-            <Col>
-              <Cell></Cell>
-            </Col>
-            <Col>
-              <Cell></Cell>
-            </Col>
-          </Row>
-        </Col>
-        <Col>
-          <Row>
-            <Col>
-              <Cell>{props.ctValue}</Cell>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <Cell>{props.xhValue1}</Cell>
-            </Col>
-            <Col>
-              <Cell>{props.xhValue2}</Cell>
-            </Col>
-            <Col>
-              <Cell>{props.xhValue3}</Cell>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <Cell></Cell>
-            </Col>
-            <Col>
-              <Cell></Cell>
-            </Col>
-            <Col>
-              <Cell></Cell>
-            </Col>
-          </Row>
-        </Col>
-      </Row>
-    </>
+    <Row>
+      <Col width={20}>
+        <Cell height={BASIC_ROW_HEIGHT * 3}>{direction}</Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 3}>{"轴\n颈"}</Cell>
+      </Col>
+      <Col width={32}>
+        <Cell height={BASIC_ROW_HEIGHT * 3}>通道{"\n"}编号</Cell>
+        <Cell>{direction}CT</Cell>
+        <Cell>{props.xhChannelName}</Cell>
+        <Cell></Cell>
+      </Col>
+      <Col width={28}>
+        <Cell height={BASIC_ROW_HEIGHT * 3}>拆射{"\n"}角度</Cell>
+        <Cell>{props.ctZsj}</Cell>
+        <Cell>{props.xhZsj}</Cell>
+        <Cell></Cell>
+      </Col>
+      <Col>
+        <Cell>灵敏度(dB)</Cell>
+        <Row>
+          <Col>
+            <Cell height={BASIC_ROW_HEIGHT * 2}>{"校验\n(80%)"}</Cell>
+            <Cell>{props.ctJy}</Cell>
+            <Cell>{props.xhJy}</Cell>
+            <Cell></Cell>
+          </Col>
+          <Col>
+            <Cell height={BASIC_ROW_HEIGHT * 2}>补偿</Cell>
+            <Cell>{props.ctBc}</Cell>
+            <Cell>{props.xhBc}</Cell>
+            <Cell></Cell>
+          </Col>
+          <Col>
+            <Cell height={BASIC_ROW_HEIGHT * 2}>探伤</Cell>
+            <Cell>{props.ctTs}</Cell>
+            <Cell>{props.xhTs}</Cell>
+            <Cell></Cell>
+          </Col>
+        </Row>
+      </Col>
+      <Col width={70}>
+        <Cell>缺陷编号</Cell>
+        <Row>
+          <Col>
+            <Cell height={BASIC_ROW_HEIGHT * 2}>1</Cell>
+          </Col>
+          <Col>
+            <Cell height={BASIC_ROW_HEIGHT * 2}>2</Cell>
+          </Col>
+          <Col>
+            <Cell height={BASIC_ROW_HEIGHT * 2}>3</Cell>
+          </Col>
+        </Row>
+        <Cell>{props.ctValue}</Cell>
+        <Row>
+          <Col>
+            <Cell>{props.xhValue1}</Cell>
+            <Cell></Cell>
+          </Col>
+          <Col>
+            <Cell>{props.xhValue2}</Cell>
+            <Cell></Cell>
+          </Col>
+          <Col>
+            <Cell>{props.xhValue3}</Cell>
+            <Cell></Cell>
+          </Col>
+        </Row>
+      </Col>
+    </Row>
   );
 };
 
@@ -457,13 +361,6 @@ const ReportDoc = (props: ReportDocProps) => {
               <Row>
                 <Col>
                   <Cell font12>左轴颈根部扫描图</Cell>
-                </Col>
-                <Col>
-                  <Cell font12>右轴颈根部扫描图</Cell>
-                </Col>
-              </Row>
-              <Row>
-                <Col>
                   <View style={[styles.borderTR]}>
                     {props.imageLXH ? (
                       <Image
@@ -474,30 +371,7 @@ const ReportDoc = (props: ReportDocProps) => {
                       <View style={[{ height: IMAGE_HEIGHT }]}></View>
                     )}
                   </View>
-                </Col>
-                <Col>
-                  <View style={[styles.borderTR]}>
-                    {props.imageRXH ? (
-                      <Image
-                        src={props.imageRXH}
-                        style={[{ height: IMAGE_HEIGHT }]}
-                      />
-                    ) : (
-                      <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                    )}
-                  </View>
-                </Col>
-              </Row>
-              <Row>
-                <Col>
                   <Cell font12>左轮座部扫描图</Cell>
-                </Col>
-                <Col>
-                  <Cell font12>右轮座部扫描图</Cell>
-                </Col>
-              </Row>
-              <Row>
-                <Col>
                   <View style={[styles.borderTR]}>
                     {props.imageLLZ ? (
                       <Image
@@ -510,6 +384,18 @@ const ReportDoc = (props: ReportDocProps) => {
                   </View>
                 </Col>
                 <Col>
+                  <Cell font12>右轴颈根部扫描图</Cell>
+                  <View style={[styles.borderTR]}>
+                    {props.imageRXH ? (
+                      <Image
+                        src={props.imageRXH}
+                        style={[{ height: IMAGE_HEIGHT }]}
+                      />
+                    ) : (
+                      <View style={[{ height: IMAGE_HEIGHT }]}></View>
+                    )}
+                  </View>
+                  <Cell font12>右轮座部扫描图</Cell>
                   <View style={[styles.flex1, styles.borderTR]}>
                     {props.imageRLZ ? (
                       <Image
@@ -631,7 +517,7 @@ export const Component = () => {
                 {of13.map((_, flawNo) => {
                   return (
                     <Row key={flawNo}>
-                      <Col width={"40%"}>
+                      <Col width={SECOND_WIDTH}>
                         <Cell>{_}</Cell>
                       </Col>
                       <Col>

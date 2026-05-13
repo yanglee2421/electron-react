@@ -17,16 +17,16 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
 
-const FIRST_COL_WIDTH = 60;
+const FIRST_COL_WIDTH = 50;
 const LAST_COL_WIDTH = 50;
-const CHANNEL_COL_WIDTH = 90;
+const CHANNEL_COL_WIDTH = 80;
 
 interface TableHeaderProps {}
 
 const TableHeader = ({}: TableHeaderProps) => (
   <Row>
     <Col width={FIRST_COL_WIDTH}>
-      <Cell>单位名称:</Cell>
+      <Cell>单位名称</Cell>
     </Col>
     <Col>
       <Cell>宁东铁路公司</Cell>
@@ -35,7 +35,7 @@ const TableHeader = ({}: TableHeaderProps) => (
       <Cell>RE2B</Cell>
     </Col>
     <Col width={60}>
-      <Cell>校验时间:</Cell>
+      <Cell>校验时间</Cell>
     </Col>
     <Col>
       <Cell>{dayjs().format("YYYY-MM-DD HH:mm:ss")}</Cell>
@@ -141,12 +141,10 @@ const SignatureTable = (props: SignatureTableProps) => {
 
 interface ReportDocProps {
   children?: React.ReactNode;
-  duanMain?: React.ReactNode;
 }
 
 const ReportDoc = (props: ReportDocProps) => {
   const CELL_HEIGHT = 26;
-  const of10 = of(10);
 
   return (
     <Document
@@ -173,6 +171,7 @@ const ReportDoc = (props: ReportDocProps) => {
                       <Cell height={CELL_HEIGHT * 12}>
                         {"轮座镶入部轮座镶入部".split("").join("\n")}
                       </Cell>
+                      <Cell>全轴穿透</Cell>
                     </Col>
                     <Col>
                       <Cell>A1</Cell>
@@ -182,100 +181,13 @@ const ReportDoc = (props: ReportDocProps) => {
                       {of(10).map((_) => (
                         <Cell key={_}></Cell>
                       ))}
+                      <Cell>CT</Cell>
                     </Col>
                   </Row>
                 </Col>
-                <Col>
-                  <Cell>反射波高(dB)</Cell>
-                  <Row>
-                    {of(5).map((count) => {
-                      return (
-                        <Col key={count}>
-                          <Cell>第{count}次</Cell>
-                          <Row>
-                            <Col>
-                              <Cell>左</Cell>
-                              <Cell>1</Cell>
-                              <Cell>2</Cell>
-                              <Cell>3</Cell>
-                              <Cell>4</Cell>
-                              {of10.map((_) => (
-                                <Cell key={_}></Cell>
-                              ))}
-                            </Col>
-                            <Col>
-                              <Cell>右</Cell>
-                              <Cell>1</Cell>
-                              <Cell>2</Cell>
-                              <Cell>3</Cell>
-                              <Cell>4</Cell>
-                              {of10.map((_) => (
-                                <Cell key={_}></Cell>
-                              ))}
-                            </Col>
-                          </Row>
-                        </Col>
-                      );
-                    })}
-                    <Col>
-                      <Cell>最大差值</Cell>
-                      <Row>
-                        <Col>
-                          <Cell>左</Cell>
-                          <Cell>1</Cell>
-                          <Cell>2</Cell>
-                          <Cell>3</Cell>
-                          <Cell>4</Cell>
-                          {of10.map((_) => (
-                            <Cell key={_}></Cell>
-                          ))}
-                        </Col>
-                        <Col>
-                          <Cell>右</Cell>
-                          <Cell>1</Cell>
-                          <Cell>2</Cell>
-                          <Cell>3</Cell>
-                          <Cell>4</Cell>
-                          {of10.map((_) => (
-                            <Cell key={_}></Cell>
-                          ))}
-                        </Col>
-                      </Row>
-                    </Col>
-                  </Row>
-                </Col>
-                <Col width={LAST_COL_WIDTH}>
-                  <Cell></Cell>
-                  <Cell>结果评定</Cell>
-                  <Cell></Cell>
-                  <Cell>合格</Cell>
-                  <Cell>合格</Cell>
-                  <Cell>合格</Cell>
-                  <Cell>合格</Cell>
-                  {of10.map((count) => {
-                    return <Cell key={count}></Cell>;
-                  })}
-                </Col>
+                {props.children}
               </Row>
-              <Row>
-                <Col width={CHANNEL_COL_WIDTH}>
-                  <Row>
-                    <Col width={FIRST_COL_WIDTH}>
-                      <Cell>全轴穿透</Cell>
-                    </Col>
-                    <Col>
-                      <Cell>1</Cell>
-                    </Col>
-                  </Row>
-                </Col>
-                <Col>
-                  <Cell></Cell>
-                </Col>
-                <Col width={LAST_COL_WIDTH}>
-                  <Cell></Cell>
-                </Col>
-              </Row>
-              <CellHeightContext value={36}>
+              <CellHeightContext value={40}>
                 <SignatureTable />
               </CellHeightContext>
             </View>
@@ -317,27 +229,91 @@ export const Component = () => {
       )
       .map((record) => record.szIDs);
 
+    const of10 = of(10);
+
     return (
       <PDFViewer
         showToolbar={true}
         style={{ width: "100%", height: "100vh", border: 0 }}
       >
-        <ReportDoc
-          duanMain={of(5).map((_, index) => {
-            return (
-              <React.Fragment key={index}>
-                <Col>
-                  <Cell>{attenMap.get(opids.at(index)!)?.lxh}</Cell>
-                  <Cell>{attenMap.get(opids.at(index)!)?.la3}</Cell>
-                </Col>
-                <Col>
-                  <Cell>{attenMap.get(opids.at(index)!)?.rxh}</Cell>
-                  <Cell>{attenMap.get(opids.at(index)!)?.ra3}</Cell>
-                </Col>
-              </React.Fragment>
-            );
-          })}
-        ></ReportDoc>
+        <ReportDoc>
+          <Col>
+            <Cell>反射波高(dB)</Cell>
+            <Row>
+              {of(5).map((count) => {
+                return (
+                  <Col key={count}>
+                    <Cell>第{count}次</Cell>
+                    <Row>
+                      <Col>
+                        <Cell>左</Cell>
+                        <Cell>1</Cell>
+                        <Cell>2</Cell>
+                        <Cell>3</Cell>
+                        <Cell>4</Cell>
+                        {of10.map((_) => (
+                          <Cell key={_}></Cell>
+                        ))}
+                        <Cell>1</Cell>
+                      </Col>
+                      <Col>
+                        <Cell>右</Cell>
+                        <Cell>1</Cell>
+                        <Cell>2</Cell>
+                        <Cell>3</Cell>
+                        <Cell>4</Cell>
+                        {of10.map((_) => (
+                          <Cell key={_}></Cell>
+                        ))}
+                        <Cell>1</Cell>
+                      </Col>
+                    </Row>
+                  </Col>
+                );
+              })}
+              <Col>
+                <Cell>最大差值</Cell>
+                <Row>
+                  <Col>
+                    <Cell>左</Cell>
+                    <Cell>1</Cell>
+                    <Cell>2</Cell>
+                    <Cell>3</Cell>
+                    <Cell>4</Cell>
+                    {of10.map((_) => (
+                      <Cell key={_}></Cell>
+                    ))}
+                    <Cell>1</Cell>
+                  </Col>
+                  <Col>
+                    <Cell>右</Cell>
+                    <Cell>1</Cell>
+                    <Cell>2</Cell>
+                    <Cell>3</Cell>
+                    <Cell>4</Cell>
+                    {of10.map((_) => (
+                      <Cell key={_}></Cell>
+                    ))}
+                    <Cell>1</Cell>
+                  </Col>
+                </Row>
+              </Col>
+            </Row>
+          </Col>
+          <Col width={LAST_COL_WIDTH}>
+            <Cell></Cell>
+            <Cell>结果评定</Cell>
+            <Cell></Cell>
+            <Cell>合格</Cell>
+            <Cell>合格</Cell>
+            <Cell>合格</Cell>
+            <Cell>合格</Cell>
+            {of10.map((count) => {
+              return <Cell key={count}></Cell>;
+            })}
+            <Cell></Cell>
+          </Col>
+        </ReportDoc>
       </PDFViewer>
     );
   };

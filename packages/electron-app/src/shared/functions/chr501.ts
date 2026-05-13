@@ -35,11 +35,7 @@ const channelKey = (nBoard: number, nChannel: number) => {
   return `${nBoard}-${nChannel}`;
 };
 
-const mathFormat = (value: number, enabled = false) => {
-  if (!enabled) {
-    return value ? "✓" : "";
-  }
-
+const mathFormat = (value: number) => {
   return mathjs.format(value, {
     notation: "fixed",
     precision: 0,
