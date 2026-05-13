@@ -57,6 +57,10 @@ export const registerIPCHandlers = () => {
     return result.filePaths;
   });
 
+  ipcHandle("app/version", () => {
+    return app.getVersion();
+  });
+
   ipcHandle(
     "APP/SHOW_OPEN_DIALOG",
     async (_, options: Electron.OpenDialogOptions) => {
@@ -75,5 +79,6 @@ export const registerIPCHandlers = () => {
     ipcRemoveHandle("APP/SELECT_DIRECTORY");
     ipcRemoveHandle("APP/SELECT_FILE");
     ipcRemoveHandle("APP/SHOW_OPEN_DIALOG");
+    ipcRemoveHandle("app/version");
   };
 };

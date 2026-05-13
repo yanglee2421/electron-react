@@ -27,4 +27,8 @@ export interface IPCContract {
     args: [Electron.OpenDialogOptions];
     return: string[];
   };
+  "app/version": {
+    args: [];
+    return: string;
+  };
 }
