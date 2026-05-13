@@ -167,7 +167,7 @@ class TableQueryBuilder<
       equals: this.equals,
       ins: this.ins,
       dates: this.dates,
-      orderBy: this.orderBy,
+      orderBy: this.orderByKey,
       orderByDirection: this.orderByDirection,
     });
   }

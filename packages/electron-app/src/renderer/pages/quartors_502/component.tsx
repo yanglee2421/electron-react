@@ -139,10 +139,14 @@ const SignatureTable = (props: SignatureTableProps) => {
   );
 };
 
-interface ReportDocProps {}
+interface ReportDocProps {
+  children?: React.ReactNode;
+  duanMain?: React.ReactNode;
+}
 
 const ReportDoc = (props: ReportDocProps) => {
   const CELL_HEIGHT = 26;
+  const of10 = of(10);
 
   return (
     <Document
@@ -163,102 +167,92 @@ const ReportDoc = (props: ReportDocProps) => {
               <Row>
                 <Col width={CHANNEL_COL_WIDTH}>
                   <Cell height={CELL_HEIGHT * 3}>通道</Cell>
-                </Col>
-                <Col>
                   <Row>
+                    <Col width={FIRST_COL_WIDTH}>
+                      <Cell height={CELL_HEIGHT * 2}>{"轴颈\n根部"}</Cell>
+                      <Cell height={CELL_HEIGHT * 12}>
+                        {"轮座镶入部轮座镶入部".split("").join("\n")}
+                      </Cell>
+                    </Col>
                     <Col>
-                      <Cell>反射波高(dB)</Cell>
+                      <Cell>A1</Cell>
+                      <Cell>A3</Cell>
+                      <Cell>01</Cell>
+                      <Cell>02</Cell>
+                      {of(10).map((_) => (
+                        <Cell key={_}></Cell>
+                      ))}
                     </Col>
                   </Row>
+                </Col>
+                <Col>
+                  <Cell>反射波高(dB)</Cell>
                   <Row>
-                    {of(6).map((count) => {
+                    {of(5).map((count) => {
                       return (
                         <Col key={count}>
                           <Cell>第{count}次</Cell>
+                          <Row>
+                            <Col>
+                              <Cell>左</Cell>
+                              <Cell>1</Cell>
+                              <Cell>2</Cell>
+                              <Cell>3</Cell>
+                              <Cell>4</Cell>
+                              {of10.map((_) => (
+                                <Cell key={_}></Cell>
+                              ))}
+                            </Col>
+                            <Col>
+                              <Cell>右</Cell>
+                              <Cell>1</Cell>
+                              <Cell>2</Cell>
+                              <Cell>3</Cell>
+                              <Cell>4</Cell>
+                              {of10.map((_) => (
+                                <Cell key={_}></Cell>
+                              ))}
+                            </Col>
+                          </Row>
                         </Col>
                       );
                     })}
-                  </Row>
-                  <Row>
-                    {of(12).map((count) => {
-                      return (
-                        <Col key={count}>
-                          <Cell>{count % 2 === 0 ? "左" : "右"}</Cell>
+                    <Col>
+                      <Cell>最大差值</Cell>
+                      <Row>
+                        <Col>
+                          <Cell>左</Cell>
+                          <Cell>1</Cell>
+                          <Cell>2</Cell>
+                          <Cell>3</Cell>
+                          <Cell>4</Cell>
+                          {of10.map((_) => (
+                            <Cell key={_}></Cell>
+                          ))}
                         </Col>
-                      );
-                    })}
+                        <Col>
+                          <Cell>右</Cell>
+                          <Cell>1</Cell>
+                          <Cell>2</Cell>
+                          <Cell>3</Cell>
+                          <Cell>4</Cell>
+                          {of10.map((_) => (
+                            <Cell key={_}></Cell>
+                          ))}
+                        </Col>
+                      </Row>
+                    </Col>
                   </Row>
                 </Col>
                 <Col width={LAST_COL_WIDTH}>
                   <Cell></Cell>
                   <Cell>结果评定</Cell>
                   <Cell></Cell>
-                </Col>
-              </Row>
-              <Row>
-                <Col width={CHANNEL_COL_WIDTH}>
-                  <Row>
-                    <Col width={FIRST_COL_WIDTH}>
-                      <Cell height={CELL_HEIGHT * 2}>{"轴颈\n根部"}</Cell>
-                    </Col>
-                    <Col>
-                      <Cell></Cell>
-                      <Cell></Cell>
-                    </Col>
-                  </Row>
-                </Col>
-                <Col>
-                  {of(2).map((_, board) => {
-                    return (
-                      <Row key={board}>
-                        {of(12).map((count) => {
-                          return (
-                            <Col key={count}>
-                              <Cell>{count}</Cell>
-                            </Col>
-                          );
-                        })}
-                      </Row>
-                    );
-                  })}
-                </Col>
-                <Col width={LAST_COL_WIDTH}>
-                  <Cell></Cell>
                   <Cell>合格</Cell>
-                </Col>
-              </Row>
-              <Row>
-                <Col width={CHANNEL_COL_WIDTH}>
-                  <Row>
-                    <Col width={FIRST_COL_WIDTH}>
-                      <Cell height={CELL_HEIGHT * 12}>
-                        {"轮座镶入部轮座镶入部".split("").join("\n")}
-                      </Cell>
-                    </Col>
-                    <Col>
-                      {of(12).map((count) => {
-                        return <Cell key={count}></Cell>;
-                      })}
-                    </Col>
-                  </Row>
-                </Col>
-                <Col>
-                  {of(12).map((count) => {
-                    return (
-                      <Row key={count}>
-                        {of(12).map((count) => {
-                          return (
-                            <Col key={count}>
-                              <Cell>{count}</Cell>
-                            </Col>
-                          );
-                        })}
-                      </Row>
-                    );
-                  })}
-                </Col>
-                <Col width={LAST_COL_WIDTH}>
-                  {of(12).map((count) => {
+                  <Cell>合格</Cell>
+                  <Cell>合格</Cell>
+                  <Cell>合格</Cell>
+                  {of10.map((count) => {
                     return <Cell key={count}></Cell>;
                   })}
                 </Col>
@@ -328,7 +322,22 @@ export const Component = () => {
         showToolbar={true}
         style={{ width: "100%", height: "100vh", border: 0 }}
       >
-        <ReportDoc></ReportDoc>
+        <ReportDoc
+          duanMain={of(5).map((_, index) => {
+            return (
+              <React.Fragment key={index}>
+                <Col>
+                  <Cell>{attenMap.get(opids.at(index)!)?.lxh}</Cell>
+                  <Cell>{attenMap.get(opids.at(index)!)?.la3}</Cell>
+                </Col>
+                <Col>
+                  <Cell>{attenMap.get(opids.at(index)!)?.rxh}</Cell>
+                  <Cell>{attenMap.get(opids.at(index)!)?.ra3}</Cell>
+                </Col>
+              </React.Fragment>
+            );
+          })}
+        ></ReportDoc>
       </PDFViewer>
     );
   };
