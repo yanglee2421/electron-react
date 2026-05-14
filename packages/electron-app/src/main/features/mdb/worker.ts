@@ -86,10 +86,6 @@ const resolveQueryBuilder = async (
       const isLikeMatch = likes.every((filter) => {
         const fieldValue = Reflect.get(row, String(filter.key));
 
-        if (!fieldValue) {
-          return true;
-        }
-
         return String(fieldValue)
           .toLowerCase()
           .includes(String(filter.value).toLowerCase());

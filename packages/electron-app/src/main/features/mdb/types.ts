@@ -315,7 +315,13 @@ export interface MDBWorkerData {
 
 export type MDBPayload = Omit<MDBWorkerData, "databasePath">;
 
-interface ListQuartorInput {}
+export interface ListQuartorInput {
+  pageIndex: number;
+  pageSize: number;
+  date: string;
+  user: string;
+  zx: string;
+}
 
 export interface IPCContract {
   "MDB/MDB_ROOT_GET": {

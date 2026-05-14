@@ -149,24 +149,6 @@ const routes: RouteObject[] = [
                 loader: async () => {},
               },
               {
-                path: "jtv_xuzhoubei",
-                children: [
-                  {
-                    index: true,
-                    lazy: () =>
-                      import("#renderer/pages/jtv_hmis_xuzhoubei/component"),
-                  },
-                  {
-                    path: "setting",
-                    lazy: () =>
-                      import(
-                        "#renderer/pages/jtv_hmis_xuzhoubei_setting/component"
-                      ),
-                  },
-                ],
-                loader: async () => {},
-              },
-              {
                 path: "jtv_guangzhoubei",
                 children: [
                   {
