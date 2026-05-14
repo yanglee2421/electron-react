@@ -107,10 +107,10 @@ export const resolveCHR501 = (flaws: VerifyData[], detectors: Detecotor[]) => {
 
   const l01Group = listToMap(l01Flaws);
   const l02Group = listToMap(l02Flaws, 12 - l02Flaws.length);
-  const lA3Group = listToMap(lA3Flaws);
+  const lA3Group = listToMap(lA3Flaws, 12 - lA3Flaws.length);
   const r01Group = listToMap(r01Flaws);
   const r02Group = listToMap(r02Flaws, 12 - r02Flaws.length);
-  const rA3Group = listToMap(rA3Flaws);
+  const rA3Group = listToMap(rA3Flaws, 12 - rA3Flaws.length);
 
   const flawInfo = new Map<string, FlawInfo[]>();
   const of13 = of(13);

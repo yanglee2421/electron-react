@@ -1,6 +1,6 @@
 import { FXPLCClient, TransportSerial } from "node-fxplc";
 import { SerialPort } from "serialport";
-import type { PLCReadResult, PLCWritePayload } from "./types";
+import type { PLCReadResult, PLCWritePayload, ReadXInput } from "./types";
 
 export class PLC {
   private readonly DEFAULT_PATH: string = "COM1";
@@ -94,5 +94,28 @@ export class PLC {
 
     if (err) throw err;
     return null;
+  }
+
+  async hanndleXRead(params: ReadXInput) {
+    const { path, address } = params;
+    const plc = this.createPLCClient(path);
+    let err = null;
+    let result: boolean | null = null;
+
+    try {
+      result = await plc.readBit(`X${address}`);
+    } catch (error) {
+      err = error;
+    } finally {
+      plc.close();
+    }
+
+    if (err) throw err;
+
+    if (result !== null) {
+      return result;
+    }
+
+    throw new Error("invalid Result");
   }
 }

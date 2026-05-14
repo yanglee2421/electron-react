@@ -326,7 +326,11 @@ const ReportDoc = (props: ReportDocProps) => {
   const ROW_HEIGHT = React.use(CellHeightContext);
 
   return (
-    <Document>
+    <Document
+      title="CHR501"
+      creator="超声波自动探伤机"
+      producer="武铁紫云接口面板"
+    >
       <Page size="A4" style={[styles.page, styles.font10, styles.textCenter]}>
         <PageHeader>辆货统-501</PageHeader>
         <View>
