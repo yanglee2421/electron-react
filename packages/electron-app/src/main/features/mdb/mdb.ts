@@ -21,6 +21,7 @@ import type {
   QuartorData,
   QuartorYearlyData,
   TableQueryResult,
+  User,
   Verify,
   VerifyData,
 } from "./types";
@@ -104,6 +105,10 @@ class TableQueryBuilder<
   private tableName: string;
   private orderByKey?: unknown;
   private orderByDirection?: "asc" | "desc";
+  private ltKey?: unknown;
+  private ltValue?: number;
+  private gtKey?: unknown;
+  private gtValue?: number;
 
   constructor(options: TableQueryBuilderOptions) {
     super();
@@ -154,6 +159,18 @@ class TableQueryBuilder<
 
     return this;
   }
+  lt<TKey extends keyof TRow>(key: TKey, value: number) {
+    this.ltKey = key;
+    this.ltValue = value;
+
+    return this;
+  }
+  gt<TKey extends keyof TRow>(key: TKey, value: number) {
+    this.ltKey = key;
+    this.ltValue = value;
+
+    return this;
+  }
 
   async execute(): Promise<TResult> {
     const databasePath = await this.appPathInfo.mdb();
@@ -169,6 +186,10 @@ class TableQueryBuilder<
       dates: this.dates,
       orderBy: this.orderByKey,
       orderByDirection: this.orderByDirection,
+      ltKey: this.ltKey,
+      ltValue: this.ltValue,
+      gtKey: this.gtKey,
+      gtValue: this.gtValue,
     });
   }
 }
@@ -253,6 +274,12 @@ class Database {
    */
   verifies_data() {
     return this.table<VerifyData>("verifies_data");
+  }
+  /**
+   * @description 用户
+   */
+  users() {
+    return this.table<User>("users");
   }
 }
 

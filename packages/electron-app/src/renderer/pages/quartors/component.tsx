@@ -1,7 +1,5 @@
 import type { Quartor } from "#main/features/mdb/types";
-import type { MDBUser } from "#renderer/api/fetch_preload";
-import { fetchDataFromAppDB } from "#renderer/api/fetch_preload";
-import { fetchQuartor } from "#renderer/api/mdb";
+import { fetchQuartor, fetchUser } from "#renderer/api/mdb";
 import { Loading } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
@@ -19,7 +17,6 @@ import {
   IconButton,
   LinearProgress,
   Link,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -80,7 +77,7 @@ const columns = [
     header: "ID",
     footer: "ID",
   }),
-  columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
+  // columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
   columnHelper.accessor("tmnow", {
@@ -93,7 +90,7 @@ const columns = [
       return new Date(tmnow).toLocaleString();
     },
   }),
-  columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
+  // columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
 ];
 
 interface TT {
@@ -149,46 +146,34 @@ const calcPrintCheck = (...args: Quartor[]): TT => {
   };
 };
 
-interface CalcQueryInputParams {
-  date: dayjs.Dayjs | null;
-  user: string;
-  zx: string;
-}
-
-const calcUIValue = (params: CalcQueryInputParams) => {
-  return {
-    date: params.date ? params.date.toISOString() : "",
-    user: params.user || "",
-    zx: params.zx || "",
-  };
-};
-
 export const Component = () => {
   "use no memo";
 
   const [date, setDate] = React.useState<dayjs.Dayjs | null>(() => dayjs());
   const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(20);
+  const [pageSize, setPageSize] = React.useState(100);
   const [user, setUser] = React.useState("");
   const [zx, setZX] = React.useState("");
+
+  const userDataListId = React.useId();
+  const zxDataListId = React.useId();
 
   const navigate = useNavigate();
 
   const usersQuery = useQuery(
-    fetchDataFromAppDB<MDBUser>({
-      tableName: "users",
+    fetchUser({
       pageIndex: 0,
-      pageSize: 100,
+      pageSize: 999,
     }),
   );
-
-  const uiValue = calcUIValue({ date, user, zx });
 
   const query = useQuery(
     fetchQuartor({
       pageIndex,
       pageSize,
-      ...uiValue,
+      date: date ? date.format("YYYY-MM-DD") : "",
+      user,
+      zx,
     }),
   );
 
@@ -218,14 +203,17 @@ export const Component = () => {
             setUser(e.target.value);
           }}
           label="检测员"
-          select
-        >
+          slotProps={{
+            htmlInput: {
+              list: userDataListId,
+            },
+          }}
+        />
+        <datalist id={userDataListId}>
           {usersQuery.data.rows.map((user) => (
-            <MenuItem key={user.szUid} value={user.szUid}>
-              {user.szUid}
-            </MenuItem>
+            <option key={user.szUid} value={user.szUid}></option>
           ))}
-        </TextField>
+        </datalist>
       </Grid>
     );
   };
@@ -318,11 +306,12 @@ export const Component = () => {
                 setZX(e.target.value);
               }}
               fullWidth
-              select
-            >
-              <MenuItem value="RE2B">RE2B</MenuItem>
-              <MenuItem value="RD2">RD2</MenuItem>
-            </TextField>
+              slotProps={{ htmlInput: { list: zxDataListId } }}
+            />
+            <datalist id={zxDataListId}>
+              <option value="RE2B"></option>
+              <option value="RD2"></option>
+            </datalist>
           </Grid>
         </Grid>
       </CardContent>

@@ -28,6 +28,36 @@ const isClamped = (num: number, min: number, max: number) => {
   return Object.is(clamp(num, min, max), num);
 };
 
+const lt = (row: Row, ltKey?: unknown, ltValue?: number) => {
+  if (typeof ltKey !== "string") {
+    return true;
+  }
+
+  if (typeof ltValue !== "number") {
+    return true;
+  }
+
+  const fieldValue = Reflect.get(row, ltKey);
+  const numValue = valueToNumber(fieldValue);
+
+  return numValue < ltValue;
+};
+
+const gt = (row: Row, gtKey?: unknown, gtValue?: number) => {
+  if (typeof gtKey !== "string") {
+    return true;
+  }
+
+  if (typeof gtValue !== "number") {
+    return true;
+  }
+
+  const fieldValue = Reflect.get(row, gtKey);
+  const numValue = valueToNumber(fieldValue);
+
+  return numValue > gtValue;
+};
+
 interface ResolveQueryBuilderOptions {
   databasePath: string;
   tableName: string;
@@ -39,6 +69,10 @@ interface ResolveQueryBuilderOptions {
   dates: FilterDateValue[];
   orderBy?: string;
   orderByDirection?: "asc" | "desc";
+  ltKey?: unknown;
+  ltValue?: number;
+  gtKey?: unknown;
+  gtValue?: number;
 }
 
 interface Row {
@@ -117,7 +151,17 @@ const resolveQueryBuilder = async (
         return isClamped(fieldTime, startTime, endTime);
       });
 
-      return isLikeMatch && isEqualMatch && isInMatch && isDateMatch;
+      const isLtMatch = lt(row, options.ltKey, options.ltValue);
+      const isGtMatch = gt(row, options.gtKey, options.gtValue);
+
+      return (
+        isLikeMatch &&
+        isEqualMatch &&
+        isInMatch &&
+        isDateMatch &&
+        isLtMatch &&
+        isGtMatch
+      );
     });
   const filteredCount = filteredRows.length;
   const pagedData = filteredRows.slice(offset, offset + limit);

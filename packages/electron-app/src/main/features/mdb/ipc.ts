@@ -23,14 +23,56 @@ export const registerIPCHandlers = (mdb: MDB) => {
     }
 
     if (zx) {
-      query.equal("szWHModel", zx);
+      query.like("szWHModel", zx);
     }
 
     if (user) {
-      query.equal("szUsername", user);
+      query.like("szUsername", user);
     }
 
-    const result = await query.offset(pageIndex * pageSize).limit(pageSize);
+    const result = await query
+      .orderBy("tmnow", "desc")
+      .offset(pageIndex * pageSize)
+      .limit(pageSize);
+
+    return result;
+  });
+
+  ipcHandle("mdb/user", async (_, payload) => {
+    const { pageIndex, pageSize } = payload;
+    const result = await mdb
+      .app()
+      .users()
+      .offset(pageIndex * pageSize)
+      .limit(pageSize);
+
+    return result;
+  });
+
+  ipcHandle("mdb/verifies", async (_, payload) => {
+    const { pageIndex, pageSize, date, user, zx } = payload;
+    const query = mdb.root().verifies();
+
+    if (date) {
+      query.date(
+        "tmNow",
+        dayjs(date).startOf("day").toDate(),
+        dayjs(date).endOf("day").toDate(),
+      );
+    }
+
+    if (zx) {
+      query.like("szWHModel", zx);
+    }
+
+    if (user) {
+      query.like("szUsername", user);
+    }
+
+    const result = await query
+      .orderBy("tmNow", "desc")
+      .offset(pageIndex * pageSize)
+      .limit(pageSize);
 
     return result;
   });
@@ -40,5 +82,7 @@ export const registerIPCHandlers = (mdb: MDB) => {
     ipcRemoveHandle("MDB/MDB_APP_GET");
 
     ipcRemoveHandle("mdb/quartor");
+    ipcRemoveHandle("mdb/user");
+    ipcRemoveHandle("mdb/verifies");
   };
 };

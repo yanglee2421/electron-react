@@ -74,6 +74,11 @@ const flawsToMetaData = (flaws: QuartorData[]): ChannelMeta => {
 
 const calculateMaxDiff = (...args: string[]) => {
   const nums = args.map((arg) => Number.parseFloat(arg));
+
+  if (nums.length === 0) {
+    return "";
+  }
+
   const hasNan = nums.some((num) => Number.isNaN(num));
 
   if (hasNan) return "";

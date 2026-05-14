@@ -1,3 +1,4 @@
+import type { CHR502Input } from "#main/features/printer/types";
 import { ipc } from "#renderer/lib/ipc";
 import { queryOptions } from "@tanstack/react-query";
 
@@ -12,11 +13,11 @@ export const fetchCHR501Data = (id: string) => {
   });
 };
 
-export const fetchCHR502Data = () => {
+export const fetchCHR502Data = (params: CHR502Input) => {
   return queryOptions({
-    queryKey: [QUERY_KEY, "chr502"],
+    queryKey: [QUERY_KEY, "chr502", params],
     queryFn: async () => {
-      return ipc.invoke("printer/chr502");
+      return ipc.invoke("printer/chr502", params);
     },
   });
 };

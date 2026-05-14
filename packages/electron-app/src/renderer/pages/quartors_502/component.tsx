@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 
 import React from "react";
+import { useLocation } from "react-router";
 
 const FIRST_COL_WIDTH = 50;
 const LAST_COL_WIDTH = 50;
@@ -212,7 +213,13 @@ const ReportDoc = (props: ReportDocProps) => {
 };
 
 export const Component = () => {
-  const query = useQuery(fetchCHR502Data());
+  const location = useLocation();
+
+  const query = useQuery(
+    fetchCHR502Data({
+      ids: Array.isArray(location.state.ids) ? location.state.ids : [],
+    }),
+  );
 
   const renderQuery = () => {
     if (query.isPending) {
@@ -229,7 +236,7 @@ export const Component = () => {
     }
 
     const of10 = of(10);
-    const { flaws, records, corporation } = query.data;
+    const { flaws, records, corporation, previousRecord } = query.data;
     const { attenMap, resultInfo, maxDiffInfo } = resolveCHR502(flaws);
     const opids = records
       .toSorted(
@@ -251,7 +258,9 @@ export const Component = () => {
           equipmentTable={{
             deviceNo: corporation.DeviceNO || "",
             createDate: dayjs(corporation.prodate).format("YYYY-MM-DD") || "",
-            previousCheckDate: dayjs().format("YYYY-MM-DD"),
+            previousCheckDate: dayjs(previousRecord?.tmnow).format(
+              "YYYY-MM-DD",
+            ),
           }}
         >
           <Col>

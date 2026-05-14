@@ -8,15 +8,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-export interface MDBUser {
-  szUid: string;
-  szPasswd: string | null;
-  bAdmin: boolean;
-  lastLogin: string;
-  szMemo: string | null;
-  userCode: string | null;
-}
-
 type Args<TKey extends keyof IPCContract> = IPCContract[TKey] extends {
   args: infer TArgs;
 }

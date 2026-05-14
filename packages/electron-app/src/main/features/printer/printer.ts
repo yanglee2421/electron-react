@@ -1,4 +1,5 @@
 import { atFirstOrThrow } from "@yotulee/run";
+import dayjs from "dayjs";
 import { app, BrowserWindow } from "electron";
 import fs from "node:fs";
 import os from "node:os";
@@ -87,18 +88,32 @@ export class Printer {
     await fs.promises.writeFile(filePath, buf);
   }
 
-  async getDataForCHR502() {
+  async getDataForCHR502(ids: string[]) {
     const records = await this.mdb
       .root()
       .quartors()
-      .orderBy("tmnow", "desc")
+      .orderBy("tmnow", "asc")
+      .in("szIDs", ids)
       .limit(5);
-    const previousRecord = await this.mdb
+
+    const queryPreviousRecord = this.mdb
       .root()
       .quartors()
       .orderBy("tmnow", "desc")
-      .offset(6)
       .limit(1);
+
+    const firstRecord = records.rows.at(0);
+
+    if (firstRecord) {
+      const firstDay = dayjs(firstRecord.tmnow).toDate().getTime();
+
+      queryPreviousRecord
+        .lt("tmnow", firstDay)
+        .equal("szWHModel", firstRecord.szWHModel || "");
+    }
+
+    const previousRecord = await queryPreviousRecord;
+
     const datas = await this.mdb
       .root()
       .quartors_data()
@@ -112,7 +127,7 @@ export class Printer {
     return {
       records: records.rows,
       flaws: datas.rows,
-      previousRecord: previousRecord.rows[0] || null,
+      previousRecord: previousRecord.rows.at(0) || null,
       corporation,
     };
   }

@@ -254,6 +254,15 @@ export interface QuartorYearlyData {
   tmNow: Date;
 }
 
+export interface User {
+  szUid: string;
+  szPasswd: string | null;
+  bAdmin: boolean;
+  lastLogin: string;
+  szMemo: string | null;
+  userCode: string | null;
+}
+
 export interface FilterValue {
   key: unknown;
   value: unknown;
@@ -323,6 +332,19 @@ export interface ListQuartorInput {
   zx: string;
 }
 
+export interface ListUserInput {
+  pageIndex: number;
+  pageSize: number;
+}
+
+export interface ListVerifiesInput {
+  pageIndex: number;
+  pageSize: number;
+  date: string;
+  user: string;
+  zx: string;
+}
+
 export interface IPCContract {
   "MDB/MDB_ROOT_GET": {
     args: [MDBPayload];
@@ -335,5 +357,13 @@ export interface IPCContract {
   "mdb/quartor": {
     args: [ListQuartorInput];
     return: { count: number; rows: Quartor[] };
+  };
+  "mdb/user": {
+    args: [ListUserInput];
+    return: { count: number; rows: User[] };
+  };
+  "mdb/verifies": {
+    args: [ListVerifiesInput];
+    return: { count: number; rows: Verify[] };
   };
 }

@@ -175,21 +175,6 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
         ],
       },
       {
-        title: "徐州北",
-        children: [
-          {
-            segment: calculateSegment("jtv_xuzhoubei"),
-            title: "HMIS",
-            icon: <QrCodeScannerOutlined />,
-          },
-          {
-            segment: calculateSegment("jtv_xuzhoubei", "setting"),
-            title: "设置",
-            icon: <TuneOutlined />,
-          },
-        ],
-      },
-      {
         title: "广州北",
         children: [
           {

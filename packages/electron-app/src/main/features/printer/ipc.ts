@@ -5,8 +5,8 @@ export const registerIPCHandlers = (printer: Printer) => {
   ipcHandle("printer/chr501", (_, id: string) => {
     return printer.getDataForCHR501(id);
   });
-  ipcHandle("printer/chr502", () => {
-    return printer.getDataForCHR502();
+  ipcHandle("printer/chr502", (_, payload) => {
+    return printer.getDataForCHR502(payload.ids);
   });
   ipcHandle("printer/print", () => {
     return printer.print();
