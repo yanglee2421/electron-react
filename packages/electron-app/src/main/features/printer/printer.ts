@@ -107,10 +107,13 @@ export class Printer {
         records.rows.map((r) => r.szIDs),
       );
 
+    const corporation = await this.mdb.app().corporation();
+
     return {
       records: records.rows,
       flaws: datas.rows,
       previousRecord: previousRecord.rows[0] || null,
+      corporation,
     };
   }
 }

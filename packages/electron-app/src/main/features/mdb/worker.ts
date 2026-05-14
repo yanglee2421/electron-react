@@ -110,9 +110,8 @@ const resolveQueryBuilder = async (
       const isDateMatch = dates.every((filter) => {
         const fieldValue = Reflect.get(row, String(filter.key));
 
-        // 如果字段值不存在，则认为不进行过滤，直接匹配成功
         if (!(fieldValue instanceof Date)) {
-          return true;
+          return false;
         }
 
         const startTime = filter.startAt.getTime();

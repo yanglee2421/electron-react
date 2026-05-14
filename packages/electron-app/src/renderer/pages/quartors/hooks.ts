@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 
-type State = {
+interface State {
   date: string | null;
   pageIndex: number;
   pageSize: number;
@@ -10,7 +10,7 @@ type State = {
   whModel: string;
   idsWheel: string;
   result: string;
-};
+}
 
 const initialState = (): State => ({
   date: new Date().toISOString(),

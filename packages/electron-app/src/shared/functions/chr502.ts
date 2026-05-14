@@ -1,8 +1,9 @@
 import type { QuartorData } from "#main/features/mdb/types";
 import { mapGroupBy } from "@yotulee/run";
+import * as mathjs from "mathjs";
 import { divideBy10 } from "./math";
 
-interface RecordMetaData {
+interface ChannelMeta {
   lct: string;
   rct: string;
   lxh: string;
@@ -15,7 +16,7 @@ interface RecordMetaData {
   ra3: string;
 }
 
-const flawsToMetaData = (flaws: QuartorData[]): RecordMetaData => {
+const flawsToMetaData = (flaws: QuartorData[]): ChannelMeta => {
   return flaws.reduce(
     (meta, flaw) => {
       const key = `${flaw.nBoard}-${flaw.nChannel}`;
@@ -71,10 +72,49 @@ const flawsToMetaData = (flaws: QuartorData[]): RecordMetaData => {
   );
 };
 
+const calculateMaxDiff = (...args: string[]) => {
+  const nums = args.map((arg) => Number.parseFloat(arg));
+  const hasNan = nums.some((num) => Number.isNaN(num));
+
+  if (hasNan) return "";
+
+  const max = mathjs.max(nums);
+  const min = mathjs.min(nums);
+
+  return mathjs.format(mathjs.abs(mathjs.subtract(max, min)), {
+    notation: "fixed",
+    precision: 1,
+  });
+};
+
+interface ResultInfo {
+  xhc: string;
+  a3: string;
+  ch01: string;
+  ch02: string;
+  ct: string;
+}
+
+const calculateResult = (left: string, right: string): string => {
+  const leftNum = Number.parseFloat(left);
+  const rightNum = Number.parseFloat(right);
+
+  if (Number.isNaN(leftNum)) {
+    return "";
+  }
+
+  if (Number.isNaN(rightNum)) {
+    return "";
+  }
+
+  const valid = mathjs.smallerEq(leftNum, 6) && mathjs.smallerEq(rightNum, 6);
+
+  return valid ? "合格" : "不合格";
+};
+
 export const resolveCHR502 = (flaws: QuartorData[]) => {
   const opidToFlaws = mapGroupBy(flaws, (flaw) => flaw.opid);
-
-  const attenMap = new Map<string, RecordMetaData>();
+  const attenMap = new Map<string, ChannelMeta>();
 
   for (const [opid, flaws] of opidToFlaws) {
     if (opid === null) continue;
@@ -82,5 +122,28 @@ export const resolveCHR502 = (flaws: QuartorData[]) => {
     attenMap.set(opid, flawsToMetaData(flaws));
   }
 
-  return { attenMap };
+  const attenValues = [...attenMap.values()];
+
+  const maxDiffInfo: ChannelMeta = {
+    lct: calculateMaxDiff(...attenValues.map((meta) => meta.lct)),
+    rct: calculateMaxDiff(...attenValues.map((meta) => meta.rct)),
+    lxh: calculateMaxDiff(...attenValues.map((meta) => meta.lxh)),
+    rxh: calculateMaxDiff(...attenValues.map((meta) => meta.rxh)),
+    l01: calculateMaxDiff(...attenValues.map((meta) => meta.l01)),
+    r01: calculateMaxDiff(...attenValues.map((meta) => meta.r01)),
+    l02: calculateMaxDiff(...attenValues.map((meta) => meta.l02)),
+    r02: calculateMaxDiff(...attenValues.map((meta) => meta.r02)),
+    la3: calculateMaxDiff(...attenValues.map((meta) => meta.la3)),
+    ra3: calculateMaxDiff(...attenValues.map((meta) => meta.ra3)),
+  };
+
+  const resultInfo: ResultInfo = {
+    ct: calculateResult(maxDiffInfo.lct, maxDiffInfo.rct),
+    xhc: calculateResult(maxDiffInfo.lxh, maxDiffInfo.rxh),
+    ch01: calculateResult(maxDiffInfo.l01, maxDiffInfo.r01),
+    ch02: calculateResult(maxDiffInfo.l02, maxDiffInfo.r02),
+    a3: calculateResult(maxDiffInfo.la3, maxDiffInfo.ra3),
+  };
+
+  return { attenMap, maxDiffInfo, resultInfo };
 };

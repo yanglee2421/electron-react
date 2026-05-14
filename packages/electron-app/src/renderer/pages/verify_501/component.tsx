@@ -26,6 +26,14 @@ import dayjs from "dayjs";
 import React from "react";
 import { useParams } from "react-router";
 
+const ASIDE_COL_WIDTH = 24;
+const SECOND_WIDTH = 80;
+const SIGNATURE_COL_WIDTH = 104;
+const XHC_DIRECTION_COL_WIDTH = 20;
+const XHC_CHANNEL_COL_WIDTH = 32;
+const XHC_ZSJ_COL_WIDTH = 28;
+const XHC_FLAW_NO_COL_WIDTH = 80;
+
 interface TableHeaderProps {
   labelL: string;
   valueL: string;
@@ -62,9 +70,7 @@ const EquipmentTable = (props: EquipmentTableProps) => {
   return (
     <Row>
       <Col>
-        <Cell l font12>
-          设备型号
-        </Cell>
+        <Cell font12>设备型号</Cell>
       </Col>
       <Col>
         <Cell font12>{props.deviceModel}</Cell>
@@ -100,8 +106,6 @@ interface LZInfoTableProps {
   zsj4?: string;
   zsj2?: string;
 }
-
-const SECOND_WIDTH = 80;
 
 const LZInfoTable = (props: LZInfoTableProps) => {
   const BASIC_ROW_HEIGHT = React.use(CellHeightContext);
@@ -177,17 +181,17 @@ const XHCTable = (props: XHCTableProps) => {
 
   return (
     <Row>
-      <Col width={20}>
+      <Col width={XHC_DIRECTION_COL_WIDTH}>
         <Cell height={BASIC_ROW_HEIGHT * 3}>{direction}</Cell>
         <Cell height={BASIC_ROW_HEIGHT * 3}>{"轴\n颈"}</Cell>
       </Col>
-      <Col width={32}>
+      <Col width={XHC_CHANNEL_COL_WIDTH}>
         <Cell height={BASIC_ROW_HEIGHT * 3}>通道{"\n"}编号</Cell>
         <Cell>{direction}CT</Cell>
         <Cell>{props.xhChannelName}</Cell>
         <Cell></Cell>
       </Col>
-      <Col width={28}>
+      <Col width={XHC_ZSJ_COL_WIDTH}>
         <Cell height={BASIC_ROW_HEIGHT * 3}>拆射{"\n"}角度</Cell>
         <Cell>{props.ctZsj}</Cell>
         <Cell>{props.xhZsj}</Cell>
@@ -216,7 +220,7 @@ const XHCTable = (props: XHCTableProps) => {
           </Col>
         </Row>
       </Col>
-      <Col width={70}>
+      <Col width={XHC_FLAW_NO_COL_WIDTH}>
         <Cell>缺陷编号</Cell>
         <Row>
           <Col>
@@ -258,9 +262,9 @@ const SignatureTable = (props: SignatureTableProps) => {
   const BASIC_ROW_HEIGHT = React.use(CellHeightContext);
 
   return (
-    <View style={[styles.borderBL]}>
+    <>
       <Row>
-        <Col>
+        <Col width={SIGNATURE_COL_WIDTH}>
           <Cell height={BASIC_ROW_HEIGHT * 2} font12>
             签字签章
           </Cell>
@@ -283,14 +287,14 @@ const SignatureTable = (props: SignatureTableProps) => {
         </Col>
       </Row>
       <Row>
-        <Col width={"20%"}>
+        <Col width={SIGNATURE_COL_WIDTH}>
           <Cell font12>备注</Cell>
         </Col>
         <Col>
           <Cell font12></Cell>
         </Col>
       </Row>
-    </View>
+    </>
   );
 };
 
@@ -319,6 +323,8 @@ const ReportDoc = (props: ReportDocProps) => {
   } = props;
   const IMAGE_HEIGHT = 150;
 
+  const ROW_HEIGHT = React.use(CellHeightContext);
+
   return (
     <Document>
       <Page size="A4" style={[styles.page, styles.font10, styles.textCenter]}>
@@ -328,23 +334,18 @@ const ReportDoc = (props: ReportDocProps) => {
             铁路货车轮轴多通道超声波自动探伤系统日常性能校验记录表
           </ReportTitle>
           <TableHeader {...tableHeader1} />
-          <EquipmentTable {...equipmentTableProps} />
-          <View style={[styles.flexRow, styles.borderL]}>
-            <View
-              style={[
-                styles.borderTR,
-                styles.itemsCenter,
-                styles.justifyCenter,
-                styles.padding6,
-              ]}
-            >
-              <Text>{asideTip}</Text>
-            </View>
-            {props.children}
+          <View style={[styles.borderBL]}>
+            <EquipmentTable {...equipmentTableProps} />
+            <Row>
+              <Col width={ASIDE_COL_WIDTH}>
+                <Cell height={ROW_HEIGHT * 26}>{asideTip}</Cell>
+              </Col>
+              {props.children}
+            </Row>
+            <CellHeightContext value={26}>
+              <SignatureTable {...signatureTableProps} />
+            </CellHeightContext>
           </View>
-          <CellHeightContext value={26}>
-            <SignatureTable {...signatureTableProps} />
-          </CellHeightContext>
         </View>
         <PageFooter>第 1 页</PageFooter>
       </Page>

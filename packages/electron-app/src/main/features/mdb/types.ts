@@ -55,7 +55,7 @@ export interface Detection {
    * @description 轴型
    */
   szWHModel: string | null;
-  tmnow: string | null;
+  tmnow: Date | null;
 }
 
 export interface DetectionData {
@@ -95,7 +95,7 @@ export interface Verify {
   szTMMake: string | null;
   szUsername: string | null;
   szWHModel: string | null;
-  tmNow: string | null;
+  tmNow: Date | null;
 }
 
 export interface VerifyData {
@@ -133,14 +133,14 @@ export interface Quartor {
   bWheelRS: boolean | null;
   bSickLD: boolean | null;
   bSickRD: boolean | null;
-  tmnow: string | null;
+  tmnow: Date | null;
   szResult: string | null;
   szMemo: string | null;
   DB: string | null;
   bJiXiaoReportOut: boolean | null;
   bHeGe: boolean | null;
-  startTime: string | null;
-  endTime: string | null;
+  startTime: Date | null;
+  endTime: Date | null;
 }
 
 export interface QuartorData {
@@ -168,7 +168,7 @@ export interface Corporation {
   Factory: string | null;
   Workshop: string | null;
   TBType: string | null;
-  prodate: string | null;
+  prodate: Date | null;
 }
 
 export interface QuartorYearlyData {
@@ -250,10 +250,8 @@ export interface QuartorYearlyData {
   Dyn_S1: number;
   Dyn_S2: number;
   Dyn_Max: number;
-  // 短文本类型
   szUsername: string;
-  // 日期/时间类型：推荐用 string（适配接口传输），也可根据场景改用 Date 类型
-  tmNow: string; // 若需直接用日期对象，可改为 Date，如：tmNow: Date;
+  tmNow: Date;
 }
 
 export interface FilterValue {
@@ -317,6 +315,8 @@ export interface MDBWorkerData {
 
 export type MDBPayload = Omit<MDBWorkerData, "databasePath">;
 
+interface ListQuartorInput {}
+
 export interface IPCContract {
   "MDB/MDB_ROOT_GET": {
     args: [MDBPayload];
@@ -325,5 +325,9 @@ export interface IPCContract {
   "MDB/MDB_APP_GET": {
     args: [MDBPayload];
     return: { total: number; rows: unknown[] };
+  };
+  "mdb/quartor": {
+    args: [ListQuartorInput];
+    return: { count: number; rows: Quartor[] };
   };
 }

@@ -15,38 +15,43 @@ import { Alert, AlertTitle } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+
 import React from "react";
 
 const FIRST_COL_WIDTH = 50;
 const LAST_COL_WIDTH = 50;
 const CHANNEL_COL_WIDTH = 80;
 
-interface TableHeaderProps {}
+interface TableHeaderProps {
+  factoryName?: string;
+  date?: string;
+  zx?: string;
+}
 
-const TableHeader = ({}: TableHeaderProps) => (
+const TableHeader = (props: TableHeaderProps) => (
   <Row>
     <Col width={FIRST_COL_WIDTH}>
       <Cell>单位名称</Cell>
     </Col>
     <Col>
-      <Cell>宁东铁路公司</Cell>
+      <Cell>{props.factoryName}</Cell>
     </Col>
     <Col width={40}>
-      <Cell>RE2B</Cell>
+      <Cell>{props.zx}</Cell>
     </Col>
     <Col width={60}>
       <Cell>校验时间</Cell>
     </Col>
     <Col>
-      <Cell>{dayjs().format("YYYY-MM-DD HH:mm:ss")}</Cell>
+      <Cell>{props.date}</Cell>
     </Col>
   </Row>
 );
 
 interface EquipmentTableProps {
-  deviceModel?: string;
+  createDate?: string;
   deviceNo?: string;
-  blockModel?: string;
+  previousCheckDate?: string;
 }
 
 const EquipmentTable = (props: EquipmentTableProps) => {
@@ -62,7 +67,7 @@ const EquipmentTable = (props: EquipmentTableProps) => {
         <Cell>制造时间</Cell>
       </Col>
       <Col>
-        <Cell>{props.deviceNo}</Cell>
+        <Cell>{props.createDate}</Cell>
       </Col>
       <Col width={FIRST_COL_WIDTH}>
         <Cell>制造单位</Cell>
@@ -74,7 +79,7 @@ const EquipmentTable = (props: EquipmentTableProps) => {
         <Cell>上次检修时间</Cell>
       </Col>
       <Col>
-        <Cell>{props.blockModel}</Cell>
+        <Cell>{props.previousCheckDate}</Cell>
       </Col>
     </Row>
   );
@@ -141,6 +146,8 @@ const SignatureTable = (props: SignatureTableProps) => {
 
 interface ReportDocProps {
   children?: React.ReactNode;
+  tableHeader: TableHeaderProps;
+  equipmentTable: EquipmentTableProps;
 }
 
 const ReportDoc = (props: ReportDocProps) => {
@@ -160,8 +167,8 @@ const ReportDoc = (props: ReportDocProps) => {
           </ReportTitle>
           <CellHeightContext value={CELL_HEIGHT}>
             <View style={[styles.borderBL]}>
-              <TableHeader />
-              <EquipmentTable />
+              <TableHeader {...props.tableHeader} />
+              <EquipmentTable {...props.equipmentTable} />
               <Row>
                 <Col width={CHANNEL_COL_WIDTH}>
                   <Cell height={CELL_HEIGHT * 3}>通道</Cell>
@@ -221,51 +228,61 @@ export const Component = () => {
       );
     }
 
-    const { flaws, records } = query.data;
-    const { attenMap } = resolveCHR502(flaws);
+    const of10 = of(10);
+    const { flaws, records, corporation } = query.data;
+    const { attenMap, resultInfo, maxDiffInfo } = resolveCHR502(flaws);
     const opids = records
       .toSorted(
         (a, b) => new Date(a.tmnow!).getTime() - new Date(b.tmnow!).getTime(),
       )
       .map((record) => record.szIDs);
 
-    const of10 = of(10);
-
     return (
       <PDFViewer
         showToolbar={true}
         style={{ width: "100%", height: "100vh", border: 0 }}
       >
-        <ReportDoc>
+        <ReportDoc
+          tableHeader={{
+            factoryName: corporation.Factory || "",
+            zx: records.at(0)?.szWHModel || "",
+            date: dayjs(records.at(-1)?.tmnow).format("YYYY-MM-DD HH:mm:ss"),
+          }}
+          equipmentTable={{
+            deviceNo: corporation.DeviceNO || "",
+            createDate: dayjs(corporation.prodate).format("YYYY-MM-DD") || "",
+            previousCheckDate: dayjs().format("YYYY-MM-DD"),
+          }}
+        >
           <Col>
             <Cell>反射波高(dB)</Cell>
             <Row>
-              {of(5).map((count) => {
+              {opids.map((opid, index) => {
                 return (
-                  <Col key={count}>
-                    <Cell>第{count}次</Cell>
+                  <Col key={opid}>
+                    <Cell>第{index + 1}次</Cell>
                     <Row>
                       <Col>
                         <Cell>左</Cell>
-                        <Cell>1</Cell>
-                        <Cell>2</Cell>
-                        <Cell>3</Cell>
-                        <Cell>4</Cell>
+                        <Cell>{attenMap.get(opid)?.lxh}</Cell>
+                        <Cell>{attenMap.get(opid)?.la3}</Cell>
+                        <Cell>{attenMap.get(opid)?.l01}</Cell>
+                        <Cell>{attenMap.get(opid)?.l02}</Cell>
                         {of10.map((_) => (
                           <Cell key={_}></Cell>
                         ))}
-                        <Cell>1</Cell>
+                        <Cell>{attenMap.get(opid)?.lct}</Cell>
                       </Col>
                       <Col>
                         <Cell>右</Cell>
-                        <Cell>1</Cell>
-                        <Cell>2</Cell>
-                        <Cell>3</Cell>
-                        <Cell>4</Cell>
+                        <Cell>{attenMap.get(opid)?.rxh}</Cell>
+                        <Cell>{attenMap.get(opid)?.ra3}</Cell>
+                        <Cell>{attenMap.get(opid)?.r01}</Cell>
+                        <Cell>{attenMap.get(opid)?.r02}</Cell>
                         {of10.map((_) => (
                           <Cell key={_}></Cell>
                         ))}
-                        <Cell>1</Cell>
+                        <Cell>{attenMap.get(opid)?.rct}</Cell>
                       </Col>
                     </Row>
                   </Col>
@@ -276,25 +293,25 @@ export const Component = () => {
                 <Row>
                   <Col>
                     <Cell>左</Cell>
-                    <Cell>1</Cell>
-                    <Cell>2</Cell>
-                    <Cell>3</Cell>
-                    <Cell>4</Cell>
+                    <Cell>{maxDiffInfo.lxh}</Cell>
+                    <Cell>{maxDiffInfo.la3}</Cell>
+                    <Cell>{maxDiffInfo.l01}</Cell>
+                    <Cell>{maxDiffInfo.l02}</Cell>
                     {of10.map((_) => (
                       <Cell key={_}></Cell>
                     ))}
-                    <Cell>1</Cell>
+                    <Cell>{maxDiffInfo.lct}</Cell>
                   </Col>
                   <Col>
                     <Cell>右</Cell>
-                    <Cell>1</Cell>
-                    <Cell>2</Cell>
-                    <Cell>3</Cell>
-                    <Cell>4</Cell>
+                    <Cell>{maxDiffInfo.rxh}</Cell>
+                    <Cell>{maxDiffInfo.ra3}</Cell>
+                    <Cell>{maxDiffInfo.r01}</Cell>
+                    <Cell>{maxDiffInfo.r02}</Cell>
                     {of10.map((_) => (
                       <Cell key={_}></Cell>
                     ))}
-                    <Cell>1</Cell>
+                    <Cell>{maxDiffInfo.rct}</Cell>
                   </Col>
                 </Row>
               </Col>
@@ -304,14 +321,14 @@ export const Component = () => {
             <Cell></Cell>
             <Cell>结果评定</Cell>
             <Cell></Cell>
-            <Cell>合格</Cell>
-            <Cell>合格</Cell>
-            <Cell>合格</Cell>
-            <Cell>合格</Cell>
+            <Cell>{resultInfo.xhc}</Cell>
+            <Cell>{resultInfo.a3}</Cell>
+            <Cell>{resultInfo.ch01}</Cell>
+            <Cell>{resultInfo.ch02}</Cell>
             {of10.map((count) => {
               return <Cell key={count}></Cell>;
             })}
-            <Cell></Cell>
+            <Cell>{resultInfo.ct}</Cell>
           </Col>
         </ReportDoc>
       </PDFViewer>

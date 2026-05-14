@@ -100,6 +100,12 @@ const columns = [
   columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
 ];
 
+const calculateDisableCHR502 = (...args: string[]) => {
+  if (args.length !== 5) {
+    return true;
+  }
+};
+
 interface DataGridProps {
   data?: Quartor[];
   isPending?: boolean;
@@ -109,7 +115,6 @@ interface DataGridProps {
 }
 
 const DataGrid = (props: DataGridProps) => {
-  "use no memo";
   const data = React.useMemo(() => props.data || [], [props.data]);
 
   const navigate = useNavigate();
@@ -123,18 +128,15 @@ const DataGrid = (props: DataGridProps) => {
     manualPagination: true,
   });
 
+  const ids = table.getSelectedRowModel().flatRows.map((row) => row.id);
+  const enableCHR502 = calculateDisableCHR502(...ids);
+
   const renderRow = () => {
     if (props.isPending) {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            <Loading
-              slotProps={{
-                box: {
-                  padding: 0,
-                },
-              }}
-            />
+            <Loading slotProps={{ box: { padding: 0 } }} />
           </TableCell>
         </TableRow>
       );
@@ -181,7 +183,11 @@ const DataGrid = (props: DataGridProps) => {
           variant="outlined"
           startIcon={<Print />}
           onClick={() => {
-            navigate("/quartors/chr502");
+            navigate("/quartors/chr502", {
+              state: {
+                ids: table.getSelectedRowModel().flatRows.map((row) => row.id),
+              },
+            });
           }}
         >
           Excel
@@ -232,6 +238,8 @@ const DataGrid = (props: DataGridProps) => {
 };
 
 export const Component = () => {
+  "use no memo";
+
   const selectDate = useSessionStore((s) => s.date);
   const pageIndex = useSessionStore((s) => s.pageIndex);
   const pageSize = useSessionStore((s) => s.pageSize);
@@ -311,11 +319,6 @@ export const Component = () => {
       d.whModel = whModel;
     });
 
-  const setIdsWheel = (idsWheel: string) =>
-    set((d) => {
-      d.idsWheel = idsWheel;
-    });
-
   const setResult = (result: string) =>
     set((d) => {
       d.result = result;
@@ -388,14 +391,6 @@ export const Component = () => {
               label="轴型"
               value={whModel}
               onChange={(e) => setWHModel(e.target.value)}
-              fullWidth
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="轴号"
-              value={idsWheel}
-              onChange={(e) => setIdsWheel(e.target.value)}
               fullWidth
             />
           </Grid>
