@@ -355,6 +355,16 @@ export interface ListAnniversaryOutputItem {
   rows: QuartorYearlyData[];
 }
 
+export interface ListDetectionInput {
+  pageIndex: number;
+  pageSize: number;
+  date: string;
+  user: string;
+  zx: string;
+  zh: string;
+  result: string;
+}
+
 export interface IPCContract {
   "MDB/MDB_ROOT_GET": {
     args: [MDBPayload];
@@ -383,5 +393,9 @@ export interface IPCContract {
   "mdb/anniversary/id": {
     args: [string];
     return: { count: number; rows: QuartorYearlyData[] };
+  };
+  "mdb/detections": {
+    args: [ListDetectionInput];
+    return: { count: number; rows: Detection[] };
   };
 }

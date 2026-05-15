@@ -95,6 +95,41 @@ export const registerIPCHandlers = (mdb: MDB) => {
     return data;
   });
 
+  ipcHandle("mdb/detections", async (_, payload) => {
+    const { pageIndex, pageSize, date, user, zx, zh, result } = payload;
+    const query = mdb.root().detections();
+
+    if (date) {
+      query.date(
+        "tmnow",
+        dayjs(date).startOf("day").toDate(),
+        dayjs(date).endOf("day").toDate(),
+      );
+    }
+
+    if (zx) {
+      query.like("szWHModel", zx);
+    }
+
+    if (user) {
+      query.like("szUsername", user);
+    }
+
+    if (zh) {
+      query.like("szIDsWheel", zh);
+    }
+
+    if (result) {
+      query.like("szResult", result);
+    }
+
+    const queryResult = await query
+      .offset(pageIndex * pageSize)
+      .limit(pageSize);
+
+    return queryResult;
+  });
+
   return () => {
     ipcRemoveHandle("MDB/MDB_ROOT_GET");
     ipcRemoveHandle("MDB/MDB_APP_GET");
@@ -104,5 +139,6 @@ export const registerIPCHandlers = (mdb: MDB) => {
     ipcRemoveHandle("mdb/verifies");
     ipcRemoveHandle("mdb/anniversary");
     ipcRemoveHandle("mdb/anniversary/id");
+    ipcRemoveHandle("mdb/detections");
   };
 };

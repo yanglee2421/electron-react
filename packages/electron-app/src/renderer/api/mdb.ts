@@ -1,5 +1,6 @@
 import type {
   ListAnniversaryInput,
+  ListDetectionInput,
   ListQuartorInput,
   ListUserInput,
   ListVerifiesInput,
@@ -50,6 +51,15 @@ export const fetchAnniversaryById = (id: string) => {
     queryKey: [QUERY_KEY, "anniversary/id", id],
     queryFn: () => {
       return ipc.invoke("mdb/anniversary/id", id);
+    },
+  });
+};
+
+export const fetchDetections = (params: ListDetectionInput) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "detections", params],
+    queryFn: () => {
+      return ipc.invoke("mdb/detections", params);
     },
   });
 };

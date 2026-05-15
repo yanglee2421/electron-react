@@ -4,6 +4,10 @@ export interface CHR502Input {
   ids: string[];
 }
 
+export interface CHR53AInput {
+  ids: string[];
+}
+
 export interface IPCContract {
   "printer/chr501": {
     args: [string];
@@ -16,6 +20,10 @@ export interface IPCContract {
   "printer/chr503": {
     args: [string];
     return: ReturnType<Printer["getDataForCHR503"]>;
+  };
+  "printer/chr53a": {
+    args: [CHR53AInput];
+    return: ReturnType<Printer["getDataForCHR53A"]>;
   };
   "printer/print": {
     args: [];

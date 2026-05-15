@@ -68,6 +68,11 @@ export const routes: RouteObject[] = [
                     path: ":id",
                     lazy: () => import("#renderer/pages/detection_show"),
                   },
+                  {
+                    path: "chr53a",
+                    lazy: () =>
+                      import("#renderer/pages/detection_chr53a/component"),
+                  },
                 ],
               },
               {

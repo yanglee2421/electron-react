@@ -146,4 +146,10 @@ export class Printer {
       corporation,
     };
   }
+
+  async getDataForCHR53A(ids: string[]) {
+    const rows = await this.mdb.root().detections().in("szIDs", ids);
+
+    return { records: rows.rows };
+  }
 }

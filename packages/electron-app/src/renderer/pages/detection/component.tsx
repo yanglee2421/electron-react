@@ -1,24 +1,22 @@
-import type { Detection } from "#main/modules/mdb";
-import type { Filter } from "#main/modules/mdb.worker";
-import type { MDBUser } from "#renderer/api/fetch_preload";
-import {
-  fetchDataFromAppDB,
-  fetchDataFromRootDB,
-} from "#renderer/api/fetch_preload";
+import type { Detection } from "#main/features/mdb/types";
+import { fetchDetections, fetchUser } from "#renderer/api/mdb";
 import { Loading } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import {
   CheckBoxOutlineBlankOutlined,
   CheckBoxOutlined,
+  Print,
   RefreshOutlined,
 } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
+  Button,
   Card,
   CardContent,
   CardHeader,
+  Checkbox,
   Divider,
   Grid,
   IconButton,
@@ -45,8 +43,7 @@ import {
 } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import React from "react";
-import { Link as RouterLink } from "react-router";
-import { useSessionStore } from "./hooks";
+import { Link as RouterLink, useNavigate } from "react-router";
 
 const renderCheckBoxIcon = (value: boolean | null) => {
   return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
@@ -54,8 +51,30 @@ const renderCheckBoxIcon = (value: boolean | null) => {
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Detection>();
-
 const columns = [
+  columnHelper.display({
+    id: "checkbox",
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onChange={row.getToggleSelectedHandler()}
+      />
+    ),
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+        indeterminate={table.getIsSomeRowsSelected()}
+      />
+    ),
+    footer: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+        indeterminate={table.getIsSomeRowsSelected()}
+      />
+    ),
+  }),
   columnHelper.accessor("szIDs", {
     cell: ({ getValue }) => {
       const szID = getValue();
@@ -110,37 +129,94 @@ const columns = [
   columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
 ];
 
-type DataGridProps = {
-  data: Detection[];
-  total?: number;
-  isPending?: boolean;
-  isError?: boolean;
-  isFetching?: boolean;
-  error?: Error | null;
+interface ValidateSelectedResult {
+  disabledCH53A: boolean;
+  subheader?: React.ReactNode;
+}
+
+const validateSelected = (rows: Detection[]): ValidateSelectedResult => {
+  let date = "";
+  let user = "";
+
+  for (const row of rows) {
+    date ||= dayjs(row.tmnow).format("YYYY-MM-DD");
+
+    const isSameDate = Object.is(date, dayjs(row.tmnow).format("YYYY-MM-DD"));
+
+    if (!isSameDate) {
+      return {
+        disabledCH53A: true,
+        subheader: "存在日期不一致的记录",
+      };
+    }
+
+    if (!row.szUsername) {
+      return {
+        disabledCH53A: true,
+        subheader: "不能选择无操作者的记录",
+      };
+    }
+
+    user ||= row.szUsername;
+
+    const isSameUser = Object.is(user, row.szUsername);
+
+    if (!isSameUser) {
+      return {
+        disabledCH53A: true,
+        subheader: "存在操作者不一致的记录",
+      };
+    }
+  }
+
+  return {
+    disabledCH53A: false,
+    subheader: `已选中${rows.length}条`,
+  };
 };
 
-const DataGrid = ({
-  data,
-  total,
-  isPending,
-  isError,
-  isFetching,
-  error,
-}: DataGridProps) => {
+export const Component = () => {
   "use no memo";
 
+  const [date, setDate] = React.useState<dayjs.Dayjs | null>(() => dayjs());
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(100);
+  const [zx, setZx] = React.useState("");
+  const [zh, setZh] = React.useState("");
+  const [result, setResult] = React.useState("");
+  const [user, setUser] = React.useState("");
+
+  const query = useQuery(
+    fetchDetections({
+      zx,
+      zh,
+      user,
+      result,
+      date: date ? date.toISOString() : "",
+      pageIndex,
+      pageSize,
+    }),
+  );
+
+  const navigate = useNavigate();
+  const usersQuery = useQuery(fetchUser({ pageIndex: 0, pageSize: 1000 }));
+
+  const data = React.useMemo(() => query.data?.rows || [], [query.data]);
+
   const table = useReactTable({
+    getCoreRowModel: getCoreRowModel(),
     columns,
     data,
     getRowId: (row) => row.szIDs,
-    rowCount: total,
-
-    getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
   });
 
+  const { subheader, disabledCH53A } = validateSelected(
+    table.getSelectedRowModel().flatRows.map((row) => row.original),
+  );
+
   const renderRow = () => {
-    if (isPending) {
+    if (query.isPending) {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
@@ -154,13 +230,13 @@ const DataGrid = ({
       );
     }
 
-    if (isError) {
+    if (query.isError) {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length}>
             <Alert severity="error" variant="filled">
               <AlertTitle>错误</AlertTitle>
-              {error?.message}
+              {query.error?.message}
             </Alert>
           </TableCell>
         </TableRow>
@@ -190,152 +266,11 @@ const DataGrid = ({
 
   return (
     <>
-      {isFetching && <LinearProgress />}
-      <TableContainer>
-        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.lg }}>
-          <TableHead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>{renderRow()}</TableBody>
-          <TableFooter>
-            {table.getFooterGroups().map((footerGroup) => (
-              <TableRow key={footerGroup.id}>
-                {footerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    padding={cellPaddingMap.get(header.column.id)}
-                  >
-                    {flexRender(
-                      header.column.columnDef.footer,
-                      header.getContext(),
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableFooter>
-        </Table>
-      </TableContainer>
-    </>
-  );
-};
-
-export const Component = () => {
-  const selectDate = useSessionStore((s) => s.date);
-  const pageIndex = useSessionStore((s) => s.pageIndex);
-  const pageSize = useSessionStore((s) => s.pageSize);
-  const username = useSessionStore((s) => s.username);
-  const whModel = useSessionStore((s) => s.whModel);
-  const idsWheel = useSessionStore((s) => s.idsWheel);
-  const result = useSessionStore((s) => s.result);
-
-  const date = selectDate ? dayjs(selectDate) : null;
-  const filters: Filter[] = [
-    date
-      ? {
-          type: "date" as const,
-          field: "tmnow",
-          startAt: date.startOf("day").toISOString(),
-          endAt: date.endOf("day").toISOString(),
-        }
-      : false,
-    {
-      type: "like" as const,
-      field: "szUsername",
-      value: username,
-    },
-    {
-      type: "like" as const,
-      field: "szWHModel",
-      value: whModel,
-    },
-    {
-      type: "like" as const,
-      field: "szIDsWheel",
-      value: idsWheel,
-    },
-    {
-      type: "like" as const,
-      field: "szResult",
-      value: result,
-    },
-  ].filter((i) => typeof i === "object");
-
-  const query = useQuery(
-    fetchDataFromRootDB<Detection>({
-      tableName: "detections",
-      pageIndex,
-      pageSize,
-      filters,
-    }),
-  );
-
-  const usersQuery = useQuery(
-    fetchDataFromAppDB<MDBUser>({
-      tableName: "users",
-      pageIndex: 0,
-      pageSize: 100,
-    }),
-  );
-
-  const data = React.useMemo(() => query.data?.rows || [], [query.data]);
-
-  const set = useSessionStore.setState;
-  const setDate = (day: null | dayjs.Dayjs) =>
-    set((d) => {
-      d.date = day ? day.toISOString() : null;
-    });
-
-  const setPageIndex = (page: number) =>
-    set((d) => {
-      d.pageIndex = page;
-    });
-
-  const setPageSize = (size: number) =>
-    set((d) => {
-      d.pageSize = size;
-    });
-
-  const setUsername = (username: string) =>
-    set((d) => {
-      d.username = username;
-    });
-
-  const setWHModel = (whModel: string) =>
-    set((d) => {
-      d.whModel = whModel;
-    });
-
-  const setIdsWheel = (idsWheel: string) =>
-    set((d) => {
-      d.idsWheel = idsWheel;
-    });
-
-  const setResult = (result: string) =>
-    set((d) => {
-      d.result = result;
-    });
-
-  return (
-    <>
       <ScrollToTopButton />
       <Card>
         <CardHeader
           title="现车作业"
+          subheader={subheader}
           action={
             <IconButton
               onClick={() => query.refetch()}
@@ -367,8 +302,8 @@ export const Component = () => {
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="检测员"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={user}
+                onChange={(e) => setUser(e.target.value)}
                 fullWidth
                 select
               >
@@ -383,16 +318,16 @@ export const Component = () => {
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="轴型"
-                value={whModel}
-                onChange={(e) => setWHModel(e.target.value)}
+                value={zx}
+                onChange={(e) => setZx(e.target.value)}
                 fullWidth
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="轴号"
-                value={idsWheel}
-                onChange={(e) => setIdsWheel(e.target.value)}
+                value={zh}
+                onChange={(e) => setZh(e.target.value)}
                 fullWidth
               />
             </Grid>
@@ -407,19 +342,67 @@ export const Component = () => {
           </Grid>
         </CardContent>
         <Divider />
-        <DataGrid
-          data={data}
-          total={query.data?.total}
-          isPending={query.isPending}
-          isError={query.isError}
-          isFetching={query.isFetching}
-          error={query.error}
-        />
+        <CardContent>
+          <Button
+            startIcon={<Print />}
+            disabled={disabledCH53A}
+            variant="outlined"
+            onClick={() => {
+              navigate("/detection/chr53a", {
+                state: table
+                  .getSelectedRowModel()
+                  .flatRows.map((row) => row.original.szIDs),
+              });
+            }}
+          >
+            CHR53A
+          </Button>
+        </CardContent>
+        {query.isFetching && <LinearProgress />}
+        <TableContainer>
+          <Table sx={{ minWidth: (theme) => theme.breakpoints.values.lg }}>
+            <TableHead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableCell
+                      key={header.id}
+                      padding={cellPaddingMap.get(header.column.id)}
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHead>
+            <TableBody>{renderRow()}</TableBody>
+            <TableFooter>
+              {table.getFooterGroups().map((footerGroup) => (
+                <TableRow key={footerGroup.id}>
+                  {footerGroup.headers.map((header) => (
+                    <TableCell
+                      key={header.id}
+                      padding={cellPaddingMap.get(header.column.id)}
+                    >
+                      {flexRender(
+                        header.column.columnDef.footer,
+                        header.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableFooter>
+          </Table>
+        </TableContainer>
         <Divider />
         <TablePagination
           component={"div"}
           page={pageIndex}
-          count={query.data?.total || 0}
+          count={query.data?.count || 0}
           rowsPerPage={pageSize}
           rowsPerPageOptions={rowsPerPageOptions}
           onPageChange={(_, page) => {
