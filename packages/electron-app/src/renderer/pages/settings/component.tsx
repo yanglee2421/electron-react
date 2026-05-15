@@ -1,3 +1,4 @@
+import { fetchVersion, useExportDB } from "#renderer/api/app";
 import {
   fetchIsRunAsAdmin,
   fetchOpenAtLogin,
@@ -10,6 +11,7 @@ import { profile as profileSchema } from "#shared/instances/schema";
 import {
   AdminPanelSettings,
   BugReportOutlined,
+  ExitToApp,
   FindInPageOutlined,
   People,
   SaveOutlined,
@@ -102,6 +104,8 @@ export const Component = () => {
   const openDevTools = useOpenDevTools();
   const selectDirectory = useSelectDirectory();
   const profileForm = useProfileForm();
+  const version = useQuery(fetchVersion());
+  const exportDB = useExportDB();
 
   const handleDirectoryChange = () => {
     selectDirectory.mutate(void 0, {
@@ -221,6 +225,19 @@ export const Component = () => {
               </profileForm.Button>
             )}
           </profileForm.Subscribe>
+          <Button
+            startIcon={
+              <PendingIcon isPending={exportDB.isPending}>
+                <ExitToApp />
+              </PendingIcon>
+            }
+            onClick={() => {
+              exportDB.mutate();
+            }}
+            disabled={exportDB.isPending}
+          >
+            导出
+          </Button>
         </CardActions>
       </>
     );
@@ -274,9 +291,7 @@ export const Component = () => {
             >
               <ListItemText primary="管理员权限" />
             </ListItem>
-            <ListItem
-              secondaryAction={window.electron.process.env.npm_package_version}
-            >
+            <ListItem secondaryAction={version.data}>
               <ListItemText primary="版本" />
             </ListItem>
             <ListItem

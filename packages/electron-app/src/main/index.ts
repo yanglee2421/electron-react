@@ -102,7 +102,7 @@ const activate$ = fromEventPattern(
   (handler) => app.on("activate", handler),
   (handler) => app.off("activate", handler),
 );
-const secondInstance$ = fromEventPattern(
+const secondInstance$ = fromEventPattern<[Electron.Event, string[]]>(
   (handler) => app.on("second-instance", handler),
   (handler) => app.off("second-instance", handler),
 );
@@ -171,6 +171,14 @@ const using$ = using(
         win.webContents.send("logUpdated");
       });
     });
+
+    if (is.dev) {
+      app.setAsDefaultProtocolClient("wtzy-protocol", process.execPath, [
+        path.resolve(process.argv[1]),
+      ]);
+    } else {
+      app.setAsDefaultProtocolClient("wtzy-protocol");
+    }
 
     return {
       unsubscribe: () => {
@@ -253,7 +261,11 @@ activate$
   .pipe(filter(() => BrowserWindow.getAllWindows().length === 0))
   .subscribe(() => createWindow());
 
-secondInstance$.subscribe(() => {
+secondInstance$.subscribe(([, cmds]) => {
+  if (is.dev) {
+    console.log(cmds.at(-1));
+  }
+
   const win = BrowserWindow.getAllWindows().at(0);
   if (!win) return;
 

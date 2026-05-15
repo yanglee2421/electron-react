@@ -11,15 +11,6 @@
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 ```
 
-Commonjs modules must be imported using require
-
-```ts
-//
-const require = createRequire(import.meta.url);
-// odbc only support commonjs
-const odbc: typeof import("odbc") = require("odbc");
-```
-
 If you need react dev tools
 
 ```bash
@@ -45,17 +36,13 @@ Before development and packaging, generate SQL files for database migration usin
 
 Generating SQL depends on the contents of `schema.ts`. After modifying `schema.ts`, you need to regenerate the SQL files.
 
-> Note: `@electron/rebuild` is internally invoked by `electron-builder`, but during the development phase, `electron-builder` is not used for packaging.
-
 ```bash
 npx drizzle-kit generate
 ```
 
 ## Note
 
-1. 打印:日校表格填入数据
 2. HMIS:从`usprofile.ini`文件读取`InputSkip`，确保自动填充不会引起闪退
-3.
 
 ## Cpp Addon
 
