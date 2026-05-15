@@ -328,9 +328,9 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
   return result;
 };
 
-type ModeIconProps = {
+interface ModeIconProps {
   mode: string;
-};
+}
 
 const ModeIcon = ({ mode }: ModeIconProps) => {
   switch (mode) {

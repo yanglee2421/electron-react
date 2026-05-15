@@ -10,15 +10,6 @@ import { queryOptions } from "@tanstack/react-query";
 
 const QUERY_KEY = "mdb";
 
-export const fetchQuartor = (params: ListQuartorInput) => {
-  return queryOptions({
-    queryKey: [QUERY_KEY, "quartor", params],
-    queryFn: () => {
-      return ipc.invoke("mdb/quartor", params);
-    },
-  });
-};
-
 export const fetchUser = (params: ListUserInput) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "user", params],
@@ -33,6 +24,33 @@ export const fetchVerifies = (params: ListVerifiesInput) => {
     queryKey: [QUERY_KEY, "verifies", params],
     queryFn: () => {
       return ipc.invoke("mdb/verifies", params);
+    },
+  });
+};
+
+export const fetchVerifyById = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "verifies/id", id],
+    queryFn: async () => {
+      return ipc.invoke("mdb/verifies/id", id);
+    },
+  });
+};
+
+export const fetchQuartor = (params: ListQuartorInput) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "quartor", params],
+    queryFn: () => {
+      return ipc.invoke("mdb/quartor", params);
+    },
+  });
+};
+
+export const fetchQuartorById = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "quartor/id", id],
+    queryFn: async () => {
+      return ipc.invoke("mdb/quartor/id", id);
     },
   });
 };
@@ -60,6 +78,15 @@ export const fetchDetections = (params: ListDetectionInput) => {
     queryKey: [QUERY_KEY, "detections", params],
     queryFn: () => {
       return ipc.invoke("mdb/detections", params);
+    },
+  });
+};
+
+export const fetchDetectionById = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "detections/id", id],
+    queryFn: () => {
+      return ipc.invoke("mdb/detections/id", id);
     },
   });
 };

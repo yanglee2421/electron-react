@@ -1,17 +1,17 @@
+import { HomeOutlined } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
-  Typography,
-  Button,
   Box,
+  Button,
   CircularProgress,
+  Typography,
 } from "@mui/material";
-import { HomeOutlined } from "@mui/icons-material";
 import { isRouteErrorResponse, Link, useRouteError } from "react-router";
 
-type ErrorAlertContentProps = {
+interface ErrorAlertContentProps {
   error: unknown;
-};
+}
 
 const ErrorAlertContent = ({ error }: ErrorAlertContentProps) => {
   if (isRouteErrorResponse(error)) {

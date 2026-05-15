@@ -39,9 +39,9 @@ export const Component = () => {
       );
     }
 
-    const of12 = of(12);
     const { corporation } = query.data;
     const { rows } = resolveCHR503(query.data.rows);
+    const ofRest = of(24 - rows.length);
     const FIRST_COL_WIDTH = 80;
 
     return (
@@ -131,7 +131,7 @@ export const Component = () => {
                                   </Cell>
                                 );
                               })}
-                              {of12.map((i) => (
+                              {ofRest.map((i) => (
                                 <Cell key={i}></Cell>
                               ))}
                               <Cell>探伤工</Cell>
@@ -148,7 +148,7 @@ export const Component = () => {
                                   </Cell>
                                 );
                               })}
-                              {of12.map((i) => (
+                              {ofRest.map((i) => (
                                 <Cell key={i}></Cell>
                               ))}
                               <Cell>探伤工长</Cell>
@@ -170,7 +170,7 @@ export const Component = () => {
                                   </Cell>
                                 );
                               })}
-                              {of12.map((i) => (
+                              {ofRest.map((i) => (
                                 <Cell key={i}></Cell>
                               ))}
                               <Cell>设备维修工</Cell>
@@ -187,7 +187,7 @@ export const Component = () => {
                                   </Cell>
                                 );
                               })}
-                              {of12.map((i) => (
+                              {ofRest.map((i) => (
                                 <Cell key={i}></Cell>
                               ))}
                               <Cell>质检员</Cell>
@@ -224,7 +224,7 @@ export const Component = () => {
                                   </Cell>
                                 );
                               })}
-                              {of12.map((i) => (
+                              {ofRest.map((i) => (
                                 <Cell key={i}></Cell>
                               ))}
                             </Col>
@@ -240,7 +240,7 @@ export const Component = () => {
                                   </Cell>
                                 );
                               })}
-                              {of12.map((i) => (
+                              {ofRest.map((i) => (
                                 <Cell key={i}></Cell>
                               ))}
                             </Col>
@@ -258,7 +258,7 @@ export const Component = () => {
                                   </Cell>
                                 );
                               })}
-                              {of12.map((i) => (
+                              {ofRest.map((i) => (
                                 <Cell key={i}></Cell>
                               ))}
                             </Col>
@@ -286,7 +286,7 @@ export const Component = () => {
                               </Cell>
                             );
                           })}
-                          {of12.map((i) => (
+                          {ofRest.map((i) => (
                             <Cell key={i}></Cell>
                           ))}
                           <Cell>设备专职</Cell>
@@ -303,7 +303,7 @@ export const Component = () => {
                               </Cell>
                             );
                           })}
-                          {of12.map((i) => (
+                          {ofRest.map((i) => (
                             <Cell key={i}></Cell>
                           ))}
                           <Cell>主管领导</Cell>

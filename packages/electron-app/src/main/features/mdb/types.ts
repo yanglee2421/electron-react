@@ -374,10 +374,6 @@ export interface IPCContract {
     args: [MDBPayload];
     return: { total: number; rows: unknown[] };
   };
-  "mdb/quartor": {
-    args: [ListQuartorInput];
-    return: { count: number; rows: Quartor[] };
-  };
   "mdb/user": {
     args: [ListUserInput];
     return: { count: number; rows: User[] };
@@ -385,6 +381,18 @@ export interface IPCContract {
   "mdb/verifies": {
     args: [ListVerifiesInput];
     return: { count: number; rows: Verify[] };
+  };
+  "mdb/verifies/id": {
+    args: [string];
+    return: { record: Verify; datas: VerifyData[] };
+  };
+  "mdb/quartor": {
+    args: [ListQuartorInput];
+    return: { count: number; rows: Quartor[] };
+  };
+  "mdb/quartor/id": {
+    args: [string];
+    return: { record: Quartor; datas: QuartorData[] };
   };
   "mdb/anniversary": {
     args: [ListAnniversaryInput];
@@ -397,5 +405,9 @@ export interface IPCContract {
   "mdb/detections": {
     args: [ListDetectionInput];
     return: { count: number; rows: Detection[] };
+  };
+  "mdb/detections/id": {
+    args: [string];
+    return: { record: Detection; datas: DetectionData[] };
   };
 }

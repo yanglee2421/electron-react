@@ -1,8 +1,8 @@
-import { fetchCHR501Data } from "#renderer/api/printer";
+import { fetchVerifyById } from "#renderer/api/mdb";
 import { Loading } from "#renderer/components/Loading";
 import { of } from "#shared/functions/array";
 import { mathFormat } from "#shared/functions/math";
-import { Print } from "@mui/icons-material";
+import { Print, Refresh } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -15,6 +15,7 @@ import {
   Divider,
   FormLabel,
   Grid,
+  IconButton,
   Stack,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
@@ -43,7 +44,7 @@ const resolveMetaInfo = (params: string | null) => {
 
 export const Component = () => {
   const params = useParams();
-  const query = useQuery(fetchCHR501Data(params.id!));
+  const query = useQuery(fetchVerifyById(params.id!));
 
   const renderQuery = () => {
     if (query.isPending) {
@@ -65,6 +66,7 @@ export const Component = () => {
       datas,
       (data) => `${data.nBoard}-${data.nChannel}`,
     );
+    const of2 = of(2);
 
     const renderMetaInfo = (board: number, channel: number) => {
       const channelId = `${board}-${channel}`;
@@ -97,7 +99,19 @@ export const Component = () => {
 
     return (
       <Card>
-        <CardHeader title="校验记录详情" />
+        <CardHeader
+          title="校验记录详情"
+          action={
+            <IconButton
+              onClick={() => {
+                query.refetch();
+              }}
+              disabled={query.isRefetching}
+            >
+              <Refresh />
+            </IconButton>
+          }
+        />
         <CardContent>
           <Button
             startIcon={<Print />}
@@ -111,57 +125,73 @@ export const Component = () => {
         <Divider></Divider>
         <CardContent>
           <Grid container spacing={1.5}>
-            {of(2).map((_, board) => {
+            <Grid size={12}>
+              <FormLabel>穿透</FormLabel>
+            </Grid>
+            {of2.map((_, board) => {
+              const direction = board ? "右" : "左";
+
+              return (
+                <Grid key={_} size={{ xs: 12, sm: 6 }}>
+                  <Card variant="outlined">
+                    <CardHeader
+                      title={`${direction}穿透`}
+                      subheader={`${flawGroup.get(`${board}-0`)?.length || 0}伤`}
+                    />
+                    <CardContent>{renderMetaInfo(board, 0)}</CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+            <Grid size={12}>
+              <FormLabel>卸荷槽</FormLabel>
+            </Grid>
+            {of2.map((_, board) => {
+              const direction = board ? "右" : "左";
+
+              return (
+                <Grid key={_} size={{ xs: 12, sm: 6 }}>
+                  <Card variant="outlined">
+                    <CardHeader
+                      title={`${direction}A1`}
+                      subheader={`${flawGroup.get(`${board}-1`)?.length || 0}伤`}
+                    />
+                    <CardContent>{renderMetaInfo(board, 1)}</CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+            <Grid size={12}>
+              <FormLabel>轮座</FormLabel>
+            </Grid>
+            {of2.map((_, board) => {
               const direction = board ? "右" : "左";
 
               return (
                 <Grid key={board} size={{ xs: 12, md: 6 }}>
                   <Stack spacing={2}>
-                    <Stack spacing={0.5}>
-                      <FormLabel>穿透</FormLabel>
+                    <Stack spacing={1.5}>
                       <Card variant="outlined">
                         <CardHeader
-                          title={`${direction}穿透`}
-                          subheader={`${flawGroup.get(`${board}-0`)?.length || 0}伤`}
+                          title={`${direction}01`}
+                          subheader={`${flawGroup.get(`${board}-2`)?.length || 0}伤`}
                         />
-                        <CardContent>{renderMetaInfo(board, 0)}</CardContent>
+                        <CardContent>{renderMetaInfo(board, 2)}</CardContent>
                       </Card>
-                    </Stack>
-                    <Stack spacing={0.5}>
-                      <FormLabel>卸荷槽</FormLabel>
                       <Card variant="outlined">
                         <CardHeader
-                          title={`${direction}A1`}
-                          subheader={`${flawGroup.get(`${board}-1`)?.length || 0}伤`}
+                          title={`${direction}02`}
+                          subheader={`${flawGroup.get(`${board}-3`)?.length || 0}伤`}
                         />
-                        <CardContent>{renderMetaInfo(board, 1)}</CardContent>
+                        <CardContent>{renderMetaInfo(board, 3)}</CardContent>
                       </Card>
-                    </Stack>
-                    <Stack spacing={0.5}>
-                      <FormLabel>轮座</FormLabel>
-                      <Stack spacing={1.5}>
-                        <Card variant="outlined">
-                          <CardHeader
-                            title={`${direction}01`}
-                            subheader={`${flawGroup.get(`${board}-2`)?.length || 0}伤`}
-                          />
-                          <CardContent>{renderMetaInfo(board, 2)}</CardContent>
-                        </Card>
-                        <Card variant="outlined">
-                          <CardHeader
-                            title={`${direction}02`}
-                            subheader={`${flawGroup.get(`${board}-3`)?.length || 0}伤`}
-                          />
-                          <CardContent>{renderMetaInfo(board, 3)}</CardContent>
-                        </Card>
-                        <Card variant="outlined">
-                          <CardHeader
-                            title={`${direction}A3`}
-                            subheader={`${flawGroup.get(`${board}-4`)?.length || 0}伤`}
-                          />
-                          <CardContent>{renderMetaInfo(board, 4)}</CardContent>
-                        </Card>
-                      </Stack>
+                      <Card variant="outlined">
+                        <CardHeader
+                          title={`${direction}A3`}
+                          subheader={`${flawGroup.get(`${board}-4`)?.length || 0}伤`}
+                        />
+                        <CardContent>{renderMetaInfo(board, 4)}</CardContent>
+                      </Card>
                     </Stack>
                   </Stack>
                 </Grid>

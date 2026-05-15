@@ -1,11 +1,5 @@
-import {
-  Box,
-  Button,
-  Card,
-  CardActions,
-  CardContent,
-  CardHeader,
-} from "@mui/material";
+import { Home } from "@mui/icons-material";
+import { Box, Button, Divider, Typography } from "@mui/material";
 import { Link } from "react-router";
 
 export const Component = () => {
@@ -18,21 +12,25 @@ export const Component = () => {
         height: "100dvh",
       }}
     >
-      <Card
-        sx={{
-          minWidth: (t) => t.breakpoints.values.sm,
-        }}
-      >
-        <CardHeader title="404" subheader="页面未找到" />
-        <CardContent>
-          很抱歉，您访问的页面不存在。请检查您输入的网址是否正确，或者返回首页以继续。
-        </CardContent>
-        <CardActions>
-          <Button variant="contained" to="/" component={Link} fullWidth>
-            返回首页
-          </Button>
-        </CardActions>
-      </Card>
+      <Box>
+        <Typography variant="h1">404</Typography>
+        <Typography variant="h2">页面未找到</Typography>
+        <Typography>
+          很抱歉，您访问的页面不存在。该资源可能已被移除，或者返回首页以继续。
+        </Typography>
+        <Typography variant="body2"></Typography>
+        <Divider sx={{ marginBlock: 1.5 }}>请尝试</Divider>
+        <Button
+          variant="contained"
+          to="/"
+          component={Link}
+          fullWidth
+          size="large"
+          startIcon={<Home />}
+        >
+          返回首页
+        </Button>
+      </Box>
     </Box>
   );
 };

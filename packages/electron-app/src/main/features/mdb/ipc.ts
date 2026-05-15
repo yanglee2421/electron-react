@@ -5,12 +5,67 @@ import dayjs from "dayjs";
 import type { MDB } from "./mdb";
 
 export const registerIPCHandlers = (mdb: MDB) => {
+  // DEPRECATED
   ipcHandle("MDB/MDB_ROOT_GET", async (_, data) => {
     return mdb.getDataFromRootDB(data);
   });
   ipcHandle("MDB/MDB_APP_GET", async (_, data) => {
     return mdb.getDataFromAppDB(data);
   });
+
+  // Basic
+  ipcHandle("mdb/user", async (_, payload) => {
+    const { pageIndex, pageSize } = payload;
+    const result = await mdb
+      .app()
+      .users()
+      .offset(pageIndex * pageSize)
+      .limit(pageSize);
+
+    return result;
+  });
+
+  // Report
+  ipcHandle("mdb/verifies", async (_, payload) => {
+    const { pageIndex, pageSize, date, user, zx } = payload;
+    const query = mdb.root().verifies();
+
+    if (date) {
+      query.date(
+        "tmNow",
+        dayjs(date).startOf("day").toDate(),
+        dayjs(date).endOf("day").toDate(),
+      );
+    }
+
+    if (zx) {
+      query.like("szWHModel", zx);
+    }
+
+    if (user) {
+      query.like("szUsername", user);
+    }
+
+    const result = await query
+      .orderBy("tmNow", "desc")
+      .offset(pageIndex * pageSize)
+      .limit(pageSize);
+
+    return result;
+  });
+
+  ipcHandle("mdb/verifies/id", async (_, id) => {
+    const records = await mdb.root().verifies().equal("szIDs", id);
+    const datas = await mdb.root().verifies_data().equal("opid", id);
+    const record = records.rows.at(0);
+
+    if (!record) {
+      throw new Error(`Not Found #${id}`);
+    }
+
+    return { record, datas: datas.rows };
+  });
+
   ipcHandle("mdb/quartor", async (_, payload) => {
     const { pageIndex, pageSize, zx, user, date } = payload;
     const query = mdb.root().quartors();
@@ -39,43 +94,19 @@ export const registerIPCHandlers = (mdb: MDB) => {
     return result;
   });
 
-  ipcHandle("mdb/user", async (_, payload) => {
-    const { pageIndex, pageSize } = payload;
-    const result = await mdb
-      .app()
-      .users()
-      .offset(pageIndex * pageSize)
-      .limit(pageSize);
+  ipcHandle("mdb/quartor/id", async (_, id) => {
+    const records = await mdb.root().quartors().equal("szIDs", id);
+    const datas = await mdb.root().quartors_data().equal("opid", id);
+    const record = records.rows.at(0);
 
-    return result;
-  });
-
-  ipcHandle("mdb/verifies", async (_, payload) => {
-    const { pageIndex, pageSize, date, user, zx } = payload;
-    const query = mdb.root().verifies();
-
-    if (date) {
-      query.date(
-        "tmNow",
-        dayjs(date).startOf("day").toDate(),
-        dayjs(date).endOf("day").toDate(),
-      );
+    if (!record) {
+      throw new Error(`Not Found #${id}`);
     }
 
-    if (zx) {
-      query.like("szWHModel", zx);
-    }
-
-    if (user) {
-      query.like("szUsername", user);
-    }
-
-    const result = await query
-      .orderBy("tmNow", "desc")
-      .offset(pageIndex * pageSize)
-      .limit(pageSize);
-
-    return result;
+    return {
+      record,
+      datas: datas.rows,
+    };
   });
 
   ipcHandle("mdb/anniversary", async (_, { pageIndex, pageSize }) => {
@@ -130,15 +161,34 @@ export const registerIPCHandlers = (mdb: MDB) => {
     return queryResult;
   });
 
+  ipcHandle("mdb/detections/id", async (_, id) => {
+    const records = await mdb.root().detections().equal("szIDs", id);
+    const datas = await mdb.root().detections_data().equal("opid", id);
+    const record = records.rows.at(0);
+
+    if (!record) {
+      throw new Error(`Not Found #${id}`);
+    }
+
+    return {
+      record,
+      datas: datas.rows,
+    };
+  });
+
   return () => {
+    // DEPRECATED
     ipcRemoveHandle("MDB/MDB_ROOT_GET");
     ipcRemoveHandle("MDB/MDB_APP_GET");
 
-    ipcRemoveHandle("mdb/quartor");
     ipcRemoveHandle("mdb/user");
     ipcRemoveHandle("mdb/verifies");
+    ipcRemoveHandle("mdb/verifies/id");
+    ipcRemoveHandle("mdb/quartor");
+    ipcRemoveHandle("mdb/quartor/id");
     ipcRemoveHandle("mdb/anniversary");
     ipcRemoveHandle("mdb/anniversary/id");
     ipcRemoveHandle("mdb/detections");
+    ipcRemoveHandle("mdb/detections/id");
   };
 };
