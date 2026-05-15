@@ -86,6 +86,20 @@ export const CheckOK = () => {
   );
 };
 
+export const CheckNG = () => {
+  return (
+    <Svg viewBox="0 0 24 24" width={"10"} height={"10"}>
+      <Path
+        d="M18 6L6 18M6 6l12 12"
+        stroke="black"
+        strokeWidth={1}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+};
+
 export const PageHeader = (props: React.PropsWithChildren) => {
   return (
     <View>

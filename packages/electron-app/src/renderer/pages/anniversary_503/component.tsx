@@ -2,6 +2,8 @@ import { fetchCHR503Data } from "#renderer/api/printer";
 import { Loading } from "#renderer/components/Loading";
 import {
   Cell,
+  CheckNG,
+  CheckOK,
   Col,
   PageFooter,
   PageHeader,
@@ -14,6 +16,7 @@ import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Alert, AlertTitle } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import { useParams } from "react-router";
 
 export const Component = () => {
@@ -37,7 +40,9 @@ export const Component = () => {
     }
 
     const of12 = of(12);
+    const { corporation } = query.data;
     const { rows } = resolveCHR503(query.data.rows);
+    const FIRST_COL_WIDTH = 80;
 
     return (
       <PDFViewer
@@ -57,34 +62,44 @@ export const Component = () => {
               </ReportTitle>
               <View style={[styles.paddingB4, styles.font12]}>
                 <Row>
-                  <Col>
+                  <Col width={FIRST_COL_WIDTH}>
                     <Text>单位名称</Text>
                   </Col>
-                  <Col></Col>
                   <Col>
+                    <Text>{corporation.Factory}</Text>
+                  </Col>
+                  <Col width={FIRST_COL_WIDTH}>
                     <Text>检验时间</Text>
                   </Col>
-                  <Col></Col>
+                  <Col>
+                    <Text>
+                      {dayjs(rows.at(0)?.tmNow).format(
+                        "YYYY年MM月DD日 HH:mm:ss",
+                      )}
+                    </Text>
+                  </Col>
                 </Row>
               </View>
               <View style={[styles.borderBL]}>
                 <CellHeightContext value={20}>
                   <Row>
-                    <Col>
+                    <Col width={FIRST_COL_WIDTH}>
                       <Cell font12>设备型号</Cell>
                       <Cell font12>制造单位</Cell>
                     </Col>
                     <Col>
-                      <Cell></Cell>
-                      <Cell></Cell>
+                      <Cell font12>{corporation.DeviceType}</Cell>
+                      <Cell font12>紫云公司</Cell>
                     </Col>
-                    <Col>
+                    <Col width={FIRST_COL_WIDTH}>
                       <Cell font12>设备编号</Cell>
                       <Cell font12>制造日期</Cell>
                     </Col>
                     <Col>
-                      <Cell></Cell>
-                      <Cell></Cell>
+                      <Cell font12>{corporation.DeviceNO}</Cell>
+                      <Cell font12>
+                        {dayjs(corporation.prodate).format("YYYY年MM月DD日")}
+                      </Cell>
                     </Col>
                   </Row>
                   <Cell font12>仪器测试情况</Cell>
@@ -199,22 +214,52 @@ export const Component = () => {
                               <Cell height={CELL_HEIGHT * 2}>
                                 {"水平\n线性"}
                               </Cell>
-                              {of(24).map((i) => (
-                                <Cell key={i}>{i}</Cell>
+                              {rows.map((row) => {
+                                return (
+                                  <Cell
+                                    key={`${row.nBoard}-${row.nChannel}}`}
+                                    text={false}
+                                  >
+                                    {row.horResult ? <CheckOK /> : <CheckNG />}
+                                  </Cell>
+                                );
+                              })}
+                              {of12.map((i) => (
+                                <Cell key={i}></Cell>
                               ))}
                             </Col>
                             <Col>
                               <Cell height={CELL_HEIGHT * 2}>{"分辨力"}</Cell>
-                              {of(24).map((i) => (
-                                <Cell key={i}>{i}</Cell>
+                              {rows.map((row) => {
+                                return (
+                                  <Cell
+                                    key={`${row.nBoard}-${row.nChannel}}`}
+                                    text={false}
+                                  >
+                                    {row.decResult ? <CheckOK /> : <CheckNG />}
+                                  </Cell>
+                                );
+                              })}
+                              {of12.map((i) => (
+                                <Cell key={i}></Cell>
                               ))}
                             </Col>
                             <Col>
                               <Cell height={CELL_HEIGHT * 2}>
                                 {"垂直\n线性"}
                               </Cell>
-                              {of(24).map((i) => (
-                                <Cell key={i}>{i}</Cell>
+                              {rows.map((row) => {
+                                return (
+                                  <Cell
+                                    key={`${row.nBoard}-${row.nChannel}}`}
+                                    text={false}
+                                  >
+                                    {row.horResult ? <CheckOK /> : <CheckNG />}
+                                  </Cell>
+                                );
+                              })}
+                              {of12.map((i) => (
+                                <Cell key={i}></Cell>
                               ))}
                             </Col>
                           </Row>
@@ -231,8 +276,18 @@ export const Component = () => {
                         </Col>
                         <Col width={60}>
                           <Cell height={CELL_HEIGHT * 2}>{"灵敏度\n余量"}</Cell>
-                          {of(24).map((i) => (
-                            <Cell key={i}>{i}</Cell>
+                          {rows.map((row) => {
+                            return (
+                              <Cell
+                                key={`${row.nBoard}-${row.nChannel}}`}
+                                text={false}
+                              >
+                                {row.attResult ? <CheckOK /> : <CheckNG />}
+                              </Cell>
+                            );
+                          })}
+                          {of12.map((i) => (
+                            <Cell key={i}></Cell>
                           ))}
                           <Cell>设备专职</Cell>
                           <Cell height={CELL_HEIGHT * 2}></Cell>
@@ -241,8 +296,15 @@ export const Component = () => {
                           <Cell height={CELL_HEIGHT * 2}>
                             {"测试结果\n判定"}
                           </Cell>
-                          {of(24).map((i) => (
-                            <Cell key={i}>{i}</Cell>
+                          {rows.map((row) => {
+                            return (
+                              <Cell key={`${row.nBoard}-${row.nChannel}}`}>
+                                {row.finallyResult ? "合格" : "不合格"}
+                              </Cell>
+                            );
+                          })}
+                          {of12.map((i) => (
+                            <Cell key={i}></Cell>
                           ))}
                           <Cell>主管领导</Cell>
                           <Cell height={CELL_HEIGHT * 2}></Cell>
