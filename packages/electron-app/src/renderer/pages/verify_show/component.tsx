@@ -1,25 +1,45 @@
 import { fetchCHR501Data } from "#renderer/api/printer";
 import { Loading } from "#renderer/components/Loading";
 import { of } from "#shared/functions/array";
-import { resolveCHR501 } from "#shared/functions/chr501";
+import { mathFormat } from "#shared/functions/math";
 import { Print } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
+  Box,
   Button,
   Card,
   CardContent,
   CardHeader,
+  Chip,
+  Divider,
+  FormLabel,
   Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  Stack,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { chunk, mapGroupBy } from "@yotulee/run";
 import { Link, useParams } from "react-router";
+
+const resolveMetaInfo = (params: string | null) => {
+  const result = new Map<string, number>();
+
+  if (params === null) {
+    return result;
+  }
+
+  const chunks = chunk(params.split(""), 8);
+
+  for (const item of chunks) {
+    const board = Number(item.at(0)) ? 0 : 1;
+    const channel = item.at(1);
+    const flawType = Number(item.at(-1));
+
+    result.set(`${board}-${channel}`, flawType);
+  }
+
+  return result;
+};
 
 export const Component = () => {
   const params = useParams();
@@ -39,127 +59,117 @@ export const Component = () => {
       );
     }
 
-    const { datas, detectors } = query.data;
-    const { flawInfo } = resolveCHR501(datas, detectors);
+    const { datas, record } = query.data;
+    const metaInfo = resolveMetaInfo(record.szMemo);
+    const flawGroup = mapGroupBy(
+      datas,
+      (data) => `${data.nBoard}-${data.nChannel}`,
+    );
+
+    const renderMetaInfo = (board: number, channel: number) => {
+      const channelId = `${board}-${channel}`;
+      const flawType = metaInfo.get(channelId) || 1;
+
+      switch (flawType) {
+        case 2:
+          return "透声不良";
+        case 3:
+          return "晶粗";
+        case 1:
+        default:
+          return (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {flawGroup.get(channelId)?.map((flaw, index) => (
+                <Chip
+                  key={index}
+                  label={mathFormat(flaw.fltValueX, {
+                    precision: 0,
+                    notation: "fixed",
+                  })}
+                  variant="outlined"
+                  sx={{ flexGrow: 0 }}
+                />
+              ))}
+            </Box>
+          );
+      }
+    };
 
     return (
-      <Grid container spacing={1}>
-        <Grid size={12}>
-          <Card>
-            <CardHeader title="数据加载成功" />
-            <CardContent>
-              <Button
-                startIcon={<Print />}
-                component={Link}
-                to={`/verify/${params.id}/chr501`}
-                variant="outlined"
-              >
-                打印
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
-        {of(2).map((_, board) => {
-          const direction = board === 0 ? "左" : "右";
+      <Card>
+        <CardHeader title="校验记录详情" />
+        <CardContent>
+          <Button
+            startIcon={<Print />}
+            component={Link}
+            to={`/verify/${params.id}/chr501`}
+            variant="outlined"
+          >
+            打印
+          </Button>
+        </CardContent>
+        <Divider></Divider>
+        <CardContent>
+          <Grid container spacing={1.5}>
+            {of(2).map((_, board) => {
+              const direction = board ? "右" : "左";
 
-          return (
-            <Grid size={6} key={board}>
-              <Card>
-                <CardHeader title={direction} />
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>探测部位</TableCell>
-                        <TableCell>探头号</TableCell>
-                        <TableCell>疑似裂纹个数</TableCell>
-                        <TableCell>距端面距</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>穿透</TableCell>
-                        <TableCell>{direction}穿透</TableCell>
-                        <TableCell>
-                          {flawInfo.get(`${board}-0`)?.length}裂纹
-                        </TableCell>
-                        <TableCell>
-                          {flawInfo
-                            .get(`${board}-0`)
-                            ?.map((flaw) => flaw.value)
-                            .join(", ")}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>卸荷槽</TableCell>
-                        <TableCell>{direction}卸荷槽</TableCell>
-                        <TableCell>
-                          {flawInfo.get(`${board}-1`)?.length}裂纹
-                        </TableCell>
-                        <TableCell
-                          sx={{ textWrap: "wrap", whiteSpace: "normal" }}
-                        >
-                          {flawInfo
-                            .get(`${board}-1`)
-                            ?.map((flaw) => flaw.value)
-                            .join(", ")}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell rowSpan={3}>轮座</TableCell>
-                        <TableCell>{direction}A03</TableCell>
-                        <TableCell>
-                          {flawInfo.get(`${board}-2`)?.length}裂纹
-                        </TableCell>
-                        <TableCell>
-                          {flawInfo
-                            .get(`${board}-2`)
-                            ?.map((flaw) => flaw.value)
-                            .join(", ")}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>{direction}01</TableCell>
-                        <TableCell>
-                          {
-                            flawInfo.get(`${board}-3`)?.filter((i) => i.value)
-                              ?.length
-                          }
-                          裂纹
-                        </TableCell>
-                        <TableCell>
-                          {flawInfo
-                            .get(`${board}-3`)
-                            ?.filter((i) => i.value)
-                            ?.map((flaw) => flaw.value)
-                            .join(", ")}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>{direction}02</TableCell>
-                        <TableCell>
-                          {
-                            flawInfo.get(`${board}-4`)?.filter((i) => i.value)
-                              ?.length
-                          }
-                          裂纹
-                        </TableCell>
-                        <TableCell>
-                          {flawInfo
-                            .get(`${board}-4`)
-                            ?.filter((i) => i.value)
-                            ?.map((flaw) => flaw.value)
-                            .join(", ")}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Card>
-            </Grid>
-          );
-        })}
-      </Grid>
+              return (
+                <Grid key={board} size={{ xs: 12, md: 6 }}>
+                  <Stack spacing={2}>
+                    <Stack spacing={0.5}>
+                      <FormLabel>穿透</FormLabel>
+                      <Card variant="outlined">
+                        <CardHeader
+                          title={`${direction}穿透`}
+                          subheader={`${flawGroup.get(`${board}-0`)?.length || 0}伤`}
+                        />
+                        <CardContent>{renderMetaInfo(board, 0)}</CardContent>
+                      </Card>
+                    </Stack>
+                    <Stack spacing={0.5}>
+                      <FormLabel>卸荷槽</FormLabel>
+                      <Card variant="outlined">
+                        <CardHeader
+                          title={`${direction}A1`}
+                          subheader={`${flawGroup.get(`${board}-1`)?.length || 0}伤`}
+                        />
+                        <CardContent>{renderMetaInfo(board, 1)}</CardContent>
+                      </Card>
+                    </Stack>
+                    <Stack spacing={0.5}>
+                      <FormLabel>轮座</FormLabel>
+                      <Stack spacing={1.5}>
+                        <Card variant="outlined">
+                          <CardHeader
+                            title={`${direction}01`}
+                            subheader={`${flawGroup.get(`${board}-2`)?.length || 0}伤`}
+                          />
+                          <CardContent>{renderMetaInfo(board, 2)}</CardContent>
+                        </Card>
+                        <Card variant="outlined">
+                          <CardHeader
+                            title={`${direction}02`}
+                            subheader={`${flawGroup.get(`${board}-3`)?.length || 0}伤`}
+                          />
+                          <CardContent>{renderMetaInfo(board, 3)}</CardContent>
+                        </Card>
+                        <Card variant="outlined">
+                          <CardHeader
+                            title={`${direction}A3`}
+                            subheader={`${flawGroup.get(`${board}-4`)?.length || 0}伤`}
+                          />
+                          <CardContent>{renderMetaInfo(board, 4)}</CardContent>
+                        </Card>
+                      </Stack>
+                    </Stack>
+                  </Stack>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </CardContent>
+      </Card>
     );
   };
 

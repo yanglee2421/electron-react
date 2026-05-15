@@ -247,7 +247,7 @@ export const Component = () => {
     return (
       <PDFViewer
         showToolbar
-        style={{ width: "100%", height: "100vh", border: 0 }}
+        style={{ width: "100%", height: "100%", border: 0 }}
       >
         <ReportDoc
           tableHeader={{

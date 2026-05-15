@@ -108,10 +108,26 @@ export const PageHeader = (props: React.PropsWithChildren) => {
   );
 };
 
-export const PageFooter = (props: React.PropsWithChildren) => {
+interface PageFooterProps {
+  center?: boolean;
+  children?: React.ReactNode;
+}
+
+export const PageFooter = (props: PageFooterProps) => {
   return (
-    <View style={[styles.paddingT8, { marginTop: "auto" }]}>
-      <Text style={[styles.textRight, styles.font12]}>{props.children}</Text>
+    <View
+      style={cn(styles.paddingT8, {
+        marginTop: "auto",
+      })}
+    >
+      <Text
+        style={[
+          props.center ? styles.textCenter : styles.textRight,
+          styles.font12,
+        ]}
+      >
+        {props.children}
+      </Text>
     </View>
   );
 };
