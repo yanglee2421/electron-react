@@ -8,6 +8,9 @@ export const registerIPCHandlers = (printer: Printer) => {
   ipcHandle("printer/chr502", (_, payload) => {
     return printer.getDataForCHR502(payload.ids);
   });
+  ipcHandle("printer/chr503", (_, id: string) => {
+    return printer.getDataForCHR503(id);
+  });
   ipcHandle("printer/print", () => {
     return printer.print();
   });
@@ -15,6 +18,7 @@ export const registerIPCHandlers = (printer: Printer) => {
   return () => {
     ipcRemoveHandle("printer/chr501");
     ipcRemoveHandle("printer/chr502");
+    ipcRemoveHandle("printer/chr503");
     ipcRemoveHandle("printer/print");
   };
 };

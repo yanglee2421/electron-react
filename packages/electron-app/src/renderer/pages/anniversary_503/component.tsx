@@ -9,6 +9,7 @@ import {
   Row,
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
+import { resolveCHR503 } from "#shared/functions/chr503";
 import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Alert, AlertTitle } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
@@ -34,6 +35,9 @@ export const Component = () => {
         </Alert>
       );
     }
+
+    const of12 = of(12);
+    const { rows } = resolveCHR503(query.data.rows);
 
     return (
       <PDFViewer
@@ -105,8 +109,15 @@ export const Component = () => {
                               <Cell height={CELL_HEIGHT * 2}>
                                 {"水平线性\n(%)"}
                               </Cell>
-                              {of(24).map((i) => (
-                                <Cell key={i}>{i}</Cell>
+                              {rows.map((row) => {
+                                return (
+                                  <Cell key={`${row.nBoard}-${row.nChannel}}`}>
+                                    {row.horValue}
+                                  </Cell>
+                                );
+                              })}
+                              {of12.map((i) => (
+                                <Cell key={i}></Cell>
                               ))}
                               <Cell>探伤工</Cell>
                               <Cell height={CELL_HEIGHT * 2}></Cell>
@@ -115,8 +126,15 @@ export const Component = () => {
                               <Cell height={CELL_HEIGHT * 2}>
                                 {"分辨力\n(dB)"}
                               </Cell>
-                              {of(24).map((i) => (
-                                <Cell key={i}>{i}</Cell>
+                              {rows.map((row) => {
+                                return (
+                                  <Cell key={`${row.nBoard}-${row.nChannel}}`}>
+                                    {row.decValue}
+                                  </Cell>
+                                );
+                              })}
+                              {of12.map((i) => (
+                                <Cell key={i}></Cell>
                               ))}
                               <Cell>探伤工长</Cell>
                               <Cell height={CELL_HEIGHT * 2}></Cell>
@@ -130,8 +148,15 @@ export const Component = () => {
                               <Cell height={CELL_HEIGHT * 2}>
                                 {"垂直线性\n(%)"}
                               </Cell>
-                              {of(24).map((i) => (
-                                <Cell key={i}>{i}</Cell>
+                              {rows.map((row) => {
+                                return (
+                                  <Cell key={`${row.nBoard}-${row.nChannel}}`}>
+                                    {row.verValue}
+                                  </Cell>
+                                );
+                              })}
+                              {of12.map((i) => (
+                                <Cell key={i}></Cell>
                               ))}
                               <Cell>设备维修工</Cell>
                               <Cell height={CELL_HEIGHT * 2}></Cell>
@@ -140,8 +165,15 @@ export const Component = () => {
                               <Cell height={CELL_HEIGHT * 2}>
                                 {"灵敏度余量\n(dB)"}
                               </Cell>
-                              {of(24).map((i) => (
-                                <Cell key={i}>{i}</Cell>
+                              {rows.map((row) => {
+                                return (
+                                  <Cell key={`${row.nBoard}-${row.nChannel}}`}>
+                                    {row.attValue}
+                                  </Cell>
+                                );
+                              })}
+                              {of12.map((i) => (
+                                <Cell key={i}></Cell>
                               ))}
                               <Cell>质检员</Cell>
                               <Cell height={CELL_HEIGHT * 2}></Cell>

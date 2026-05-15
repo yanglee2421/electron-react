@@ -142,7 +142,7 @@ export class Printer {
     const corporation = await this.mdb.app().corporation();
 
     return {
-      rows,
+      rows: rows.rows,
       corporation,
     };
   }
