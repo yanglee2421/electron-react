@@ -13,6 +13,10 @@ export interface IPCContract {
     args: [CHR502Input];
     return: ReturnType<Printer["getDataForCHR502"]>;
   };
+  "printer/chr503": {
+    args: [string];
+    return: ReturnType<Printer["getDataForCHR503"]>;
+  };
   "printer/print": {
     args: [];
     return: ReturnType<Printer["print"]>;

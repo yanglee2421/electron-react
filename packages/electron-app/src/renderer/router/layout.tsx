@@ -259,6 +259,11 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
       icon: <CalendarMonthOutlined />,
     },
     {
+      segment: calculateSegment("anniversary"),
+      title: "年度校验",
+      icon: <CalendarMonthOutlined />,
+    },
+    {
       kind: "divider",
     },
   );

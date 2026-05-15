@@ -345,6 +345,16 @@ export interface ListVerifiesInput {
   zx: string;
 }
 
+export interface ListAnniversaryInput {
+  pageIndex: number;
+  pageSize: number;
+}
+
+export interface ListAnniversaryOutputItem {
+  id: string;
+  rows: QuartorYearlyData[];
+}
+
 export interface IPCContract {
   "MDB/MDB_ROOT_GET": {
     args: [MDBPayload];
@@ -365,5 +375,13 @@ export interface IPCContract {
   "mdb/verifies": {
     args: [ListVerifiesInput];
     return: { count: number; rows: Verify[] };
+  };
+  "mdb/anniversary": {
+    args: [ListAnniversaryInput];
+    return: { count: number; rows: ListAnniversaryOutputItem[] };
+  };
+  "mdb/anniversary/id": {
+    args: [string];
+    return: { count: number; rows: QuartorYearlyData[] };
   };
 }

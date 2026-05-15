@@ -246,7 +246,7 @@ export const Component = () => {
 
     return (
       <PDFViewer
-        showToolbar={true}
+        showToolbar
         style={{ width: "100%", height: "100vh", border: 0 }}
       >
         <ReportDoc

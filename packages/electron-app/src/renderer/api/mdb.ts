@@ -1,4 +1,5 @@
 import type {
+  ListAnniversaryInput,
   ListQuartorInput,
   ListUserInput,
   ListVerifiesInput,
@@ -31,6 +32,24 @@ export const fetchVerifies = (params: ListVerifiesInput) => {
     queryKey: [QUERY_KEY, "verifies", params],
     queryFn: () => {
       return ipc.invoke("mdb/verifies", params);
+    },
+  });
+};
+
+export const fetchAnniversary = (params: ListAnniversaryInput) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "anniversary", params],
+    queryFn: () => {
+      return ipc.invoke("mdb/anniversary", params);
+    },
+  });
+};
+
+export const fetchAnniversaryById = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "anniversary/id", id],
+    queryFn: () => {
+      return ipc.invoke("mdb/anniversary/id", id);
     },
   });
 };

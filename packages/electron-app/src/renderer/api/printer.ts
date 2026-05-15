@@ -21,3 +21,12 @@ export const fetchCHR502Data = (params: CHR502Input) => {
     },
   });
 };
+
+export const fetchCHR503Data = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "chr503", id],
+    queryFn: async () => {
+      return ipc.invoke("printer/chr503", id);
+    },
+  });
+};

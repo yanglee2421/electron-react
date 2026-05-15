@@ -131,4 +131,19 @@ export class Printer {
       corporation,
     };
   }
+
+  async getDataForCHR503(id: string) {
+    const rows = await this.mdb.root().Quartor().equal("szIDs", id);
+
+    if (rows.rows.length === 0) {
+      throw new Error(`未找到ID为${id}的记录`);
+    }
+
+    const corporation = await this.mdb.app().corporation();
+
+    return {
+      rows,
+      corporation,
+    };
+  }
 }
