@@ -9,11 +9,11 @@ import {
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import { profile as profileSchema } from "#shared/instances/schema";
 import {
-  AdminPanelSettings,
   BugReportOutlined,
+  DoneAll,
   ExitToApp,
   FindInPageOutlined,
-  People,
+  RemoveDone,
   SaveOutlined,
 } from "@mui/icons-material";
 import {
@@ -283,9 +283,9 @@ export const Component = () => {
             <ListItem
               secondaryAction={
                 isRunAsAdmin.data ? (
-                  <AdminPanelSettings color="success" />
+                  <DoneAll color="success" />
                 ) : (
-                  <People color="error" />
+                  <RemoveDone color="error" />
                 )
               }
             >
