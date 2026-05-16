@@ -1,7 +1,30 @@
 {
   "targets": [
     {
+      "target_name": "hello_addon",
+      "sources": [
+        "<!@(node get-source-file.cjs)"
+      ],
+      "include_dirs": [
+        "<!@(node -p \"require('node-addon-api').include\")"
+      ],
+      "dependencies": [
+        "<!(node -p \"require('node-addon-api').gyp\")"
+      ],
       "conditions": [
+        [
+          "OS=='linux'",
+          {
+            "cflags": [
+              "-fpermissive",
+              "-fexceptions"
+            ],
+            "cflags_cc": [
+              "-fpermissive",
+              "-fexceptions"
+            ]
+          }
+        ],
         [
           "OS=='win'",
           {
@@ -23,16 +46,6 @@
             ]
           }
         ]
-      ],
-      "target_name": "hello_addon",
-      "sources": [
-        "./src/hello.cpp"
-      ],
-      "include_dirs": [
-        "<!@(node -p \"require('node-addon-api').include\")"
-      ],
-      "dependencies": [
-        "<!(node -p \"require('node-addon-api').gyp\")"
       ]
     }
   ]
