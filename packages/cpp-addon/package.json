@@ -37,8 +37,8 @@
   },
   "scripts": {
     "build": "tsdown",
-    "build:node": "node-gyp rebuild",
-    "build:electron": "electron-rebuild",
+    "build:node": "tsdown && node-gyp rebuild",
+    "build:electron": "tsdown && electron-rebuild",
     "gyp:configure": "node-gyp configure",
     "gyp:build": "node-gyp build"
   },
