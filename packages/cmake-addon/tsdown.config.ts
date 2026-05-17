@@ -1,5 +1,5 @@
-import url from "node:url";
 import path from "node:path";
+import url from "node:url";
 import { defineConfig } from "tsdown";
 
 const calcualteJSExtension = (format: string) => {
@@ -24,7 +24,7 @@ const calcualteDTSExtension = (format: string) => {
   }
 };
 
-export default defineConfig(() => {
+export default defineConfig((conf) => {
   const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
   return {
@@ -35,7 +35,7 @@ export default defineConfig(() => {
         target: ["ES2023"],
       },
       cjs: {
-        target: ["node20"],
+        target: ["node22"],
       },
     },
     outDir: path.resolve(__dirname, "dist"),
@@ -47,12 +47,15 @@ export default defineConfig(() => {
     },
     clean: true,
 
-    target: "node20",
+    target: "node22",
     platform: "node",
 
-    minify: true,
-    inlineOnly: false as const,
+    minify: !conf.watch,
     fixedExtension: false,
     plugins: [],
+
+    deps: {
+      // onlyBundle: [],
+    },
   };
 });

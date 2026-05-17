@@ -1,6 +1,5 @@
 // 康华 安康
 import * as schema from "#main/features/db/schema";
-
 import type { Logger } from "#main/features/logger";
 import type {
   Quartor,
@@ -1292,7 +1291,7 @@ export class KH {
       sbbh: corporation.DeviceNO || "",
       sbmc: corporation.DeviceName || "",
       dwmc: corporation.Factory || "",
-      zzsj: corporation.prodate || "",
+      zzsj: corporation.prodate?.toISOString() || "",
       zzdw: "武汉武铁紫云轨道装备有限公司",
       scjxsj: previous ? dayjs(previous.tmnow).format("YYYY-MM-DD") : "",
       jyrq: dayjs(records[0].tmnow).format("YYYY-MM-DD"),

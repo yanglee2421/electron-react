@@ -1,19 +1,18 @@
-import dayjs from "dayjs";
+import type { Filter, User } from "#main/features/mdb/types";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
-  type MDBUser,
 } from "#renderer/api/fetch_preload";
 import { QueryProvider } from "#renderer/components/query";
+import dayjs from "dayjs";
 import { useSessionStore } from "./hooks";
-import type { Filter } from "#main/modules/mdb.worker";
 
 export const loader = async () => {
   const queryClient = QueryProvider.queryClient;
   const state = useSessionStore.getState();
 
   await queryClient.ensureQueryData(
-    fetchDataFromAppDB<MDBUser>({
+    fetchDataFromAppDB<User>({
       tableName: "users",
       pageIndex: 0,
       pageSize: 100,

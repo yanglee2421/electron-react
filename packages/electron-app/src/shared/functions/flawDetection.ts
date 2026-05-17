@@ -1,4 +1,4 @@
-import type { DetectionData } from "#main/modules/mdb";
+import type { DetectionData } from "#main/features/mdb/types";
 import { isClamped, mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as mathjs from "mathjs";
@@ -44,7 +44,7 @@ export const calculatePlace = (nChannel: number) => {
   }
 };
 
-export const tmnowToTSSJ = (tmnow: string) => {
+export const tmnowToTSSJ = (tmnow: string | Date) => {
   return dayjs(tmnow).format("YYYY-MM-DD HH:mm:ss");
 };
 

@@ -1,9 +1,7 @@
-import type { Verify } from "#main/modules/mdb";
-import type { Filter } from "#main/modules/mdb.worker";
+import type { Filter, User, Verify } from "#main/features/mdb/types";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
-  type MDBUser,
 } from "#renderer/api/fetch_preload";
 import { useUploadCHR501 } from "#renderer/api/kh";
 import { Loading } from "#renderer/components/Loading";
@@ -295,7 +293,7 @@ export const Component = () => {
   );
 
   const usersQuery = useQuery(
-    fetchDataFromAppDB<MDBUser>({
+    fetchDataFromAppDB<User>({
       tableName: "users",
       pageIndex: 0,
       pageSize: 100,

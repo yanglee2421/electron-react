@@ -1,6 +1,6 @@
 {
   "name": "@yanglee2421/electron-app",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "private": true,
   "description": "WuTie ZiYun ToolKit",
   "keywords": [
@@ -40,7 +40,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -49,7 +50,6 @@
     "@yanglee2421/cpp-addon": "workspace:*",
     "@yotulee/run": "npm:@jsr/yotulee__run@^0.0.15",
     "awilix": "^13.0.3",
-    "better-sqlite3": "^12.5.0",
     "fast-xml-parser": "^5.3.3",
     "iconv-lite": "^0.7.1",
     "ini": "^6.0.0",
@@ -78,7 +78,6 @@
     "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/react-table": "^8.21.3",
     "@toolpad/core": "^0.16.0",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/ini": "^4.1.1",
     "@types/nprogress": "^0.2.3",
     "@types/react": "^19.2.14",

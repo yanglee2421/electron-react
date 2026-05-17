@@ -1,4 +1,4 @@
-import type { VerifyData } from "#main/modules/cmd";
+import type { VerifyData } from "#main/features/mdb/types";
 import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
 import { QueryProvider } from "#renderer/components/query";
 import type { LoaderFunction } from "react-router";

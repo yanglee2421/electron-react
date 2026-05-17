@@ -1,4 +1,4 @@
-import type { QuartorYearlyData } from "#main/modules/mdb";
+import type { QuartorYearlyData } from "#main/features/mdb/types";
 import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
 import { useUploadCHR503 } from "#renderer/api/kh";
 import { createNChannelGroup } from "#shared/functions/flawDetection";

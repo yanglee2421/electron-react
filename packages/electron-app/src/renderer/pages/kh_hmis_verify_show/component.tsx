@@ -1,4 +1,4 @@
-import type { VerifyData } from "#main/modules/mdb";
+import type { VerifyData } from "#main/features/mdb/types";
 import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
 import { Loading } from "#renderer/components/Loading";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";

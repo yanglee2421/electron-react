@@ -1,5 +1,4 @@
-import type { Filter } from "#main/modules/mdb.worker";
-import type { MDBUser } from "#renderer/api/fetch_preload";
+import type { Filter, User } from "#main/features/mdb/types";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
@@ -13,7 +12,7 @@ export const loader = async () => {
   const state = useSessionStore.getState();
 
   await queryClient.ensureQueryData(
-    fetchDataFromAppDB<MDBUser>({
+    fetchDataFromAppDB<User>({
       tableName: "users",
       pageIndex: 0,
       pageSize: 100,

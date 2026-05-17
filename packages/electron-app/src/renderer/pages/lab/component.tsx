@@ -1,4 +1,4 @@
-import type { Invoice } from "#main/lib/ipc";
+import type { Invoice } from "#main/features/xml/types";
 import {
   fetchXMLPDFCompute,
   useOpenPath,

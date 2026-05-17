@@ -1,6 +1,4 @@
-import type { Quartor } from "#main/modules/mdb";
-import type { Filter } from "#main/modules/mdb.worker";
-import type { MDBUser } from "#renderer/api/fetch_preload";
+import type { Filter, Quartor, User } from "#main/features/mdb/types";
 import {
   fetchDataFromAppDB,
   fetchDataFromRootDB,
@@ -301,7 +299,7 @@ export const Component = () => {
   );
 
   const usersQuery = useQuery(
-    fetchDataFromAppDB<MDBUser>({
+    fetchDataFromAppDB<User>({
       tableName: "users",
       pageIndex: 0,
       pageSize: 100,

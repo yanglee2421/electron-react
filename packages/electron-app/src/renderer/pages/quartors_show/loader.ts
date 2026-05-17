@@ -1,4 +1,4 @@
-import type { QuartorData } from "#main/modules/mdb";
+import type { QuartorData } from "#main/features/mdb/types";
 import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
 import { QueryProvider } from "#renderer/components/query";
 import type { LoaderFunction } from "react-router";
