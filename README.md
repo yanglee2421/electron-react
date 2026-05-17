@@ -23,7 +23,12 @@ corepack enable pnpm
 sudo apt update
 sudo apt install -y build-essential python3-minimal
 
-# Install vite plus
+# Install nodejs & pnpm by fnm
+curl -o- https://fnm.vercel.app/install | bash
+fnm install 24
+corepack enable pnpm
+
+# OR install vite plus
 curl -fsSL https://vite.plus | bash
 
 # Install nodejs & pnpm by vite plus
