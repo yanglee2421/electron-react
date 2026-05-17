@@ -25,7 +25,7 @@ export class DB {
   }
   export(destinationFile: string) {
     // this.client.$client.backup(destinationFile);
-    fs.promises.cp(this.dbPath, destinationFile, {
+    return fs.promises.cp(this.dbPath, destinationFile, {
       recursive: true,
     });
   }
