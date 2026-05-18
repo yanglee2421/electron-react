@@ -1,5 +1,6 @@
 import {
   Cell,
+  CheckOK,
   Col,
   PageFooter,
   PageHeader,
@@ -33,8 +34,8 @@ export const Component = () => {
             </ReportTitle>
             <View style={[styles.paddingB4]}>
               <Row>
-                <Col>
-                  <Text>单位名称:宁东铁路公司</Text>
+                <Col width={128}>
+                  <Text style={[styles.textLeft]}>单位名称:宁东铁路公司</Text>
                 </Col>
                 <Col>
                   <Text>探伤方法:微控超探</Text>
@@ -45,7 +46,7 @@ export const Component = () => {
                 <Col>
                   <Text>探伤者:张三</Text>
                 </Col>
-                <Col>
+                <Col width={60}>
                   <Text>{dayjs().format("YYYY-MM-DD")}</Text>
                 </Col>
               </Row>
@@ -98,7 +99,9 @@ export const Component = () => {
                             <Col key={_}>
                               <Cell>{_ % 2 !== 0 ? "左" : "右"}</Cell>
                               {of(22).map((_) => (
-                                <Cell key={_}>{_}</Cell>
+                                <Cell key={_} text={false}>
+                                  <CheckOK />
+                                </Cell>
                               ))}
                             </Col>
                           ))}
@@ -107,16 +110,16 @@ export const Component = () => {
                     ))}
                   </Row>
                 </Col>
-                <Col width={36}>
+                <Col width={40}>
                   <Cell height={CELL_HEIGHT * 3}>{"探测\n结果"}</Cell>
                   {of(22).map((_) => (
-                    <Cell key={_}>{_}</Cell>
+                    <Cell key={_}>不合格</Cell>
                   ))}
                 </Col>
                 <Col width={60}>
                   <Cell height={CELL_HEIGHT * 3}>备注</Cell>
                   {of(22).map((_) => (
-                    <Cell key={_}>{_}</Cell>
+                    <Cell key={_}>待复验</Cell>
                   ))}
                 </Col>
               </Row>
