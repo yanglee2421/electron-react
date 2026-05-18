@@ -61,28 +61,28 @@ export const Component = () => {
                 <Col width={34}>
                   <Cell height={CELL_HEIGHT * 3}>轴型</Cell>
                   {of(22).map((_) => (
-                    <Cell key={_}>{_}</Cell>
+                    <Cell key={_}>RE2B</Cell>
                   ))}
                 </Col>
-                <Col width={80}>
+                <Col width={54}>
                   <Cell height={CELL_HEIGHT * 3}>轴号</Cell>
                   {of(22).map((_) => (
-                    <Cell key={_}>{_}</Cell>
+                    <Cell key={_}>12345678</Cell>
                   ))}
                 </Col>
-                <Col width={80}>
+                <Col width={100}>
                   <Cell height={CELL_HEIGHT * 2}>轮对首次组装</Cell>
                   <Row>
-                    <Col>
+                    <Col width={64}>
                       <Cell>时间</Cell>
                       {of(22).map((_) => (
-                        <Cell key={_}>{_}</Cell>
+                        <Cell key={_}>{dayjs().format("YYYY-MM-DD")}</Cell>
                       ))}
                     </Col>
                     <Col>
                       <Cell>单位</Cell>
                       {of(22).map((_) => (
-                        <Cell key={_}>{_}</Cell>
+                        <Cell key={_}>123</Cell>
                       ))}
                     </Col>
                   </Row>
@@ -113,7 +113,7 @@ export const Component = () => {
                     <Cell key={_}>{_}</Cell>
                   ))}
                 </Col>
-                <Col width={80}>
+                <Col width={60}>
                   <Cell height={CELL_HEIGHT * 3}>备注</Cell>
                   {of(22).map((_) => (
                     <Cell key={_}>{_}</Cell>
