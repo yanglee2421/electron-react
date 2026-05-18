@@ -106,7 +106,7 @@ export const Component = () => {
         <CardContent>
           <Link to={`/anniversary/${params.id}/chr503`}>
             <Button startIcon={<Print />} variant="outlined">
-              CHR503
+              打印
             </Button>
           </Link>
         </CardContent>

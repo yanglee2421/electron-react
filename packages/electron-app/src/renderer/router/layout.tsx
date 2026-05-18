@@ -68,6 +68,11 @@ const createSegmentAlias = () => {
     ["md5_backup_image", "图片备份"],
     ["lab", "实验室"],
     ["help", "帮助"],
+    ["chr53a", "探伤记录表"],
+    ["anniversary", "年度校验"],
+    ["chr503", "年度性能校验表"],
+    ["chr501", "日常性能校验表"],
+    ["chr501", "日常性能校验表"],
   ]);
 
   return segmentAlias;

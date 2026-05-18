@@ -5,21 +5,21 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import {
-  defer,
-  filter,
-  from,
-  fromEventPattern,
-  NEVER,
-  of,
-  partition,
-  retry,
-  shareReplay,
-  startWith,
-  switchMap,
-  take,
-  tap,
-  timer,
-  using,
+    defer,
+    filter,
+    from,
+    fromEventPattern,
+    NEVER,
+    of,
+    partition,
+    retry,
+    shareReplay,
+    startWith,
+    switchMap,
+    take,
+    tap,
+    timer,
+    using,
 } from "rxjs";
 import { container } from "./features";
 import * as cmdIPC from "./features/cmd/ipc";
@@ -45,6 +45,10 @@ if (is.dev) {
     `./${app.getName()}-dev`,
   );
   app.setPath("userData", devUserDataPath);
+}
+
+if(platform.isLinux){
+  app.disableHardwareAcceleration()
 }
 
 const createWindow = async () => {

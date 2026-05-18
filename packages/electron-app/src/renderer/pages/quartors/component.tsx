@@ -329,7 +329,7 @@ export const Component = () => {
           }}
           disabled={printCheck.disabledPrint}
         >
-          Excel
+          打印
         </Button>
       </CardContent>
       {query.isFetching && <LinearProgress />}

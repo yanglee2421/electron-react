@@ -200,7 +200,6 @@ export const Component = () => {
 
   const navigate = useNavigate();
   const usersQuery = useQuery(fetchUser({ pageIndex: 0, pageSize: 1000 }));
-
   const data = React.useMemo(() => query.data?.rows || [], [query.data]);
 
   const table = useReactTable({
@@ -355,7 +354,7 @@ export const Component = () => {
               });
             }}
           >
-            CHR53A
+            打印
           </Button>
         </CardContent>
         {query.isFetching && <LinearProgress />}
