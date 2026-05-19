@@ -1,0 +1,17 @@
+networks:
+  app_net:
+    driver: bridge
+    external: false
+
+# volumes:
+#   pgdata:
+#     driver: local
+
+services:
+  electron-linux:
+    build:
+      context: .
+    image: electron:linux
+    container_name: electron_linux_container
+    volumes:
+      - ./packages/electron-app/release:/output_dist

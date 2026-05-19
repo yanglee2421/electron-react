@@ -29,5 +29,5 @@ nsis:
   allowElevation: true
 linux:
   target:
-    - "AppImage"
+    - "deb"
   artifactName: "${productName}-Linux-${version}.${ext}"
