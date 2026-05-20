@@ -22,13 +22,13 @@ COPY packages/cpp-addon/package.json ./packages/cpp-addon/
 RUN pnpm i --frozen-lockfile
 
 # ---- Stage 2: build ----
-FROM electron:linux as build
+FROM electron:linux AS build
 ARG NODE_ENV=production
 ARG DATABASE_URL
 WORKDIR /app
 COPY --from=deps /app .
 COPY . .
 RUN pnpm -F cpp-addon build:electron
-RUN pnpm -F electron-app build
+RUN pnpm -F app-ziyun build
 
-CMD ["sh", "-c", "cp -r dist /host_dist && echo '✅ Build complete!'"]
+CMD ["sh", "-c", "cp -r /app/packages/electron-app/release/. /output_dist"]

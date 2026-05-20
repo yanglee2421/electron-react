@@ -1,10 +1,9 @@
 # @see - https://www.electron.build/configuration
 appId: "app.yanglee2421.app-ziyun"
+productName: "武铁紫云接口面板"
 asar: true
 asarUnpack:
   - resources/**
-name: app-ziyun
-productName: "武铁紫云接口面板"
 files:
   - "out"
   - "drizzle"
