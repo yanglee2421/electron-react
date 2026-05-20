@@ -1,17 +1,24 @@
 # @see - https://www.electron.build/configuration
-appId: "app.yanglee2421.wtzy_toolkit"
+appId: "app.yanglee2421.app-ziyun"
 asar: true
 asarUnpack:
   - resources/**
+name: app-ziyun
 productName: "武铁紫云接口面板"
-directories:
-  output: "release/${version}"
 files:
   - "out"
   - "drizzle"
   - "resources"
   - "!**/LICENSE"
 compression: "maximum"
+directories:
+  output: "release/${version}"
+npmRebuild: true
+electronDownload:
+  mirror: https://npmmirror.com/mirrors/electron/
+publish:
+  provider: generic
+  url: https://yanglee2421.vercel.app/auto-updates
 mac:
   target:
     - "dmg"

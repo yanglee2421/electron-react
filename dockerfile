@@ -1,8 +1,17 @@
-ARG NODE_VERSION=24-alpine
+# ---- Stage 0: enviornment ----
+FROM ubuntu:20.04 AS enviornment
+ENV DEBIAN_FRONTEND=noninteractive
+RUN ldd --version
+RUN apt-get update
+RUN apt-get install -y build-essential python3-minimal curl
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+RUN apt-get install -y nodejs
+RUN corepack enable pnpm
+RUN pnpm -v
+
 
 # ---- Stage 1: deps ----
-# FROM node:${NODE_VERSION} AS deps
-FROM setup:1 AS deps
+FROM enviornment AS deps
 WORKDIR /app
 COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/electron-app/package.json ./packages/electron-app/
@@ -11,8 +20,7 @@ RUN corepack enable pnpm
 RUN pnpm i --frozen-lockfile
 
 # ---- Stage 2: build ----
-# FROM node:${NODE_VERSION} AS build
-FROM setup:1 as build
+FROM enviornment as build
 ARG NODE_ENV=production
 ARG DATABASE_URL
 WORKDIR /app

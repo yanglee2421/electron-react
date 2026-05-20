@@ -5,21 +5,21 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import {
-    defer,
-    filter,
-    from,
-    fromEventPattern,
-    NEVER,
-    of,
-    partition,
-    retry,
-    shareReplay,
-    startWith,
-    switchMap,
-    take,
-    tap,
-    timer,
-    using,
+  defer,
+  filter,
+  from,
+  fromEventPattern,
+  NEVER,
+  of,
+  partition,
+  retry,
+  shareReplay,
+  startWith,
+  switchMap,
+  take,
+  tap,
+  timer,
+  using,
 } from "rxjs";
 import { container } from "./features";
 import * as cmdIPC from "./features/cmd/ipc";
@@ -39,6 +39,9 @@ import * as profileIPC from "./features/profile/ipc";
 import * as xmlIPC from "./features/xml/ipc";
 import * as infraIPC from "./infra/ipc";
 
+/**
+ * Avoid single instance in development version & production version
+ */
 if (is.dev) {
   const devUserDataPath = path.resolve(
     app.getPath("appData"),
@@ -47,8 +50,12 @@ if (is.dev) {
   app.setPath("userData", devUserDataPath);
 }
 
-if(platform.isLinux){
-  app.disableHardwareAcceleration()
+/**
+ * Disable GPU & Sandbox to avoid crash
+ */
+if (platform.isLinux) {
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch("no-sandbox");
 }
 
 const createWindow = async () => {
@@ -84,11 +91,18 @@ const createWindow = async () => {
     win.show();
   });
 
-  const ELECTRON_RENDERER_URL = is.dev
-    ? process.env["ELECTRON_RENDERER_URL"]!
-    : path.join(__dirname, "../renderer/index.html");
+  if (is.dev) {
+    const ELECTRON_RENDERER_URL = process.env["ELECTRON_RENDERER_URL"]!;
+    console.log(ELECTRON_RENDERER_URL);
 
-  await win.loadURL(ELECTRON_RENDERER_URL);
+    await win.loadURL(ELECTRON_RENDERER_URL);
+  } else {
+    const ELECTRON_RENDERER_URL = path.join(
+      __dirname,
+      "../renderer/index.html",
+    );
+    await win.loadFile(ELECTRON_RENDERER_URL);
+  }
 };
 
 // Define rxjs observable

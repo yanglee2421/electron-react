@@ -1,6 +1,21 @@
 packages:
   - "packages/*"
 
+allowBuilds:
+  '@serialport/bindings-cpp': true
+  electron: true
+  electron-winstaller: true
+  esbuild: true
+
+minimumReleaseAgeExclude:
+  - app-builder-lib@26.11.0
+  - builder-util-runtime@9.6.1
+  - builder-util@26.11.0
+  - dmg-builder@26.11.0
+  - electron-builder-squirrel-windows@26.11.0
+  - electron-builder@26.11.0
+  - electron-publish@26.11.0
+
 onlyBuiltDependencies:
   - "@serialport/bindings-cpp"
   - better-sqlite3
