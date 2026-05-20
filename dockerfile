@@ -31,4 +31,8 @@ COPY . .
 RUN pnpm -F cpp-addon build:electron
 RUN pnpm -F app-ziyun build
 
-CMD ["sh", "-c", "cp -r /app/packages/electron-app/release/. /output_dist"]
+# --- Stage 3: export
+FROM ubuntu:20.04 AS export
+WORKDIR /app
+COPY --from=build /app/packages/electron-app/release .
+CMD ["sh", "-c", "cp -r /app/. /output_dist"]
