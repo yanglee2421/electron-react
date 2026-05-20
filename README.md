@@ -42,6 +42,16 @@ vpr dev
 vpr build
 ```
 
+## Build
+
+### Linux
+
+Use docker to build deb for Linux
+
+```bash
+docker compose up --build
+```
+
 ## Note
 
 Before development and packaging, generate SQL files for database migration using the following command:
@@ -63,6 +73,19 @@ Setup terminal encode to UTF8 in Powershell
 ```bash
 # windows powershell
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
+```
+
+```bash
+# 直接用 docker run 执行命令
+docker run --rm my-ubuntu-gcc11 gcc --version
+
+# 进入容器交互式检查
+docker run -it --rm my-ubuntu-gcc11 bash
+
+# 如果容器已经在运行
+docker ps
+docker exec -it <container_id_or_name> bash
+gcc --version
 ```
 
 Else
