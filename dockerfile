@@ -15,6 +15,10 @@
 
 # ---- Stage 1: deps ----
 FROM electron:linux AS deps
+ARG ELECTRON_MIRROR
+ARG ELECTRON_BUILDER_BINARIES_MIRROR
+ARG NODE_JS_ORG_MIRROR
+ARG NPM_CONFIG_DISTURL
 WORKDIR /app
 COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/electron-app/package.json ./packages/electron-app/
