@@ -93,8 +93,6 @@ const createWindow = async () => {
 
   if (is.dev) {
     const ELECTRON_RENDERER_URL = process.env["ELECTRON_RENDERER_URL"]!;
-    console.log(ELECTRON_RENDERER_URL);
-
     await win.loadURL(ELECTRON_RENDERER_URL);
   } else {
     const ELECTRON_RENDERER_URL = path.join(
@@ -191,11 +189,11 @@ const using$ = using(
     });
 
     if (is.dev) {
-      app.setAsDefaultProtocolClient("wtzy-protocol", process.execPath, [
+      app.setAsDefaultProtocolClient("app-ziyun", process.execPath, [
         path.resolve(process.argv[1]),
       ]);
     } else {
-      app.setAsDefaultProtocolClient("wtzy-protocol");
+      app.setAsDefaultProtocolClient("app-ziyun");
     }
 
     return {
@@ -239,8 +237,8 @@ duplicateInstance$.subscribe(() => {
   app.quit();
 });
 
-const retryDelay$ = defer(() =>
-  from(container.dispose()).pipe(
+const retryDelay$ = defer(() => {
+  return from(container.dispose()).pipe(
     tap(() => {
       const dbPath = path.resolve(app.getPath("userData"), "db.db");
       const desktopDbPath = path.resolve(app.getPath("desktop"), "db.db");
@@ -249,8 +247,8 @@ const retryDelay$ = defer(() =>
       fs.rmSync(dbPath, { recursive: true, force: true });
     }),
     switchMap(() => timer(200)),
-  ),
-);
+  );
+});
 
 const primarySubscription = primaryInstance$
   .pipe(

@@ -12,32 +12,6 @@ import {
   useLocaleTime,
 } from "#renderer/hooks/dom/useLocaleDate";
 import type { CallbackFn } from "#renderer/lib/utils";
-import type { CollisionDetection } from "@dnd-kit/core";
-import {
-  DndContext,
-  DragOverlay,
-  KeyboardSensor,
-  MeasuringStrategy,
-  PointerSensor,
-  pointerWithin,
-  rectIntersection,
-  useDroppable,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  restrictToFirstScrollableAncestor,
-  restrictToWindowEdges,
-  snapCenterToCursor,
-} from "@dnd-kit/modifiers";
-import {
-  defaultAnimateLayoutChanges,
-  rectSortingStrategy,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import {
   CheckBoxOutlineBlankOutlined,
   CheckBoxOutlined,
@@ -104,18 +78,6 @@ type IdToItemNameContextType = [
   Map<string, string>,
   CallbackFn<[string, string], void>,
 ];
-
-const calculateIsHTMLElement = (el: unknown): el is HTMLElement => {
-  return el instanceof HTMLElement;
-};
-
-const collisionDetection: CollisionDetection = (args) => {
-  if (args.pointerCoordinates) {
-    return pointerWithin(args);
-  }
-
-  return rectIntersection(args);
-};
 
 const computeTotal = (
   invoices: Invoice[],
@@ -247,131 +209,9 @@ const IdToItemNameContext = React.createContext<IdToItemNameContextType>([
   Boolean,
 ]);
 
-type SortableCellProps = React.PropsWithChildren<{
-  id: string;
-}>;
-
-const SortableCell = (props: SortableCellProps) => {
-  const sortable = useSortable({
-    id: props.id,
-    animateLayoutChanges: defaultAnimateLayoutChanges,
-  });
-
-  return (
-    <Box
-      ref={(el) => {
-        const isHTMLEl = calculateIsHTMLElement(el);
-        if (!isHTMLEl) return;
-
-        sortable.setNodeRef(el);
-
-        return () => {
-          sortable.setNodeRef(null);
-        };
-      }}
-      {...sortable.attributes}
-      {...sortable.listeners}
-      component={"div"}
-      style={{
-        transform: CSS.Transform.toString(sortable.transform),
-        transition: sortable.transition,
-      }}
-      sx={{
-        touchAction: "none",
-        transformOrigin: "0 0",
-
-        aspectRatio: "1 / 1",
-        backgroundColor: "primary.main",
-        borderRadius: 1,
-      }}
-    >
-      {props.children}
-    </Box>
-  );
-};
-
-type DroppableContainerProps = React.PropsWithChildren<{
-  id: string;
-}>;
-
-const DropableContainer = (props: DroppableContainerProps) => {
-  const droppable = useDroppable({
-    id: props.id,
-  });
-
-  return (
-    <Box
-      ref={(el) => {
-        const isHTMLEl = calculateIsHTMLElement(el);
-        if (!isHTMLEl) return;
-
-        droppable.setNodeRef(el);
-
-        return () => {
-          droppable.setNodeRef(null);
-        };
-      }}
-    >
-      {props.children}
-    </Box>
-  );
-};
-
-const DndPanel = () => {
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
-  return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={collisionDetection}
-      measuring={{
-        droppable: {
-          strategy: MeasuringStrategy.Always,
-        },
-      }}
-      modifiers={[
-        snapCenterToCursor,
-        restrictToWindowEdges,
-        restrictToFirstScrollableAncestor,
-      ]}
-      onDragStart={() => {}}
-      onDragOver={() => {}}
-      onDragEnd={() => {}}
-      onDragCancel={() => {}}
-    >
-      <DropableContainer id="droppable-1">
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0,1fr))",
-            gap: 2,
-
-            minBlockSize: 300,
-          }}
-        >
-          <SortableContext
-            items={["item-1", "item-2"]}
-            strategy={rectSortingStrategy}
-          >
-            <SortableCell id="item-1">item one</SortableCell>
-
-            <SortableCell id="item-2">item two</SortableCell>
-          </SortableContext>
-        </Box>
-      </DropableContainer>
-      <DragOverlay></DragOverlay>
-    </DndContext>
-  );
-};
-
-type BooleanCellProps = {
+interface BooleanCellProps {
   value: boolean;
-};
+}
 
 const BooleanCell = ({ value }: BooleanCellProps) => {
   return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
@@ -934,7 +774,6 @@ export const Component = () => {
           subsidyPerDay={subsidyPerDay}
           onSubsidyPerDayChange={setSubsidyPerDay}
         />
-        <DndPanel />
         <Card>
           <CardHeader title="结果" />
           <CardContent>
