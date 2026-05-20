@@ -8,10 +8,10 @@ networks:
 #     driver: local
 
 services:
-  electron-linux:
+  linux-builder:
     build:
       context: .
-    image: electron:linux
-    container_name: electron_linux_container
+    image: builder:linux
+    container_name: build_linux
     volumes:
       - ./packages/electron-app/release:/output_dist
