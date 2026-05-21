@@ -204,6 +204,11 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
       title: "PLC",
       icon: <Memory />,
     },
+    {
+      segment: calculateSegment("pdf"),
+      title: "PDF",
+      icon: <Dock />,
+    },
   );
 
   if (shouldAdd) {
@@ -237,11 +242,6 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
         segment: calculateSegment("qrcode"),
         title: "QRCode",
         icon: <QrCodeOutlined />,
-      },
-      {
-        segment: calculateSegment("pdf"),
-        title: "PDF",
-        icon: <Dock />,
       },
     );
   }
