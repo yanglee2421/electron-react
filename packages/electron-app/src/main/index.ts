@@ -279,11 +279,14 @@ activate$
 
 secondInstance$.subscribe(([, cmds]) => {
   if (is.dev) {
-    console.log(cmds.at(-1));
+    const url = cmds.at(-1);
+    console.log(url);
   }
 
   const win = BrowserWindow.getAllWindows().at(0);
   if (!win) return;
+
+  win.webContents.send("secondInstance");
 
   if (win.isMinimized()) {
     win.restore();

@@ -135,6 +135,13 @@ interface ValidateSelectedResult {
 }
 
 const validateSelected = (rows: Detection[]): ValidateSelectedResult => {
+  if (rows.length === 0) {
+    return {
+      disabledCH53A: true,
+      subheader: "未选中作业记录",
+    };
+  }
+
   let date = "";
   let user = "";
 
@@ -348,9 +355,11 @@ export const Component = () => {
             variant="outlined"
             onClick={() => {
               navigate("/detection/chr53a", {
-                state: table
-                  .getSelectedRowModel()
-                  .flatRows.map((row) => row.original.szIDs),
+                state: {
+                  ids: table
+                    .getSelectedRowModel()
+                    .flatRows.map((row) => row.original.szIDs),
+                },
               });
             }}
           >

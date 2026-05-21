@@ -149,7 +149,8 @@ export class Printer {
 
   async getDataForCHR53A(ids: string[]) {
     const rows = await this.mdb.root().detections().in("szIDs", ids);
+    const corporation = await this.mdb.app().corporation();
 
-    return { records: rows.rows };
+    return { records: rows.rows, corporation };
   }
 }

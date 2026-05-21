@@ -31,6 +31,10 @@ class IPC {
   removeItem(name: string): Promise<void> {
     return this.invoke("kv/remove", name);
   }
+
+  on(...args: Parameters<typeof window.electron.ipcRenderer.on>) {
+    return window.electron.ipcRenderer.on(...args);
+  }
 }
 
 export const ipc = new IPC();

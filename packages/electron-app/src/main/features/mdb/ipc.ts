@@ -155,6 +155,7 @@ export const registerIPCHandlers = (mdb: MDB) => {
     }
 
     const queryResult = await query
+      .orderBy("tmnow", "desc")
       .offset(pageIndex * pageSize)
       .limit(pageSize);
 

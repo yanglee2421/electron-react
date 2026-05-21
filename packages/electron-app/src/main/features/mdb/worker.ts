@@ -96,6 +96,13 @@ const resolveQueryBuilder = async (
   const table = reader.getTable(tableName);
   const rows = table.getData();
   const filteredRows = rows
+    .map((row) => {
+      return Object.fromEntries(
+        Object.entries(row).map(([key, value]) => {
+          return [key, value instanceof Date ? fixMDBDate(value) : value];
+        }),
+      );
+    })
     .toSorted((a, b) => {
       const orderBy = options.orderBy;
 
@@ -165,15 +172,8 @@ const resolveQueryBuilder = async (
     });
   const filteredCount = filteredRows.length;
   const pagedData = filteredRows.slice(offset, offset + limit);
-  const resultRows = pagedData.map((row) => {
-    return Object.fromEntries(
-      Object.entries(row).map(([key, value]) => {
-        return [key, value instanceof Date ? fixMDBDate(value) : value];
-      }),
-    );
-  });
 
-  return { rows: resultRows, count: filteredCount };
+  return { rows: pagedData, count: filteredCount };
 };
 
 export default resolveQueryBuilder;
