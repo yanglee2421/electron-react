@@ -37,10 +37,10 @@
   },
   "scripts": {
     "build": "tsdown",
-    "build:node": "tsdown && node-gyp rebuild",
-    "build:electron": "tsdown && electron-rebuild",
+    "build:electron": "electron-rebuild",
     "gyp:configure": "node-gyp configure",
-    "gyp:build": "node-gyp build"
+    "gyp:build": "node-gyp build",
+    "gyp:rebuild": "node-gyp rebuild"
   },
   "devDependencies": {
     "node-gyp": "^12.2.0"

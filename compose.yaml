@@ -14,8 +14,7 @@ services:
       args:
         ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
         ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
-        NODE_JS_ORG_MIRROR: https://npmmirror.com/mirrors/node/
-        NPM_CONFIG_DISTURL: https://npmmirror.com/mirrors/node/
+        npm_package_config_node_gyp_dist_url: https://npmmirror.com/mirrors/node/
     image: builder:linux
     container_name: build_linux
     volumes:

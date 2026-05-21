@@ -34,7 +34,7 @@
   },
   "scripts": {
     "dev": "pnpm -F app-ziyun dev",
-    "build": "pnpm -F app-ziyun build",
+    "build": "pnpm -F cpp-addon build && pnpm -F app-ziyun build",
     "db:generate": "pnpm -F app-ziyun db:generate",
     "lint": "vp lint"
   },

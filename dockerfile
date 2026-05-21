@@ -2,7 +2,7 @@
 # FROM ubuntu:20.04 AS enviornment
 # ENV DEBIAN_FRONTEND=noninteractive
 # RUN apt-get update
-# RUN apt-get install software-properties-common -y
+# RUN apt-get install -y software-properties-common
 # RUN add-apt-repository ppa:ubuntu-toolchain-r/test
 # RUN apt-get update
 # RUN apt-get install -y build-essential python3-minimal curl
@@ -10,6 +10,7 @@
 # RUN apt-get install -y nodejs
 # RUN corepack enable pnpm
 # RUN corepack prepare pnpm@11.1.3 --activate
+# RUN apt-get install -y g++-11 gcc-11
 # RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110
 # RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 110
 
@@ -17,8 +18,7 @@
 FROM electron:linux AS deps
 ARG ELECTRON_MIRROR
 ARG ELECTRON_BUILDER_BINARIES_MIRROR
-ARG NODE_JS_ORG_MIRROR
-ARG NPM_CONFIG_DISTURL
+ARG npm_package_config_node_gyp_dist_url
 WORKDIR /app
 COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/electron-app/package.json ./packages/electron-app/
@@ -28,12 +28,13 @@ RUN pnpm i --frozen-lockfile
 # ---- Stage 2: build ----
 FROM electron:linux AS build
 ARG NODE_ENV=production
-ARG DATABASE_URL
+ARG ELECTRON_MIRROR
+ARG ELECTRON_BUILDER_BINARIES_MIRROR
+ARG npm_package_config_node_gyp_dist_url
 WORKDIR /app
 COPY --from=deps /app .
 COPY . .
-RUN pnpm -F cpp-addon build:electron
-RUN pnpm -F app-ziyun build
+RUN pnpm build
 
 # --- Stage 3: export
 FROM ubuntu:20.04 AS export
