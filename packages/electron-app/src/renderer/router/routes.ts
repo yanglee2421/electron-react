@@ -56,6 +56,10 @@ export const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/qrcode/component"),
           },
           {
+            path: "pdf",
+            lazy: () => import("#renderer/pages/pdf/component"),
+          },
+          {
             children: [
               {
                 path: "detection",

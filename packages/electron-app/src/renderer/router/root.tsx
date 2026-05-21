@@ -1,4 +1,4 @@
-import { HomeOutlined } from "@mui/icons-material";
+import { Dock, HomeOutlined } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -237,6 +237,11 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
         segment: calculateSegment("qrcode"),
         title: "QRCode",
         icon: <QrCodeOutlined />,
+      },
+      {
+        segment: calculateSegment("pdf"),
+        title: "PDF",
+        icon: <Dock />,
       },
     );
   }
