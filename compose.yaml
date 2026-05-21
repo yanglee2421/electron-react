@@ -1,7 +1,7 @@
-networks:
-  app_net:
-    driver: bridge
-    external: false
+# networks:
+#   app_net:
+#     driver: bridge
+#     external: false
 
 # volumes:
 #   pgdata:

@@ -75,7 +75,12 @@ Setup terminal encode to UTF8 in Powershell
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 ```
 
+### Docker
+
 ```bash
+docker build ./your_directory
+docker build -t imageName:imageTag ./your_directory
+
 # 直接用 docker run 执行命令
 docker run --rm my-ubuntu-gcc11 gcc --version
 
@@ -85,7 +90,46 @@ docker run -it --rm my-ubuntu-gcc11 bash
 # 如果容器已经在运行
 docker ps
 docker exec -it <container_id_or_name> bash
-gcc --version
+
+# 清理掉所有停止的容器、未使用的网络、悬空镜像（dangling images）以及构建缓存
+docker system prune
+# 默认的 prune 不会删掉“正在被某个容器使用”或者“有标签（Tag）”的镜像。如果你想连同未使用的镜像一起删掉，加上 -a
+docker system prune -a --volumes
+# 如果你只是想清空构建缓存，可以用
+docker builder prune
+# 如果要强制删除所有构建缓存（包括最近使用的）：
+docker builder prune -a
+```
+
+### Docker Compose
+
+```bash
+docker compose up
+docker compose up --build
+docker compose up --build -d
+docker compose down
+
+docker compose start
+docker compose stop
+docker compose restart
+
+docker compose ps
+docker compose stats
+```
+
+### Diskpart
+
+```bash
+diskpart
+# 1. 挂载并选中这个虚拟磁盘文件（注意加双引号）
+select vdisk file="C:\Users\<你的用户名>\AppData\Local\Docker\wsl\data\ext4.vhdx"
+
+# 2. 以只读模式紧缩磁盘（这一步是核心）
+compact vdisk
+
+# 3. 压缩完成后，分离磁盘并退出
+detach vdisk
+exit
 ```
 
 Else
