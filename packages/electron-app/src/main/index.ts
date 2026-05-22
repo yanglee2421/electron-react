@@ -55,19 +55,20 @@ if (is.dev) {
  */
 if (platform.isLinux) {
   app.disableHardwareAcceleration();
-  app.commandLine.appendSwitch("no-sandbox");
 }
 
-const createWindow = async () => {
+const createWindow = () => {
   const { profile } = container.cradle;
   const alwaysOnTop = profile.state.alwaysOnTop;
 
   const win = new BrowserWindow({
     webPreferences: {
-      preload: path.join(__dirname, "../preload/index.mjs"),
+      preload: path.join(__dirname, "../preload/index.cjs"),
+      sandbox: true,
       nodeIntegration: false,
-      sandbox: false,
-      webSecurity: false,
+      contextIsolation: true,
+      webSecurity: true,
+      plugins: false,
     },
 
     autoHideMenuBar: false,
@@ -91,16 +92,9 @@ const createWindow = async () => {
     win.show();
   });
 
-  if (is.dev) {
-    const ELECTRON_RENDERER_URL = process.env["ELECTRON_RENDERER_URL"]!;
-    await win.loadURL(ELECTRON_RENDERER_URL);
-  } else {
-    const ELECTRON_RENDERER_URL = path.join(
-      __dirname,
-      "../renderer/index.html",
-    );
-    await win.loadFile(ELECTRON_RENDERER_URL);
-  }
+  return is.dev
+    ? win.loadURL(process.env["ELECTRON_RENDERER_URL"]!)
+    : win.loadFile(path.join(__dirname, "../renderer/index.html"));
 };
 
 // Define rxjs observable

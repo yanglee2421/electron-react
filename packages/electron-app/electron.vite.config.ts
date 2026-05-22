@@ -34,27 +34,37 @@ const reactDevtoolsPlugin = (enabled?: boolean): Plugin => {
   };
 };
 
-export default defineConfig(() => ({
-  main: {
-    resolve: { alias },
-    build: { watch: {} },
-  },
-  preload: {
-    resolve: { alias },
-  },
-  renderer: {
-    plugins: [
-      react({
-        babel: {
-          /**
-           * Enable react compiler for React 19.
-           */
-          plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
+export default defineConfig(() => {
+  return {
+    main: {
+      resolve: { alias },
+      build: { watch: {} },
+    },
+    preload: {
+      resolve: { alias },
+      build: {
+        rollupOptions: {
+          output: {
+            format: "cjs" as const,
+          },
         },
-      }),
-      reactDevtoolsPlugin(),
-    ],
-    resolve: { alias },
-    build: {},
-  },
-}));
+        externalizeDeps: false,
+      },
+    },
+    renderer: {
+      plugins: [
+        react({
+          babel: {
+            /**
+             * Enable react compiler for React 19.
+             */
+            plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
+          },
+        }),
+        reactDevtoolsPlugin(),
+      ],
+      resolve: { alias },
+      build: {},
+    },
+  };
+});
