@@ -1,6 +1,14 @@
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
-import { app, BrowserWindow, Menu, nativeTheme, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  nativeTheme,
+  net,
+  protocol,
+  shell,
+} from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
@@ -56,6 +64,23 @@ if (is.dev) {
 if (platform.isLinux) {
   app.disableHardwareAcceleration();
 }
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "ziyun",
+    privileges: {
+      // 标记为安全协议（和 https 一样，不会触发混淆内容警告）
+      secure: true,
+      // 标准协议
+      standard: true,
+      // 允许通过 fetch/img 标签加载
+      supportFetchAPI: true,
+      // 允许跨域
+      corsEnabled: true,
+      stream: true,
+    },
+  },
+]);
 
 const createWindow = () => {
   const { profile } = container.cradle;
@@ -190,6 +215,12 @@ const using$ = using(
       app.setAsDefaultProtocolClient("app-ziyun");
     }
 
+    protocol.handle("ziyun", (request) => {
+      const filePath = new URL(request.url).pathname.replace(/^\//, "");
+
+      return net.fetch(url.pathToFileURL(decodeURIComponent(filePath)).href);
+    });
+
     return {
       unsubscribe: () => {
         infraUnIPC();
@@ -213,6 +244,7 @@ const using$ = using(
         container.dispose();
         profileSubscription.unsubscribe();
         loggerSubscription.unsubscribe();
+        protocol.unhandle("ziyun");
       },
     };
   },
@@ -220,16 +252,6 @@ const using$ = using(
   // Even if we don't actually need it
   () => NEVER.pipe(startWith(null)),
 );
-
-duplicateInstance$.subscribe(() => {
-  if (is.dev) {
-    console.warn(
-      "Another instance of the app is already running. This instance will be closed.",
-    );
-  }
-
-  app.quit();
-});
 
 const retryDelay$ = defer(() => {
   return from(container.dispose()).pipe(
@@ -242,6 +264,18 @@ const retryDelay$ = defer(() => {
     }),
     switchMap(() => timer(200)),
   );
+});
+
+// Subscribe Observerable
+
+duplicateInstance$.subscribe(() => {
+  if (is.dev) {
+    console.warn(
+      "Another instance of the app is already running. This instance will be closed.",
+    );
+  }
+
+  app.quit();
 });
 
 const primarySubscription = primaryInstance$
