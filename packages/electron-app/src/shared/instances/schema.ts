@@ -16,11 +16,11 @@ export const profile = z.object({
 
 export type Profile = z.infer<typeof profile>;
 
-const ipv4Schema =  z.ipv4().default("0.0.0.0")
+const ipv4Schema = z.ipv4().default("0.0.0.0");
 const portSchema = z.number().int().min(1).max(65535).default(80);
 
 export const kh_hmis = z.object({
-  ip:ipv4Schema,
+  ip: ipv4Schema,
   port: portSchema,
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
@@ -99,3 +99,32 @@ export const guangzhoujibaoduan = z.object({
 });
 
 export type Guangzhoujibaoduan = z.infer<typeof guangzhoujibaoduan>;
+
+const btsSchema = z
+  .array(z.object({ address: z.number().int() }))
+  .default([])
+  .superRefine((val, ctx) => {
+    const set = new Set();
+    const hasDuplicate = val.some((i) => {
+      const isInSet = set.has(i.address);
+
+      if (!isInSet) {
+        set.add(i.address);
+      }
+
+      return isInSet;
+    });
+
+    if (hasDuplicate) {
+      ctx.addIssue("存在重复的地址");
+    }
+  });
+
+export const plcSchema = z.object({
+  x: btsSchema,
+  y: btsSchema,
+  m: btsSchema,
+  d: btsSchema,
+});
+
+export type PLCSchema = z.infer<typeof plcSchema>;

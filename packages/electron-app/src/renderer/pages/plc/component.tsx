@@ -1,10 +1,25 @@
 import {
+  fetchDRead,
+  fetchMRead,
   fetchPLCReadTest,
   fetchSerialPortList,
+  fetchXRead,
+  fetchYRead,
+  useDWrite,
+  useMWrite,
   usePLCWriteTest,
-} from "#renderer/api/fetch_preload";
+  useYWrite,
+} from "#renderer/api/plc";
 import { NumberField } from "#renderer/components/number";
-import { Refresh, Replay, Restore, Save } from "@mui/icons-material";
+import { usePLCStore } from "#renderer/hooks/stores/usePLCStore";
+import {
+  Grid3x3,
+  KeyboardReturn,
+  Refresh,
+  Replay,
+  Restore,
+  Save,
+} from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -14,19 +29,25 @@ import {
   CardActions,
   CardContent,
   CardHeader,
+  Checkbox,
   CircularProgress,
   Divider,
+  FormControlLabel,
+  FormLabel,
   Grid,
   IconButton,
+  InputAdornment,
   MenuItem,
   Skeleton,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNotifications } from "@toolpad/core";
+
 import React from "react";
 import { z } from "zod";
 
@@ -93,6 +114,176 @@ const ErrorAlert = (props: ErrorAlertProps) => {
   );
 };
 
+interface XInputProps {
+  path: string;
+  address: number;
+}
+
+const XInput = (props: XInputProps) => {
+  const query = useQuery(
+    fetchXRead({
+      path: props.path,
+      address: props.address,
+    }),
+  );
+
+  if (!query.isSuccess) {
+    return null;
+  }
+
+  return (
+    <FormControlLabel
+      control={<Checkbox value={query.data} />}
+      label={"X" + props.address}
+    />
+  );
+};
+
+interface YInputProps {
+  path: string;
+  address: number;
+}
+
+const YInput = (props: YInputProps) => {
+  const queryOptions = fetchYRead({
+    path: props.path,
+    address: props.address,
+  });
+  const query = useQuery(queryOptions);
+
+  const writeY = useYWrite();
+  const queryClient = useQueryClient();
+
+  if (!query.isSuccess) {
+    return null;
+  }
+
+  return (
+    <FormControlLabel
+      control={
+        <Switch
+          checked={query.data}
+          onChange={(_, checked) => {
+            queryClient.setQueryData(queryOptions.queryKey, checked);
+            writeY.mutate({
+              path: props.path,
+              address: props.address,
+              value: checked,
+            });
+          }}
+        />
+      }
+      label={"Y" + props.address}
+    />
+  );
+};
+
+interface MInputProps {
+  path: string;
+  address: number;
+}
+
+const MInput = (props: MInputProps) => {
+  const query = useQuery(
+    fetchMRead({
+      path: props.path,
+      address: props.address,
+    }),
+  );
+
+  const writeM = useMWrite();
+  const queryClient = useQueryClient();
+
+  if (!query.isSuccess) {
+    return null;
+  }
+
+  return (
+    <FormControlLabel
+      control={<Switch value={query.data} onChange={() => {}} />}
+      label={"M" + props.address}
+    />
+  );
+};
+
+interface DInputProps {
+  path: string;
+  address: number;
+}
+
+const DInput = (props: DInputProps) => {
+  const [value, setValue] = React.useState(Number.NaN);
+
+  const query = useQuery(
+    fetchDRead({
+      path: props.path,
+      address: props.address,
+    }),
+  );
+
+  const inputValue = value || query.data || NaN;
+
+  const writeD = useDWrite();
+  const queryClient = useQueryClient();
+
+  if (!query.isSuccess) {
+    return null;
+  }
+
+  return (
+    <NumberField
+      field={{
+        value: inputValue,
+        onChange: setValue,
+        onBlur: () => {},
+      }}
+      placeholder={query.data.toString(10)}
+      fullWidth
+      label={"D" + props.address}
+    />
+  );
+};
+
+interface AddButtonProps {
+  onAdd(_: number): void;
+}
+
+const AddButton = (props: AddButtonProps) => {
+  const [address, setAddress] = React.useState(Number.NaN);
+
+  return (
+    <NumberField
+      field={{
+        value: address,
+        onChange: setAddress,
+        onBlur: () => {},
+      }}
+      slotProps={{
+        input: {
+          startAdornment: (
+            <InputAdornment position="end">
+              <Grid3x3 />
+            </InputAdornment>
+          ),
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                onClick={() => {
+                  props.onAdd(address);
+                  setAddress(0);
+                }}
+              >
+                <KeyboardReturn />
+              </IconButton>
+            </InputAdornment>
+          ),
+        },
+      }}
+      fullWidth
+    />
+  );
+};
+
 export const Component = () => {
   const [serialPort, setSerialPort] = React.useState("");
 
@@ -104,17 +295,21 @@ export const Component = () => {
 
   const plcReadTest = useQuery({
     ...fetchPLCReadTest(serialPortPath),
-    refetchInterval: (query) => {
-      if (query.state.fetchFailureCount > 1) {
-        return false;
-      }
+    // refetchInterval: (query) => {
+    //   if (query.state.fetchFailureCount > 1) {
+    //     return false;
+    //   }
 
-      return 1000;
-    },
+    //   return 1000;
+    // },
     enabled: !!serialPortPath,
   });
   const plcWriteTest = usePLCWriteTest();
   const notifications = useNotifications();
+  const xList = usePLCStore((s) => s.x);
+  const yList = usePLCStore((s) => s.y);
+  const mList = usePLCStore((s) => s.m);
+  const dList = usePLCStore((s) => s.d);
 
   const form = useAppForm({
     defaultValues: {
@@ -485,8 +680,97 @@ export const Component = () => {
     );
   };
 
-  return <Stack spacing={3}>{renderSerialPortQuery()}</Stack>;
+  return (
+    <Stack spacing={3}>
+      <Card>
+        <CardHeader title="配置" />
+        <Divider></Divider>
+        <CardContent>
+          <Grid container spacing={1}>
+            <Grid size={12}>
+              <FormLabel>X点</FormLabel>
+            </Grid>
+            {xList.map((i) => {
+              return (
+                <Grid key={i.address}>
+                  <XInput path={serialPortPath} address={i.address} />
+                </Grid>
+              );
+            })}
+            <Grid size={12}>
+              <AddButton
+                onAdd={(address) => {
+                  usePLCStore.setState((draft) => {
+                    draft.x.push({ address });
+                  });
+                }}
+              />
+            </Grid>
+            <Grid size={12}>
+              <FormLabel>Y点</FormLabel>
+            </Grid>
+            {yList.map((i) => {
+              return (
+                <Grid key={i.address}>
+                  <YInput path={serialPortPath} address={i.address} />
+                </Grid>
+              );
+            })}
+            <Grid size={12}>
+              <AddButton
+                onAdd={(address) => {
+                  usePLCStore.setState((draft) => {
+                    draft.y.push({ address });
+                  });
+                }}
+              />
+            </Grid>
+            <Grid size={12}>
+              <FormLabel>M点</FormLabel>
+            </Grid>
+            {mList.map((i) => {
+              return (
+                <Grid key={i.address}>
+                  <MInput path={serialPortPath} address={i.address} />
+                </Grid>
+              );
+            })}
+            <Grid size={12}>
+              <AddButton
+                onAdd={(address) => {
+                  usePLCStore.setState((draft) => {
+                    draft.m.push({ address });
+                  });
+                }}
+              />
+            </Grid>
+            <Grid size={12}>
+              <FormLabel>D点</FormLabel>
+            </Grid>
+            {dList.map((i) => {
+              return (
+                <Grid key={i.address} size={{ xs: 12, sm: 6, lg: 4 }}>
+                  <DInput path={serialPortPath} address={i.address} />
+                </Grid>
+              );
+            })}
+            <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
+              <AddButton
+                onAdd={(address) => {
+                  usePLCStore.setState((draft) => {
+                    draft.d.push({ address });
+                  });
+                }}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+      {renderSerialPortQuery()}
+    </Stack>
+  );
 };
-// X
-// M
-// D
+// X boolean readonly
+// Y boolean switch
+// M boolean switch
+// D number input

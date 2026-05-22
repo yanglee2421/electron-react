@@ -41,7 +41,6 @@ export interface WriteYInput {
 export interface ReadDInput {
   path: string;
   address: number;
-  return: number;
 }
 
 export interface WriteDInput {
@@ -53,7 +52,6 @@ export interface WriteDInput {
 export interface ReadMInput {
   path: string;
   address: number;
-  return: boolean;
 }
 
 export interface WriteMInput {
@@ -85,23 +83,23 @@ export interface IPCContract {
     return: boolean;
   };
   "plc/y_write": {
-    args: [string, string];
-    return: string;
+    args: [WriteYInput];
+    return: boolean;
   };
   "plc/d_read": {
-    args: [string];
-    return: string;
+    args: [ReadDInput];
+    return: number;
   };
   "plc/d_write": {
-    args: [string, string];
-    return: string;
+    args: [WriteDInput];
+    return: number;
   };
   "plc/m_read": {
-    args: [string];
-    return: string;
+    args: [ReadMInput];
+    return: boolean;
   };
   "plc/m_write": {
-    args: [string, string];
-    return: string;
+    args: [WriteMInput];
+    return: boolean;
   };
 }
