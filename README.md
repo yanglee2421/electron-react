@@ -13,7 +13,7 @@ choco install python visualstudio2022-workload-vctools -y
 
 # Install nodejs & pnpm
 choco install nodejs --version='24.15.0'
-corepack enable pnpm
+corepack prepare pnpm --activate
 ```
 
 ### Linux
@@ -23,23 +23,12 @@ corepack enable pnpm
 sudo apt update
 sudo apt install -y build-essential python3-minimal
 
-# Install nodejs & pnpm by fnm
-curl -o- https://fnm.vercel.app/install | bash
-fnm install 24
-corepack enable pnpm
-
-# OR install vite plus
-curl -fsSL https://vite.plus | bash
-
-# Install nodejs & pnpm by vite plus
-vp env setup
-vp env on
-vp env pin lts
-
-# Install npm dependencies & run script by vite plus
-vp i
-vpr dev
-vpr build
+# Install nodejs & pnpm by nodesource
+sudo apt install -y curl
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v
+corepack prepare pnpm --activate
 ```
 
 ## Build
@@ -119,15 +108,12 @@ docker compose stats
 
 ### Diskpart
 
+在WSL中使用Docker进行构建时会生成大量的缓存，这些缓存在使用`docker builder prune -a`后并不会将空间返回给宿主机器，需要使用`diskpart`对docker使用的虚拟磁盘进行压缩才能重新获取这些空间
+
 ```bash
 diskpart
-# 1. 挂载并选中这个虚拟磁盘文件（注意加双引号）
-select vdisk file="C:\Users\<你的用户名>\AppData\Local\Docker\wsl\data\ext4.vhdx"
-
-# 2. 以只读模式紧缩磁盘（这一步是核心）
+select vdisk file="C:\Users\zy\AppData\Local\Docker\wsl\disk\docker_data.vhdx"
 compact vdisk
-
-# 3. 压缩完成后，分离磁盘并退出
 detach vdisk
 exit
 ```
