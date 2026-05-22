@@ -216,9 +216,9 @@ const using$ = using(
     }
 
     protocol.handle("ziyun", (request) => {
-      const filePath = new URL(request.url).pathname.replace(/^\//, "");
+      const filePath = new URL(request.url).searchParams.get("file")!;
 
-      return net.fetch(url.pathToFileURL(decodeURIComponent(filePath)).href);
+      return net.fetch(url.pathToFileURL(filePath).href);
     });
 
     return {

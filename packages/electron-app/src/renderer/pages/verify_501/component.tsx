@@ -34,6 +34,13 @@ const XHC_CHANNEL_COL_WIDTH = 32;
 const XHC_ZSJ_COL_WIDTH = 28;
 const XHC_FLAW_NO_COL_WIDTH = 80;
 
+const createCustomURL = (path: string) => {
+  const url = new URL("ziyun://localhost/file");
+  url.searchParams.set("file", path);
+
+  return url.href;
+};
+
 interface TableHeaderProps {
   labelL: string;
   valueL: string;
@@ -369,7 +376,7 @@ const ReportDoc = (props: ReportDocProps) => {
                   <View style={[styles.borderTR]}>
                     {props.imageLXH ? (
                       <Image
-                        src={`ziyun://localhost/${props.imageLXH}`}
+                        src={createCustomURL(props.imageLXH)}
                         style={[{ height: IMAGE_HEIGHT }]}
                       />
                     ) : (
@@ -380,7 +387,7 @@ const ReportDoc = (props: ReportDocProps) => {
                   <View style={[styles.borderTR]}>
                     {props.imageLLZ ? (
                       <Image
-                        src={`ziyun://localhost/${props.imageLLZ}`}
+                        src={createCustomURL(props.imageLLZ)}
                         style={[{ height: IMAGE_HEIGHT }]}
                       />
                     ) : (
@@ -393,7 +400,7 @@ const ReportDoc = (props: ReportDocProps) => {
                   <View style={[styles.borderTR]}>
                     {props.imageRXH ? (
                       <Image
-                        src={`ziyun://localhost/${props.imageRXH}`}
+                        src={createCustomURL(props.imageRXH)}
                         style={[{ height: IMAGE_HEIGHT }]}
                       />
                     ) : (
@@ -404,7 +411,7 @@ const ReportDoc = (props: ReportDocProps) => {
                   <View style={[styles.flex1, styles.borderTR]}>
                     {props.imageRLZ ? (
                       <Image
-                        src={`ziyun://localhost/${props.imageRLZ}`}
+                        src={createCustomURL(props.imageRLZ)}
                         style={[{ height: IMAGE_HEIGHT }]}
                       />
                     ) : (
@@ -417,7 +424,7 @@ const ReportDoc = (props: ReportDocProps) => {
               <View style={[styles.borderTR]}>
                 {props.imageLCT ? (
                   <Image
-                    src={`ziyun://localhost/${props.imageLCT}`}
+                    src={createCustomURL(props.imageLCT)}
                     style={[{ height: IMAGE_HEIGHT }]}
                   />
                 ) : (
@@ -428,7 +435,7 @@ const ReportDoc = (props: ReportDocProps) => {
               <View style={[styles.borderTR]}>
                 {props.imageRCT ? (
                   <Image
-                    src={`ziyun://localhost/${props.imageRCT}`}
+                    src={createCustomURL(props.imageRCT)}
                     style={[{ height: IMAGE_HEIGHT }]}
                   />
                 ) : (
