@@ -11,7 +11,7 @@ import {
   useYWrite,
 } from "#renderer/api/plc";
 import { Loading } from "#renderer/components/Loading";
-import { IntField, NumberField } from "#renderer/components/number";
+import { NumberField } from "#renderer/components/number";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { usePLCStore } from "#renderer/hooks/stores/usePLCStore";
 import {
@@ -340,42 +340,47 @@ const DInput = (props: DInputProps) => {
       <form.Field name="value">
         {(field) => {
           return (
-            <IntField
-              value={field.state.value}
-              onChange={field.handleChange}
-              textField={{
+            <NumberField
+              field={{
+                value: field.state.value,
+                onChange: field.handleChange,
                 onBlur: field.handleBlur,
-                placeholder: query.data.toString(10),
-                fullWidth: true,
-                label: "D" + props.address,
-                slotProps: {
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <form.Subscribe
-                          selector={(s) => [s.canSubmit, s.isSubmitting]}
-                        >
-                          {([canSubmit, isSubmitting]) => {
-                            return (
-                              <IconButton
-                                type="submit"
-                                form={formId}
-                                disabled={!canSubmit}
-                              >
+              }}
+              placeholder={query.data.toString(10)}
+              fullWidth
+              error={!!field.getMeta().errors.length}
+              helperText={field.getMeta().errors.at(0)?.message}
+              label={"D" + props.address}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <form.Subscribe
+                        selector={(s) => [s.canSubmit, s.isSubmitting]}
+                      >
+                        {([canSubmit, isSubmitting]) => {
+                          return (
+                            <Button
+                              type="submit"
+                              form={formId}
+                              disabled={!canSubmit}
+                              endIcon={
                                 <PendingIcon isPending={isSubmitting}>
                                   <KeyboardReturn />
                                 </PendingIcon>
-                              </IconButton>
-                            );
-                          }}
-                        </form.Subscribe>
-                      </InputAdornment>
-                    ),
-                  },
+                              }
+                              variant="contained"
+                            >
+                              保存
+                            </Button>
+                          );
+                        }}
+                      </form.Subscribe>
+                    </InputAdornment>
+                  ),
                 },
-                error: !!field.getMeta().errors.length,
-                helperText: field.getMeta().errors.at(0)?.message,
               }}
+              _enableReturnSubmit
             />
           );
         }}
@@ -391,10 +396,12 @@ const Form = () => {
     defaultValues: {
       type: "X",
       address: 0,
+      description: "",
     },
     onSubmit: (c) => {
       const type = c.value.type;
       const address = c.value.address;
+      const description = c.value.description;
 
       usePLCStore.setState((draft) => {
         switch (type) {
@@ -404,7 +411,7 @@ const Form = () => {
                 severity: "warning",
               });
             } else {
-              draft.x.push({ address });
+              draft.x.push({ address, description });
             }
             break;
           case "Y":
@@ -413,7 +420,7 @@ const Form = () => {
                 severity: "warning",
               });
             } else {
-              draft.y.push({ address });
+              draft.y.push({ address, description });
             }
             break;
           case "D":
@@ -422,7 +429,7 @@ const Form = () => {
                 severity: "warning",
               });
             } else {
-              draft.d.push({ address });
+              draft.d.push({ address, description });
             }
             break;
           case "M":
@@ -431,7 +438,7 @@ const Form = () => {
                 severity: "warning",
               });
             } else {
-              draft.m.push({ address });
+              draft.m.push({ address, description });
             }
             break;
         }
@@ -443,6 +450,7 @@ const Form = () => {
       onChange: z.object({
         type: z.string(),
         address: z.number().int(),
+        description: z.string(),
       }),
     },
   });
@@ -456,6 +464,10 @@ const Form = () => {
         e.preventDefault();
         e.stopPropagation();
         form.handleSubmit();
+      }}
+      noValidate
+      onReset={() => {
+        form.reset();
       }}
     >
       <Grid container spacing={1}>
@@ -489,29 +501,61 @@ const Form = () => {
                     onChange: field.handleChange,
                     onBlur: field.handleBlur,
                   }}
+                  name={field.name}
                   _min={0}
                   _max={37}
                   fullWidth
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <Button
-                            form={formId}
-                            type="submit"
-                            variant="contained"
-                            endIcon={<KeyboardReturn />}
-                          >
-                            新增
-                          </Button>
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
+                  label="点位地址"
                 />
               );
             }}
           </form.Field>
+        </Grid>
+        <Grid size={12}>
+          <form.Field name="description">
+            {(field) => {
+              return (
+                <TextField
+                  value={field.state.value}
+                  onChange={(e) => {
+                    field.handleChange(e.target.value);
+                  }}
+                  onBlur={field.handleBlur}
+                  error={!!field.getMeta().errors.length}
+                  helperText={field.getMeta().errors.at(0)?.message}
+                  name={field.name}
+                  fullWidth
+                  label="地址描述"
+                />
+              );
+            }}
+          </form.Field>
+        </Grid>
+        <Grid size={12}>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
+              {([canSubmit, isSubmitting]) => {
+                return (
+                  <Button
+                    disabled={!canSubmit}
+                    form={formId}
+                    type="submit"
+                    variant="contained"
+                    endIcon={
+                      <PendingIcon isPending={isSubmitting}>
+                        <Save />
+                      </PendingIcon>
+                    }
+                  >
+                    保存
+                  </Button>
+                );
+              }}
+            </form.Subscribe>
+            <Button variant="outlined" startIcon={<Restore />}>
+              重置
+            </Button>
+          </Box>
         </Grid>
       </Grid>
     </form>
@@ -522,6 +566,7 @@ interface BitInputWrapper {
   address: number;
   type: "X" | "Y" | "M" | "D";
   children?: React.ReactNode;
+  subheader?: React.ReactNode;
 }
 
 const BitInputWrapper = (props: BitInputWrapper) => {
@@ -529,6 +574,7 @@ const BitInputWrapper = (props: BitInputWrapper) => {
     <Card variant="outlined">
       <CardHeader
         title={props.type + props.address}
+        subheader={props.subheader}
         action={
           <IconButton
             onClick={() => {
@@ -670,6 +716,7 @@ export const Component = () => {
             onReset={() => {
               form.reset();
             }}
+            noValidate
           >
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
@@ -985,7 +1032,11 @@ export const Component = () => {
                       key={i.address}
                       size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
                     >
-                      <BitInputWrapper address={i.address} type="X">
+                      <BitInputWrapper
+                        address={i.address}
+                        type="X"
+                        subheader={i.description}
+                      >
                         <XInput path={serialPortPath} address={i.address} />
                       </BitInputWrapper>
                     </Grid>
@@ -1000,7 +1051,11 @@ export const Component = () => {
                       key={i.address}
                       size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
                     >
-                      <BitInputWrapper address={i.address} type="Y">
+                      <BitInputWrapper
+                        address={i.address}
+                        type="Y"
+                        subheader={i.description}
+                      >
                         <YInput path={serialPortPath} address={i.address} />
                       </BitInputWrapper>
                     </Grid>
@@ -1015,7 +1070,11 @@ export const Component = () => {
                       key={i.address}
                       size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
                     >
-                      <BitInputWrapper type="M" address={i.address}>
+                      <BitInputWrapper
+                        type="M"
+                        address={i.address}
+                        subheader={i.description}
+                      >
                         <MInput path={serialPortPath} address={i.address} />
                       </BitInputWrapper>
                     </Grid>
@@ -1030,7 +1089,11 @@ export const Component = () => {
                       key={i.address}
                       size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
                     >
-                      <BitInputWrapper type="D" address={i.address}>
+                      <BitInputWrapper
+                        type="D"
+                        address={i.address}
+                        subheader={i.description}
+                      >
                         <DInput path={serialPortPath} address={i.address} />
                       </BitInputWrapper>
                     </Grid>

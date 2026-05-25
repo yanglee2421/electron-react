@@ -36,6 +36,7 @@ type NumberFieldProps = TextFieldProps & {
   _step?: number;
   _min?: number;
   _max?: number;
+  _enableReturnSubmit?: boolean;
 };
 
 export const NumberField = (props: NumberFieldProps) => {
@@ -89,6 +90,7 @@ export const NumberField = (props: NumberFieldProps) => {
             changeValue(field.value + _step);
             break;
           case "ArrowDown":
+            e.preventDefault();
             setFocusedValue((prev) => {
               const nextValue = (Number.parseFloat(prev) || 0) - _step;
 
@@ -100,60 +102,16 @@ export const NumberField = (props: NumberFieldProps) => {
             });
             changeValue(field.value - _step);
             break;
-          default:
+          case "Enter":
+            if (!props._enableReturnSubmit) {
+              e.preventDefault();
+            }
+            setFocusedValue(field.value.toString());
+            changeValue(field.value);
+            break;
         }
       }}
       {...restProps}
-    />
-  );
-};
-
-interface IntFieldProps {
-  textField?: TextFieldProps;
-  value: number;
-  onChange: (_: number) => void;
-  min?: number;
-  max?: number;
-  step?: number;
-}
-
-export const IntField = (props: IntFieldProps) => {
-  const {
-    textField,
-    value,
-    onChange,
-    min = Number.NEGATIVE_INFINITY,
-    max = Number.POSITIVE_INFINITY,
-    step = 1,
-  } = props;
-
-  const changeValue = (val: number) => {
-    const value = clamp(val, min, max);
-    onChange(value);
-  };
-
-  return (
-    <TextField
-      value={value}
-      onChange={(e) => {
-        changeValue(
-          Number.parseInt(e.target.value.trim().replaceAll(/[^\d]/g, "")),
-        );
-      }}
-      onKeyDown={(e) => {
-        switch (e.key) {
-          case "ArrowUp":
-            e.preventDefault();
-
-            changeValue(value + step);
-            break;
-          case "ArrowDown":
-            changeValue(value - step);
-            break;
-          default:
-        }
-      }}
-      {...textField}
     />
   );
 };

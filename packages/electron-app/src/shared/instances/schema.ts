@@ -101,7 +101,7 @@ export const guangzhoujibaoduan = z.object({
 export type Guangzhoujibaoduan = z.infer<typeof guangzhoujibaoduan>;
 
 const btsSchema = z
-  .array(z.object({ address: z.number().int() }))
+  .array(z.object({ address: z.number().int(), description: z.string() }))
   .default([])
   .superRefine((val, ctx) => {
     const set = new Set();
