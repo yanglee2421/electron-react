@@ -107,3 +107,53 @@ export const NumberField = (props: NumberFieldProps) => {
     />
   );
 };
+
+interface IntFieldProps {
+  textField?: TextFieldProps;
+  value: number;
+  onChange: (_: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+}
+
+export const IntField = (props: IntFieldProps) => {
+  const {
+    textField,
+    value,
+    onChange,
+    min = Number.NEGATIVE_INFINITY,
+    max = Number.POSITIVE_INFINITY,
+    step = 1,
+  } = props;
+
+  const changeValue = (val: number) => {
+    const value = clamp(val, min, max);
+    onChange(value);
+  };
+
+  return (
+    <TextField
+      value={value}
+      onChange={(e) => {
+        changeValue(
+          Number.parseInt(e.target.value.trim().replaceAll(/[^\d]/g, "")),
+        );
+      }}
+      onKeyDown={(e) => {
+        switch (e.key) {
+          case "ArrowUp":
+            e.preventDefault();
+
+            changeValue(value + step);
+            break;
+          case "ArrowDown":
+            changeValue(value - step);
+            break;
+          default:
+        }
+      }}
+      {...textField}
+    />
+  );
+};

@@ -160,7 +160,7 @@ export class PLC {
     const { path, address, value } = params;
     const plc = this.getPLC(path);
 
-    await plc.batchWrite([`M${address}`], [value]);
+    await plc.batchWrite([`D${address}`], [value]);
 
     return value;
   }

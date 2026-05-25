@@ -10,10 +10,12 @@ import {
   usePLCWriteTest,
   useYWrite,
 } from "#renderer/api/plc";
-import { NumberField } from "#renderer/components/number";
+import { Loading } from "#renderer/components/Loading";
+import { IntField, NumberField } from "#renderer/components/number";
+import { ScrollToTopButton } from "#renderer/components/scroll";
 import { usePLCStore } from "#renderer/hooks/stores/usePLCStore";
 import {
-  Grid3x3,
+  Delete,
   KeyboardReturn,
   Refresh,
   Replay,
@@ -38,16 +40,21 @@ import {
   IconButton,
   InputAdornment,
   MenuItem,
+  Radio,
+  RadioGroup,
   Skeleton,
   Stack,
   Switch,
   TextField,
   Typography,
 } from "@mui/material";
-import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
+import {
+  createFormHook,
+  createFormHookContexts,
+  useForm,
+} from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNotifications } from "@toolpad/core";
-
 import React from "react";
 import { z } from "zod";
 
@@ -57,7 +64,7 @@ const { useAppForm } = createFormHook({
   formContext,
   fieldComponents: {
     TextField,
-    NumberField,
+    NumberField: NumberField,
   },
   formComponents: {
     Button,
@@ -73,11 +80,11 @@ const schema = z.object({
   D309: z.number().min(0).int(),
 });
 
-type ErrorAlertProps = {
+interface ErrorAlertProps {
   error: unknown;
   onRetry: () => void;
   isRetrying?: boolean;
-};
+}
 
 const ErrorAlert = (props: ErrorAlertProps) => {
   const { error } = props;
@@ -127,13 +134,21 @@ const XInput = (props: XInputProps) => {
     }),
   );
 
-  if (!query.isSuccess) {
-    return null;
+  if (query.isPending) {
+    return <Loading />;
+  }
+
+  if (query.isError) {
+    return (
+      <Typography color="error" variant="body2">
+        {query.error.message}
+      </Typography>
+    );
   }
 
   return (
     <FormControlLabel
-      control={<Checkbox value={query.data} />}
+      control={<Checkbox checked={query.data} readOnly onChange={Boolean} />}
       label={"X" + props.address}
     />
   );
@@ -154,10 +169,17 @@ const YInput = (props: YInputProps) => {
   const writeY = useYWrite();
   const queryClient = useQueryClient();
 
-  if (!query.isSuccess) {
-    return null;
+  if (query.isPending) {
+    return <Loading />;
   }
 
+  if (query.isError) {
+    return (
+      <Typography color="error" variant="body2">
+        {query.error.message}
+      </Typography>
+    );
+  }
   return (
     <FormControlLabel
       control={
@@ -184,26 +206,62 @@ interface MInputProps {
 }
 
 const MInput = (props: MInputProps) => {
-  const query = useQuery(
-    fetchMRead({
-      path: props.path,
-      address: props.address,
-    }),
-  );
+  const queryInput = fetchMRead({
+    path: props.path,
+    address: props.address,
+  });
+  const query = useQuery(queryInput);
 
   const writeM = useMWrite();
   const queryClient = useQueryClient();
 
-  if (!query.isSuccess) {
-    return null;
+  if (query.isPending) {
+    return <Loading />;
+  }
+
+  if (query.isError) {
+    return (
+      <Typography color="error" variant="body2">
+        {query.error.message}
+      </Typography>
+    );
   }
 
   return (
     <FormControlLabel
-      control={<Switch value={query.data} onChange={() => {}} />}
+      control={
+        <Switch
+          checked={query.data}
+          onChange={(_, checked) => {
+            queryClient.setQueryData(queryInput.queryKey, checked);
+            writeM.mutate({
+              path: props.path,
+              address: props.address,
+              value: checked,
+            });
+          }}
+        />
+      }
       label={"M" + props.address}
     />
   );
+};
+
+interface PendingIconProps {
+  isPending?: boolean;
+  size?: number;
+  color?: React.ComponentProps<typeof CircularProgress>["color"];
+  children?: React.ReactNode;
+}
+
+const PendingIcon = (props: PendingIconProps) => {
+  const { size = 16, color } = props;
+
+  if (props.isPending) {
+    return <CircularProgress size={size} color={color} />;
+  }
+
+  return props.children;
 };
 
 interface DInputProps {
@@ -212,7 +270,10 @@ interface DInputProps {
 }
 
 const DInput = (props: DInputProps) => {
-  const [value, setValue] = React.useState(Number.NaN);
+  const formId = React.useId();
+
+  const writeD = useDWrite();
+  const notifications = useNotifications();
 
   const query = useQuery(
     fetchDRead({
@@ -221,66 +282,287 @@ const DInput = (props: DInputProps) => {
     }),
   );
 
-  const inputValue = value || query.data || NaN;
+  const defaultValue = typeof query.data === "number" ? query.data : 0;
 
-  const writeD = useDWrite();
-  const queryClient = useQueryClient();
+  const form = useForm({
+    defaultValues: {
+      value: defaultValue,
+    },
+    onSubmit: async (c) => {
+      writeD.mutate(
+        {
+          address: props.address,
+          path: props.path,
+          value: c.value.value,
+        },
+        {
+          onError: async (error) => {
+            notifications.show(error.message, { severity: "error" });
+          },
+          onSuccess: async () => {
+            notifications.show(`更改D${props.address}成功`, {
+              severity: "success",
+            });
+          },
+        },
+      );
+    },
+    validators: {
+      onChange: z.object({
+        value: z.number().int(),
+      }),
+    },
+  });
 
-  if (!query.isSuccess) {
-    return null;
+  if (query.isPending) {
+    return <Loading />;
+  }
+
+  if (query.isError) {
+    return (
+      <Typography color="error" variant="body2">
+        {query.error.message}
+      </Typography>
+    );
   }
 
   return (
-    <NumberField
-      field={{
-        value: inputValue,
-        onChange: setValue,
-        onBlur: () => {},
+    <form
+      id={formId}
+      onSubmit={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        form.handleSubmit();
       }}
-      placeholder={query.data.toString(10)}
-      fullWidth
-      label={"D" + props.address}
-    />
+      onReset={() => form.reset()}
+      noValidate
+    >
+      <form.Field name="value">
+        {(field) => {
+          return (
+            <IntField
+              value={field.state.value}
+              onChange={field.handleChange}
+              textField={{
+                onBlur: field.handleBlur,
+                placeholder: query.data.toString(10),
+                fullWidth: true,
+                label: "D" + props.address,
+                slotProps: {
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <form.Subscribe
+                          selector={(s) => [s.canSubmit, s.isSubmitting]}
+                        >
+                          {([canSubmit, isSubmitting]) => {
+                            return (
+                              <IconButton
+                                type="submit"
+                                form={formId}
+                                disabled={!canSubmit}
+                              >
+                                <PendingIcon isPending={isSubmitting}>
+                                  <KeyboardReturn />
+                                </PendingIcon>
+                              </IconButton>
+                            );
+                          }}
+                        </form.Subscribe>
+                      </InputAdornment>
+                    ),
+                  },
+                },
+                error: !!field.getMeta().errors.length,
+                helperText: field.getMeta().errors.at(0)?.message,
+              }}
+            />
+          );
+        }}
+      </form.Field>
+    </form>
   );
 };
 
-interface AddButtonProps {
-  onAdd(_: number): void;
-}
+const Form = () => {
+  const notifications = useNotifications();
 
-const AddButton = (props: AddButtonProps) => {
-  const [address, setAddress] = React.useState(Number.NaN);
+  const form = useForm({
+    defaultValues: {
+      type: "X",
+      address: 0,
+    },
+    onSubmit: (c) => {
+      const type = c.value.type;
+      const address = c.value.address;
+
+      usePLCStore.setState((draft) => {
+        switch (type) {
+          case "X":
+            if (draft.x.some((item) => item.address === address)) {
+              notifications.show(`${type + address} 已存在`, {
+                severity: "warning",
+              });
+            } else {
+              draft.x.push({ address });
+            }
+            break;
+          case "Y":
+            if (draft.y.some((item) => item.address === address)) {
+              notifications.show(`${type + address} 已存在`, {
+                severity: "warning",
+              });
+            } else {
+              draft.y.push({ address });
+            }
+            break;
+          case "D":
+            if (draft.d.some((item) => item.address === address)) {
+              notifications.show(`${type + address} 已存在`, {
+                severity: "warning",
+              });
+            } else {
+              draft.d.push({ address });
+            }
+            break;
+          case "M":
+            if (draft.m.some((item) => item.address === address)) {
+              notifications.show(`${type + address} 已存在`, {
+                severity: "warning",
+              });
+            } else {
+              draft.m.push({ address });
+            }
+            break;
+        }
+      });
+
+      c.formApi.resetField("address");
+    },
+    validators: {
+      onChange: z.object({
+        type: z.string(),
+        address: z.number().int(),
+      }),
+    },
+  });
+
+  const formId = React.useId();
 
   return (
-    <NumberField
-      field={{
-        value: address,
-        onChange: setAddress,
-        onBlur: () => {},
+    <form
+      id={formId}
+      onSubmit={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        form.handleSubmit();
       }}
-      slotProps={{
-        input: {
-          startAdornment: (
-            <InputAdornment position="end">
-              <Grid3x3 />
-            </InputAdornment>
-          ),
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                onClick={() => {
-                  props.onAdd(address);
-                  setAddress(0);
-                }}
-              >
-                <KeyboardReturn />
-              </IconButton>
-            </InputAdornment>
-          ),
-        },
-      }}
-      fullWidth
-    />
+    >
+      <Grid container spacing={1}>
+        <Grid size={12}>
+          <form.Field name="type">
+            {(field) => {
+              return (
+                <RadioGroup
+                  value={field.state.value}
+                  onChange={(_, value) => {
+                    field.handleChange(value);
+                  }}
+                  row
+                >
+                  <FormControlLabel control={<Radio value={"X"} />} label="X" />
+                  <FormControlLabel control={<Radio value={"Y"} />} label="Y" />
+                  <FormControlLabel control={<Radio value={"M"} />} label="M" />
+                  <FormControlLabel control={<Radio value={"D"} />} label="D" />
+                </RadioGroup>
+              );
+            }}
+          </form.Field>
+        </Grid>
+        <Grid size={12}>
+          <form.Field name="address">
+            {(field) => {
+              return (
+                <NumberField
+                  field={{
+                    value: field.state.value,
+                    onChange: field.handleChange,
+                    onBlur: field.handleBlur,
+                  }}
+                  _min={0}
+                  _max={37}
+                  fullWidth
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Button
+                            form={formId}
+                            type="submit"
+                            variant="contained"
+                            endIcon={<KeyboardReturn />}
+                          >
+                            新增
+                          </Button>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+              );
+            }}
+          </form.Field>
+        </Grid>
+      </Grid>
+    </form>
+  );
+};
+
+interface BitInputWrapper {
+  address: number;
+  type: "X" | "Y" | "M" | "D";
+  children?: React.ReactNode;
+}
+
+const BitInputWrapper = (props: BitInputWrapper) => {
+  return (
+    <Card variant="outlined">
+      <CardHeader
+        title={props.type + props.address}
+        action={
+          <IconButton
+            onClick={() => {
+              usePLCStore.setState((draft) => {
+                switch (props.type) {
+                  case "Y":
+                    draft.y = draft.y.filter(
+                      (item) => !Object.is(item.address, props.address),
+                    );
+                    break;
+                  case "X":
+                    draft.x = draft.x.filter(
+                      (item) => !Object.is(item.address, props.address),
+                    );
+                    break;
+                  case "D":
+                    draft.d = draft.d.filter(
+                      (item) => !Object.is(item.address, props.address),
+                    );
+                    break;
+                  case "M":
+                    draft.m = draft.m.filter(
+                      (item) => !Object.is(item.address, props.address),
+                    );
+                }
+              });
+            }}
+          >
+            <Delete />
+          </IconButton>
+        }
+      />
+      <CardContent>{props.children}</CardContent>
+    </Card>
   );
 };
 
@@ -295,13 +577,13 @@ export const Component = () => {
 
   const plcReadTest = useQuery({
     ...fetchPLCReadTest(serialPortPath),
-    // refetchInterval: (query) => {
-    //   if (query.state.fetchFailureCount > 1) {
-    //     return false;
-    //   }
+    refetchInterval: (query) => {
+      if (query.state.fetchFailureCount > 1) {
+        return false;
+      }
 
-    //   return 1000;
-    // },
+      return 1000 * 2;
+    },
     enabled: !!serialPortPath,
   });
   const plcWriteTest = usePLCWriteTest();
@@ -390,7 +672,7 @@ export const Component = () => {
             }}
           >
             <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
                 <TextField
                   value={plcReadTest.data.D20}
                   fullWidth
@@ -402,7 +684,7 @@ export const Component = () => {
                   label="左轴身实际值D20"
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
                 <TextField
                   value={plcReadTest.data.D21}
                   fullWidth
@@ -414,7 +696,7 @@ export const Component = () => {
                   label="右轴身实际值D21"
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
                 <TextField
                   value={plcReadTest.data.D22}
                   fullWidth
@@ -426,7 +708,7 @@ export const Component = () => {
                   label="左端面实际值D22"
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
                 <TextField
                   value={plcReadTest.data.D23}
                   fullWidth
@@ -441,7 +723,7 @@ export const Component = () => {
               <Grid size={12}>
                 <Divider>分隔线</Divider>
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
                 <form.AppField name="D300">
                   {(field) => {
                     return (
@@ -462,7 +744,7 @@ export const Component = () => {
                   }}
                 </form.AppField>
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
                 <form.AppField name="D301">
                   {(field) => {
                     return (
@@ -483,7 +765,7 @@ export const Component = () => {
                   }}
                 </form.AppField>
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
                 <form.AppField name="D302">
                   {(field) => {
                     return (
@@ -504,7 +786,7 @@ export const Component = () => {
                   }}
                 </form.AppField>
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
                 <form.AppField name="D303">
                   {(field) => {
                     return (
@@ -525,7 +807,7 @@ export const Component = () => {
                   }}
                 </form.AppField>
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
                 <form.AppField name="D308">
                   {(field) => {
                     return (
@@ -546,7 +828,7 @@ export const Component = () => {
                   }}
                 </form.AppField>
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
                 <form.AppField name="D309">
                   {(field) => {
                     return (
@@ -681,96 +963,84 @@ export const Component = () => {
   };
 
   return (
-    <Stack spacing={3}>
-      <Card>
-        <CardHeader title="配置" />
-        <Divider></Divider>
-        <CardContent>
-          <Grid container spacing={1}>
-            <Grid size={12}>
-              <FormLabel>X点</FormLabel>
-            </Grid>
-            {xList.map((i) => {
-              return (
-                <Grid key={i.address}>
-                  <XInput path={serialPortPath} address={i.address} />
+    <>
+      <ScrollToTopButton />
+      <Stack spacing={3}>
+        {renderSerialPortQuery()}
+        {!!serialPortPath && (
+          <Card>
+            <CardHeader title="自定义点位" />
+            <CardContent>
+              <Form />
+            </CardContent>
+            <Divider></Divider>
+            <CardContent>
+              <Grid container spacing={1}>
+                <Grid size={12}>
+                  <FormLabel>X点</FormLabel>
                 </Grid>
-              );
-            })}
-            <Grid size={12}>
-              <AddButton
-                onAdd={(address) => {
-                  usePLCStore.setState((draft) => {
-                    draft.x.push({ address });
-                  });
-                }}
-              />
-            </Grid>
-            <Grid size={12}>
-              <FormLabel>Y点</FormLabel>
-            </Grid>
-            {yList.map((i) => {
-              return (
-                <Grid key={i.address}>
-                  <YInput path={serialPortPath} address={i.address} />
+                {xList.map((i) => {
+                  return (
+                    <Grid
+                      key={i.address}
+                      size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                    >
+                      <BitInputWrapper address={i.address} type="X">
+                        <XInput path={serialPortPath} address={i.address} />
+                      </BitInputWrapper>
+                    </Grid>
+                  );
+                })}
+                <Grid size={12}>
+                  <FormLabel>Y点</FormLabel>
                 </Grid>
-              );
-            })}
-            <Grid size={12}>
-              <AddButton
-                onAdd={(address) => {
-                  usePLCStore.setState((draft) => {
-                    draft.y.push({ address });
-                  });
-                }}
-              />
-            </Grid>
-            <Grid size={12}>
-              <FormLabel>M点</FormLabel>
-            </Grid>
-            {mList.map((i) => {
-              return (
-                <Grid key={i.address}>
-                  <MInput path={serialPortPath} address={i.address} />
+                {yList.map((i) => {
+                  return (
+                    <Grid
+                      key={i.address}
+                      size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                    >
+                      <BitInputWrapper address={i.address} type="Y">
+                        <YInput path={serialPortPath} address={i.address} />
+                      </BitInputWrapper>
+                    </Grid>
+                  );
+                })}
+                <Grid size={12}>
+                  <FormLabel>M点</FormLabel>
                 </Grid>
-              );
-            })}
-            <Grid size={12}>
-              <AddButton
-                onAdd={(address) => {
-                  usePLCStore.setState((draft) => {
-                    draft.m.push({ address });
-                  });
-                }}
-              />
-            </Grid>
-            <Grid size={12}>
-              <FormLabel>D点</FormLabel>
-            </Grid>
-            {dList.map((i) => {
-              return (
-                <Grid key={i.address} size={{ xs: 12, sm: 6, lg: 4 }}>
-                  <DInput path={serialPortPath} address={i.address} />
+                {mList.map((i) => {
+                  return (
+                    <Grid
+                      key={i.address}
+                      size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                    >
+                      <BitInputWrapper type="M" address={i.address}>
+                        <MInput path={serialPortPath} address={i.address} />
+                      </BitInputWrapper>
+                    </Grid>
+                  );
+                })}
+                <Grid size={12}>
+                  <FormLabel>D点</FormLabel>
                 </Grid>
-              );
-            })}
-            <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
-              <AddButton
-                onAdd={(address) => {
-                  usePLCStore.setState((draft) => {
-                    draft.d.push({ address });
-                  });
-                }}
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-      {renderSerialPortQuery()}
-    </Stack>
+                {dList.map((i) => {
+                  return (
+                    <Grid
+                      key={i.address}
+                      size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                    >
+                      <BitInputWrapper type="D" address={i.address}>
+                        <DInput path={serialPortPath} address={i.address} />
+                      </BitInputWrapper>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </CardContent>
+          </Card>
+        )}
+      </Stack>
+    </>
   );
 };
-// X boolean readonly
-// Y boolean switch
-// M boolean switch
-// D number input

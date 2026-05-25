@@ -11,11 +11,11 @@ const calculateTheme = (isDark: boolean) => {
     const darkTheme = createTheme({
       palette: {
         mode: "dark",
-        primary: {
-          main: "#3d5afe",
-          dark: "#2137b1",
-          light: "#637bfe",
-        },
+        // primary: {
+        //   main: "#3d5afe",
+        //   dark: "#2137b1",
+        //   light: "#637bfe",
+        // },
       },
       components: {
         MuiAlert: {
@@ -30,11 +30,11 @@ const calculateTheme = (isDark: boolean) => {
   const lightTheme = createTheme({
     palette: {
       mode: "light",
-      primary: {
-        main: "#3d5afe",
-        dark: "#2137b1",
-        light: "#637bfe",
-      },
+      // primary: {
+      //   main: "#3d5afe",
+      //   dark: "#2137b1",
+      //   light: "#637bfe",
+      // },
     },
     components: {
       MuiAlert: {

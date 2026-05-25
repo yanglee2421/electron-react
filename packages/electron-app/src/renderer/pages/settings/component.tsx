@@ -256,26 +256,32 @@ export const Component = () => {
         />
         {renderForm()}
       </Card>
-      <Paper>
-        <List>
-          <ListItem
-            secondaryAction={
-              <Switch
-                checked={openAtLogin.data}
-                onChange={(_, checked) => {
-                  queryClient.setQueryData(
-                    fetchOpenAtLogin().queryKey,
-                    checked,
-                  );
-                  updateOpenAtLogin.mutate(checked);
-                }}
-              />
-            }
-          >
-            <ListItemText primary="开机自启" />
-          </ListItem>
-        </List>
-      </Paper>
+      <React.Activity
+        mode={
+          window.electron.process.platform === "win32" ? "visible" : "hidden"
+        }
+      >
+        <Paper>
+          <List>
+            <ListItem
+              secondaryAction={
+                <Switch
+                  checked={openAtLogin.data}
+                  onChange={(_, checked) => {
+                    queryClient.setQueryData(
+                      fetchOpenAtLogin().queryKey,
+                      checked,
+                    );
+                    updateOpenAtLogin.mutate(checked);
+                  }}
+                />
+              }
+            >
+              <ListItemText primary="开机自启" />
+            </ListItem>
+          </List>
+        </Paper>
+      </React.Activity>
       <Card>
         <CardHeader title="关于" />
         <CardContent>
