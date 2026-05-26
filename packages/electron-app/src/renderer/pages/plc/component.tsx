@@ -127,12 +127,11 @@ interface XInputProps {
 }
 
 const XInput = (props: XInputProps) => {
-  const query = useQuery(
-    fetchXRead({
-      path: props.path,
-      address: props.address,
-    }),
-  );
+  const queryInput = fetchXRead({
+    path: props.path,
+    address: props.address,
+  });
+  const query = useQuery({ ...queryInput, enabled: !!props.path });
 
   const renderQuery = () => {
     if (query.isPending) {
@@ -190,7 +189,7 @@ const YInput = (props: YInputProps) => {
     address: props.address,
   });
   const writeY = useYWrite();
-  const query = useQuery(queryInput);
+  const query = useQuery({ ...queryInput, enabled: !!props.path });
   const queryClient = useQueryClient();
 
   const renderQuery = () => {
@@ -261,7 +260,7 @@ const MInput = (props: MInputProps) => {
     address: props.address,
   });
   const writeM = useMWrite();
-  const query = useQuery(queryInput);
+  const query = useQuery({ ...queryInput, enabled: !!props.path });
   const queryClient = useQueryClient();
 
   const renderQuery = () => {
@@ -329,14 +328,14 @@ interface DInputProps {
 const DInput = (props: DInputProps) => {
   const formId = React.useId();
 
+  const queryInput = fetchDRead({
+    path: props.path,
+    address: props.address,
+  });
+
   const writeD = useDWrite();
   const notifications = useNotifications();
-  const query = useQuery(
-    fetchDRead({
-      path: props.path,
-      address: props.address,
-    }),
-  );
+  const query = useQuery({ ...queryInput, enabled: !!props.path });
 
   const defaultValue = typeof query.data === "number" ? query.data : 0;
 
@@ -363,11 +362,7 @@ const DInput = (props: DInputProps) => {
         },
       );
     },
-    validators: {
-      onChange: z.object({
-        value: z.number().int(),
-      }),
-    },
+    validators: { onChange: z.object({ value: z.number().int() }) },
   });
 
   const renderQuery = () => {
