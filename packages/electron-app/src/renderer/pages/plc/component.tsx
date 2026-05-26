@@ -607,7 +607,7 @@ const Form = () => {
           </form.Field>
         </Grid>
         <Grid size={12}>
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: "flex", gap: 1.5 }}>
             <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
               {([canSubmit, isSubmitting]) => {
                 return (
@@ -646,6 +646,32 @@ interface BitInputWrapper {
 }
 
 const BitInputWrapper = (props: BitInputWrapper) => {
+  const handleDelete = () => {
+    usePLCStore.setState((draft) => {
+      switch (props.type) {
+        case "Y":
+          draft.y = draft.y.filter(
+            (item) => !Object.is(item.address, props.address),
+          );
+          break;
+        case "X":
+          draft.x = draft.x.filter(
+            (item) => !Object.is(item.address, props.address),
+          );
+          break;
+        case "D":
+          draft.d = draft.d.filter(
+            (item) => !Object.is(item.address, props.address),
+          );
+          break;
+        case "M":
+          draft.m = draft.m.filter(
+            (item) => !Object.is(item.address, props.address),
+          );
+      }
+    });
+  };
+
   return (
     <Card variant="outlined">
       <CardHeader
@@ -654,33 +680,7 @@ const BitInputWrapper = (props: BitInputWrapper) => {
         action={
           <>
             {props.action}
-            <IconButton
-              onClick={() => {
-                usePLCStore.setState((draft) => {
-                  switch (props.type) {
-                    case "Y":
-                      draft.y = draft.y.filter(
-                        (item) => !Object.is(item.address, props.address),
-                      );
-                      break;
-                    case "X":
-                      draft.x = draft.x.filter(
-                        (item) => !Object.is(item.address, props.address),
-                      );
-                      break;
-                    case "D":
-                      draft.d = draft.d.filter(
-                        (item) => !Object.is(item.address, props.address),
-                      );
-                      break;
-                    case "M":
-                      draft.m = draft.m.filter(
-                        (item) => !Object.is(item.address, props.address),
-                      );
-                  }
-                });
-              }}
-            >
+            <IconButton onClick={handleDelete}>
               <Delete />
             </IconButton>
           </>
@@ -830,11 +830,7 @@ export const Component = () => {
                   <TextField
                     value={plcReadTest.data.D20}
                     fullWidth
-                    slotProps={{
-                      input: {
-                        readOnly: true,
-                      },
-                    }}
+                    slotProps={{ input: { readOnly: true } }}
                     label="左轴身实际值D20"
                   />
                 </Grid>
@@ -842,11 +838,7 @@ export const Component = () => {
                   <TextField
                     value={plcReadTest.data.D21}
                     fullWidth
-                    slotProps={{
-                      input: {
-                        readOnly: true,
-                      },
-                    }}
+                    slotProps={{ input: { readOnly: true } }}
                     label="右轴身实际值D21"
                   />
                 </Grid>
@@ -854,11 +846,7 @@ export const Component = () => {
                   <TextField
                     value={plcReadTest.data.D22}
                     fullWidth
-                    slotProps={{
-                      input: {
-                        readOnly: true,
-                      },
-                    }}
+                    slotProps={{ input: { readOnly: true } }}
                     label="左端面实际值D22"
                   />
                 </Grid>
@@ -866,11 +854,7 @@ export const Component = () => {
                   <TextField
                     value={plcReadTest.data.D23}
                     fullWidth
-                    slotProps={{
-                      input: {
-                        readOnly: true,
-                      },
-                    }}
+                    slotProps={{ input: { readOnly: true } }}
                     label="右端面实际值D23"
                   />
                 </Grid>
@@ -1028,13 +1012,6 @@ export const Component = () => {
           <CardHeader
             title="自定义点位"
             subheader="预置点位不能满足要求时，可以自定义点位"
-            action={
-              <IconButton disabled={true}>
-                <PendingIcon>
-                  <Refresh />
-                </PendingIcon>
-              </IconButton>
-            }
           />
           <CardContent>
             <Form />
