@@ -2,6 +2,7 @@ import {
   useMD5BackupImage,
   useSelectDirectory,
 } from "#renderer/api/fetch_preload";
+import { PendingIcon } from "#renderer/components/Loading";
 import { FindInPageOutlined } from "@mui/icons-material";
 import {
   Button,
@@ -9,7 +10,6 @@ import {
   CardActions,
   CardContent,
   CardHeader,
-  CircularProgress,
   Grid,
   IconButton,
   InputAdornment,
@@ -35,22 +35,6 @@ const { useAppForm } = createFormHook({
     Button,
   },
 });
-
-type PendingIconProps = React.PropsWithChildren<{
-  isPending?: boolean;
-  size?: number;
-  color?: React.ComponentProps<typeof CircularProgress>["color"];
-}>;
-
-const PendingIcon = (props: PendingIconProps) => {
-  const { size = 16, color } = props;
-
-  if (props.isPending) {
-    return <CircularProgress size={size} color={color} />;
-  }
-
-  return props.children;
-};
 
 export const Component = () => {
   const formId = React.useId();
@@ -142,7 +126,6 @@ export const Component = () => {
                 )}
               </form.AppField>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}></Grid>
           </Grid>
         </form>
       </CardContent>

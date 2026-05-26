@@ -1,4 +1,5 @@
 import { useMD5Compute, useSelectFile } from "#renderer/api/fetch_preload";
+import { PendingIcon } from "#renderer/components/Loading";
 import { FindInPageOutlined } from "@mui/icons-material";
 import {
   Button,
@@ -6,7 +7,6 @@ import {
   CardActions,
   CardContent,
   CardHeader,
-  CircularProgress,
   Grid,
   IconButton,
   InputAdornment,
@@ -166,21 +166,4 @@ export const Component = () => {
       </CardActions>
     </Card>
   );
-};
-
-interface PendingIconProps {
-  isPending?: boolean;
-  size?: number;
-  color?: React.ComponentProps<typeof CircularProgress>["color"];
-  children?: React.ReactNode;
-}
-
-const PendingIcon = (props: PendingIconProps) => {
-  const { size = 16, color } = props;
-
-  if (props.isPending) {
-    return <CircularProgress size={size} color={color} />;
-  }
-
-  return props.children;
 };

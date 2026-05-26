@@ -6,6 +6,7 @@ import {
   useOpenDevTools,
   useSelectDirectory,
 } from "#renderer/api/fetch_preload";
+import { PendingIcon } from "#renderer/components/Loading";
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import { profile as profileSchema } from "#shared/instances/schema";
 import {
@@ -22,7 +23,6 @@ import {
   CardActions,
   CardContent,
   CardHeader,
-  CircularProgress,
   Grid,
   IconButton,
   InputAdornment,
@@ -76,22 +76,6 @@ const useProfileForm = () => {
   });
 
   return form;
-};
-
-type PendingIconProps = React.PropsWithChildren<{
-  isPending?: boolean;
-  size?: number;
-  color?: React.ComponentProps<typeof CircularProgress>["color"];
-}>;
-
-const PendingIcon = (props: PendingIconProps) => {
-  const { size = 16, color } = props;
-
-  if (props.isPending) {
-    return <CircularProgress size={size} color={color} />;
-  }
-
-  return props.children;
 };
 
 export const Component = () => {

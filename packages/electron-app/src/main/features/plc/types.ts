@@ -102,4 +102,12 @@ export interface IPCContract {
     args: [WriteMInput];
     return: boolean;
   };
+  "plc/open": {
+    args: [string];
+    return: void;
+  };
+  "plc/close": {
+    args: [];
+    return: void;
+  };
 }

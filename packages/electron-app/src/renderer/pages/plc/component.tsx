@@ -10,11 +10,13 @@ import {
   usePLCWriteTest,
   useYWrite,
 } from "#renderer/api/plc";
-import { Loading } from "#renderer/components/Loading";
+import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { NumberField } from "#renderer/components/number";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { usePLCStore } from "#renderer/hooks/stores/usePLCStore";
+import { ipc } from "#renderer/lib/ipc";
 import {
+  Add,
   Delete,
   KeyboardReturn,
   Refresh,
@@ -89,20 +91,17 @@ interface ErrorAlertProps {
 const ErrorAlert = (props: ErrorAlertProps) => {
   const { error } = props;
 
-  const content =
-    error instanceof Error ? (
-      <>
-        <Typography>{error.message}</Typography>
-        <Typography variant="body2">{error.stack}</Typography>
-      </>
-    ) : (
-      <Typography>未知错误，请联系服务人员</Typography>
-    );
-
   return (
     <Alert severity="error" variant="outlined">
       <AlertTitle>错误</AlertTitle>
-      {content}
+      {error instanceof Error ? (
+        <>
+          <Typography>{error.message}</Typography>
+          <Typography variant="body2">{error.stack}</Typography>
+        </>
+      ) : (
+        <Typography>未知错误，请联系服务人员</Typography>
+      )}
       <Button
         onClick={props.onRetry}
         disabled={props.isRetrying}
@@ -124,6 +123,7 @@ const ErrorAlert = (props: ErrorAlertProps) => {
 interface XInputProps {
   path: string;
   address: number;
+  description?: React.ReactNode;
 }
 
 const XInput = (props: XInputProps) => {
@@ -134,75 +134,125 @@ const XInput = (props: XInputProps) => {
     }),
   );
 
-  if (query.isPending) {
-    return <Loading />;
-  }
+  const renderQuery = () => {
+    if (query.isPending) {
+      return <Loading />;
+    }
 
-  if (query.isError) {
+    if (query.isError) {
+      return (
+        <Typography color="error" variant="body2">
+          {query.error.message}
+        </Typography>
+      );
+    }
+
     return (
-      <Typography color="error" variant="body2">
-        {query.error.message}
-      </Typography>
+      <FormControlLabel
+        control={<Checkbox checked={query.data} readOnly onChange={Boolean} />}
+        label={"X" + props.address}
+      />
     );
-  }
+  };
 
   return (
-    <FormControlLabel
-      control={<Checkbox checked={query.data} readOnly onChange={Boolean} />}
-      label={"X" + props.address}
-    />
+    <BitInputWrapper
+      address={props.address}
+      type="X"
+      subheader={props.description}
+      action={
+        <IconButton
+          disabled={query.isRefetching}
+          onClick={() => {
+            query.refetch();
+          }}
+        >
+          <PendingIcon isPending={query.isRefetching}>
+            <Refresh />
+          </PendingIcon>
+        </IconButton>
+      }
+    >
+      {renderQuery()}
+    </BitInputWrapper>
   );
 };
 
 interface YInputProps {
   path: string;
   address: number;
+  description?: React.ReactNode;
 }
 
 const YInput = (props: YInputProps) => {
-  const queryOptions = fetchYRead({
+  const queryInput = fetchYRead({
     path: props.path,
     address: props.address,
   });
-  const query = useQuery(queryOptions);
-
   const writeY = useYWrite();
+  const query = useQuery(queryInput);
   const queryClient = useQueryClient();
 
-  if (query.isPending) {
-    return <Loading />;
-  }
+  const renderQuery = () => {
+    if (query.isPending) {
+      return <Loading />;
+    }
 
-  if (query.isError) {
+    if (query.isError) {
+      return (
+        <Typography color="error" variant="body2">
+          {query.error.message}
+        </Typography>
+      );
+    }
+
     return (
-      <Typography color="error" variant="body2">
-        {query.error.message}
-      </Typography>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={query.data}
+            onChange={(_, checked) => {
+              queryClient.setQueryData(queryInput.queryKey, checked);
+              writeY.mutate({
+                path: props.path,
+                address: props.address,
+                value: checked,
+              });
+            }}
+          />
+        }
+        label={"Y" + props.address}
+      />
     );
-  }
+  };
+
   return (
-    <FormControlLabel
-      control={
-        <Switch
-          checked={query.data}
-          onChange={(_, checked) => {
-            queryClient.setQueryData(queryOptions.queryKey, checked);
-            writeY.mutate({
-              path: props.path,
-              address: props.address,
-              value: checked,
-            });
+    <BitInputWrapper
+      address={props.address}
+      type="Y"
+      subheader={props.description}
+      action={
+        <IconButton
+          disabled={query.isRefetching}
+          onClick={() => {
+            query.refetch();
           }}
-        />
+        >
+          <PendingIcon isPending={query.isRefetching}>
+            <Refresh />
+          </PendingIcon>
+        </IconButton>
       }
-      label={"Y" + props.address}
-    />
+    >
+      {renderQuery()}
+    </BitInputWrapper>
   );
 };
 
 interface MInputProps {
   path: string;
   address: number;
+  description?: React.ReactNode;
 }
 
 const MInput = (props: MInputProps) => {
@@ -210,63 +260,70 @@ const MInput = (props: MInputProps) => {
     path: props.path,
     address: props.address,
   });
-  const query = useQuery(queryInput);
-
   const writeM = useMWrite();
+  const query = useQuery(queryInput);
   const queryClient = useQueryClient();
 
-  if (query.isPending) {
-    return <Loading />;
-  }
+  const renderQuery = () => {
+    if (query.isPending) {
+      return <Loading />;
+    }
 
-  if (query.isError) {
+    if (query.isError) {
+      return (
+        <Typography color="error" variant="body2">
+          {query.error.message}
+        </Typography>
+      );
+    }
+
     return (
-      <Typography color="error" variant="body2">
-        {query.error.message}
-      </Typography>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={query.data}
+            onChange={(_, checked) => {
+              queryClient.setQueryData(queryInput.queryKey, checked);
+              writeM.mutate({
+                path: props.path,
+                address: props.address,
+                value: checked,
+              });
+            }}
+          />
+        }
+        label={"M" + props.address}
+      />
     );
-  }
+  };
 
   return (
-    <FormControlLabel
-      control={
-        <Switch
-          checked={query.data}
-          onChange={(_, checked) => {
-            queryClient.setQueryData(queryInput.queryKey, checked);
-            writeM.mutate({
-              path: props.path,
-              address: props.address,
-              value: checked,
-            });
+    <BitInputWrapper
+      type="M"
+      address={props.address}
+      subheader={props.description}
+      action={
+        <IconButton
+          disabled={query.isRefetching}
+          onClick={() => {
+            query.refetch();
           }}
-        />
+        >
+          <PendingIcon isPending={query.isRefetching}>
+            <Refresh />
+          </PendingIcon>
+        </IconButton>
       }
-      label={"M" + props.address}
-    />
+    >
+      {renderQuery()}
+    </BitInputWrapper>
   );
-};
-
-interface PendingIconProps {
-  isPending?: boolean;
-  size?: number;
-  color?: React.ComponentProps<typeof CircularProgress>["color"];
-  children?: React.ReactNode;
-}
-
-const PendingIcon = (props: PendingIconProps) => {
-  const { size = 16, color } = props;
-
-  if (props.isPending) {
-    return <CircularProgress size={size} color={color} />;
-  }
-
-  return props.children;
 };
 
 interface DInputProps {
   path: string;
   address: number;
+  description?: React.ReactNode;
 }
 
 const DInput = (props: DInputProps) => {
@@ -274,7 +331,6 @@ const DInput = (props: DInputProps) => {
 
   const writeD = useDWrite();
   const notifications = useNotifications();
-
   const query = useQuery(
     fetchDRead({
       path: props.path,
@@ -314,78 +370,103 @@ const DInput = (props: DInputProps) => {
     },
   });
 
-  if (query.isPending) {
-    return <Loading />;
-  }
+  const renderQuery = () => {
+    if (query.isPending) {
+      return <Loading />;
+    }
 
-  if (query.isError) {
+    if (query.isError) {
+      return (
+        <Typography color="error" variant="body2">
+          {query.error.message}
+        </Typography>
+      );
+    }
+
     return (
-      <Typography color="error" variant="body2">
-        {query.error.message}
-      </Typography>
+      <form
+        id={formId}
+        onSubmit={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+        onReset={() => form.reset()}
+        noValidate
+      >
+        <form.Field name="value">
+          {(field) => {
+            return (
+              <NumberField
+                field={{
+                  value: field.state.value,
+                  onChange: field.handleChange,
+                  onBlur: field.handleBlur,
+                }}
+                placeholder={query.data.toString(10)}
+                fullWidth
+                error={!!field.getMeta().errors.length}
+                helperText={field.getMeta().errors.at(0)?.message}
+                label={"D" + props.address}
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <form.Subscribe
+                          selector={(s) => [s.canSubmit, s.isSubmitting]}
+                        >
+                          {([canSubmit, isSubmitting]) => {
+                            return (
+                              <Button
+                                type="submit"
+                                form={formId}
+                                disabled={!canSubmit}
+                                endIcon={
+                                  <PendingIcon isPending={isSubmitting}>
+                                    <KeyboardReturn />
+                                  </PendingIcon>
+                                }
+                                variant="contained"
+                                size="small"
+                              >
+                                写入
+                              </Button>
+                            );
+                          }}
+                        </form.Subscribe>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                _enableReturnSubmit
+              />
+            );
+          }}
+        </form.Field>
+      </form>
     );
-  }
+  };
 
   return (
-    <form
-      id={formId}
-      onSubmit={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        form.handleSubmit();
-      }}
-      onReset={() => form.reset()}
-      noValidate
+    <BitInputWrapper
+      type="D"
+      address={props.address}
+      subheader={props.description}
+      action={
+        <IconButton
+          disabled={query.isRefetching}
+          onClick={() => {
+            query.refetch();
+          }}
+        >
+          <PendingIcon isPending={query.isRefetching}>
+            <Refresh />
+          </PendingIcon>
+        </IconButton>
+      }
     >
-      <form.Field name="value">
-        {(field) => {
-          return (
-            <NumberField
-              field={{
-                value: field.state.value,
-                onChange: field.handleChange,
-                onBlur: field.handleBlur,
-              }}
-              placeholder={query.data.toString(10)}
-              fullWidth
-              error={!!field.getMeta().errors.length}
-              helperText={field.getMeta().errors.at(0)?.message}
-              label={"D" + props.address}
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <form.Subscribe
-                        selector={(s) => [s.canSubmit, s.isSubmitting]}
-                      >
-                        {([canSubmit, isSubmitting]) => {
-                          return (
-                            <Button
-                              type="submit"
-                              form={formId}
-                              disabled={!canSubmit}
-                              endIcon={
-                                <PendingIcon isPending={isSubmitting}>
-                                  <KeyboardReturn />
-                                </PendingIcon>
-                              }
-                              variant="contained"
-                            >
-                              保存
-                            </Button>
-                          );
-                        }}
-                      </form.Subscribe>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              _enableReturnSubmit
-            />
-          );
-        }}
-      </form.Field>
-    </form>
+      {renderQuery()}
+    </BitInputWrapper>
   );
 };
 
@@ -444,7 +525,7 @@ const Form = () => {
         }
       });
 
-      c.formApi.resetField("address");
+      c.formApi.reset();
     },
     validators: {
       onChange: z.object({
@@ -470,7 +551,7 @@ const Form = () => {
         form.reset();
       }}
     >
-      <Grid container spacing={1}>
+      <Grid container spacing={2}>
         <Grid size={12}>
           <form.Field name="type">
             {(field) => {
@@ -503,7 +584,6 @@ const Form = () => {
                   }}
                   name={field.name}
                   _min={0}
-                  _max={37}
                   fullWidth
                   label="点位地址"
                 />
@@ -541,13 +621,13 @@ const Form = () => {
                     form={formId}
                     type="submit"
                     variant="contained"
-                    endIcon={
+                    startIcon={
                       <PendingIcon isPending={isSubmitting}>
-                        <Save />
+                        <Add />
                       </PendingIcon>
                     }
                   >
-                    保存
+                    新增点位
                   </Button>
                 );
               }}
@@ -567,6 +647,7 @@ interface BitInputWrapper {
   type: "X" | "Y" | "M" | "D";
   children?: React.ReactNode;
   subheader?: React.ReactNode;
+  action?: React.ReactNode;
 }
 
 const BitInputWrapper = (props: BitInputWrapper) => {
@@ -576,35 +657,38 @@ const BitInputWrapper = (props: BitInputWrapper) => {
         title={props.type + props.address}
         subheader={props.subheader}
         action={
-          <IconButton
-            onClick={() => {
-              usePLCStore.setState((draft) => {
-                switch (props.type) {
-                  case "Y":
-                    draft.y = draft.y.filter(
-                      (item) => !Object.is(item.address, props.address),
-                    );
-                    break;
-                  case "X":
-                    draft.x = draft.x.filter(
-                      (item) => !Object.is(item.address, props.address),
-                    );
-                    break;
-                  case "D":
-                    draft.d = draft.d.filter(
-                      (item) => !Object.is(item.address, props.address),
-                    );
-                    break;
-                  case "M":
-                    draft.m = draft.m.filter(
-                      (item) => !Object.is(item.address, props.address),
-                    );
-                }
-              });
-            }}
-          >
-            <Delete />
-          </IconButton>
+          <>
+            {props.action}
+            <IconButton
+              onClick={() => {
+                usePLCStore.setState((draft) => {
+                  switch (props.type) {
+                    case "Y":
+                      draft.y = draft.y.filter(
+                        (item) => !Object.is(item.address, props.address),
+                      );
+                      break;
+                    case "X":
+                      draft.x = draft.x.filter(
+                        (item) => !Object.is(item.address, props.address),
+                      );
+                      break;
+                    case "D":
+                      draft.d = draft.d.filter(
+                        (item) => !Object.is(item.address, props.address),
+                      );
+                      break;
+                    case "M":
+                      draft.m = draft.m.filter(
+                        (item) => !Object.is(item.address, props.address),
+                      );
+                  }
+                });
+              }}
+            >
+              <Delete />
+            </IconButton>
+          </>
         }
       />
       <CardContent>{props.children}</CardContent>
@@ -664,17 +748,41 @@ export const Component = () => {
     validators: { onChange: schema },
   });
 
+  React.useEffect(() => {
+    ipc.invoke("plc/open", serialPortPath);
+
+    return () => {
+      ipc.invoke("plc/close");
+    };
+  }, [serialPortPath]);
+
   const renderPLCReadQuery = () => {
     if (plcReadTest.isPending) {
       return (
-        <Card>
-          <CardHeader title="PLC" />
-          <CardContent>
-            <Skeleton />
-            <Skeleton animation="wave" />
-            <Skeleton animation={false} />
-          </CardContent>
-        </Card>
+        <>
+          <Card>
+            <CardHeader
+              title="预置点位"
+              subheader="为气动多通道探伤机预置的一些点位"
+            />
+            <CardContent>
+              <Skeleton />
+              <Skeleton animation="wave" />
+              <Skeleton animation={false} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader
+              title="自定义点位"
+              subheader="预置点位不能满足要求时，可以自定义点位"
+            />
+            <CardContent>
+              <Skeleton />
+              <Skeleton animation="wave" />
+              <Skeleton animation={false} />
+            </CardContent>
+          </Card>
+        </>
       );
     }
 
@@ -691,247 +799,316 @@ export const Component = () => {
     }
 
     return (
-      <Card>
-        <CardHeader
-          title="PLC"
-          action={
-            <IconButton
-              onClick={() => {
-                plcReadTest.refetch();
-              }}
-              disabled={plcReadTest.isRefetching}
-            >
-              <Refresh />
-            </IconButton>
-          }
-        />
-        <CardContent>
-          <form
-            id={formId}
-            onSubmit={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              form.handleSubmit();
-            }}
-            onReset={() => {
-              form.reset();
-            }}
-            noValidate
-          >
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                <TextField
-                  value={plcReadTest.data.D20}
-                  fullWidth
-                  slotProps={{
-                    input: {
-                      readOnly: true,
-                    },
-                  }}
-                  label="左轴身实际值D20"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                <TextField
-                  value={plcReadTest.data.D21}
-                  fullWidth
-                  slotProps={{
-                    input: {
-                      readOnly: true,
-                    },
-                  }}
-                  label="右轴身实际值D21"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                <TextField
-                  value={plcReadTest.data.D22}
-                  fullWidth
-                  slotProps={{
-                    input: {
-                      readOnly: true,
-                    },
-                  }}
-                  label="左端面实际值D22"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                <TextField
-                  value={plcReadTest.data.D23}
-                  fullWidth
-                  slotProps={{
-                    input: {
-                      readOnly: true,
-                    },
-                  }}
-                  label="右端面实际值D23"
-                />
-              </Grid>
-              <Grid size={12}>
-                <Divider>分隔线</Divider>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                <form.AppField name="D300">
-                  {(field) => {
-                    return (
-                      <field.NumberField
-                        fullWidth
-                        label="左轴身降起始值D300"
-                        placeholder={plcReadTest.data.D300 + ""}
-                        field={{
-                          value: field.state.value,
-                          onChange: field.handleChange,
-                          onBlur: field.handleBlur,
-                        }}
-                        _min={0}
-                        error={field.state.meta.errors.length > 0}
-                        helperText={field.state.meta.errors.at(0)?.message}
-                      />
-                    );
-                  }}
-                </form.AppField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                <form.AppField name="D301">
-                  {(field) => {
-                    return (
-                      <field.NumberField
-                        fullWidth
-                        label="右轴身降起始值D301"
-                        placeholder={plcReadTest.data.D301 + ""}
-                        field={{
-                          value: field.state.value,
-                          onChange: field.handleChange,
-                          onBlur: field.handleBlur,
-                        }}
-                        _min={0}
-                        error={field.state.meta.errors.length > 0}
-                        helperText={field.state.meta.errors.at(0)?.message}
-                      />
-                    );
-                  }}
-                </form.AppField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                <form.AppField name="D302">
-                  {(field) => {
-                    return (
-                      <field.NumberField
-                        fullWidth
-                        label="左端面降起始值D302"
-                        placeholder={plcReadTest.data.D302 + ""}
-                        field={{
-                          value: field.state.value,
-                          onChange: field.handleChange,
-                          onBlur: field.handleBlur,
-                        }}
-                        _min={0}
-                        error={field.state.meta.errors.length > 0}
-                        helperText={field.state.meta.errors.at(0)?.message}
-                      />
-                    );
-                  }}
-                </form.AppField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                <form.AppField name="D303">
-                  {(field) => {
-                    return (
-                      <field.NumberField
-                        fullWidth
-                        label="右端面降起始值D303"
-                        placeholder={plcReadTest.data.D303 + ""}
-                        field={{
-                          value: field.state.value,
-                          onChange: field.handleChange,
-                          onBlur: field.handleBlur,
-                        }}
-                        _min={0}
-                        error={field.state.meta.errors.length > 0}
-                        helperText={field.state.meta.errors.at(0)?.message}
-                      />
-                    );
-                  }}
-                </form.AppField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                <form.AppField name="D308">
-                  {(field) => {
-                    return (
-                      <field.NumberField
-                        fullWidth
-                        label="左轴身差值D308"
-                        placeholder={plcReadTest.data.D308 + ""}
-                        field={{
-                          value: field.state.value,
-                          onChange: field.handleChange,
-                          onBlur: field.handleBlur,
-                        }}
-                        _min={0}
-                        error={field.state.meta.errors.length > 0}
-                        helperText={field.state.meta.errors.at(0)?.message}
-                      />
-                    );
-                  }}
-                </form.AppField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                <form.AppField name="D309">
-                  {(field) => {
-                    return (
-                      <field.NumberField
-                        fullWidth
-                        label="右轴身差值D309"
-                        placeholder={plcReadTest.data.D309 + ""}
-                        field={{
-                          value: field.state.value,
-                          onChange: field.handleChange,
-                          onBlur: field.handleBlur,
-                        }}
-                        _min={0}
-                        error={field.state.meta.errors.length > 0}
-                        helperText={field.state.meta.errors.at(0)?.message}
-                      />
-                    );
-                  }}
-                </form.AppField>
-              </Grid>
-            </Grid>
-          </form>
-        </CardContent>
-        <CardActions>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={plcWriteTest.isPending}
-            startIcon={
-              plcWriteTest.isPending ? <CircularProgress size={20} /> : <Save />
+      <>
+        <Card>
+          <CardHeader
+            title="预置点位"
+            subheader="为气动多通道探伤机预置的一些点位"
+            action={
+              <IconButton
+                onClick={() => {
+                  plcReadTest.refetch();
+                }}
+                disabled={plcReadTest.isRefetching}
+              >
+                <PendingIcon isPending={plcReadTest.isRefetching}>
+                  <Refresh />
+                </PendingIcon>
+              </IconButton>
             }
-          >
-            保存
-          </Button>
-          <Button type="reset" form={formId} startIcon={<Restore />}>
-            重置
-          </Button>
-        </CardActions>
-      </Card>
+          />
+          <CardContent>
+            <form
+              id={formId}
+              onSubmit={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                form.handleSubmit();
+              }}
+              onReset={() => {
+                form.reset();
+              }}
+              noValidate
+            >
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                  <TextField
+                    value={plcReadTest.data.D20}
+                    fullWidth
+                    slotProps={{
+                      input: {
+                        readOnly: true,
+                      },
+                    }}
+                    label="左轴身实际值D20"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                  <TextField
+                    value={plcReadTest.data.D21}
+                    fullWidth
+                    slotProps={{
+                      input: {
+                        readOnly: true,
+                      },
+                    }}
+                    label="右轴身实际值D21"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                  <TextField
+                    value={plcReadTest.data.D22}
+                    fullWidth
+                    slotProps={{
+                      input: {
+                        readOnly: true,
+                      },
+                    }}
+                    label="左端面实际值D22"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                  <TextField
+                    value={plcReadTest.data.D23}
+                    fullWidth
+                    slotProps={{
+                      input: {
+                        readOnly: true,
+                      },
+                    }}
+                    label="右端面实际值D23"
+                  />
+                </Grid>
+                <Grid size={12}>
+                  <Divider>分隔线</Divider>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                  <form.AppField name="D300">
+                    {(field) => {
+                      return (
+                        <field.NumberField
+                          fullWidth
+                          label="左轴身降起始值D300"
+                          placeholder={plcReadTest.data.D300 + ""}
+                          field={{
+                            value: field.state.value,
+                            onChange: field.handleChange,
+                            onBlur: field.handleBlur,
+                          }}
+                          _min={0}
+                          error={field.state.meta.errors.length > 0}
+                          helperText={field.state.meta.errors.at(0)?.message}
+                        />
+                      );
+                    }}
+                  </form.AppField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                  <form.AppField name="D301">
+                    {(field) => {
+                      return (
+                        <field.NumberField
+                          fullWidth
+                          label="右轴身降起始值D301"
+                          placeholder={plcReadTest.data.D301 + ""}
+                          field={{
+                            value: field.state.value,
+                            onChange: field.handleChange,
+                            onBlur: field.handleBlur,
+                          }}
+                          _min={0}
+                          error={field.state.meta.errors.length > 0}
+                          helperText={field.state.meta.errors.at(0)?.message}
+                        />
+                      );
+                    }}
+                  </form.AppField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                  <form.AppField name="D302">
+                    {(field) => {
+                      return (
+                        <field.NumberField
+                          fullWidth
+                          label="左端面降起始值D302"
+                          placeholder={plcReadTest.data.D302 + ""}
+                          field={{
+                            value: field.state.value,
+                            onChange: field.handleChange,
+                            onBlur: field.handleBlur,
+                          }}
+                          _min={0}
+                          error={field.state.meta.errors.length > 0}
+                          helperText={field.state.meta.errors.at(0)?.message}
+                        />
+                      );
+                    }}
+                  </form.AppField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                  <form.AppField name="D303">
+                    {(field) => {
+                      return (
+                        <field.NumberField
+                          fullWidth
+                          label="右端面降起始值D303"
+                          placeholder={plcReadTest.data.D303 + ""}
+                          field={{
+                            value: field.state.value,
+                            onChange: field.handleChange,
+                            onBlur: field.handleBlur,
+                          }}
+                          _min={0}
+                          error={field.state.meta.errors.length > 0}
+                          helperText={field.state.meta.errors.at(0)?.message}
+                        />
+                      );
+                    }}
+                  </form.AppField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                  <form.AppField name="D308">
+                    {(field) => {
+                      return (
+                        <field.NumberField
+                          fullWidth
+                          label="左轴身差值D308"
+                          placeholder={plcReadTest.data.D308 + ""}
+                          field={{
+                            value: field.state.value,
+                            onChange: field.handleChange,
+                            onBlur: field.handleBlur,
+                          }}
+                          _min={0}
+                          error={field.state.meta.errors.length > 0}
+                          helperText={field.state.meta.errors.at(0)?.message}
+                        />
+                      );
+                    }}
+                  </form.AppField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                  <form.AppField name="D309">
+                    {(field) => {
+                      return (
+                        <field.NumberField
+                          fullWidth
+                          label="右轴身差值D309"
+                          placeholder={plcReadTest.data.D309 + ""}
+                          field={{
+                            value: field.state.value,
+                            onChange: field.handleChange,
+                            onBlur: field.handleBlur,
+                          }}
+                          _min={0}
+                          error={field.state.meta.errors.length > 0}
+                          helperText={field.state.meta.errors.at(0)?.message}
+                        />
+                      );
+                    }}
+                  </form.AppField>
+                </Grid>
+              </Grid>
+            </form>
+          </CardContent>
+          <CardActions>
+            <Button
+              type="submit"
+              form={formId}
+              disabled={plcWriteTest.isPending}
+              startIcon={
+                <PendingIcon isPending={plcWriteTest.isPending}>
+                  <Save />
+                </PendingIcon>
+              }
+            >
+              保存
+            </Button>
+            <Button type="reset" form={formId} startIcon={<Restore />}>
+              重置
+            </Button>
+          </CardActions>
+        </Card>
+        <Card>
+          <CardHeader
+            title="自定义点位"
+            subheader="预置点位不能满足要求时，可以自定义点位"
+            action={
+              <IconButton disabled={true}>
+                <PendingIcon>
+                  <Refresh />
+                </PendingIcon>
+              </IconButton>
+            }
+          />
+          <CardContent>
+            <Form />
+          </CardContent>
+          <Divider></Divider>
+          <CardContent>
+            <Grid container spacing={2}>
+              <Grid size={12}>
+                <FormLabel>X点</FormLabel>
+              </Grid>
+              {xList.map((i) => {
+                return (
+                  <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <XInput
+                      path={serialPortPath}
+                      address={i.address}
+                      description={i.description}
+                    />
+                  </Grid>
+                );
+              })}
+              <Grid size={12}>
+                <FormLabel>Y点</FormLabel>
+              </Grid>
+              {yList.map((i) => {
+                return (
+                  <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <YInput
+                      path={serialPortPath}
+                      address={i.address}
+                      description={i.description}
+                    />
+                  </Grid>
+                );
+              })}
+              <Grid size={12}>
+                <FormLabel>M点</FormLabel>
+              </Grid>
+              {mList.map((i) => {
+                return (
+                  <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <MInput
+                      path={serialPortPath}
+                      address={i.address}
+                      description={i.description}
+                    />
+                  </Grid>
+                );
+              })}
+              <Grid size={12}>
+                <FormLabel>D点</FormLabel>
+              </Grid>
+              {dList.map((i) => {
+                return (
+                  <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <DInput path={serialPortPath} address={i.address} />
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </CardContent>
+        </Card>
+      </>
     );
   };
 
   const renderSerialPortQuery = () => {
     if (serialPorts.isPending) {
-      return (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 6,
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      );
+      return <Loading />;
     }
 
     if (serialPorts.isError) {
@@ -970,7 +1147,7 @@ export const Component = () => {
         <Card>
           <CardHeader
             title="串口"
-            subheader="指定串口"
+            subheader="指定PLC所连接的串口, 一般为 COM1"
             action={
               <IconButton
                 onClick={() => {
@@ -983,8 +1160,8 @@ export const Component = () => {
             }
           />
           <CardContent>
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4 }}>
                 <TextField
                   value={serialPortPath}
                   onChange={(e) => {
@@ -1012,98 +1189,7 @@ export const Component = () => {
   return (
     <>
       <ScrollToTopButton />
-      <Stack spacing={3}>
-        {renderSerialPortQuery()}
-        {!!serialPortPath && (
-          <Card>
-            <CardHeader title="自定义点位" />
-            <CardContent>
-              <Form />
-            </CardContent>
-            <Divider></Divider>
-            <CardContent>
-              <Grid container spacing={1}>
-                <Grid size={12}>
-                  <FormLabel>X点</FormLabel>
-                </Grid>
-                {xList.map((i) => {
-                  return (
-                    <Grid
-                      key={i.address}
-                      size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-                    >
-                      <BitInputWrapper
-                        address={i.address}
-                        type="X"
-                        subheader={i.description}
-                      >
-                        <XInput path={serialPortPath} address={i.address} />
-                      </BitInputWrapper>
-                    </Grid>
-                  );
-                })}
-                <Grid size={12}>
-                  <FormLabel>Y点</FormLabel>
-                </Grid>
-                {yList.map((i) => {
-                  return (
-                    <Grid
-                      key={i.address}
-                      size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-                    >
-                      <BitInputWrapper
-                        address={i.address}
-                        type="Y"
-                        subheader={i.description}
-                      >
-                        <YInput path={serialPortPath} address={i.address} />
-                      </BitInputWrapper>
-                    </Grid>
-                  );
-                })}
-                <Grid size={12}>
-                  <FormLabel>M点</FormLabel>
-                </Grid>
-                {mList.map((i) => {
-                  return (
-                    <Grid
-                      key={i.address}
-                      size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-                    >
-                      <BitInputWrapper
-                        type="M"
-                        address={i.address}
-                        subheader={i.description}
-                      >
-                        <MInput path={serialPortPath} address={i.address} />
-                      </BitInputWrapper>
-                    </Grid>
-                  );
-                })}
-                <Grid size={12}>
-                  <FormLabel>D点</FormLabel>
-                </Grid>
-                {dList.map((i) => {
-                  return (
-                    <Grid
-                      key={i.address}
-                      size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-                    >
-                      <BitInputWrapper
-                        type="D"
-                        address={i.address}
-                        subheader={i.description}
-                      >
-                        <DInput path={serialPortPath} address={i.address} />
-                      </BitInputWrapper>
-                    </Grid>
-                  );
-                })}
-              </Grid>
-            </CardContent>
-          </Card>
-        )}
-      </Stack>
+      <Stack spacing={2}>{renderSerialPortQuery()}</Stack>
     </>
   );
 };

@@ -33,6 +33,12 @@ export const registerIPCHandlers = (plc: PLC) => {
   ipcHandle("plc/y_write", (_, payload) => {
     return plc.handleYWrite(payload);
   });
+  ipcHandle("plc/open", (_, path) => {
+    plc.open(path);
+  });
+  ipcHandle("plc/close", (_) => {
+    plc.close();
+  });
 
   return () => {
     ipcRemoveHandle("PLC/read_test");
@@ -45,5 +51,7 @@ export const registerIPCHandlers = (plc: PLC) => {
     ipcRemoveHandle("plc/x_read");
     ipcRemoveHandle("plc/y_read");
     ipcRemoveHandle("plc/y_write");
+    ipcRemoveHandle("plc/open");
+    ipcRemoveHandle("plc/close");
   };
 };

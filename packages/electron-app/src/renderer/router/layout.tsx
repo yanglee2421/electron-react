@@ -49,6 +49,7 @@ const createSegmentAlias = () => {
     ["chr503", "年度性能校验表"],
     ["chr501", "日常性能校验表"],
     ["chr501", "日常性能校验表"],
+    ["plc", "PLC助手"],
   ]);
 
   return segmentAlias;

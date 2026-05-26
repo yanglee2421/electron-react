@@ -1,4 +1,17 @@
 import { FXPLCClient, TransportSerial } from "node-fxplc";
+import type { Observable, Subscription } from "rxjs";
+import {
+  BehaviorSubject,
+  distinctUntilChanged,
+  last,
+  NEVER,
+  of,
+  shareReplay,
+  startWith,
+  switchMap,
+  takeUntil,
+  using,
+} from "rxjs";
 import { SerialPort } from "serialport";
 import type {
   PLCReadResult,
@@ -12,58 +25,98 @@ import type {
   WriteYInput,
 } from "./types";
 
-export class PLC {
-  private readonly registers = [
-    "D20",
-    "D21",
-    "D22",
-    "D23",
-    "D300",
-    "D301",
-    "D302",
-    "D303",
-    "D308",
-    "D309",
-  ];
-  private path: string = "";
-  private plc: FXPLCClient | null = null;
+const createPLCClient = (path: string) => {
+  const port = new TransportSerial({ path: path, timeout: 1000 * 2 });
+  const plc = new FXPLCClient(port);
 
-  constructor() {}
+  return plc;
+};
+
+const registers = [
+  "D20",
+  "D21",
+  "D22",
+  "D23",
+  "D300",
+  "D301",
+  "D302",
+  "D303",
+  "D308",
+  "D309",
+];
+
+export class PLC {
+  private path$: BehaviorSubject<string>;
+  private plc$: Observable<FXPLCClient | null>;
+  private subscription: Subscription;
+  private plc: FXPLCClient | null;
+
+  constructor() {
+    this.path$ = new BehaviorSubject("");
+    this.plc$ = this.path$.pipe(
+      distinctUntilChanged(),
+      switchMap((path) => {
+        if (!path) {
+          return of(null);
+        }
+
+        return using(
+          () => {
+            const plc = createPLCClient(path);
+            console.log("start", path);
+
+            return {
+              unsubscribe: () => {
+                console.log("unsubscribe", path);
+                plc.close();
+              },
+              plc,
+            };
+          },
+          (c) => {
+            const plc: FXPLCClient = Reflect.get(Object(c), "plc");
+
+            return NEVER.pipe(startWith(plc));
+          },
+        );
+      }),
+      takeUntil(this.path$.pipe(last())),
+      shareReplay({ refCount: true, bufferSize: 1 }),
+    );
+
+    this.plc = null;
+    this.subscription = this.plc$.subscribe({
+      next: (plc) => {
+        this.plc = plc;
+      },
+      error: () => {
+        this.plc = null;
+      },
+      complete: () => {
+        this.plc = null;
+      },
+    });
+  }
 
   dispose() {
-    this.plc?.close();
+    this.subscription.unsubscribe();
+    this.path$.complete();
   }
 
-  createPLC() {
-    const port = new TransportSerial({
-      path: this.path,
-      baudRate: 9600,
-      timeout: 1000 * 15,
-    });
+  getPLC(path: string) {
+    this.path$.next(path);
+    const plc = this.plc;
 
-    return new FXPLCClient(port);
-  }
-
-  getPLC(path: string): FXPLCClient {
-    if (path !== this.path) {
-      this.path = path;
-      this.plc = this.createPLC();
-
-      return this.plc;
+    if (!plc) {
+      throw new Error("PLC is not connected");
     }
 
-    if (!this.plc) {
-      this.plc = this.createPLC();
-
-      return this.plc;
-    }
-
-    return this.plc;
+    return plc;
   }
 
   async handleReadState(path: string): Promise<PLCReadResult> {
     const plc = this.getPLC(path);
-    const values = await plc.batchRead(this.registers);
+    const values = await plc.batchRead(registers);
 
     const result: PLCReadResult = {
       D20: values[0],
@@ -88,7 +141,6 @@ export class PLC {
   async handleWriteState(payload: PLCWritePayload) {
     const { path, ...restPayload } = payload;
     const plc = this.getPLC(path);
-
     const { registers, values } = Object.entries(restPayload).reduce(
       (result, [key, value], index) => {
         result.registers[index] = key;
@@ -125,7 +177,6 @@ export class PLC {
   async handleYWrite(params: WriteYInput) {
     const { path, address, value } = params;
     const plc = this.getPLC(path);
-
     await plc.writeBit(`Y${address}`, value);
 
     return value;
@@ -142,7 +193,6 @@ export class PLC {
   async handleMWrite(params: WriteMInput) {
     const { path, address, value } = params;
     const plc = this.getPLC(path);
-
     await plc.writeBit(`M${address}`, value);
 
     return value;
@@ -159,9 +209,15 @@ export class PLC {
   async handleDWrite(params: WriteDInput) {
     const { path, address, value } = params;
     const plc = this.getPLC(path);
-
     await plc.batchWrite([`D${address}`], [value]);
 
     return value;
+  }
+
+  open(path: string) {
+    this.path$.next(path);
+  }
+  close() {
+    this.path$.next("");
   }
 }
