@@ -6,6 +6,7 @@ import {
   Col,
   PageFooter,
   PageHeader,
+  ReportImage,
   ReportTitle,
   Row,
 } from "#renderer/components/pdf";
@@ -13,14 +14,7 @@ import { of } from "#shared/functions/array";
 import { resolveCHR501 } from "#shared/functions/chr501";
 import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Alert, AlertTitle } from "@mui/material";
-import {
-  Document,
-  Image,
-  Page,
-  PDFViewer,
-  Text,
-  View,
-} from "@react-pdf/renderer";
+import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
@@ -33,13 +27,6 @@ const XHC_DIRECTION_COL_WIDTH = 20;
 const XHC_CHANNEL_COL_WIDTH = 32;
 const XHC_ZSJ_COL_WIDTH = 28;
 const XHC_FLAW_NO_COL_WIDTH = 80;
-
-const createCustomURL = (path: string) => {
-  const url = new URL("ziyun://localhost/file");
-  url.searchParams.set("file", path);
-
-  return url.href;
-};
 
 interface TableHeaderProps {
   labelL: string;
@@ -374,73 +361,31 @@ const ReportDoc = (props: ReportDocProps) => {
                 <Col>
                   <Cell font12>左轴颈根部扫描图</Cell>
                   <View style={[styles.borderTR]}>
-                    {props.imageLXH ? (
-                      <Image
-                        src={createCustomURL(props.imageLXH)}
-                        style={[{ height: IMAGE_HEIGHT }]}
-                      />
-                    ) : (
-                      <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                    )}
+                    <ReportImage height={IMAGE_HEIGHT} src={props.imageLXH} />
                   </View>
                   <Cell font12>左轮座部扫描图</Cell>
                   <View style={[styles.borderTR]}>
-                    {props.imageLLZ ? (
-                      <Image
-                        src={createCustomURL(props.imageLLZ)}
-                        style={[{ height: IMAGE_HEIGHT }]}
-                      />
-                    ) : (
-                      <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                    )}
+                    <ReportImage height={IMAGE_HEIGHT} src={props.imageLLZ} />
                   </View>
                 </Col>
                 <Col>
                   <Cell font12>右轴颈根部扫描图</Cell>
                   <View style={[styles.borderTR]}>
-                    {props.imageRXH ? (
-                      <Image
-                        src={createCustomURL(props.imageRXH)}
-                        style={[{ height: IMAGE_HEIGHT }]}
-                      />
-                    ) : (
-                      <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                    )}
+                    <ReportImage height={IMAGE_HEIGHT} src={props.imageRXH} />
                   </View>
                   <Cell font12>右轮座部扫描图</Cell>
                   <View style={[styles.flex1, styles.borderTR]}>
-                    {props.imageRLZ ? (
-                      <Image
-                        src={createCustomURL(props.imageRLZ)}
-                        style={[{ height: IMAGE_HEIGHT }]}
-                      />
-                    ) : (
-                      <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                    )}
+                    <ReportImage height={IMAGE_HEIGHT} src={props.imageRLZ} />
                   </View>
                 </Col>
               </Row>
               <Cell font12>左穿透扫描图</Cell>
               <View style={[styles.borderTR]}>
-                {props.imageLCT ? (
-                  <Image
-                    src={createCustomURL(props.imageLCT)}
-                    style={[{ height: IMAGE_HEIGHT }]}
-                  />
-                ) : (
-                  <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                )}
+                <ReportImage height={IMAGE_HEIGHT} src={props.imageLCT} />
               </View>
               <Cell font12>右穿透扫描图</Cell>
               <View style={[styles.borderTR]}>
-                {props.imageRCT ? (
-                  <Image
-                    src={createCustomURL(props.imageRCT)}
-                    style={[{ height: IMAGE_HEIGHT }]}
-                  />
-                ) : (
-                  <View style={[{ height: IMAGE_HEIGHT }]}></View>
-                )}
+                <ReportImage height={IMAGE_HEIGHT} src={props.imageRCT} />
               </View>
             </View>
           </View>

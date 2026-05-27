@@ -1,5 +1,5 @@
 import { CellHeightContext, cn, styles } from "#shared/instances/styles";
-import { Path, Svg, Text, View } from "@react-pdf/renderer";
+import { Image, Path, Svg, Text, View } from "@react-pdf/renderer";
 import React from "react";
 
 export const Row = (props: React.PropsWithChildren) => {
@@ -142,5 +142,30 @@ export const ReportTitle = (props: React.PropsWithChildren) => {
     <View style={[styles.paddingY8]}>
       <Text style={[styles.font16, styles.fontBold]}>{props.children}</Text>
     </View>
+  );
+};
+
+const createCustomURL = (path: string) => {
+  const url = new URL("ziyun://localhost/file");
+  url.searchParams.set("file", path);
+
+  return url.href;
+};
+
+interface ReportImageProps {
+  src?: string;
+  height: number;
+}
+
+export const ReportImage = (props: ReportImageProps) => {
+  if (!props.src) {
+    return <View style={[{ height: props.height }]}></View>;
+  }
+
+  return (
+    <Image
+      src={createCustomURL(props.src)}
+      style={[{ height: props.height }]}
+    />
   );
 };
