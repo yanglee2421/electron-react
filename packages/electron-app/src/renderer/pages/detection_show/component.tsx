@@ -116,7 +116,7 @@ export const Component = () => {
           <Button
             startIcon={<Print />}
             component={Link}
-            to={`/detection/${params.id}/chr5`}
+            to={`/detection/${params.id}/chr52a`}
             variant="outlined"
           >
             打印

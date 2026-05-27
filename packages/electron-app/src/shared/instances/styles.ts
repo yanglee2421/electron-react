@@ -62,6 +62,9 @@ export const styles = StyleSheet.create({
   itemsCenter: {
     alignItems: "center",
   },
+  itemsStart: {
+    alignItems: "flex-start",
+  },
   gap10: {
     gap: 10,
   },
@@ -126,6 +129,18 @@ export const styles = StyleSheet.create({
   },
   paddingB8: {
     paddingBottom: 8,
+  },
+  paddingL2: {
+    paddingLeft: 2,
+  },
+  paddingL4: {
+    paddingLeft: 4,
+  },
+  paddingL6: {
+    paddingLeft: 6,
+  },
+  paddingL8: {
+    paddingLeft: 8,
   },
 
   border: {

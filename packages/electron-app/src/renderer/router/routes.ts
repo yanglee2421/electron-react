@@ -70,7 +70,17 @@ export const routes: RouteObject[] = [
                   },
                   {
                     path: ":id",
-                    lazy: () => import("#renderer/pages/detection_show"),
+                    children: [
+                      {
+                        index: true,
+                        lazy: () => import("#renderer/pages/detection_show"),
+                      },
+                      {
+                        path: "chr52a",
+                        lazy: () =>
+                          import("#renderer/pages/detection_chr52a/component"),
+                      },
+                    ],
                   },
                   {
                     path: "chr53a",
