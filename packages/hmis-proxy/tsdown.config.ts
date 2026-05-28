@@ -30,14 +30,7 @@ export default defineConfig((conf) => {
   return {
     entry: ["src/main.ts"],
     dts: true,
-    format: {
-      esm: {
-        target: ["ES2023"],
-      },
-      cjs: {
-        target: ["node22"],
-      },
-    },
+    format: "esm",
     outDir: path.resolve(__dirname, "dist"),
     outExtensions: ({ format }) => {
       return {

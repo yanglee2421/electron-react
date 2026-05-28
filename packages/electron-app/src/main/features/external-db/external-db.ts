@@ -1,6 +1,6 @@
+import type { DBClient } from "@yanglee2421/external-db";
+import { relations, schema } from "@yanglee2421/external-db";
 import { drizzle } from "drizzle-orm/node-sqlite";
-import type { DBClient } from "external-db";
-import { relations, schema } from "external-db";
 import { DatabaseSync } from "node:sqlite";
 import type { Subscription } from "rxjs";
 import {

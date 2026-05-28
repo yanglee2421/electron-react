@@ -1,4 +1,4 @@
-import { createServer } from "hmis-proxy";
+import { createServer } from "@yanglee2421/hmis-proxy";
 import type { Subscription } from "rxjs";
 import {
   distinctUntilChanged,
