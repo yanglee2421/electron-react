@@ -43,6 +43,7 @@
     "gyp:rebuild": "node-gyp rebuild"
   },
   "devDependencies": {
+    "node-addon-api": "^8.8.0",
     "node-gyp": "^12.2.0"
   }
 }

@@ -11,9 +11,18 @@
     "import": "./dist/main.mjs",
     "require": "./dist/main.cjs"
   },
-  "dependencies": {
+  "devDependencies": {
     "@hono/node-server": "^2.0.4",
     "@hono/zod-validator": "^0.8.0",
-    "hono": "^4.12.23"
+    "dayjs": "^1.11.20",
+    "hono": "^4.12.23",
+    "zod": "^4.4.3"
+  },
+  "peerDependencies": {
+    "@hono/node-server": "^2.0.4",
+    "@hono/zod-validator": "^0.8.0",
+    "dayjs": "^1.11.20",
+    "hono": "^4.12.23",
+    "zod": "^4.4.3"
   }
 }

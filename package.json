@@ -34,15 +34,9 @@
   },
   "scripts": {
     "dev": "pnpm -F app-ziyun dev",
-    "build": "pnpm -F cpp-addon build && pnpm -F app-ziyun build",
+    "build": "pnpm -r build",
     "db:generate": "pnpm -F app-ziyun db:generate",
     "lint": "vp lint"
-  },
-  "dependencies": {
-    "dayjs": "^1.11.20",
-    "drizzle-orm": "1.0.0-beta.22",
-    "node-addon-api": "^8.5.0",
-    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",

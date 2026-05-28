@@ -10,5 +10,11 @@
     },
     "import": "./dist/main.mjs",
     "require": "./dist/main.cjs"
+  },
+  "peerDependencies": {
+    "drizzle-orm": "1.0.0-beta.22"
+  },
+  "devDependencies": {
+    "drizzle-orm": "1.0.0-beta.22"
   }
 }
