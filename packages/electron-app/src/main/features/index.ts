@@ -1,8 +1,10 @@
 import { asClass, createContainer } from "awilix";
 import { Cmd } from "./cmd";
 import { DB } from "./db";
+import { ExternalDB } from "./external-db";
 import { Guangzhoubei } from "./guangzhoubei";
 import { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
+import { HmisProxy } from "./hmis-proxy";
 import { Hxzy } from "./hxzy/hxzy";
 import { ImageModule } from "./image";
 import { JTV } from "./jtv";
@@ -22,12 +24,18 @@ container.register({
   db: asClass(DB)
     .singleton()
     .disposer((db) => db.dispose()),
+  externalDB: asClass(ExternalDB)
+    .singleton()
+    .disposer((instance) => instance.dispose()),
   guangzhoubei: asClass(Guangzhoubei)
     .singleton()
     .disposer((instance) => instance.dispose()),
   guangzhoujibaoduan: asClass(JTV_HMIS_Guangzhoujibaoduan)
     .singleton()
     .disposer((instance) => instance.dispose()),
+  hmisProxy: asClass(HmisProxy)
+    .singleton()
+    .disposer((hmisProxy) => hmisProxy.dispose()),
   hxzy: asClass(Hxzy)
     .singleton()
     .disposer((instance) => instance.dispose()),

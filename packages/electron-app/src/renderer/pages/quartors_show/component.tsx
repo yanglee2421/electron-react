@@ -74,8 +74,10 @@ export const Component = () => {
       switch (flawType) {
         case 2:
           return "透声不良";
-        case 3:
+        case 4:
           return "晶粗";
+        case 8:
+          return "压装不良";
         case 1:
         default:
           return (

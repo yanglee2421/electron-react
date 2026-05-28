@@ -1,7 +1,9 @@
 import type { DB } from "#main/features/db";
 import type { Cmd } from "./cmd";
+import type { ExternalDB } from "./external-db";
 import type { Guangzhoubei } from "./guangzhoubei";
 import type { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
+import type { HmisProxy } from "./hmis-proxy";
 import type { Hxzy } from "./hxzy";
 import type { ImageModule } from "./image";
 import type { JTV } from "./jtv";
@@ -18,8 +20,10 @@ export interface AppCradle {
 
   cmd: Cmd;
   db: DB;
+  externalDB: ExternalDB;
   guangzhoubei: Guangzhoubei;
   guangzhoujibaoduan: JTV_HMIS_Guangzhoujibaoduan;
+  hmisProxy: HmisProxy;
   hxzy: Hxzy;
   image: ImageModule;
   jtv: JTV;

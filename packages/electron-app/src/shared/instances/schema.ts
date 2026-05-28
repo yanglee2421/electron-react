@@ -3,6 +3,9 @@ import { zhCN } from "zod/locales";
 
 z.config(zhCN());
 
+const ipv4Schema = z.ipv4().default("0.0.0.0");
+const portSchema = z.number().int().min(1).max(65535).default(80);
+
 export const themeMode = z.enum(["system", "light", "dark"]).default("system");
 
 export type ThemeMode = z.infer<typeof themeMode>;
@@ -12,12 +15,13 @@ export const profile = z.object({
   encoding: z.string().default("gbk"),
   alwaysOnTop: z.boolean().default(false),
   mode: themeMode,
+  enableExternalDB: z.boolean().default(false),
+  externalDBPath: z.string().default(""),
+  enableHMISProxy: z.boolean().default(false),
+  hmisProxyPort: portSchema,
 });
 
 export type Profile = z.infer<typeof profile>;
-
-const ipv4Schema = z.ipv4().default("0.0.0.0");
-const portSchema = z.number().int().min(1).max(65535).default(80);
 
 export const kh_hmis = z.object({
   ip: ipv4Schema,

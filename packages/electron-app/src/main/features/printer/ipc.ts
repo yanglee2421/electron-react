@@ -11,9 +11,12 @@ export const registerIPCHandlers = (printer: Printer) => {
   ipcHandle("printer/chr503", (_, id: string) => {
     return printer.getDataForCHR503(id);
   });
-  ipcHandle('printer/chr53a',async(_,input)=>{
-    return printer.getDataForCHR53A(input.ids)
-  })
+  ipcHandle("printer/chr53a", async (_, input) => {
+    return printer.getDataForCHR53A(input.ids);
+  });
+  ipcHandle("printer/chr52a", async (_, id) => {
+    return printer.getDataForCHR52A(id);
+  });
   ipcHandle("printer/print", () => {
     return printer.print();
   });
@@ -22,7 +25,8 @@ export const registerIPCHandlers = (printer: Printer) => {
     ipcRemoveHandle("printer/chr501");
     ipcRemoveHandle("printer/chr502");
     ipcRemoveHandle("printer/chr503");
-    ipcRemoveHandle('printer/chr53a')
+    ipcRemoveHandle("printer/chr53a");
+    ipcRemoveHandle("printer/chr52a");
     ipcRemoveHandle("printer/print");
   };
 };

@@ -5,8 +5,10 @@ import {
   useOpenAtLogin,
   useOpenDevTools,
   useSelectDirectory,
+  useSelectFile,
 } from "#renderer/api/fetch_preload";
 import { PendingIcon } from "#renderer/components/Loading";
+import { NumberField } from "#renderer/components/number";
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import { profile as profileSchema } from "#shared/instances/schema";
 import {
@@ -23,6 +25,8 @@ import {
   CardActions,
   CardContent,
   CardHeader,
+  FormControlLabel,
+  FormLabel,
   Grid,
   IconButton,
   InputAdornment,
@@ -56,17 +60,29 @@ const useProfileForm = () => {
   const notifications = useNotifications();
   const appPath = useProfileStore((state) => state.appPath);
   const encoding = useProfileStore((state) => state.encoding);
+  const externalDBPath = useProfileStore((state) => state.externalDBPath);
+  const enableExternalDB = useProfileStore((state) => state.enableExternalDB);
+  const enableHMISProxy = useProfileStore((state) => state.enableHMISProxy);
+  const hmisProxyPort = useProfileStore((state) => state.hmisProxyPort);
 
   const form = useAppForm({
     defaultValues: {
       ...useProfileStore.getState(),
       appPath,
       encoding,
+      enableExternalDB,
+      externalDBPath,
+      enableHMISProxy,
+      hmisProxyPort,
     },
     onSubmit: async ({ value }) => {
       useProfileStore.setState({
         appPath: value.appPath,
         encoding: value.encoding,
+        enableExternalDB: value.enableExternalDB,
+        externalDBPath: value.externalDBPath,
+        enableHMISProxy: value.enableHMISProxy,
+        hmisProxyPort: value.hmisProxyPort,
       });
       notifications.show("保存成功", { severity: "success" });
     },
@@ -90,6 +106,7 @@ export const Component = () => {
   const profileForm = useProfileForm();
   const version = useQuery(fetchVersion());
   const exportDB = useExportDB();
+  const selectFile = useSelectFile();
 
   const handleDirectoryChange = () => {
     selectDirectory.mutate(void 0, {
@@ -122,15 +139,16 @@ export const Component = () => {
             onReset={() => profileForm.reset()}
           >
             <Grid spacing={1.5} container>
+              <Grid size={12}>
+                <FormLabel>12通道相关</FormLabel>
+              </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <profileForm.AppField name="appPath">
-                  {(appPathField) => (
-                    <appPathField.TextField
-                      value={appPathField.state.value}
-                      onChange={(e) =>
-                        appPathField.handleChange(e.target.value)
-                      }
-                      onBlur={appPathField.handleBlur}
+                  {(field) => (
+                    <TextField
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
                       disabled={selectDirectory.isPending}
                       fullWidth
                       slotProps={{
@@ -153,39 +171,164 @@ export const Component = () => {
                       }}
                       label="应用路径"
                       helperText={
-                        appPathField.getMeta().errors.length
-                          ? appPathField.getMeta().errors.at(0)?.message
+                        field.getMeta().errors.length
+                          ? field.getMeta().errors.at(0)?.message
                           : "探伤软件的所在路径"
                       }
-                      error={appPathField.getMeta().errors.length > 0}
+                      error={field.getMeta().errors.length > 0}
                     />
                   )}
                 </profileForm.AppField>
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <profileForm.AppField name="encoding">
-                  {(encodingField) => (
-                    <encodingField.TextField
-                      value={encodingField.state.value}
-                      onChange={(e) =>
-                        encodingField.handleChange(e.target.value)
-                      }
-                      onBlur={encodingField.handleBlur}
+                  {(field) => (
+                    <TextField
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
                       fullWidth
                       label="编码"
                       helperText={
-                        encodingField.getMeta().errors.length
-                          ? encodingField.getMeta().errors.at(0)?.message
+                        field.getMeta().errors.length
+                          ? field.getMeta().errors.at(0)?.message
                           : "使用哪种编码集解析usprofile.ini"
                       }
-                      error={encodingField.getMeta().errors.length > 0}
+                      error={field.getMeta().errors.length > 0}
                       select
                     >
                       <MenuItem value="utf-8">utf-8</MenuItem>
                       <MenuItem value="gbk">gbk</MenuItem>
-                    </encodingField.TextField>
+                    </TextField>
                   )}
                 </profileForm.AppField>
+              </Grid>
+              <Grid size={12}>
+                <FormLabel>统信相关</FormLabel>
+              </Grid>
+              <Grid size={12}>
+                <profileForm.Field name="enableExternalDB">
+                  {(field) => {
+                    return (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.state.value}
+                            onChange={(_, checked) => {
+                              field.handleChange(checked);
+                            }}
+                          />
+                        }
+                        label="启用外部数据库"
+                      />
+                    );
+                  }}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <profileForm.Field name="externalDBPath">
+                  {(field) => {
+                    return (
+                      <TextField
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                        disabled={selectFile.isPending}
+                        fullWidth
+                        error={field.getMeta().errors.length > 0}
+                        helperText={
+                          field.getMeta().errors.length
+                            ? field.getMeta().errors.at(0)?.message
+                            : "外部数据库的所在路径"
+                        }
+                        label="外部数据库路径"
+                        slotProps={{
+                          input: {
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  onClick={() => {
+                                    selectFile.mutate(
+                                      [
+                                        {
+                                          extensions: ["db"],
+                                          name: "数据库文件",
+                                        },
+                                      ],
+                                      {
+                                        onSuccess: (paths) => {
+                                          const path = paths?.at(0);
+
+                                          if (!path) return;
+
+                                          profileForm.setFieldValue(
+                                            "externalDBPath",
+                                            path,
+                                          );
+                                          void profileForm.validateField(
+                                            "externalDBPath",
+                                            "change",
+                                          );
+                                        },
+                                      },
+                                    );
+                                  }}
+                                  disabled={selectFile.isPending}
+                                >
+                                  <PendingIcon isPending={selectFile.isPending}>
+                                    <FindInPageOutlined />
+                                  </PendingIcon>
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          },
+                        }}
+                      />
+                    );
+                  }}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={12}>
+                <profileForm.Field name="enableHMISProxy">
+                  {(field) => {
+                    return (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.state.value}
+                            onChange={(_, checked) => {
+                              field.handleChange(checked);
+                            }}
+                          />
+                        }
+                        label="启用HMIS代理"
+                      />
+                    );
+                  }}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <profileForm.Field name="hmisProxyPort">
+                  {(field) => {
+                    return (
+                      <NumberField
+                        field={{
+                          value: field.state.value,
+                          onChange: field.handleChange,
+                          onBlur: field.handleBlur,
+                        }}
+                        fullWidth
+                        error={field.getMeta().errors.length > 0}
+                        helperText={
+                          field.getMeta().errors.length
+                            ? field.getMeta().errors.at(0)?.message
+                            : "HMIS代理使用的端口号"
+                        }
+                        label="HMIS代理服务端口"
+                      />
+                    );
+                  }}
+                </profileForm.Field>
               </Grid>
             </Grid>
           </form>

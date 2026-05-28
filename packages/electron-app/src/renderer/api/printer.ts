@@ -39,3 +39,12 @@ export const fetchCHR53AData = (input: CHR53AInput) => {
     },
   });
 };
+
+export const fetchCHR52AData = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "chr52a", id],
+    queryFn: async () => {
+      return ipc.invoke("printer/chr52a", id);
+    },
+  });
+};

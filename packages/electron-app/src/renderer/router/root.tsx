@@ -1,4 +1,4 @@
-import { Dock, HomeOutlined } from "@mui/icons-material";
+import { Dock, HomeOutlined, TableBar } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -208,6 +208,11 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
       segment: calculateSegment("pdf"),
       title: "PDF",
       icon: <Dock />,
+    },
+    {
+      segment: calculateSegment("external-db"),
+      title: "external-db",
+      icon: <TableBar />,
     },
   );
 

@@ -72,8 +72,7 @@ type Result<TRow> = {
 export const useSelectDirectory = () => {
   return useMutation({
     mutationFn: async () => {
-      const filePaths = await ipc.invoke("APP/SELECT_DIRECTORY");
-      return filePaths;
+      return ipc.invoke("APP/SELECT_DIRECTORY");
     },
   });
 };
@@ -81,8 +80,7 @@ export const useSelectDirectory = () => {
 export const useSelectFile = () => {
   return useMutation({
     mutationFn: async (filters: Electron.FileFilter[]) => {
-      const filePaths = await ipc.invoke("APP/SELECT_FILE", filters);
-      return filePaths;
+      return ipc.invoke("APP/SELECT_FILE", filters);
     },
   });
 };

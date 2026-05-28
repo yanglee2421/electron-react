@@ -153,4 +153,31 @@ export class Printer {
 
     return { records: rows.rows, corporation };
   }
+
+  async getDataForCHR52A(id: string) {
+    const recordResult = await this.mdb
+      .root()
+      .detections()
+      .equal("szIDs", id)
+      .limit(1);
+
+    const record = recordResult.rows.at(0);
+
+    if (!record) {
+      throw new Error(`未找到ID为${id}的记录`);
+    }
+
+    const datasResult = await this.mdb
+      .root()
+      .detections_data()
+      .equal("opid", id);
+
+    const corporation = await this.mdb.app().corporation();
+
+    return {
+      record,
+      datas: datasResult.rows,
+      corporation,
+    };
+  }
 }

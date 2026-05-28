@@ -22,7 +22,7 @@ import { useQuery } from "@tanstack/react-query";
 import { chunk, mapGroupBy } from "@yotulee/run";
 import { Link, useParams } from "react-router";
 
-const resolveMetaInfo = (params: string | null) => {
+const resolveMemoInfo = (params: string | null) => {
   const result = new Map<string, number>();
 
   if (params === null) {
@@ -61,7 +61,7 @@ export const Component = () => {
     }
 
     const { datas, record } = query.data;
-    const metaInfo = resolveMetaInfo(record.szMemo);
+    const memoInfo = resolveMemoInfo(record.szMemo);
     const flawGroup = mapGroupBy(
       datas,
       (data) => `${data.nBoard}-${data.nChannel}`,
@@ -70,13 +70,15 @@ export const Component = () => {
 
     const renderMetaInfo = (board: number, channel: number) => {
       const channelId = `${board}-${channel}`;
-      const flawType = metaInfo.get(channelId) || 1;
+      const flawType = memoInfo.get(channelId) || 1;
 
       switch (flawType) {
         case 2:
           return "透声不良";
-        case 3:
+        case 4:
           return "晶粗";
+        case 8:
+          return "压装不良";
         case 1:
         default:
           return (

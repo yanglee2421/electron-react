@@ -60,6 +60,10 @@ export const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/pdf/component"),
           },
           {
+            path: "external-db",
+            lazy: () => import("#renderer/pages/external-db/component"),
+          },
+          {
             children: [
               {
                 path: "detection",

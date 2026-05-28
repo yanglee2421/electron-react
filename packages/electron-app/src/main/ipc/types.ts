@@ -1,5 +1,6 @@
 import type * as cmd from "#main/features/cmd/types";
 import type * as db from "#main/features/db/types";
+import type * as externalDB from "#main/features/external-db/types";
 import type * as guangzhoubei from "#main/features/guangzhoubei/types";
 import type * as guangzhoujibaoduan from "#main/features/guangzhoujibaoduan/types";
 import type * as hxzy from "#main/features/hxzy/types";
@@ -16,9 +17,11 @@ import type * as xml from "#main/features/xml/types";
 import type * as infra from "#main/infra/types";
 
 export interface IPCContract
-  extends infra.IPCContract,
+  extends
+    infra.IPCContract,
     cmd.IPCContract,
     db.IPCContract,
+    externalDB.IPCContract,
     guangzhoubei.IPCContract,
     guangzhoujibaoduan.IPCContract,
     hxzy.IPCContract,

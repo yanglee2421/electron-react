@@ -32,6 +32,7 @@ import {
 import { container } from "./features";
 import * as cmdIPC from "./features/cmd/ipc";
 import * as dbIPC from "./features/db/ipc";
+import * as externalDBIPC from "./features/external-db/ipc";
 import * as guangzhoubeiIPC from "./features/guangzhoubei/ipc";
 import * as guangzhoujibaoduanIPC from "./features/guangzhoujibaoduan/ipc";
 import * as hxzyIPC from "./features/hxzy/ipc";
@@ -161,8 +162,10 @@ const using$ = using(
 
     const {
       cmd,
+      externalDB,
       guangzhoubei,
       guangzhoujibaoduan,
+      hmisProxy,
       hxzy,
       image,
       jtv,
@@ -177,10 +180,12 @@ const using$ = using(
     const infraUnIPC = infraIPC.registerIPCHandlers();
 
     const cmdUnIPC = cmdIPC.registerIPCHandlers(cmd);
+    const externalDBUnIPC = externalDBIPC.registerIPCHandlers(externalDB);
     const dbUnIPC = dbIPC.registerIPCHandlers(db);
     const guangzhoubeiUnIPC = guangzhoubeiIPC.registerIPCHandlers(guangzhoubei);
     const guangzhoujibaoduanUnIPC =
       guangzhoujibaoduanIPC.registerIPCHandlers(guangzhoujibaoduan);
+    void hmisProxy;
     const hxzyUnIPC = hxzyIPC.registerIPCHandlers(hxzy);
     const imageUnIPC = imageIPC.registerIPCHandlers(image);
     const jtvUnIPC = jtvIPC.registerIPCHandlers(jtv);
@@ -227,6 +232,7 @@ const using$ = using(
 
         cmdUnIPC();
         dbUnIPC();
+        externalDBUnIPC();
         guangzhoubeiUnIPC();
         guangzhoujibaoduanUnIPC();
         hxzyUnIPC();

@@ -1,0 +1,19 @@
+{
+  "name": "hmis-proxy",
+  "scripts": {
+    "build": "tsdown"
+  },
+  "exports": {
+    "types": {
+      "import": "./dist/main.d.mts",
+      "require": "./dist/main.d.cts"
+    },
+    "import": "./dist/main.mjs",
+    "require": "./dist/main.cjs"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.0.4",
+    "@hono/zod-validator": "^0.8.0",
+    "hono": "^4.12.23"
+  }
+}
