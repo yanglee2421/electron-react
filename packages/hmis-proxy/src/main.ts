@@ -5,9 +5,6 @@ import dayjs from "dayjs";
 import { createFactory } from "hono/factory";
 import { z } from "zod";
 
-const factory = createFactory();
-const hmis = factory.createApp().basePath("/hmis");
-
 interface Item {
   //单号
   DH: string;
@@ -38,47 +35,24 @@ interface Item {
 }
 
 export const createServer = (port: number): ServerType => {
-  return serve({ ...hmis, port });
-};
+  const schema = z.object({
+    dh: z.string(),
+    zh: z.string(),
+  });
 
-const schema = z.object({
-  dh: z.string(),
-  zh: z.string(),
-});
+  const factory = createFactory();
+  const heartbeatHandler = factory.createHandlers((c) => {
+    return c.json({ code: 200, message: "ok" });
+  });
+  const handler = factory.createHandlers(zValidator("json", schema), (c) => {
+    const { dh, zh } = c.req.valid("json");
+    const date = dayjs().format("YYYY-MM-DD");
+    const items: Item[] = [];
 
-hmis.post("/work", zValidator("json", schema), (c) => {
-  const bodyJson = c.req.valid("json");
-  const { dh, zh } = bodyJson;
-
-  const date = dayjs().format("YYYY-MM-DD");
-
-  const items: Item[] = [];
-
-  if (dh) {
-    items.push({
-      DH: dh,
-      ZH: "38254",
-      ZX: "RD2",
-      SRDW: "003",
-      SRYY: "",
-      CZZZDW: "005",
-      CZZZRQ: date,
-      SCZZDW: "009",
-      SCZZRQ: date,
-      MCZZDW: "007",
-      MCZZRQ: date,
-      ZZC: false,
-      YZC: false,
-    });
-
-    return c.json(items);
-  }
-
-  if (zh) {
-    items.push(
-      {
-        DH: "DH001",
-        ZH: zh,
+    if (dh) {
+      items.push({
+        DH: dh,
+        ZH: "38254",
         ZX: "RD2",
         SRDW: "003",
         SRYY: "",
@@ -90,30 +64,59 @@ hmis.post("/work", zValidator("json", schema), (c) => {
         MCZZRQ: date,
         ZZC: false,
         YZC: false,
-      },
-      {
-        DH: "DH002",
-        ZH: zh,
-        ZX: "RE2B",
-        SRDW: "001",
-        SRYY: "",
-        CZZZDW: "002",
-        CZZZRQ: date,
-        SCZZDW: "003",
-        SCZZRQ: date,
-        MCZZDW: "004",
-        MCZZRQ: date,
-        ZZC: true,
-        YZC: true,
-      },
-    );
+      });
 
-    return c.json(items);
-  }
+      return c.json(items);
+    }
 
-  throw new Error("dh或zh必须提供其中至少一个");
-});
+    if (zh) {
+      items.push(
+        {
+          DH: "DH001",
+          ZH: zh,
+          ZX: "RD2",
+          SRDW: "003",
+          SRYY: "",
+          CZZZDW: "005",
+          CZZZRQ: date,
+          SCZZDW: "009",
+          SCZZRQ: date,
+          MCZZDW: "007",
+          MCZZRQ: date,
+          ZZC: false,
+          YZC: false,
+        },
+        {
+          DH: "DH002",
+          ZH: zh,
+          ZX: "RE2B",
+          SRDW: "001",
+          SRYY: "",
+          CZZZDW: "002",
+          CZZZRQ: date,
+          SCZZDW: "003",
+          SCZZRQ: date,
+          MCZZDW: "004",
+          MCZZRQ: date,
+          ZZC: true,
+          YZC: true,
+        },
+      );
 
-hmis.post("/heartbeat", (c) => {
-  return c.json({ code: 200, message: "ok" });
-});
+      return c.json(items);
+    }
+
+    throw new Error("dh或zh必须提供其中至少一个");
+  });
+
+  const hmis = factory
+    .createApp()
+    .basePath("/hmis")
+    .post("/work", ...handler)
+    .post("/heartbeat", ...heartbeatHandler);
+
+  return serve({
+    fetch: hmis.fetch,
+    port,
+  });
+};

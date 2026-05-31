@@ -3,6 +3,9 @@
   "scripts": {
     "build": "tsdown"
   },
+  "files": [
+    "dist"
+  ],
   "exports": {
     "types": {
       "import": "./dist/main.d.mts"
