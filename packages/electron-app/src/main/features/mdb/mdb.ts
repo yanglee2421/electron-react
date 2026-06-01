@@ -69,6 +69,10 @@ class AppPathInfo {
   }
 
   imagePath(rootPath: string, fileName: string) {
+    return path.resolve(rootPath, "_verify", fileName);
+  }
+
+  dataImagePath(rootPath: string, fileName: string) {
     return path.resolve(rootPath, "_data", fileName);
   }
 
@@ -356,6 +360,9 @@ export class MDB {
   }
   imagePath(rootPath: string, fileName: string) {
     return this.appPathInfo.imagePath(rootPath, fileName);
+  }
+  dataImagePath(rootPath: string, fileName: string) {
+    return this.appPathInfo.dataImagePath(rootPath, fileName);
   }
 }
 

@@ -175,12 +175,30 @@ export class Printer {
 
     const corporation = await this.mdb.app().corporation();
     const rootPath = await this.mdb.rootFolder();
-    const lctImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LCT.bmp`);
-    const rctImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RCT.bmp`);
-    const llzImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LLZ.bmp`);
-    const rlzImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RLZ.bmp`);
-    const lxhImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LXH.bmp`);
-    const rxhImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RXH.bmp`);
+    const lctImage = this.mdb.dataImagePath(
+      rootPath,
+      `${record.szIDs}.LCT.bmp`,
+    );
+    const rctImage = this.mdb.dataImagePath(
+      rootPath,
+      `${record.szIDs}.RCT.bmp`,
+    );
+    const llzImage = this.mdb.dataImagePath(
+      rootPath,
+      `${record.szIDs}.LLZ.bmp`,
+    );
+    const rlzImage = this.mdb.dataImagePath(
+      rootPath,
+      `${record.szIDs}.RLZ.bmp`,
+    );
+    const lxhImage = this.mdb.dataImagePath(
+      rootPath,
+      `${record.szIDs}.LXH.bmp`,
+    );
+    const rxhImage = this.mdb.dataImagePath(
+      rootPath,
+      `${record.szIDs}.RXH.bmp`,
+    );
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     await fs.promises.mkdir(tmpPath, { recursive: true });
