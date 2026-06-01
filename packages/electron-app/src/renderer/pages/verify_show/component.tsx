@@ -32,7 +32,7 @@ const resolveMemoInfo = (params: string | null) => {
   const chunks = chunk(params.split(""), 8);
 
   for (const item of chunks) {
-    const board = Number(item.at(0)) ? 0 : 1;
+    const board = Number(item.at(0)) ? 1 : 0;
     const channel = item.at(1);
     const flawType = Number(item.at(-1));
 
@@ -134,7 +134,7 @@ export const Component = () => {
               const direction = board ? "右" : "左";
 
               return (
-                <Grid key={_} size={{ xs: 12, sm: 6 }}>
+                <Grid key={_} size={6}>
                   <Card variant="outlined">
                     <CardHeader
                       title={`${direction}穿透`}
@@ -176,23 +176,23 @@ export const Component = () => {
                       <Card variant="outlined">
                         <CardHeader
                           title={`${direction}01`}
-                          subheader={`${flawGroup.get(`${board}-2`)?.length || 0}伤`}
-                        />
-                        <CardContent>{renderMetaInfo(board, 2)}</CardContent>
-                      </Card>
-                      <Card variant="outlined">
-                        <CardHeader
-                          title={`${direction}02`}
                           subheader={`${flawGroup.get(`${board}-3`)?.length || 0}伤`}
                         />
                         <CardContent>{renderMetaInfo(board, 3)}</CardContent>
                       </Card>
                       <Card variant="outlined">
                         <CardHeader
-                          title={`${direction}A3`}
+                          title={`${direction}02`}
                           subheader={`${flawGroup.get(`${board}-4`)?.length || 0}伤`}
                         />
                         <CardContent>{renderMetaInfo(board, 4)}</CardContent>
+                      </Card>
+                      <Card variant="outlined">
+                        <CardHeader
+                          title={`${direction}A3`}
+                          subheader={`${flawGroup.get(`${board}-2`)?.length || 0}伤`}
+                        />
+                        <CardContent>{renderMetaInfo(board, 2)}</CardContent>
                       </Card>
                     </Stack>
                   </Stack>

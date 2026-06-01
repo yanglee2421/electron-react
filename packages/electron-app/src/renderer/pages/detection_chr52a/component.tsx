@@ -1,3 +1,4 @@
+import type { Detection, DetectionData } from "#main/features/mdb/types";
 import { fetchCHR52AData } from "#renderer/api/printer";
 import { Loading } from "#renderer/components/Loading";
 import {
@@ -10,6 +11,7 @@ import {
   Row,
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
+import { divideBy10, mathFormat } from "#shared/functions/math";
 import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Alert, AlertTitle } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
@@ -19,29 +21,28 @@ import dayjs from "dayjs";
 import React from "react";
 import { useParams } from "react-router";
 
-const resolveMemoInfo = (params: string | null) => {
+type MemoInfo = Map<string, number>;
+type FlawGroup = Map<string, DetectionData[]>;
+
+const resolveMemoInfo = (params: string | null): MemoInfo => {
   const result = new Map<string, number>();
 
-  if (params === null) {
+  if (!params) {
     return result;
   }
 
-  const chunks = chunk(params.split(""), 8);
-
-  for (const item of chunks) {
-    const board = Number(item.at(0)) ? 0 : 1;
+  return chunk(params.split(""), 8).reduce((map, item) => {
+    const board = Number(item.at(0)) ? 1 : 0;
     const channel = item.at(1);
     const flawType = Number(item.at(-1));
 
-    result.set(`${board}-${channel}`, flawType);
-  }
+    map.set(`${board}-${channel}`, flawType);
 
-  return result;
+    return map;
+  }, result);
 };
 
 const calcFlawType = (type?: number) => {
-  console.log(type);
-
   switch (type) {
     case 2:
       return "透声不良";
@@ -56,7 +57,88 @@ const calcFlawType = (type?: number) => {
   }
 };
 
+const calcPlace = (board: number, channel: number) => {
+  const direction = board ? "右" : "左";
+
+  switch (channel) {
+    case 0:
+      return direction + "穿透";
+    case 1:
+      return direction + "卸荷槽";
+    case 2:
+    case 3:
+    case 4:
+      return direction + "轮座";
+    default:
+      return "";
+  }
+};
+
+const calcPlaceNote = (type: string, place: string, flawMap: FlawGroup) => {
+  if (type !== "裂纹") {
+    return type;
+  }
+
+  return flawMap
+    .get(place)
+    ?.map((flaw) => mathFormat(flaw.fltValueX, { precision: 0 }))
+    .join(" ");
+};
+
+const MemoInfoContext = React.createContext<MemoInfo>(new Map());
+const FlawGroupContext = React.createContext<FlawGroup>(new Map());
 const IMAGE_HEIGHT = 128;
+
+interface ChannelFlawsProps {
+  board: number;
+  channel: number;
+}
+
+const ChannelFlaws = (props: ChannelFlawsProps): string => {
+  const { board, channel } = props;
+  const memoInfo = React.use(MemoInfoContext);
+  const flawGroup = React.use(FlawGroupContext);
+
+  const typeNumber = memoInfo.get(`${board}-${channel}`);
+  const flawType = calcFlawType(typeNumber);
+
+  if (flawType !== "裂纹") {
+    return "";
+  }
+
+  const flaws = flawGroup.get(`${board}-${channel}`) || [];
+  const db = flaws?.at(0)?.nAtten || 0;
+
+  return `${divideBy10(db)}dB;${flaws.map((flaw) => mathFormat(flaw.fltValueX, { precision: 0 })).join(" ")}`;
+};
+
+interface NoteCellProps {
+  record: Detection;
+  datas: DetectionData[];
+}
+
+const NoteCell = (props: NoteCellProps): string => {
+  const { record, datas } = props;
+
+  if (!record.szMemo) {
+    return "";
+  }
+
+  const chunks = chunk(record.szMemo?.split("") || [], 8);
+  const flawMap = mapGroupBy(datas, (el) => calcPlace(el.nBoard, el.nChannel));
+  const flawsNote = chunks
+    .map((item) => {
+      const board = Number(item.at(0)) ? 1 : 0;
+      const channel = Number(item.at(1));
+      const type = calcFlawType(Number(item.at(-1)));
+      const place = calcPlace(board, channel);
+
+      return `${place}: ${calcPlaceNote(type, place, flawMap)}`;
+    })
+    .join("; ");
+
+  return "不合格(" + flawsNote + "), 请人工复探!";
+};
 
 export const Component = () => {
   const CELL_HEIGHT = React.use(CellHeightContext);
@@ -86,7 +168,9 @@ export const Component = () => {
       (data) => `${data.nBoard}-${data.nChannel}`,
     );
 
-    const renderFlawCount = () => {};
+    const renderFlawCount = (board: number, channel: number) => {
+      return flawGroup.get(`${board}-${channel}`)?.length || "无";
+    };
 
     return (
       <PDFViewer
@@ -171,81 +255,85 @@ export const Component = () => {
                   <Col>
                     <Cell>探头编号</Cell>
                     <Cell center={false} pl>
-                      左穿透: 1
+                      左穿透: {renderFlawCount(0, 0)}
                     </Cell>
                     <Cell center={false} pl>
-                      左A01: 4
+                      左A01: {renderFlawCount(0, 1)}
                     </Cell>
                     <Cell center={false} pl>
-                      左A02: 无
+                      左A02: {renderFlawCount(0, 2)}
                     </Cell>
                     <Cell center={false} pl>
-                      左轮座01: 16
+                      左轮座01: {renderFlawCount(0, 3)}
                     </Cell>
                     <Cell center={false} pl>
-                      左轮座02: 10
-                    </Cell>
-                    {of(4).map((_) => {
-                      return <Cell key={_}></Cell>;
-                    })}
-                    <Cell center={false} pl>
-                      右穿透: 1
-                    </Cell>
-                    <Cell center={false} pl>
-                      右A01: 4
-                    </Cell>
-                    <Cell center={false} pl>
-                      右A02: 无
-                    </Cell>
-                    <Cell center={false} pl>
-                      右轮座01: 16
-                    </Cell>
-                    <Cell center={false} pl>
-                      右轮座02: 10
-                    </Cell>
-                    {of(4).map((_) => {
-                      return <Cell key={_}></Cell>;
-                    })}
-                  </Col>
-                  <Col>
-                    <Cell>缺陷数量及位置</Cell>
-                    <Cell center={false} pl>
-                      {}
-                    </Cell>
-                    <Cell center={false} pl>
-                      左A01: 4
-                    </Cell>
-                    <Cell center={false} pl>
-                      左A02: 无
-                    </Cell>
-                    <Cell center={false} pl>
-                      左轮座01: 16
-                    </Cell>
-                    <Cell center={false} pl>
-                      左轮座02: 10
+                      左轮座02: {renderFlawCount(0, 4)}
                     </Cell>
                     {of(4).map((_) => {
                       return <Cell key={_}></Cell>;
                     })}
                     <Cell center={false} pl>
-                      右穿透: 1
+                      右穿透: {renderFlawCount(1, 0)}
                     </Cell>
                     <Cell center={false} pl>
-                      右A01: 4
+                      右A01: {renderFlawCount(1, 1)}
                     </Cell>
                     <Cell center={false} pl>
-                      右A02: 无
+                      右A02: {renderFlawCount(1, 2)}
                     </Cell>
                     <Cell center={false} pl>
-                      右轮座01: 16
+                      右轮座01: {renderFlawCount(1, 3)}
                     </Cell>
                     <Cell center={false} pl>
-                      右轮座02: 10
+                      右轮座02: {renderFlawCount(1, 4)}
                     </Cell>
                     {of(4).map((_) => {
                       return <Cell key={_}></Cell>;
                     })}
                   </Col>
+                  <FlawGroupContext value={flawGroup}>
+                    <MemoInfoContext value={memoInfo}>
+                      <Col>
+                        <Cell>缺陷数量及位置</Cell>
+                        <Cell center={false} pl>
+                          <ChannelFlaws board={0} channel={0} />
+                        </Cell>
+                        <Cell center={false} pl>
+                          <ChannelFlaws board={0} channel={1} />
+                        </Cell>
+                        <Cell center={false} pl>
+                          <ChannelFlaws board={0} channel={2} />
+                        </Cell>
+                        <Cell center={false} pl>
+                          <ChannelFlaws board={0} channel={3} />
+                        </Cell>
+                        <Cell center={false} pl>
+                          <ChannelFlaws board={0} channel={4} />
+                        </Cell>
+                        {of(4).map((_) => {
+                          return <Cell key={_}></Cell>;
+                        })}
+                        <Cell center={false} pl>
+                          <ChannelFlaws board={1} channel={0} />
+                        </Cell>
+                        <Cell center={false} pl>
+                          <ChannelFlaws board={1} channel={1} />
+                        </Cell>
+                        <Cell center={false} pl>
+                          <ChannelFlaws board={1} channel={2} />
+                        </Cell>
+                        <Cell center={false} pl>
+                          <ChannelFlaws board={1} channel={3} />
+                        </Cell>
+                        <Cell center={false} pl>
+                          <ChannelFlaws board={1} channel={4} />
+                        </Cell>
+                        {of(4).map((_) => {
+                          return <Cell key={_}></Cell>;
+                        })}
+                      </Col>
+                    </MemoInfoContext>
+                  </FlawGroupContext>
                   <Col>
                     <Cell>缺陷类型</Cell>
                     <Cell center={false} pl>
@@ -292,7 +380,9 @@ export const Component = () => {
                     <Cell height={40}>探伤工</Cell>
                   </Col>
                   <Col>
-                    <Cell height={100}></Cell>
+                    <Cell height={100} center={false} pl>
+                      <NoteCell record={record} datas={datas} />
+                    </Cell>
                     <CellHeightContext value={40}>
                       <Row>
                         <Col>
@@ -348,25 +438,25 @@ export const Component = () => {
                     <Cell>轴型</Cell>
                   </Col>
                   <Col>
-                    <Cell>RE2B</Cell>
+                    <Cell>{record.szWHModel}</Cell>
                   </Col>
                   <Col>
                     <Cell>轴号</Cell>
                   </Col>
                   <Col>
-                    <Cell>12345678</Cell>
+                    <Cell>{record.szIDsWheel}</Cell>
                   </Col>
                   <Col>
                     <Cell>车轴制造日期</Cell>
                   </Col>
                   <Col>
-                    <Cell>12345678</Cell>
+                    <Cell>{record.szTMMake}</Cell>
                   </Col>
                   <Col>
                     <Cell>车轴制造单位</Cell>
                   </Col>
                   <Col>
-                    <Cell>123</Cell>
+                    <Cell>{record.szIDsMake}</Cell>
                   </Col>
                 </Row>
                 <Row>
@@ -375,16 +465,16 @@ export const Component = () => {
                     <Cell>轮对末次组装日期</Cell>
                   </Col>
                   <Col>
-                    <Cell></Cell>
-                    <Cell></Cell>
+                    <Cell>{record.szTMFirst}</Cell>
+                    <Cell>{record.szTMLast}</Cell>
                   </Col>
                   <Col>
                     <Cell>轮对首次组装单位</Cell>
                     <Cell>轮对末次组装单位</Cell>
                   </Col>
                   <Col>
-                    <Cell></Cell>
-                    <Cell></Cell>
+                    <Cell>{record.szIDsFirst}</Cell>
+                    <Cell>{record.szIDsLast}</Cell>
                   </Col>
                 </Row>
                 <Row>
