@@ -7,6 +7,7 @@ import path from "node:path";
 import Piscina from "piscina";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
+import type { ChannelImage } from "./types";
 import workerPath from "./worker?modulePath";
 
 export class Printer {
@@ -56,7 +57,7 @@ export class Printer {
 
     await fs.promises.mkdir(tmpPath, { recursive: true });
 
-    const jpegs = await this.piscina.run({
+    const jpegs: ChannelImage = await this.piscina.run({
       tmpPath,
       lct: lctImage,
       rct: rctImage,
@@ -173,11 +174,32 @@ export class Printer {
       .equal("opid", id);
 
     const corporation = await this.mdb.app().corporation();
+    const rootPath = await this.mdb.rootFolder();
+    const lctImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LCT.bmp`);
+    const rctImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RCT.bmp`);
+    const llzImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LLZ.bmp`);
+    const rlzImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RLZ.bmp`);
+    const lxhImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LXH.bmp`);
+    const rxhImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RXH.bmp`);
+    const tmpPath = path.resolve(app.getPath("temp"), app.getName());
+
+    await fs.promises.mkdir(tmpPath, { recursive: true });
+
+    const jpegs: ChannelImage = await this.piscina.run({
+      tmpPath,
+      lct: lctImage,
+      rct: rctImage,
+      llz: llzImage,
+      rlz: rlzImage,
+      lxh: lxhImage,
+      rxh: rxhImage,
+    });
 
     return {
       record,
       datas: datasResult.rows,
       corporation,
+      jpegs,
     };
   }
 }

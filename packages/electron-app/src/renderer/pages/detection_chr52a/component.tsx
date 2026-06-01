@@ -161,7 +161,7 @@ export const Component = () => {
       );
     }
 
-    const { corporation, record, datas } = query.data;
+    const { corporation, record, datas, jpegs } = query.data;
     const memoInfo = resolveMemoInfo(record.szMemo);
     const flawGroup = mapGroupBy(
       datas,
@@ -481,31 +481,31 @@ export const Component = () => {
                   <Col>
                     <Cell font12>左轴颈根部扫描图</Cell>
                     <View style={[styles.borderTR]}>
-                      <ReportImage src={""} height={IMAGE_HEIGHT} />
+                      <ReportImage src={jpegs.lxh} height={IMAGE_HEIGHT} />
                     </View>
                     <Cell font12>左轮座部扫描图</Cell>
                     <View style={[styles.borderTR]}>
-                      <ReportImage src={""} height={IMAGE_HEIGHT} />
+                      <ReportImage src={jpegs.llz} height={IMAGE_HEIGHT} />
                     </View>
                   </Col>
                   <Col>
                     <Cell font12>右轴颈根部扫描图</Cell>
                     <View style={[styles.borderTR]}>
-                      <ReportImage src={""} height={IMAGE_HEIGHT} />
+                      <ReportImage src={jpegs.rxh} height={IMAGE_HEIGHT} />
                     </View>
                     <Cell font12>右轮座部扫描图</Cell>
                     <View style={[styles.flex1, styles.borderTR]}>
-                      <ReportImage src={""} height={IMAGE_HEIGHT} />
+                      <ReportImage src={jpegs.rlz} height={IMAGE_HEIGHT} />
                     </View>
                   </Col>
                 </Row>
                 <Cell font12>左穿透扫描图</Cell>
                 <View style={[styles.borderTR]}>
-                  <ReportImage src={""} height={IMAGE_HEIGHT} />
+                  <ReportImage src={jpegs.lct} height={IMAGE_HEIGHT} />
                 </View>
                 <Cell font12>右穿透扫描图</Cell>
                 <View style={[styles.borderTR]}>
-                  <ReportImage src={""} height={IMAGE_HEIGHT} />
+                  <ReportImage src={jpegs.rct} height={IMAGE_HEIGHT} />
                 </View>
               </View>
             </View>
