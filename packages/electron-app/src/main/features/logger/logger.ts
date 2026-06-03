@@ -1,6 +1,8 @@
 import * as schema from "#main/features/db/schema";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
+import { BrowserWindow } from "electron";
+import type { Subscription } from "rxjs";
 import { Subject } from "rxjs";
 import type { DBClient } from "../db/types";
 import type { AppCradle } from "../types";
@@ -15,13 +17,21 @@ interface LoggerOptions {
 export class Logger {
   readonly event$ = new Subject<void>();
   private db: DBClient;
+  private subscription: Subscription;
 
   constructor({ db }: AppCradle) {
     this.db = db.client;
+
+    this.subscription = this.event$.subscribe(() => {
+      BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("logUpdated");
+      });
+    });
   }
 
   dispose() {
     this.event$.complete();
+    this.subscription.unsubscribe();
   }
 
   private emit() {

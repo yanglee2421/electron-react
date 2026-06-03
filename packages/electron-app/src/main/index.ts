@@ -10,13 +10,17 @@ import {
   filter,
   from,
   fromEventPattern,
+  last,
+  map,
   NEVER,
   of,
   partition,
   retry,
   shareReplay,
   startWith,
+  Subject,
   switchMap,
+  take,
   takeUntil,
   tap,
   timer,
@@ -190,6 +194,11 @@ const ioc$ = using(
   // Even if we don't actually need it
   () => NEVER.pipe(startWith(null)),
 ).pipe(takeUntil(willQuit$), shareReplay({ bufferSize: 1, refCount: true }));
+const cmdURL$ = new Subject();
+const openURL$ = cmdURL$.pipe(
+  takeUntil(cmdURL$.pipe(last())),
+  shareReplay({ bufferSize: 1, refCount: true }),
+);
 
 // Subscribe Observerable
 
@@ -235,11 +244,13 @@ primaryInstance$
 
     const { profile, win } = container.cradle;
 
-    if (profile.state.silentStartUp) {
-      return;
+    if (!profile.state.silentStartUp) {
+      win.show();
     }
 
-    win.show();
+    const openURL = process.argv.find((arg) => arg.startsWith("app-ziyun://"));
+
+    cmdURL$.next({ openURL });
   });
 
 activate$
@@ -257,39 +268,80 @@ secondInstance$.subscribe(([, cmds]) => {
   const url = cmds.at(-1);
   const win = container.cradle.win;
 
+  cmdURL$.next({ url });
+
   win.show();
-  win.send("secondInstance", { url });
 });
 
-browserWindowCreated$.subscribe((args) => {
-  const [, win] = args;
+browserWindowCreated$
+  .pipe(
+    map(([, win]) => win),
+    tap((win) => {
+      win.menuBarVisible = false;
+    }),
+    tap((win) => {
+      optimizer.watchWindowShortcuts(win);
 
-  optimizer.watchWindowShortcuts(win);
-
-  win.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
-    return { action: "deny" };
-  });
-
-  win.on("focus", () => {
-    win.webContents.send("windowFocus");
-  });
-  win.on("blur", () => {
-    win.webContents.send("windowBlur");
-  });
-  // Only fire when the win.show is called on Windows
-  win.on("show", () => {
-    win.webContents.send("windowShow");
-  });
-  // Only fire when the win.hide is called on Windows
-  win.on("hide", () => {
-    win.webContents.send("windowHide");
-  });
-
-  win.webContents.on("did-finish-load", () => {
-    win.webContents.send("windowShow");
-  });
-});
+      win.webContents.setWindowOpenHandler((details) => {
+        shell.openExternal(details.url);
+        return { action: "deny" };
+      });
+    }),
+    tap((win) => {
+      if (is.dev) {
+        win.loadURL(process.env["ELECTRON_RENDERER_URL"]!);
+      } else {
+        win.loadFile(path.join(__dirname, "../renderer/index.html"));
+      }
+    }),
+    switchMap((win) => {
+      return fromEventPattern(
+        (handler) => win.on("ready-to-show", handler),
+        (handler) => win.off("ready-to-show", handler),
+      ).pipe(
+        take(1),
+        tap(() => win.show()),
+        switchMap(() => {
+          return fromEventPattern(
+            (handler) => win.webContents.on("did-finish-load", handler),
+            (handler) => win.webContents.off("did-finish-load", handler),
+          ).pipe(
+            switchMap(() => {
+              return openURL$.pipe(
+                takeUntil(
+                  fromEventPattern(
+                    (handler) => win.on("close", handler),
+                    (handler) => win.off("close", handler),
+                  ),
+                ),
+                tap((payload) => {
+                  win.webContents.send("secondInstance", payload);
+                }),
+              );
+            }),
+          );
+        }),
+        map(() => win),
+      );
+    }),
+    tap((win) => {
+      win.on("focus", () => {
+        win.webContents.send("windowFocus");
+      });
+      win.on("blur", () => {
+        win.webContents.send("windowBlur");
+      });
+      // Only fire when the win.show is called on Windows
+      win.on("show", () => {
+        win.webContents.send("windowShow");
+      });
+      // Only fire when the win.hide is called on Windows
+      win.on("hide", () => {
+        win.webContents.send("windowHide");
+      });
+    }),
+  )
+  .subscribe();
 
 windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
   const profile = container.cradle.profile;

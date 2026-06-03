@@ -1,6 +1,6 @@
 import type { Profile } from "#main/features/profile";
 import type { AppCradle } from "#main/features/types";
-import { is } from "@electron-toolkit/utils";
+
 import { BrowserWindow, nativeTheme } from "electron";
 import path from "node:path";
 import type { Subscription } from "rxjs";
@@ -9,9 +9,7 @@ import {
   distinctUntilChanged,
   filter,
   fromEventPattern,
-  map,
   switchMap,
-  tap,
 } from "rxjs";
 
 export class Win {
@@ -19,38 +17,23 @@ export class Win {
   private profile: Profile;
   private subscriptions: Subscription[];
 
-  constructor({ profile, logger }: AppCradle) {
+  constructor({ profile }: AppCradle) {
     this.profile = profile;
 
-    const ui$ = this.profile.state$.pipe(
+    const alwaysOnTop$ = this.profile.state$.pipe(
       distinctUntilChanged(
-        (previous, current) =>
-          previous.alwaysOnTop === current.alwaysOnTop &&
-          previous.mode === current.mode,
+        (previous, current) => previous.alwaysOnTop === current.alwaysOnTop,
+      ),
+    );
+
+    const mode$ = this.profile.state$.pipe(
+      distinctUntilChanged(
+        (previous, current) => previous.mode === current.mode,
       ),
     );
 
     const winEvent$ = this.win$.pipe(
       filter((win): win is BrowserWindow => win !== null),
-      tap((win) => {
-        win.menuBarVisible = false;
-      }),
-      tap((win) => {
-        if (is.dev) {
-          win.loadURL(process.env["ELECTRON_RENDERER_URL"]!);
-        } else {
-          win.loadFile(path.join(__dirname, "../renderer/index.html"));
-        }
-      }),
-      switchMap((win) => {
-        return fromEventPattern(
-          (handler) => win.on("ready-to-show", handler),
-          (handler) => win.off("ready-to-show", handler),
-        ).pipe(map(() => win));
-      }),
-      tap((win) => {
-        win.show();
-      }),
       switchMap((win) => {
         return fromEventPattern(
           (handler) => win.on("close", handler),
@@ -60,14 +43,12 @@ export class Win {
     );
 
     this.subscriptions = [
-      ui$.subscribe((state) => {
+      alwaysOnTop$.subscribe((state) => {
         const win = this.win$.value;
         win?.setAlwaysOnTop(state.alwaysOnTop);
-        nativeTheme.themeSource = state.mode;
       }),
-      logger.event$.subscribe(() => {
-        const win = this.win$.value;
-        win?.webContents.send("logUpdated");
+      mode$.subscribe((state) => {
+        nativeTheme.themeSource = state.mode;
       }),
       winEvent$.subscribe(() => {
         this.win$.next(null);
@@ -80,7 +61,6 @@ export class Win {
       subscription.unsubscribe();
     });
     this.win$.complete();
-    this.win$.value?.destroy();
   }
 
   create() {
@@ -119,12 +99,5 @@ export class Win {
     } else {
       this.create();
     }
-  }
-  send(channel: string, ...args: any[]) {
-    this.win$.value?.webContents.send(channel, ...args);
-
-    const win = this.win$.value;
-
-    if (!win) return;
   }
 }
