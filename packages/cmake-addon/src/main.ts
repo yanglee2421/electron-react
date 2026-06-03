@@ -42,11 +42,3 @@ export const WindowsMessages = {
   WM_LBUTTONDOWN: 0x0201,
   WM_LBUTTONUP: 0x0202,
 } as const;
-
-try {
-  cmakeAddon.testError();
-} catch (error) {
-  console.error(error);
-
-  console.log("process continue");
-}

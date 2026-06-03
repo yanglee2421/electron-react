@@ -1,14 +1,7 @@
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
-import {
-  app,
-  BrowserWindow,
-  Menu,
-  nativeTheme,
-  net,
-  protocol,
-  shell,
-} from "electron";
+import dayjs from "dayjs";
+import { app, BrowserWindow, Menu, net, protocol, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
@@ -24,7 +17,7 @@ import {
   shareReplay,
   startWith,
   switchMap,
-  take,
+  takeUntil,
   tap,
   timer,
   using,
@@ -44,7 +37,6 @@ import * as logIPC from "./features/logger/ipc";
 import * as mdbIPC from "./features/mdb/ipc";
 import * as plcIPC from "./features/plc/ipc";
 import * as printerIPC from "./features/printer/ipc";
-import * as profileIPC from "./features/profile/ipc";
 import * as xmlIPC from "./features/xml/ipc";
 import * as infraIPC from "./infra/ipc";
 
@@ -59,6 +51,14 @@ if (is.dev) {
   app.setPath("userData", devUserDataPath);
 }
 
+if (is.dev) {
+  app.setAsDefaultProtocolClient("app-ziyun", process.execPath, [
+    path.resolve(process.argv[1]),
+  ]);
+} else {
+  app.setAsDefaultProtocolClient("app-ziyun");
+}
+
 /**
  * Disable GPU & Sandbox to avoid crash
  */
@@ -70,58 +70,14 @@ protocol.registerSchemesAsPrivileged([
   {
     scheme: "ziyun",
     privileges: {
-      // 标记为安全协议（和 https 一样，不会触发混淆内容警告）
       secure: true,
-      // 标准协议
       standard: true,
-      // 允许通过 fetch/img 标签加载
       supportFetchAPI: true,
-      // 允许跨域
       corsEnabled: true,
       stream: true,
     },
   },
 ]);
-
-const createWindow = () => {
-  const { profile } = container.cradle;
-  const alwaysOnTop = profile.state.alwaysOnTop;
-
-  const win = new BrowserWindow({
-    webPreferences: {
-      preload: path.join(__dirname, "../preload/index.cjs"),
-      sandbox: true,
-      nodeIntegration: false,
-      contextIsolation: true,
-      webSecurity: true,
-      plugins: false,
-    },
-
-    autoHideMenuBar: false,
-    alwaysOnTop,
-
-    width: 1024,
-    height: 768,
-    minWidth: 380,
-    show: false,
-  });
-
-  win.menuBarVisible = false;
-
-  // Adding ready-to-show listener must be before loadURL or loadFile
-  const readyToShow$ = fromEventPattern(
-    (handler) => win.once("ready-to-show", handler),
-    (handler) => win.off("ready-to-show", handler),
-  );
-
-  readyToShow$.pipe(take(1)).subscribe(() => {
-    win.show();
-  });
-
-  return is.dev
-    ? win.loadURL(process.env["ELECTRON_RENDERER_URL"]!)
-    : win.loadFile(path.join(__dirname, "../renderer/index.html"));
-};
 
 // Define rxjs observable
 const singleInstanceLock$ = defer(() => of(app.requestSingleInstanceLock()));
@@ -150,7 +106,7 @@ const windowAllClosed$ = fromEventPattern(
   (handler) => app.on("window-all-closed", handler),
   (handler) => app.off("window-all-closed", handler),
 );
-const using$ = using(
+const ioc$ = using(
   () => {
     const dbPath = path.resolve(app.getPath("userData"), "db.db");
     container.register({ dbPath: asValue(dbPath) });
@@ -161,6 +117,7 @@ const using$ = using(
     db.migrate(migrationsFolder);
 
     const {
+      appTray,
       cmd,
       externalDB,
       guangzhoubei,
@@ -175,7 +132,6 @@ const using$ = using(
       mdb,
       plc,
       printer,
-      profile,
     } = container.cradle;
     const infraUnIPC = infraIPC.registerIPCHandlers();
 
@@ -195,36 +151,15 @@ const using$ = using(
     const mdbUnIPC = mdbIPC.registerIPCHandlers(mdb);
     const plcUnIPC = plcIPC.registerIPCHandlers(plc);
     const printerUnIPC = printerIPC.registerIPCHandlers(printer);
-    const profileUnIPC = profileIPC.registerIPCHandlers(profile);
     const xmlUnIPC = xmlIPC.registerIPCHandlers();
-
-    const profileSubscription = profile.state$.subscribe((state) => {
-      nativeTheme.themeSource = state.mode;
-
-      BrowserWindow.getAllWindows().forEach((win) => {
-        win.setAlwaysOnTop(state.alwaysOnTop);
-      });
-    });
-
-    const loggerSubscription = logger.event$.subscribe(() => {
-      BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("logUpdated");
-      });
-    });
-
-    if (is.dev) {
-      app.setAsDefaultProtocolClient("app-ziyun", process.execPath, [
-        path.resolve(process.argv[1]),
-      ]);
-    } else {
-      app.setAsDefaultProtocolClient("app-ziyun");
-    }
 
     protocol.handle("ziyun", (request) => {
       const filePath = new URL(request.url).searchParams.get("file")!;
 
       return net.fetch(url.pathToFileURL(filePath).href);
     });
+
+    void appTray;
 
     return {
       unsubscribe: () => {
@@ -244,12 +179,9 @@ const using$ = using(
         mdbUnIPC();
         plcUnIPC();
         printerUnIPC();
-        profileUnIPC();
         xmlUnIPC();
 
         container.dispose();
-        profileSubscription.unsubscribe();
-        loggerSubscription.unsubscribe();
         protocol.unhandle("ziyun");
       },
     };
@@ -257,20 +189,7 @@ const using$ = using(
   // A value must be emitted to trigger the callback function passed to the subscriber,
   // Even if we don't actually need it
   () => NEVER.pipe(startWith(null)),
-);
-
-const retryDelay$ = defer(() => {
-  return from(container.dispose()).pipe(
-    tap(() => {
-      const dbPath = path.resolve(app.getPath("userData"), "db.db");
-      const desktopDbPath = path.resolve(app.getPath("desktop"), "db.db");
-
-      fs.cpSync(dbPath, desktopDbPath, { recursive: true });
-      fs.rmSync(dbPath, { recursive: true, force: true });
-    }),
-    switchMap(() => timer(200)),
-  );
-});
+).pipe(takeUntil(willQuit$), shareReplay({ bufferSize: 1, refCount: true }));
 
 // Subscribe Observerable
 
@@ -284,13 +203,27 @@ duplicateInstance$.subscribe(() => {
   app.quit();
 });
 
-const primarySubscription = primaryInstance$
+primaryInstance$
   .pipe(
     switchMap(() => whenReady$),
-    switchMap(() => using$),
+    switchMap(() => ioc$),
     retry({
       count: 1,
-      delay: () => retryDelay$,
+      delay: () => {
+        return from(container.dispose()).pipe(
+          tap(() => {
+            const dbPath = path.resolve(app.getPath("userData"), "db.db");
+            const desktopDbPath = path.resolve(
+              app.getPath("desktop"),
+              `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
+            );
+
+            fs.cpSync(dbPath, desktopDbPath, { recursive: true });
+            fs.rmSync(dbPath, { recursive: true, force: true });
+          }),
+          switchMap(() => timer(200)),
+        );
+      },
     }),
   )
   .subscribe(() => {
@@ -300,33 +233,32 @@ const primarySubscription = primaryInstance$
       electronApp.setAppUserModelId("com.electron");
     }
 
-    createWindow();
+    const { profile, win } = container.cradle;
+
+    if (profile.state.silentStartUp) {
+      return;
+    }
+
+    win.show();
   });
 
-willQuit$.pipe(take(1)).subscribe(() => {
-  primarySubscription.unsubscribe();
-});
-
 activate$
-  .pipe(filter(() => BrowserWindow.getAllWindows().length === 0))
-  .subscribe(() => createWindow());
+  .pipe(
+    filter(() => {
+      return BrowserWindow.getAllWindows().length === 0;
+    }),
+  )
+  .subscribe(() => {
+    const win = container.cradle.win;
+    win.show();
+  });
 
 secondInstance$.subscribe(([, cmds]) => {
-  if (is.dev) {
-    const url = cmds.at(-1);
-    console.log(url);
-  }
+  const url = cmds.at(-1);
+  const win = container.cradle.win;
 
-  const win = BrowserWindow.getAllWindows().at(0);
-  if (!win) return;
-
-  win.webContents.send("secondInstance");
-
-  if (win.isMinimized()) {
-    win.restore();
-  }
-
-  win.focus();
+  win.show();
+  win.send("secondInstance", { url });
 });
 
 browserWindowCreated$.subscribe((args) => {
@@ -359,11 +291,12 @@ browserWindowCreated$.subscribe((args) => {
   });
 });
 
-windowAllClosed$
-  .pipe(
-    filter(() => !platform.isMacOS),
-    take(1),
-  )
-  .subscribe(() => {
-    app.quit();
-  });
+windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
+  const profile = container.cradle.profile;
+
+  if (profile.state.enableTray) {
+    return;
+  }
+
+  app.quit();
+});

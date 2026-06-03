@@ -339,7 +339,10 @@ export const RootRoute = () => {
   const NAVIGATION = createNavigation(import.meta.env.DEV);
 
   React.useEffect(() => {
-    const unsubscribe = ipc.on("secondInstance", () => {
+    const unsubscribe = ipc.on("secondInstance", (_, payload) => {
+      const url = payload.url;
+      console.log(url);
+
       handleSingleInstance();
     });
 

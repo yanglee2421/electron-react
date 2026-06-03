@@ -64,6 +64,7 @@ const useProfileForm = () => {
   const enableExternalDB = useProfileStore((state) => state.enableExternalDB);
   const enableHMISProxy = useProfileStore((state) => state.enableHMISProxy);
   const hmisProxyPort = useProfileStore((state) => state.hmisProxyPort);
+  const enableTray = useProfileStore((state) => state.enableTray);
 
   const form = useAppForm({
     defaultValues: {
@@ -74,6 +75,7 @@ const useProfileForm = () => {
       externalDBPath,
       enableHMISProxy,
       hmisProxyPort,
+      enableTray,
     },
     onSubmit: async ({ value }) => {
       useProfileStore.setState({
@@ -83,6 +85,7 @@ const useProfileForm = () => {
         externalDBPath: value.externalDBPath,
         enableHMISProxy: value.enableHMISProxy,
         hmisProxyPort: value.hmisProxyPort,
+        enableTray: value.enableTray,
       });
       notifications.show("保存成功", { severity: "success" });
     },
@@ -139,6 +142,25 @@ export const Component = () => {
             onReset={() => profileForm.reset()}
           >
             <Grid spacing={1.5} container>
+              <Grid size={12}>
+                <profileForm.Field name="enableTray">
+                  {(field) => {
+                    return (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.state.value}
+                            onChange={(_, checked) => {
+                              field.handleChange(checked);
+                            }}
+                          />
+                        }
+                        label="启用系统托盘"
+                      />
+                    );
+                  }}
+                </profileForm.Field>
+              </Grid>
               <Grid size={12}>
                 <FormLabel>12通道相关</FormLabel>
               </Grid>

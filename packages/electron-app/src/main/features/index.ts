@@ -1,4 +1,6 @@
+import { Win } from "#main/infra/win";
 import { asClass, createContainer } from "awilix";
+import { AppTray } from "./app-tray";
 import { Cmd } from "./cmd";
 import { DB } from "./db";
 import { ExternalDB } from "./external-db";
@@ -20,6 +22,9 @@ import type { AppCradle } from "./types";
 export const container = createContainer<AppCradle>();
 
 container.register({
+  appTray: asClass(AppTray)
+    .singleton()
+    .disposer((instance) => instance.dispose()),
   cmd: asClass(Cmd).singleton(),
   db: asClass(DB)
     .singleton()
@@ -66,4 +71,8 @@ container.register({
   profile: asClass(Profile)
     .singleton()
     .disposer((profile) => profile.dispose()),
+
+  win: asClass(Win)
+    .singleton()
+    .disposer((win) => win.dispose()),
 });

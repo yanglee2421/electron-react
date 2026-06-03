@@ -20,7 +20,6 @@ export const registerIPCHandlers = () => {
     "XML/SELECT_XML_PDF_FROM_FOLDER",
     async (_, filePaths: string[]) => {
       const allFilePaths = await collectAllFilePaths(filePaths);
-      console.log("allFilePaths", allFilePaths);
       const fileteredFilePaths = [...allFilePaths].filter((filePath) => {
         const extname = path.extname(filePath).toLowerCase();
         switch (extname) {
@@ -31,7 +30,7 @@ export const registerIPCHandlers = () => {
             return false;
         }
       });
-      console.log("fileteredFilePaths", fileteredFilePaths);
+
       return fileteredFilePaths;
     },
   );

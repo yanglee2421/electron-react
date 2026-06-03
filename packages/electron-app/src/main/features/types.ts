@@ -1,4 +1,6 @@
 import type { DB } from "#main/features/db";
+import type { Win } from "#main/infra/win";
+import type { AppTray } from "./app-tray";
 import type { Cmd } from "./cmd";
 import type { ExternalDB } from "./external-db";
 import type { Guangzhoubei } from "./guangzhoubei";
@@ -18,6 +20,7 @@ import type { Profile } from "./profile";
 export interface AppCradle {
   dbPath: string;
 
+  appTray: AppTray;
   cmd: Cmd;
   db: DB;
   externalDB: ExternalDB;
@@ -34,4 +37,6 @@ export interface AppCradle {
   plc: PLC;
   printer: Printer;
   profile: Profile;
+
+  win: Win;
 }

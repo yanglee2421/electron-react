@@ -63,11 +63,9 @@ export class PLC {
         return using(
           () => {
             const plc = createPLCClient(path);
-            console.log("start", path);
 
             return {
               unsubscribe: () => {
-                console.log("unsubscribe", path);
                 plc.close();
               },
               plc,

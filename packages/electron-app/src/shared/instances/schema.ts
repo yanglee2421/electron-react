@@ -15,6 +15,10 @@ export const profile = z.object({
   encoding: z.string().default("gbk"),
   alwaysOnTop: z.boolean().default(false),
   mode: themeMode,
+  enableTray: z.boolean().default(false),
+  silentStartUp: z.boolean().default(false),
+
+  // For Linux platform
   enableExternalDB: z.boolean().default(false),
   externalDBPath: z.string().default(""),
   enableHMISProxy: z.boolean().default(false),
