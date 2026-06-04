@@ -1,3 +1,4 @@
+import type { AppCradle } from "#main/features/types";
 import iconPath from "#resources/icon.png?asset";
 import { app, Menu, nativeImage, Tray } from "electron";
 import type { Subscription } from "rxjs";
@@ -14,13 +15,12 @@ import {
   takeUntil,
   using,
 } from "rxjs";
-import type { AppCradle } from "../types";
 
 export class AppTray {
   readonly tray$ = new BehaviorSubject<Tray | null>(null);
   private subscription: Subscription;
 
-  constructor({ profile, win }: AppCradle) {
+  constructor({ profile, appWindow }: AppCradle) {
     this.subscription = profile.state$
       .pipe(
         distinctUntilChanged((a, b) => a.enableTray === b.enableTray),
@@ -36,13 +36,13 @@ export class AppTray {
                 {
                   label: "显示主界面",
                   click: () => {
-                    win.show();
+                    appWindow.show();
                   },
                 },
                 {
                   label: "功能设置",
                   click: () => {
-                    console.log("点击了设置");
+                    console.log("click setting");
                   },
                 },
                 { type: "separator" },
@@ -62,7 +62,7 @@ export class AppTray {
               );
 
               const subscription = trayClick$.subscribe(() => {
-                win.show();
+                appWindow.show();
               });
 
               return {

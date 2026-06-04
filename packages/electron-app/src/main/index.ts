@@ -121,7 +121,6 @@ const ioc$ = using(
     db.migrate(migrationsFolder);
 
     const {
-      appTray,
       cmd,
       externalDB,
       guangzhoubei,
@@ -136,6 +135,10 @@ const ioc$ = using(
       mdb,
       plc,
       printer,
+
+      appTheme,
+      appTray,
+      appWindow,
     } = container.cradle;
     const infraUnIPC = infraIPC.registerIPCHandlers();
 
@@ -163,7 +166,9 @@ const ioc$ = using(
       return net.fetch(url.pathToFileURL(filePath).href);
     });
 
+    void appTheme;
     void appTray;
+    void appWindow;
 
     return {
       unsubscribe: () => {
@@ -242,10 +247,10 @@ primaryInstance$
       electronApp.setAppUserModelId("com.electron");
     }
 
-    const { profile, win } = container.cradle;
+    const { profile, appWindow } = container.cradle;
 
     if (!profile.state.silentStartUp) {
-      win.show();
+      appWindow.show();
     }
 
     const openURL = process.argv.find((arg) => arg.startsWith("app-ziyun://"));
@@ -260,13 +265,13 @@ activate$
     }),
   )
   .subscribe(() => {
-    const win = container.cradle.win;
+    const win = container.cradle.appWindow;
     win.show();
   });
 
 secondInstance$.subscribe(([, cmds]) => {
   const url = cmds.at(-1);
-  const win = container.cradle.win;
+  const win = container.cradle.appWindow;
 
   cmdURL$.next({ url });
 
@@ -277,17 +282,12 @@ browserWindowCreated$
   .pipe(
     map(([, win]) => win),
     tap((win) => {
-      win.menuBarVisible = false;
-    }),
-    tap((win) => {
       optimizer.watchWindowShortcuts(win);
-
+      win.menuBarVisible = false;
       win.webContents.setWindowOpenHandler((details) => {
         shell.openExternal(details.url);
         return { action: "deny" };
       });
-    }),
-    tap((win) => {
       if (is.dev) {
         win.loadURL(process.env["ELECTRON_RENDERER_URL"]!);
       } else {
@@ -301,26 +301,6 @@ browserWindowCreated$
       ).pipe(
         take(1),
         tap(() => win.show()),
-        switchMap(() => {
-          return fromEventPattern(
-            (handler) => win.webContents.on("did-finish-load", handler),
-            (handler) => win.webContents.off("did-finish-load", handler),
-          ).pipe(
-            switchMap(() => {
-              return openURL$.pipe(
-                takeUntil(
-                  fromEventPattern(
-                    (handler) => win.on("close", handler),
-                    (handler) => win.off("close", handler),
-                  ),
-                ),
-                tap((payload) => {
-                  win.webContents.send("secondInstance", payload);
-                }),
-              );
-            }),
-          );
-        }),
         map(() => win),
       );
     }),
