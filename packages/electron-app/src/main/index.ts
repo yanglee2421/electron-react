@@ -1,7 +1,15 @@
-import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
+import {
+  activate$,
+  browserWindowCreated$,
+  secondInstance$,
+  whenReady$,
+  willQuit$,
+  windowAllClosed$,
+} from "#main/infra/app-rxjs";
+import { electronApp, is, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import dayjs from "dayjs";
-import { app, BrowserWindow, Menu, net, protocol, shell } from "electron";
+import { app, BrowserWindow, Menu, net, protocol } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
@@ -9,8 +17,6 @@ import {
   defer,
   filter,
   from,
-  fromEventPattern,
-  last,
   map,
   NEVER,
   of,
@@ -18,9 +24,7 @@ import {
   retry,
   shareReplay,
   startWith,
-  Subject,
   switchMap,
-  take,
   takeUntil,
   tap,
   timer,
@@ -89,27 +93,7 @@ const [primaryInstance$, duplicateInstance$] = partition(
   singleInstanceLock$.pipe(shareReplay(1)),
   (hasLock) => hasLock,
 );
-const whenReady$ = from(app.whenReady());
-const willQuit$ = fromEventPattern(
-  (handler) => app.on("will-quit", handler),
-  (handler) => app.off("will-quit", handler),
-);
-const activate$ = fromEventPattern(
-  (handler) => app.on("activate", handler),
-  (handler) => app.off("activate", handler),
-);
-const secondInstance$ = fromEventPattern<[Electron.Event, string[]]>(
-  (handler) => app.on("second-instance", handler),
-  (handler) => app.off("second-instance", handler),
-);
-const browserWindowCreated$ = fromEventPattern<[Electron.Event, BrowserWindow]>(
-  (handler) => app.on("browser-window-created", handler),
-  (handler) => app.off("browser-window-created", handler),
-);
-const windowAllClosed$ = fromEventPattern(
-  (handler) => app.on("window-all-closed", handler),
-  (handler) => app.off("window-all-closed", handler),
-);
+
 const ioc$ = using(
   () => {
     const dbPath = path.resolve(app.getPath("userData"), "db.db");
@@ -199,11 +183,6 @@ const ioc$ = using(
   // Even if we don't actually need it
   () => NEVER.pipe(startWith(null)),
 ).pipe(takeUntil(willQuit$), shareReplay({ bufferSize: 1, refCount: true }));
-const cmdURL$ = new Subject();
-const openURL$ = cmdURL$.pipe(
-  takeUntil(cmdURL$.pipe(last())),
-  shareReplay({ bufferSize: 1, refCount: true }),
-);
 
 // Subscribe Observerable
 
@@ -247,15 +226,15 @@ primaryInstance$
       electronApp.setAppUserModelId("com.electron");
     }
 
-    const { profile, appWindow } = container.cradle;
+    const { profile, appWindow, appOpenURL } = container.cradle;
 
     if (!profile.state.silentStartUp) {
       appWindow.show();
     }
 
     const openURL = process.argv.find((arg) => arg.startsWith("app-ziyun://"));
-
-    cmdURL$.next({ openURL });
+    appOpenURL.emit(openURL);
+    console.log("primaryInstance", openURL);
   });
 
 activate$
@@ -271,39 +250,16 @@ activate$
 
 secondInstance$.subscribe(([, cmds]) => {
   const url = cmds.at(-1);
-  const win = container.cradle.appWindow;
+  const { appOpenURL, appWindow } = container.cradle;
 
-  cmdURL$.next({ url });
-
-  win.show();
+  appOpenURL.emit(url);
+  console.log("secondInstance", url);
+  appWindow.show();
 });
 
 browserWindowCreated$
   .pipe(
     map(([, win]) => win),
-    tap((win) => {
-      optimizer.watchWindowShortcuts(win);
-      win.menuBarVisible = false;
-      win.webContents.setWindowOpenHandler((details) => {
-        shell.openExternal(details.url);
-        return { action: "deny" };
-      });
-      if (is.dev) {
-        win.loadURL(process.env["ELECTRON_RENDERER_URL"]!);
-      } else {
-        win.loadFile(path.join(__dirname, "../renderer/index.html"));
-      }
-    }),
-    switchMap((win) => {
-      return fromEventPattern(
-        (handler) => win.on("ready-to-show", handler),
-        (handler) => win.off("ready-to-show", handler),
-      ).pipe(
-        take(1),
-        tap(() => win.show()),
-        map(() => win),
-      );
-    }),
     tap((win) => {
       win.on("focus", () => {
         win.webContents.send("windowFocus");

@@ -330,8 +330,8 @@ export const RootHydrateFallback = () => {
 export const RootRoute = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const handleSingleInstance = React.useEffectEvent(() => {
-    navigate("/settings");
+  const handleSingleInstance = React.useEffectEvent((path: string) => {
+    navigate(path);
   });
 
   useLogUpdate();
@@ -339,11 +339,12 @@ export const RootRoute = () => {
   const NAVIGATION = createNavigation(import.meta.env.DEV);
 
   React.useEffect(() => {
-    const unsubscribe = ipc.on("secondInstance", (_, payload) => {
+    const unsubscribe = ipc.on("open-url", (_, payload) => {
       const url = payload.url;
-      console.log(url);
+      console.log("secondInstance payload", url);
+      const path = new URL(url).pathname;
 
-      handleSingleInstance();
+      handleSingleInstance(path);
     });
 
     return () => {
