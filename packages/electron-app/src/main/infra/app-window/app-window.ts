@@ -2,7 +2,7 @@ import type { Profile } from "#main/features/profile";
 import type { AppCradle } from "#main/features/types";
 import { browserWindowCreated$ } from "#main/infra/app-rxjs";
 import { is, optimizer } from "@electron-toolkit/utils";
-import { BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, shell } from "electron";
 import path from "node:path";
 import type { Observable, Subscription } from "rxjs";
 import {
@@ -103,7 +103,7 @@ export class AppWindow {
     return this.window$.value;
   }
 
-  createWindow(url?: string) {
+  createWindow(url: string = "") {
     const alwaysOnTop = this.profile.state.alwaysOnTop;
 
     const win = new BrowserWindow({
@@ -126,14 +126,29 @@ export class AppWindow {
     });
 
     if (is.dev) {
-      const pageURL = new URL(process.env["ELECTRON_RENDERER_URL"]!);
-      if (url) {
-        pageURL.hash = new URL(url).pathname;
+      const ELECTRON_RENDERER_URL = process.env["ELECTRON_RENDERER_URL"]!;
+
+      if (!URL.canParse(ELECTRON_RENDERER_URL)) {
+        app.quit();
+        return;
       }
-      win.loadURL(pageURL.href);
+
+      if (!URL.canParse(url)) {
+        win.loadURL(ELECTRON_RENDERER_URL);
+        return;
+      }
+
+      const devURL = new URL(ELECTRON_RENDERER_URL);
+      devURL.hash = new URL(url).pathname;
+      win.loadURL(devURL.href);
     } else {
-      win.loadFile(path.join(__dirname, "../renderer/index.html"), {
-        hash: URL.canParse(url || "") ? new URL(url || "").pathname : void 0,
+      const PRODUCTION_RENDERER_PATH = path.join(
+        __dirname,
+        "../renderer/index.html",
+      );
+
+      win.loadFile(PRODUCTION_RENDERER_PATH, {
+        hash: URL.canParse(url) ? new URL(url).pathname : void 0,
       });
     }
   }

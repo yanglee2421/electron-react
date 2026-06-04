@@ -227,24 +227,20 @@ primaryInstance$
     }
 
     const { appWindow } = container.cradle;
-
     const openURL = process.argv.find((arg) => arg.startsWith("app-ziyun://"));
+
     appWindow.show(openURL);
   });
 
 activate$
-  .pipe(
-    filter(() => {
-      return BrowserWindow.getAllWindows().length === 0;
-    }),
-  )
+  .pipe(filter(() => BrowserWindow.getAllWindows().length === 0))
   .subscribe(() => {
     const win = container.cradle.appWindow;
     win.show();
   });
 
-secondInstance$.subscribe(([, cmds]) => {
-  const url = cmds.at(-1);
+secondInstance$.subscribe(([, argv]) => {
+  const url = argv.find((arg) => arg.startsWith("app-ziyun://"));
   const { appWindow } = container.cradle;
 
   appWindow.show(url);

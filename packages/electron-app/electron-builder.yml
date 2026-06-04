@@ -1,6 +1,10 @@
 # @see - https://www.electron.build/configuration
 appId: "app.yanglee2421.app-ziyun"
 productName: "武铁紫云接口面板"
+protocols:
+  - name: App Ziyun Protocol
+    schemes:
+      - app-ziyun
 asar: true
 asarUnpack:
   - resources/**
