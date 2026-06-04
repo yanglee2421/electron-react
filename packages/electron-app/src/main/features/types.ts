@@ -1,5 +1,5 @@
 import type { DB } from "#main/features/db";
-import type { AppOpenURL, AppTheme, AppTray, AppWindow } from "#main/infra";
+import type { AppTheme, AppTray, AppWindow } from "#main/infra";
 import type { Cmd } from "./cmd";
 import type { ExternalDB } from "./external-db";
 import type { Guangzhoubei } from "./guangzhoubei";
@@ -36,7 +36,6 @@ export interface AppCradle {
   printer: Printer;
   profile: Profile;
 
-  appOpenURL: AppOpenURL;
   appTheme: AppTheme;
   appTray: AppTray;
   appWindow: AppWindow;

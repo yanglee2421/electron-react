@@ -8,7 +8,6 @@
     "import": "./dist/main.mjs"
   },
   "scripts": {
-    "dev": "node ./src/main.ts",
     "build": "tsdown",
     "build:node": "cmake-js compile"
   },

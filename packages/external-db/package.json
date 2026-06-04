@@ -1,6 +1,7 @@
 {
   "name": "@yanglee2421/external-db",
   "scripts": {
+    "dev": "tsdown",
     "build": "tsdown"
   },
   "files": [

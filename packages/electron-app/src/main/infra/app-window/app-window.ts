@@ -47,7 +47,7 @@ export class AppWindow {
   private subscriptions: Subscription[];
   private createWindow$: Observable<BrowserWindow | null>;
 
-  constructor({ profile, appOpenURL }: AppCradle) {
+  constructor({ profile }: AppCradle) {
     this.profile = profile;
     this.createWindow$ = browserWindowCreated$.pipe(
       map(([, win]) => win),
@@ -103,7 +103,7 @@ export class AppWindow {
     return this.window$.value;
   }
 
-  createWindow() {
+  createWindow(url?: string) {
     const alwaysOnTop = this.profile.state.alwaysOnTop;
 
     const win = new BrowserWindow({
@@ -126,9 +126,15 @@ export class AppWindow {
     });
 
     if (is.dev) {
-      win.loadURL(process.env["ELECTRON_RENDERER_URL"]!);
+      const pageURL = new URL(process.env["ELECTRON_RENDERER_URL"]!);
+      if (url) {
+        pageURL.hash = new URL(url).pathname;
+      }
+      win.loadURL(pageURL.href);
     } else {
-      win.loadFile(path.join(__dirname, "../renderer/index.html"));
+      win.loadFile(path.join(__dirname, "../renderer/index.html"), {
+        hash: URL.canParse(url || "") ? new URL(url || "").pathname : void 0,
+      });
     }
   }
 
@@ -144,15 +150,16 @@ export class AppWindow {
     win.focus();
   }
 
-  show() {
+  show(url?: string) {
     const win = this.current;
 
     if (win) {
+      win.webContents.send("open-url", { url });
       this.focusWindow(win);
       return;
     }
 
-    this.createWindow();
+    this.createWindow(url);
 
     this.createWindow$
       .pipe(

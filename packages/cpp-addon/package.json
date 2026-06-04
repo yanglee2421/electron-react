@@ -34,6 +34,7 @@
     "import": "./dist/main.mjs"
   },
   "scripts": {
+    "dev": "tsdown",
     "build": "tsdown",
     "build:electron": "electron-rebuild",
     "gyp:configure": "node-gyp configure",

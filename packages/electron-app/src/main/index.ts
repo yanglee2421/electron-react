@@ -226,15 +226,10 @@ primaryInstance$
       electronApp.setAppUserModelId("com.electron");
     }
 
-    const { profile, appWindow, appOpenURL } = container.cradle;
-
-    if (!profile.state.silentStartUp) {
-      appWindow.show();
-    }
+    const { appWindow } = container.cradle;
 
     const openURL = process.argv.find((arg) => arg.startsWith("app-ziyun://"));
-    appOpenURL.emit(openURL);
-    console.log("primaryInstance", openURL);
+    appWindow.show(openURL);
   });
 
 activate$
@@ -250,11 +245,9 @@ activate$
 
 secondInstance$.subscribe(([, cmds]) => {
   const url = cmds.at(-1);
-  const { appOpenURL, appWindow } = container.cradle;
+  const { appWindow } = container.cradle;
 
-  appOpenURL.emit(url);
-  console.log("secondInstance", url);
-  appWindow.show();
+  appWindow.show(url);
 });
 
 browserWindowCreated$

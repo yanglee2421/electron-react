@@ -1,6 +1,7 @@
 {
   "name": "@yanglee2421/hmis-proxy",
   "scripts": {
+    "dev": "tsdown",
     "build": "tsdown"
   },
   "files": [
