@@ -33,7 +33,7 @@ const schema = z.object({
   directory: z.string().min(1),
 });
 
-export const Component = () => {
+export const Md5Compute = () => {
   const [md5, setMD5] = React.useState("");
 
   const formId = React.useId();

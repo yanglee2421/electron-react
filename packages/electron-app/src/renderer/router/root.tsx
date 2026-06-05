@@ -15,7 +15,6 @@ import {
   SportsEsportsOutlined,
   TrainOutlined,
   TuneOutlined,
-  VpnKeyOutlined,
 } from "@mui/icons-material";
 import {
   Alert,
@@ -206,11 +205,6 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
 
   if (shouldAdd) {
     result.push(
-      {
-        segment: calculateSegment("md5_compute"),
-        title: "MD5计算",
-        icon: <VpnKeyOutlined />,
-      },
       {
         segment: calculateSegment("md5_backup_image"),
         title: "图片备份",

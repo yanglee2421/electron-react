@@ -13,12 +13,14 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  Stack,
   TextField,
 } from "@mui/material";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 import { useNotifications } from "@toolpad/core";
 import React from "react";
 import { z } from "zod";
+import { Md5Compute } from "./md5-compute";
 
 const schema = z.object({
   directory: z.string().min(1),
@@ -73,71 +75,74 @@ export const Component = () => {
   };
 
   return (
-    <Card>
-      <CardHeader title="图片去重备份" />
-      <CardContent>
-        <form
-          id={formId}
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            form.handleSubmit();
-          }}
-          onReset={() => {
-            form.reset();
-          }}
-          noValidate
-        >
-          <Grid container>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.AppField name="directory">
-                {(directoryField) => (
-                  <directoryField.TextField
-                    value={directoryField.state.value}
-                    onChange={(e) => {
-                      directoryField.handleChange(e.target.value);
-                    }}
-                    fullWidth
-                    helperText={
-                      directoryField.getMeta().errors.length
-                        ? directoryField.getMeta().errors.at(0)?.message
-                        : "图片目录的所在路径"
-                    }
-                    error={directoryField.getMeta().errors.length > 0}
-                    slotProps={{
-                      input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={handleDirectoryChange}
-                              disabled={selectDirectory.isPending}
-                            >
-                              <PendingIcon
-                                isPending={selectDirectory.isPending}
+    <Stack spacing={3}>
+      <Card>
+        <CardHeader title="图片去重备份" />
+        <CardContent>
+          <form
+            id={formId}
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+            onReset={() => {
+              form.reset();
+            }}
+            noValidate
+          >
+            <Grid container>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.AppField name="directory">
+                  {(directoryField) => (
+                    <directoryField.TextField
+                      value={directoryField.state.value}
+                      onChange={(e) => {
+                        directoryField.handleChange(e.target.value);
+                      }}
+                      fullWidth
+                      helperText={
+                        directoryField.getMeta().errors.length
+                          ? directoryField.getMeta().errors.at(0)?.message
+                          : "图片目录的所在路径"
+                      }
+                      error={directoryField.getMeta().errors.length > 0}
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={handleDirectoryChange}
+                                disabled={selectDirectory.isPending}
                               >
-                                <FindInPageOutlined />
-                              </PendingIcon>
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      },
-                    }}
-                  />
-                )}
-              </form.AppField>
+                                <PendingIcon
+                                  isPending={selectDirectory.isPending}
+                                >
+                                  <FindInPageOutlined />
+                                </PendingIcon>
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                    />
+                  )}
+                </form.AppField>
+              </Grid>
             </Grid>
-          </Grid>
-        </form>
-      </CardContent>
-      <CardActions>
-        <form.Subscribe selector={(state) => state.canSubmit}>
-          {(canSubmit) => (
-            <Button form={formId} type="submit" disabled={!canSubmit}>
-              确定
-            </Button>
-          )}
-        </form.Subscribe>
-      </CardActions>
-    </Card>
+          </form>
+        </CardContent>
+        <CardActions>
+          <form.Subscribe selector={(state) => state.canSubmit}>
+            {(canSubmit) => (
+              <Button form={formId} type="submit" disabled={!canSubmit}>
+                确定
+              </Button>
+            )}
+          </form.Subscribe>
+        </CardActions>
+      </Card>
+      <Md5Compute />
+    </Stack>
   );
 };

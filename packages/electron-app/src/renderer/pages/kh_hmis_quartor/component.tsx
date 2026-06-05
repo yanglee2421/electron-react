@@ -5,7 +5,7 @@ import {
 } from "#renderer/api/fetch_preload";
 import { useUploadCHR502 } from "#renderer/api/kh";
 import { Loading } from "#renderer/components/Loading";
-import { ScrollToTop } from "#renderer/components/scroll";
+import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { RefreshOutlined } from "@mui/icons-material";
 import {
@@ -255,7 +255,6 @@ export const Component = () => {
   const whModel = useSessionStore((s) => s.whModel);
   const idsWheel = useSessionStore((s) => s.idsWheel);
   const result = useSessionStore((s) => s.result);
-  const [anchorEl, showScrollToTop] = ScrollToTop.useScrollToTop();
 
   const date = selectDate ? dayjs(selectDate) : null;
   const filters: Filter[] = [
@@ -365,7 +364,7 @@ export const Component = () => {
 
   return (
     <Card>
-      <div ref={anchorEl}></div>
+      <ScrollToTopButton />
       <CardHeader
         title="季度校验"
         action={
@@ -445,7 +444,6 @@ export const Component = () => {
         }}
         labelRowsPerPage="每页行数"
       />
-      <ScrollToTop ref={anchorEl} show={showScrollToTop} />
     </Card>
   );
 };

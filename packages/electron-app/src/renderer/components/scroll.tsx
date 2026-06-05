@@ -1,5 +1,5 @@
 import { ArrowUpwardOutlined } from "@mui/icons-material";
-import { Zoom, Fab } from "@mui/material";
+import { Fab, Zoom } from "@mui/material";
 import React from "react";
 import { createPortal } from "react-dom";
 
@@ -29,12 +29,12 @@ const useScrollToTop = () => {
   return [anchorEl, showScrollToTop] as const;
 };
 
-type ScrollToTopProps = {
+interface ScrollToTopProps {
   ref: React.RefObject<HTMLDivElement | null>;
   show: boolean;
-};
+}
 
-export const ScrollToTop = (props: ScrollToTopProps) => {
+const ScrollToTop = (props: ScrollToTopProps) => {
   return (
     <Zoom in={props.show} unmountOnExit>
       <Fab

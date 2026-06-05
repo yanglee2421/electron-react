@@ -32,10 +32,6 @@ export const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/log/component"),
           },
           {
-            path: "md5_compute",
-            lazy: () => import("#renderer/pages/md5_compute/component"),
-          },
-          {
             path: "md5_backup_image",
             lazy: () => import("#renderer/pages/md5_backup_image/component"),
           },

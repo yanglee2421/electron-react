@@ -41,7 +41,6 @@ const createSegmentAlias = () => {
     ["settings", "设置"],
     ["setting", "设置"],
     ["log", "日志"],
-    ["md5_compute", "MD5计算"],
     ["md5_backup_image", "图片备份"],
     ["lab", "实验室"],
     ["help", "帮助"],

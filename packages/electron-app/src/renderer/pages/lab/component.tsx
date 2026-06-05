@@ -6,7 +6,7 @@ import {
   useShowOpenDialog,
 } from "#renderer/api/fetch_preload";
 import { NumberField } from "#renderer/components/number";
-import { ScrollToTop } from "#renderer/components/scroll";
+import { ScrollToTopButton } from "#renderer/components/scroll";
 import {
   useLocaleDate,
   useLocaleTime,
@@ -585,7 +585,6 @@ export const Component = () => {
   const showOpenDialog = useShowOpenDialog();
   const selectXMLPDF = useSelectXMLPDFFromFolder();
   const query = useQuery(fetchXMLPDFCompute([...files]));
-  const [anchorRef, showScrollToTop] = ScrollToTop.useScrollToTop();
 
   const invoices = query.data || [];
   const invoiceGroup = mapGroupBy(
@@ -615,8 +614,7 @@ export const Component = () => {
 
   return (
     <>
-      <div ref={anchorRef}></div>
-      <ScrollToTop show={showScrollToTop} ref={anchorRef} />
+      <ScrollToTopButton />
       <Stack spacing={3}>
         <div>
           <Clock />
