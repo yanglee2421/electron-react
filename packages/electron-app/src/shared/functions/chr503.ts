@@ -2,7 +2,10 @@ import type { QuartorYearlyData } from "#main/features/mdb/types";
 
 import { divideBy10, mathFormat } from "./math";
 
-export const resolveCHR503 = (datas: QuartorYearlyData[]) => {
+export const resolveCHR503 = (
+  datas: QuartorYearlyData[],
+  is24Channel = false,
+) => {
   const rows = datas
     .filter((data) => {
       const nChannel = data.nChannel;
@@ -14,13 +17,14 @@ export const resolveCHR503 = (datas: QuartorYearlyData[]) => {
         case 3:
         case 4:
         case 5:
+          return true;
         case 6:
         case 7:
         case 8:
         case 9:
         case 10:
         case 11:
-          return true;
+          return is24Channel;
         default:
           return false;
       }

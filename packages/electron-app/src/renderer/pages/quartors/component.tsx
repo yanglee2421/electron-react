@@ -321,10 +321,15 @@ export const Component = () => {
           variant="outlined"
           startIcon={<Print />}
           onClick={() => {
-            navigate("/quartors/chr502", {
-              state: {
-                ids: table.getSelectedRowModel().flatRows.map((row) => row.id),
-              },
+            const search = new URLSearchParams();
+
+            table.getSelectedRowModel().flatRows.forEach((row) => {
+              search.append("row", row.id);
+            });
+
+            navigate({
+              pathname: "/quartors/chr502",
+              search: "?" + search.toString(),
             });
           }}
           disabled={printCheck.disabledPrint}

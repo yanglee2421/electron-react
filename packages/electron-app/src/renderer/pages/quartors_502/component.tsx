@@ -15,9 +15,8 @@ import { Alert, AlertTitle } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
-
 import React from "react";
-import { useLocation } from "react-router";
+import { useSearchParams } from "react-router";
 
 const FIRST_COL_WIDTH = 50;
 const LAST_COL_WIDTH = 50;
@@ -213,13 +212,9 @@ const ReportDoc = (props: ReportDocProps) => {
 };
 
 export const Component = () => {
-  const location = useLocation();
-
-  const query = useQuery(
-    fetchCHR502Data({
-      ids: Array.isArray(location.state.ids) ? location.state.ids : [],
-    }),
-  );
+  const [search] = useSearchParams();
+  const ids = search.getAll("row");
+  const query = useQuery(fetchCHR502Data({ ids }));
 
   const renderQuery = () => {
     if (query.isPending) {

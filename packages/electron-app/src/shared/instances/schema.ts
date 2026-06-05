@@ -22,7 +22,7 @@ export const profile = z.object({
   enableExternalDB: z.boolean().default(false),
   externalDBPath: z.string().default(""),
   enableHMISProxy: z.boolean().default(false),
-  hmisProxyPort: portSchema,
+  hmisProxyPort: portSchema.default(5003),
 });
 
 export type Profile = z.infer<typeof profile>;
