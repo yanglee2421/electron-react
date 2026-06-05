@@ -62,26 +62,28 @@ interface EquipmentTableProps {
 
 const EquipmentTable = (props: EquipmentTableProps) => {
   return (
-    <Row>
-      <Col>
-        <Cell font12>设备型号</Cell>
-      </Col>
-      <Col>
-        <Cell font12>{props.deviceModel}</Cell>
-      </Col>
-      <Col>
-        <Cell font12>设备编号</Cell>
-      </Col>
-      <Col>
-        <Cell font12>{props.deviceNo}</Cell>
-      </Col>
-      <Col>
-        <Cell font12>实物试块型号</Cell>
-      </Col>
-      <Col>
-        <Cell font12>{props.blockModel}</Cell>
-      </Col>
-    </Row>
+    <CellHeightContext value={30}>
+      <Row>
+        <Col>
+          <Cell font12>设备型号</Cell>
+        </Col>
+        <Col>
+          <Cell font12>{props.deviceModel}</Cell>
+        </Col>
+        <Col>
+          <Cell font12>设备编号</Cell>
+        </Col>
+        <Col>
+          <Cell font12>{props.deviceNo}</Cell>
+        </Col>
+        <Col>
+          <Cell font12>{"对比试样\n轮对型号"}</Cell>
+        </Col>
+        <Col>
+          <Cell font12>{props.blockModel}</Cell>
+        </Col>
+      </Row>
+    </CellHeightContext>
   );
 };
 
@@ -114,10 +116,10 @@ const LZInfoTable = (props: LZInfoTableProps) => {
           <Cell>折射角（度）</Cell>
           <Row>
             <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 4}>灵敏度{"\n"}（dB）</Cell>
+              <Cell height={BASIC_ROW_HEIGHT * 3.5}>灵敏度{"\n"}（dB）</Cell>
             </Col>
             <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 2}>校验{"\n"}（80%）</Cell>
+              <Cell height={BASIC_ROW_HEIGHT * 1.5}>校验{"\n"}（80%）</Cell>
               <Cell>补偿</Cell>
               <Cell>探伤</Cell>
             </Col>
@@ -126,21 +128,21 @@ const LZInfoTable = (props: LZInfoTableProps) => {
         <Col>
           <Cell>{direction}外</Cell>
           <Cell>{props.zsj3}</Cell>
-          <Cell height={BASIC_ROW_HEIGHT * 2}>{props.jy3}</Cell>
+          <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy3}</Cell>
           <Cell>{props.bc3}</Cell>
           <Cell>{props.ts3}</Cell>
         </Col>
         <Col>
           <Cell>{direction}内</Cell>
           <Cell>{props.zsj4}</Cell>
-          <Cell height={BASIC_ROW_HEIGHT * 2}>{props.jy4}</Cell>
+          <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy4}</Cell>
           <Cell>{props.bc4}</Cell>
           <Cell>{props.ts4}</Cell>
         </Col>
         <Col>
           <Cell>{direction}A3</Cell>
           <Cell>{props.zsj2}</Cell>
-          <Cell height={BASIC_ROW_HEIGHT * 2}>{props.jy2}</Cell>
+          <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy2}</Cell>
           <Cell>{props.bc2}</Cell>
           <Cell>{props.ts2}</Cell>
         </Col>
@@ -176,41 +178,42 @@ const XHCTable = (props: XHCTableProps) => {
   return (
     <Row>
       <Col width={XHC_DIRECTION_COL_WIDTH}>
-        <Cell height={BASIC_ROW_HEIGHT * 3}>{direction}</Cell>
-        <Cell height={BASIC_ROW_HEIGHT * 3}>{"轴\n颈"}</Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 2.5}>{direction}</Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 2}>{"轴\n颈"}</Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 1.5}>{"穿\n透"}</Cell>
       </Col>
       <Col width={XHC_CHANNEL_COL_WIDTH}>
-        <Cell height={BASIC_ROW_HEIGHT * 3}>通道{"\n"}编号</Cell>
-        <Cell>{direction}CT</Cell>
-        <Cell>{props.xhChannelName}</Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 2.5}>通道{"\n"}编号</Cell>
+        <Cell>{props.xhChannelName?.replace(/[左右0]/g, "")}</Cell>
         <Cell></Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 1.5}>CT</Cell>
       </Col>
       <Col width={XHC_ZSJ_COL_WIDTH}>
-        <Cell height={BASIC_ROW_HEIGHT * 3}>拆射{"\n"}角度</Cell>
-        <Cell>{props.ctZsj}</Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 2.5}>拆射{"\n"}角度</Cell>
         <Cell>{props.xhZsj}</Cell>
         <Cell></Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctZsj}</Cell>
       </Col>
       <Col>
         <Cell>灵敏度(dB)</Cell>
         <Row>
           <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 2}>{"校验\n(80%)"}</Cell>
-            <Cell>{props.ctJy}</Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>{"校验\n(80%)"}</Cell>
             <Cell>{props.xhJy}</Cell>
             <Cell></Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctJy}</Cell>
           </Col>
           <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 2}>补偿</Cell>
-            <Cell>{props.ctBc}</Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>补偿</Cell>
             <Cell>{props.xhBc}</Cell>
             <Cell></Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctBc}</Cell>
           </Col>
           <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 2}>探伤</Cell>
-            <Cell>{props.ctTs}</Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>探伤</Cell>
             <Cell>{props.xhTs}</Cell>
             <Cell></Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctTs}</Cell>
           </Col>
         </Row>
       </Col>
@@ -218,16 +221,15 @@ const XHCTable = (props: XHCTableProps) => {
         <Cell>缺陷编号</Cell>
         <Row>
           <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 2}>1</Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>1</Cell>
           </Col>
           <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 2}>2</Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>2</Cell>
           </Col>
           <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 2}>3</Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>3</Cell>
           </Col>
         </Row>
-        <Cell>{props.ctValue}</Cell>
         <Row>
           <Col>
             <Cell>{props.xhValue1}</Cell>
@@ -242,6 +244,7 @@ const XHCTable = (props: XHCTableProps) => {
             <Cell></Cell>
           </Col>
         </Row>
+        <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctValue}</Cell>
       </Col>
     </Row>
   );
@@ -262,30 +265,36 @@ const SignatureTable = (props: SignatureTableProps) => {
           <Cell height={BASIC_ROW_HEIGHT * 2} font12>
             签字签章
           </Cell>
-        </Col>
-        <Col>
-          <Cell font12>探伤工</Cell>
-          <Cell font12>质检员</Cell>
-        </Col>
-        <Col>
-          <Cell font12>{tsg}</Cell>
-          <Cell font12></Cell>
-        </Col>
-        <Col>
-          <Cell font12>探伤工长</Cell>
-          <Cell font12>验收员</Cell>
-        </Col>
-        <Col>
-          <Cell font12></Cell>
-          <Cell font12></Cell>
-        </Col>
-      </Row>
-      <Row>
-        <Col width={SIGNATURE_COL_WIDTH}>
           <Cell font12>备注</Cell>
         </Col>
         <Col>
-          <Cell font12></Cell>
+          <Row>
+            <Col>
+              <Cell font12>探伤工</Cell>
+              <Cell font12>质检员</Cell>
+            </Col>
+            <Col>
+              <Cell font12>{tsg}</Cell>
+              <Cell font12></Cell>
+            </Col>
+            <Col>
+              <Cell font12>探伤工长</Cell>
+              <Cell font12>验收员</Cell>
+            </Col>
+            <Col>
+              <Cell font12></Cell>
+              <Cell font12></Cell>
+            </Col>
+            <Col>
+              <Cell font12>维修工</Cell>
+              <Cell font12></Cell>
+            </Col>
+            <Col>
+              <Cell font12></Cell>
+              <Cell font12></Cell>
+            </Col>
+          </Row>
+          <Cell></Cell>
         </Col>
       </Row>
     </>
@@ -329,14 +338,14 @@ const ReportDoc = (props: ReportDocProps) => {
         <PageHeader>辆货统-501</PageHeader>
         <View>
           <ReportTitle>
-            铁路货车轮轴多通道超声波自动探伤系统日常性能校验记录表
+            铁路货车轮轴B/C型显示超声波自动探伤系统日常性能校验记录
           </ReportTitle>
           <TableHeader {...tableHeader1} />
           <View style={[styles.borderBL]}>
             <EquipmentTable {...equipmentTableProps} />
             <Row>
               <Col width={ASIDE_COL_WIDTH}>
-                <Cell height={ROW_HEIGHT * 26}>{asideTip}</Cell>
+                <Cell height={ROW_HEIGHT * 25.5}>{asideTip}</Cell>
               </Col>
               {props.children}
             </Row>
@@ -353,7 +362,7 @@ const ReportDoc = (props: ReportDocProps) => {
           <PageHeader>辆货统-501</PageHeader>
           <View>
             <ReportTitle>
-              铁路货车轮轴超声波自动探伤系统日常性能校验记录表（第2页）
+              铁路货车轮轴B/C型显示超声波自动探伤系统日常性能校验记录（第2页）
             </ReportTitle>
             <TableHeader {...tableHeader2} />
             <View style={[styles.borderBL, styles.fontBold]}>
@@ -441,7 +450,7 @@ export const Component = () => {
           equipmentTableProps={{
             deviceModel: corporation.DeviceType || "",
             deviceNo: corporation.DeviceNO || "",
-            blockModel: [record.szIDsWheel, record.szWHModel].join("_"),
+            blockModel: [record.szIDsWheel, record.szWHModel].join("-"),
           }}
           signatureTableProps={{
             tsg: record.szUsername || "",
@@ -459,7 +468,11 @@ export const Component = () => {
                 <LZInfoTable
                   board={board}
                   jy2={detectorInfo.get(`${board}-2`)?.jy}
-                  bc2={detectorInfo.get(`${board}-2`)?.bc}
+                  bc2={
+                    detectorInfo.get(`${board}-2`)?.jy
+                      ? detectorInfo.get(`${board}-2`)?.bc
+                      : ""
+                  }
                   ts2={detectorInfo.get(`${board}-2`)?.ts}
                   zsj2={detectorInfo.get(`${board}-2`)?.zsj}
                   jy3={detectorInfo.get(`${board}-3`)?.jy}
