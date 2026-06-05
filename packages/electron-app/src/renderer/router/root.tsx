@@ -297,44 +297,53 @@ export const RootHydrateFallback = () => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        flexDirection: "column",
+        gap: 2,
       }}
     >
       <CircularProgress size={64} />
+      <Typography variant="body2" color="textSecondary">
+        正在加载配置
+      </Typography>
     </Box>
   );
 };
 
-export const RootRoute = () => {
-  const theme = useTheme();
+const useOpenURL = () => {
   const navigate = useNavigate();
   const handleSingleInstance = React.useEffectEvent((path: string) => {
     navigate(path);
   });
 
-  useLogUpdate();
-
-  const NAVIGATION = createNavigation(import.meta.env.DEV);
-
   React.useEffect(() => {
     const unsubscribe = ipc.on("open-url", (_, payload) => {
       const url = payload.url;
-      console.log("secondInstance payload", url);
-      const path = new URL(url).pathname;
 
-      handleSingleInstance(path);
+      if (URL.canParse(url)) {
+        const path = new URL(url).pathname;
+
+        handleSingleInstance(path);
+      }
     });
 
     return () => {
       unsubscribe();
     };
   }, []);
+};
+
+export const RootRoute = () => {
+  const theme = useTheme();
+
+  useLogUpdate();
+  useOpenURL();
+
+  const NAVIGATION = createNavigation(import.meta.env.DEV);
 
   return (
     <ReactRouterAppProvider
       navigation={NAVIGATION}
-      branding={{
-        title: "武铁紫云接口面板",
-      }}
+      branding={{ title: "武铁紫云接口面板" }}
       theme={theme}
     >
       <NprogressBar />

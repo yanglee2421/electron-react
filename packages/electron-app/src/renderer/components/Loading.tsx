@@ -13,10 +13,12 @@ export const Loading = (props: LoadingProps) => {
 
   return (
     <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      padding={6}
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 6,
+      }}
       {...slotProps.box}
     >
       <CircularProgress {...slotProps.circularProgress} />
