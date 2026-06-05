@@ -1,5 +1,4 @@
 import * as pdf from "#renderer/api/pdf";
-import "#renderer/assets/print.css";
 import dayjs from "dayjs";
 import "dayjs/locale/zh";
 import { enableMapSet } from "immer";

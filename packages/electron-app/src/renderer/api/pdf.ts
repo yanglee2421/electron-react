@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
-import { readBarcodes, prepareZXingModule } from "zxing-wasm/reader";
-import wasmURL from "zxing-wasm/reader/zxing_reader.wasm?url";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import * as pdfjs from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
+import { prepareZXingModule, readBarcodes } from "zxing-wasm/reader";
+import wasmURL from "zxing-wasm/reader/zxing_reader.wasm?url";
 
 const getWASMHref = () => new URL(wasmURL, import.meta.url).href;
 const getPDFWorkerHref = () => new URL(pdfWorker, import.meta.url).href;
@@ -22,8 +22,8 @@ export const prepareModule = () => {
   });
 };
 
-const canvasToBlob = (canvas: HTMLCanvasElement) =>
-  new Promise<Blob>((resolve) => {
+const canvasToBlob = (canvas: HTMLCanvasElement) => {
+  return new Promise<Blob>((resolve) => {
     canvas.toBlob((blob) => {
       if (!blob) {
         throw new Error("get blob from canvas failed");
@@ -31,6 +31,7 @@ const canvasToBlob = (canvas: HTMLCanvasElement) =>
       resolve(blob);
     });
   });
+};
 
 export const pdfToImageBlob = async (file: File, pageIndex = 1) => {
   const buf = await file.arrayBuffer();
@@ -59,8 +60,8 @@ export const pdfToImageBlob = async (file: File, pageIndex = 1) => {
   return blob;
 };
 
-export const fetchBarcodeTextFromPDF = (file: File) =>
-  queryOptions({
+export const fetchBarcodeTextFromPDF = (file: File) => {
+  return queryOptions({
     queryKey: [
       "pdf demo",
       [file.lastModified, file.name, file.size, file.type],
@@ -71,9 +72,10 @@ export const fetchBarcodeTextFromPDF = (file: File) =>
       return barcodes.map((i) => i.text);
     },
   });
+};
 
-export const fetchBarcodeTextFromImage = (file: File) =>
-  queryOptions({
+export const fetchBarcodeTextFromImage = (file: File) => {
+  return queryOptions({
     queryKey: [
       "get qrcode text from image demo",
       [file.lastModified, file.name, file.size, file.type],
@@ -83,3 +85,4 @@ export const fetchBarcodeTextFromImage = (file: File) =>
       return barcodes.map((i) => i.text);
     },
   });
+};

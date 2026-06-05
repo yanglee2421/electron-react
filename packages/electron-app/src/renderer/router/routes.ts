@@ -40,10 +40,6 @@ export const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/md5_backup_image/component"),
           },
           {
-            path: "xml",
-            lazy: () => import("#renderer/pages/xml/component"),
-          },
-          {
             path: "lab",
             lazy: () => import("#renderer/pages/lab/component"),
           },
@@ -54,14 +50,6 @@ export const routes: RouteObject[] = [
           {
             path: "qrcode",
             lazy: () => import("#renderer/pages/qrcode/component"),
-          },
-          {
-            path: "pdf",
-            lazy: () => import("#renderer/pages/pdf/component"),
-          },
-          {
-            path: "external-db",
-            lazy: () => import("#renderer/pages/external-db/component"),
           },
           {
             children: [

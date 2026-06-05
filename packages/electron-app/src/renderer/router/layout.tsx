@@ -18,6 +18,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { DashboardLayout, PageContainer } from "@toolpad/core";
+import { normalizePathname } from "@yotulee/run";
 import React from "react";
 import { Outlet, useLocation } from "react-router";
 
@@ -57,22 +58,6 @@ const createSegmentAlias = () => {
 
 const calculateAlias = (segmentAlias: Map<string, string>, title: string) => {
   return segmentAlias.get(title) || title;
-};
-
-const normalizePathname = (pathname: string) => {
-  let result = pathname;
-
-  const isStartWithSlash = pathname.startsWith("/");
-  if (!isStartWithSlash) {
-    result = "/" + result;
-  }
-
-  const isEndWithSlash = pathname.endsWith("/");
-  if (isEndWithSlash) {
-    result = result.replace(/\/&/, "");
-  }
-
-  return result;
 };
 
 const calculateTitle = (

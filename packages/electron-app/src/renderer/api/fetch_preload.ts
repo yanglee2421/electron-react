@@ -123,15 +123,6 @@ export const useMD5Compute = () => {
   });
 };
 
-export const useXML = () => {
-  return useMutation({
-    mutationFn: async (xml: string) => {
-      const result = await ipc.invoke("XML/XML", xml);
-      return result;
-    },
-  });
-};
-
 export const useShowOpenDialog = () => {
   return useMutation({
     mutationFn: async (options: Electron.OpenDialogOptions) => {

@@ -1,27 +1,10 @@
-import { Dock, HomeOutlined, TableBar } from "@mui/icons-material";
-import {
-  Alert,
-  AlertTitle,
-  Box,
-  Button,
-  CircularProgress,
-  Typography,
-} from "@mui/material";
-import {
-  isRouteErrorResponse,
-  Link,
-  useNavigate,
-  useRouteError,
-} from "react-router";
-
 import { useLogUpdate } from "#renderer/api/logger";
-
 import { ipc } from "#renderer/lib/ipc";
 import {
   CalendarMonthOutlined,
   CalendarTodayOutlined,
   CalendarViewMonthOutlined,
-  CodeOutlined,
+  HomeOutlined,
   InfoOutlined,
   Memory,
   PermMediaOutlined,
@@ -34,12 +17,27 @@ import {
   TuneOutlined,
   VpnKeyOutlined,
 } from "@mui/icons-material";
-import { useTheme } from "@mui/material";
+import {
+  Alert,
+  AlertTitle,
+  Box,
+  Button,
+  CircularProgress,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import type { Navigation } from "@toolpad/core";
 import { DialogsProvider, NotificationsProvider } from "@toolpad/core";
 import { ReactRouterAppProvider } from "@toolpad/core/react-router";
 import React from "react";
-import { Outlet, ScrollRestoration } from "react-router";
+import {
+  isRouteErrorResponse,
+  Link,
+  Outlet,
+  ScrollRestoration,
+  useNavigate,
+  useRouteError,
+} from "react-router";
 import { NprogressBar } from "./nprogress";
 
 const calculateSegment = (...args: string[]) => {
@@ -204,16 +202,6 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
       title: "PLC",
       icon: <Memory />,
     },
-    {
-      segment: calculateSegment("pdf"),
-      title: "PDF",
-      icon: <Dock />,
-    },
-    {
-      segment: calculateSegment("external-db"),
-      title: "external-db",
-      icon: <TableBar />,
-    },
   );
 
   if (shouldAdd) {
@@ -227,11 +215,6 @@ const createNavigation = (shouldAdd: boolean): Navigation => {
         segment: calculateSegment("md5_backup_image"),
         title: "图片备份",
         icon: <PermMediaOutlined />,
-      },
-      {
-        segment: calculateSegment("xml"),
-        title: "XML",
-        icon: <CodeOutlined />,
       },
       {
         segment: calculateSegment("lab"),

@@ -8,13 +8,14 @@ import {
 
 const QUERY_KEY = "jtv_hmis";
 
-export const fetchJtvHmisSqliteGet = (payload: SQLiteGetParams) =>
-  queryOptions({
+export const fetchJtvHmisSqliteGet = (payload: SQLiteGetParams) => {
+  return queryOptions({
     queryKey: [QUERY_KEY, payload],
     queryFn: () => {
       return ipc.invoke("HMIS/jtv_hmis_sqlite_get", payload);
     },
   });
+};
 
 export const useDeleteJTVRecord = () => {
   const queryClient = useQueryClient();
@@ -32,6 +33,7 @@ export const useDeleteJTVRecord = () => {
 
 export const useInsertJTVRecord = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (payload: InsertRecordParams) => {
       return ipc.invoke("HMIS/jtv_hmis_sqlite_insert", payload);
@@ -44,10 +46,10 @@ export const useInsertJTVRecord = () => {
   });
 };
 
-type JTVZHGetPayload = {
+interface JTVZHGetPayload {
   barcode: string;
   isZhMode: boolean;
-};
+}
 
 export const useFetchAxleInfo = () => {
   const queryClient = useQueryClient();
