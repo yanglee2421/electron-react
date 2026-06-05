@@ -125,23 +125,7 @@ export class AppWindow {
       show: false,
     });
 
-    if (is.dev) {
-      const ELECTRON_RENDERER_URL = process.env["ELECTRON_RENDERER_URL"]!;
-
-      if (!URL.canParse(ELECTRON_RENDERER_URL)) {
-        app.quit();
-        return;
-      }
-
-      if (!URL.canParse(url)) {
-        win.loadURL(ELECTRON_RENDERER_URL);
-        return;
-      }
-
-      const devURL = new URL(ELECTRON_RENDERER_URL);
-      devURL.hash = new URL(url).pathname;
-      win.loadURL(devURL.href);
-    } else {
+    if (!is.dev) {
       const PRODUCTION_RENDERER_PATH = path.join(
         __dirname,
         "../renderer/index.html",
@@ -150,7 +134,25 @@ export class AppWindow {
       win.loadFile(PRODUCTION_RENDERER_PATH, {
         hash: URL.canParse(url) ? new URL(url).pathname : void 0,
       });
+
+      return;
     }
+
+    const ELECTRON_RENDERER_URL = process.env["ELECTRON_RENDERER_URL"]!;
+
+    if (!URL.canParse(ELECTRON_RENDERER_URL)) {
+      app.quit();
+      return;
+    }
+
+    if (!URL.canParse(url)) {
+      win.loadURL(ELECTRON_RENDERER_URL);
+      return;
+    }
+
+    const devURL = new URL(ELECTRON_RENDERER_URL);
+    devURL.hash = new URL(url).pathname;
+    win.loadURL(devURL.href);
   }
 
   focusWindow(win: BrowserWindow) {
