@@ -220,4 +220,65 @@ export class Printer {
       jpegs,
     };
   }
+
+  async getDataFromQuartor501(id: string) {
+    const records = await this.mdb.root().quartors().equal("szIDs", id);
+    const record = atFirstOrThrow(
+      records.rows,
+      () => new Error(`未找到ID为${id}的检测数据`),
+    );
+
+    const datas = await this.mdb.root().quartors_data().equal("opid", id);
+    const corporation = await this.mdb.app().corporation();
+    const detectors = await this.mdb
+      .app()
+      .detectors()
+      .equal("szwheel", record.szWHModel || "");
+    const rootPath = await this.mdb.rootFolder();
+    const lctImage = this.mdb.quartorImagePath(
+      rootPath,
+      `${record.szIDs}.LCT.bmp`,
+    );
+    const rctImage = this.mdb.quartorImagePath(
+      rootPath,
+      `${record.szIDs}.RCT.bmp`,
+    );
+    const llzImage = this.mdb.quartorImagePath(
+      rootPath,
+      `${record.szIDs}.LLZ.bmp`,
+    );
+    const rlzImage = this.mdb.quartorImagePath(
+      rootPath,
+      `${record.szIDs}.RLZ.bmp`,
+    );
+    const lxhImage = this.mdb.quartorImagePath(
+      rootPath,
+      `${record.szIDs}.LXH.bmp`,
+    );
+    const rxhImage = this.mdb.quartorImagePath(
+      rootPath,
+      `${record.szIDs}.RXH.bmp`,
+    );
+    const tmpPath = path.resolve(app.getPath("temp"), app.getName());
+
+    await fs.promises.mkdir(tmpPath, { recursive: true });
+
+    const jpegs: ChannelImage = await this.piscina.run({
+      tmpPath,
+      lct: lctImage,
+      rct: rctImage,
+      llz: llzImage,
+      rlz: rlzImage,
+      lxh: lxhImage,
+      rxh: rxhImage,
+    });
+
+    return {
+      record: record,
+      datas: datas.rows,
+      corporation,
+      detectors: detectors.rows,
+      images: jpegs,
+    };
+  }
 }

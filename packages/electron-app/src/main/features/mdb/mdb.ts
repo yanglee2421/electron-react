@@ -76,6 +76,10 @@ class AppPathInfo {
     return path.resolve(rootPath, "_data", fileName);
   }
 
+  quartorImagePath(rootPath: string, fileName: string) {
+    return path.resolve(rootPath, "_quartor", fileName);
+  }
+
   async rootDb() {
     const rootPath = await this.rootFolder();
 
@@ -363,6 +367,9 @@ export class MDB {
   }
   dataImagePath(rootPath: string, fileName: string) {
     return this.appPathInfo.dataImagePath(rootPath, fileName);
+  }
+  quartorImagePath(rootPath: string, fileName: string) {
+    return this.appPathInfo.quartorImagePath(rootPath, fileName);
   }
 }
 

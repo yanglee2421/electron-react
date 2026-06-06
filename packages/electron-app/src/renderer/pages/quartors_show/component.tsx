@@ -2,11 +2,12 @@ import { fetchQuartorById } from "#renderer/api/mdb";
 import { Loading } from "#renderer/components/Loading";
 import { of } from "#shared/functions/array";
 import { mathFormat } from "#shared/functions/math";
-import { Refresh } from "@mui/icons-material";
+import { Print, Refresh } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
   Box,
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -19,7 +20,7 @@ import {
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { chunk, mapGroupBy } from "@yotulee/run";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 
 const resolveMetaInfo = (params: string | null) => {
   const result = new Map<string, number>();
@@ -113,6 +114,16 @@ export const Component = () => {
             </IconButton>
           }
         />
+        <CardContent>
+          <Button
+            startIcon={<Print />}
+            component={Link}
+            to={`/quartors/${params.id}/chr501`}
+            variant="outlined"
+          >
+            打印
+          </Button>
+        </CardContent>
         <Divider></Divider>
         <CardContent>
           <Grid container spacing={1.5}>

@@ -7,7 +7,7 @@ const QUERY_KEY = "printer";
 export const fetchCHR501Data = (id: string) => {
   return queryOptions({
     queryKey: [QUERY_KEY, id],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("printer/chr501", id);
     },
   });
@@ -16,7 +16,7 @@ export const fetchCHR501Data = (id: string) => {
 export const fetchCHR502Data = (params: CHR502Input) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "chr502", params],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("printer/chr502", params);
     },
   });
@@ -25,7 +25,7 @@ export const fetchCHR502Data = (params: CHR502Input) => {
 export const fetchCHR503Data = (id: string) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "chr503", id],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("printer/chr503", id);
     },
   });
@@ -34,7 +34,7 @@ export const fetchCHR503Data = (id: string) => {
 export const fetchCHR53AData = (input: CHR53AInput) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "chr53a", input],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("printer/chr53a", input);
     },
   });
@@ -43,8 +43,17 @@ export const fetchCHR53AData = (input: CHR53AInput) => {
 export const fetchCHR52AData = (id: string) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "chr52a", id],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("printer/chr52a", id);
+    },
+  });
+};
+
+export const fetchQuartorCHR501Data = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "quartor-chr501", id],
+    queryFn: () => {
+      return ipc.invoke("printer/quartor-chr501", id);
     },
   });
 };
