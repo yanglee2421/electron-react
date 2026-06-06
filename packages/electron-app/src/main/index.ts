@@ -10,7 +10,7 @@ import {
 import { electronApp, is, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import dayjs from "dayjs";
-import { app, Menu, net, protocol } from "electron";
+import { app, Menu } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
@@ -69,19 +69,6 @@ if (platform.isLinux) {
   app.disableHardwareAcceleration();
 }
 
-protocol.registerSchemesAsPrivileged([
-  {
-    scheme: "ziyun",
-    privileges: {
-      secure: true,
-      standard: true,
-      supportFetchAPI: true,
-      corsEnabled: true,
-      stream: true,
-    },
-  },
-]);
-
 const ioc$ = using(
   () => {
     const dbPath = path.resolve(app.getPath("userData"), "db.db");
@@ -108,6 +95,7 @@ const ioc$ = using(
       plc,
       printer,
 
+      appProtocol,
       appTheme,
       appTray,
       appWindow,
@@ -132,18 +120,15 @@ const ioc$ = using(
     const printerUnIPC = printerIPC.registerIPCHandlers(printer);
     const xmlUnIPC = xmlIPC.registerIPCHandlers();
 
-    protocol.handle("ziyun", (request) => {
-      const filePath = new URL(request.url).searchParams.get("file")!;
-
-      return net.fetch(url.pathToFileURL(filePath).href);
-    });
-
+    appProtocol.handle();
     void appTheme;
     void appTray;
     void appWindow;
 
     return {
       unsubscribe: () => {
+        container.dispose();
+
         infraUnIPC();
 
         cmdUnIPC();
@@ -161,9 +146,6 @@ const ioc$ = using(
         plcUnIPC();
         printerUnIPC();
         xmlUnIPC();
-
-        container.dispose();
-        protocol.unhandle("ziyun");
       },
     };
   },
@@ -171,8 +153,6 @@ const ioc$ = using(
   // Even if we don't actually need it
   () => NEVER.pipe(startWith(null), takeUntil(willQuit$)),
 ).pipe(shareReplay({ bufferSize: 1, refCount: true }));
-
-// Subscribe Observerable
 
 duplicateInstance$.subscribe(() => {
   if (is.dev) {

@@ -1,4 +1,4 @@
-import { AppTheme, AppTray, AppWindow } from "#main/infra";
+import { AppProtocol, AppTheme, AppTray, AppWindow } from "#main/infra";
 import { asClass, createContainer } from "awilix";
 import { Cmd } from "./cmd";
 import { DB } from "./db";
@@ -68,6 +68,9 @@ container.register({
     .singleton()
     .disposer((profile) => profile.dispose()),
 
+  appProtocol: asClass(AppProtocol)
+    .singleton()
+    .disposer((i) => i.dispose()),
   appTheme: asClass(AppTheme)
     .singleton()
     .disposer((i) => i.dispose()),
