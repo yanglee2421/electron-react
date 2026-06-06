@@ -47,11 +47,11 @@ import * as infraIPC from "./infra/ipc";
  * Avoid single instance in development version & production version
  */
 if (is.dev) {
-  const devUserDataPath = path.resolve(
+  const USER_DATA_PATH_DEV = path.resolve(
     app.getPath("appData"),
     `./${app.getName()}-dev`,
   );
-  app.setPath("userData", devUserDataPath);
+  app.setPath("userData", USER_DATA_PATH_DEV);
 }
 
 if (is.dev) {
@@ -69,10 +69,11 @@ if (platform.isLinux) {
   app.disableHardwareAcceleration();
 }
 
+const APP_DB_PATH = path.resolve(app.getPath("userData"), "db.db");
+
 const ioc$ = using(
   () => {
-    const dbPath = path.resolve(app.getPath("userData"), "db.db");
-    container.register({ dbPath: asValue(dbPath) });
+    container.register({ dbPath: asValue(APP_DB_PATH) });
 
     const { db } = container.cradle;
     const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
@@ -186,14 +187,14 @@ primaryInstance$
     },
     error: () => {
       container.dispose();
-      const dbPath = path.resolve(app.getPath("userData"), "db.db");
+
       const desktopDbPath = path.resolve(
         app.getPath("desktop"),
         `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
       );
 
-      fs.cpSync(dbPath, desktopDbPath, { recursive: true });
-      fs.rmSync(dbPath, { recursive: true, force: true });
+      fs.cpSync(APP_DB_PATH, desktopDbPath, { recursive: true });
+      fs.rmSync(APP_DB_PATH, { recursive: true, force: true });
     },
     complete: () => {
       app.quit();
@@ -238,10 +239,3 @@ windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
 
   app.quit();
 });
-
-// activate$
-//   .pipe(filter(() => BrowserWindow.getAllWindows().length === 0))
-//   .subscribe(() => {
-//     const win = container.cradle.appWindow;
-//     win.show();
-//   });

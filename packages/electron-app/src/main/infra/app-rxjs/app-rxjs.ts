@@ -1,13 +1,6 @@
 import type { BrowserWindow } from "electron";
 import { app } from "electron";
-import {
-  defer,
-  from,
-  fromEventPattern,
-  of,
-  partition,
-  shareReplay,
-} from "rxjs";
+import { from, fromEventPattern, of, partition } from "rxjs";
 
 export const whenReady$ = from(app.whenReady());
 export const willQuit$ = fromEventPattern(
@@ -17,10 +10,6 @@ export const willQuit$ = fromEventPattern(
 export const activate$ = fromEventPattern(
   (handler) => app.on("activate", handler),
   (handler) => app.off("activate", handler),
-);
-export const secondInstance$ = fromEventPattern<[Electron.Event, string[]]>(
-  (handler) => app.on("second-instance", handler),
-  (handler) => app.off("second-instance", handler),
 );
 export const browserWindowCreated$ = fromEventPattern<
   [Electron.Event, BrowserWindow]
@@ -32,9 +21,11 @@ export const windowAllClosed$ = fromEventPattern(
   (handler) => app.on("window-all-closed", handler),
   (handler) => app.off("window-all-closed", handler),
 );
+export const secondInstance$ = fromEventPattern<[Electron.Event, string[]]>(
+  (handler) => app.on("second-instance", handler),
+  (handler) => app.off("second-instance", handler),
+);
 export const [primaryInstance$, duplicateInstance$] = partition(
-  defer(() => of(app.requestSingleInstanceLock())).pipe(
-    shareReplay({ bufferSize: 1, refCount: true }),
-  ),
+  of(app.requestSingleInstanceLock()),
   (hasLock) => hasLock,
 );
