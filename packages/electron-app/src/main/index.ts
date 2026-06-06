@@ -1,6 +1,7 @@
 import {
-  activate$,
   browserWindowCreated$,
+  duplicateInstance$,
+  primaryInstance$,
   secondInstance$,
   whenReady$,
   willQuit$,
@@ -9,25 +10,19 @@ import {
 import { electronApp, is, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import dayjs from "dayjs";
-import { app, BrowserWindow, Menu, net, protocol } from "electron";
+import { app, Menu, net, protocol } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import {
-  defer,
   filter,
-  from,
   map,
   NEVER,
-  of,
-  partition,
-  retry,
   shareReplay,
   startWith,
   switchMap,
   takeUntil,
   tap,
-  timer,
   using,
 } from "rxjs";
 import { container } from "./features";
@@ -86,13 +81,6 @@ protocol.registerSchemesAsPrivileged([
     },
   },
 ]);
-
-// Define rxjs observable
-const singleInstanceLock$ = defer(() => of(app.requestSingleInstanceLock()));
-const [primaryInstance$, duplicateInstance$] = partition(
-  singleInstanceLock$.pipe(shareReplay(1)),
-  (hasLock) => hasLock,
-);
 
 const ioc$ = using(
   () => {
@@ -179,10 +167,10 @@ const ioc$ = using(
       },
     };
   },
-  // A value must be emitted to trigger the callback function passed to the subscriber,
+  // A value must be emitted to trigger the next function,
   // Even if we don't actually need it
-  () => NEVER.pipe(startWith(null)),
-).pipe(takeUntil(willQuit$), shareReplay({ bufferSize: 1, refCount: true }));
+  () => NEVER.pipe(startWith(null), takeUntil(willQuit$)),
+).pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
 // Subscribe Observerable
 
@@ -200,43 +188,36 @@ primaryInstance$
   .pipe(
     switchMap(() => whenReady$),
     switchMap(() => ioc$),
-    retry({
-      count: 1,
-      delay: () => {
-        return from(container.dispose()).pipe(
-          tap(() => {
-            const dbPath = path.resolve(app.getPath("userData"), "db.db");
-            const desktopDbPath = path.resolve(
-              app.getPath("desktop"),
-              `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
-            );
-
-            fs.cpSync(dbPath, desktopDbPath, { recursive: true });
-            fs.rmSync(dbPath, { recursive: true, force: true });
-          }),
-          switchMap(() => timer(200)),
-        );
-      },
-    }),
   )
-  .subscribe(() => {
-    Menu.setApplicationMenu(null);
+  .subscribe({
+    next: () => {
+      Menu.setApplicationMenu(null);
 
-    if (platform.isWindows) {
-      electronApp.setAppUserModelId("com.electron");
-    }
+      if (platform.isWindows) {
+        electronApp.setAppUserModelId("com.electron");
+      }
 
-    const { appWindow } = container.cradle;
-    const openURL = process.argv.find((arg) => arg.startsWith("app-ziyun://"));
+      const { appWindow } = container.cradle;
+      const openURL = process.argv.find((arg) => {
+        return arg.startsWith("app-ziyun://");
+      });
 
-    appWindow.show(openURL);
-  });
+      appWindow.show(openURL);
+    },
+    error: () => {
+      container.dispose();
+      const dbPath = path.resolve(app.getPath("userData"), "db.db");
+      const desktopDbPath = path.resolve(
+        app.getPath("desktop"),
+        `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
+      );
 
-activate$
-  .pipe(filter(() => BrowserWindow.getAllWindows().length === 0))
-  .subscribe(() => {
-    const win = container.cradle.appWindow;
-    win.show();
+      fs.cpSync(dbPath, desktopDbPath, { recursive: true });
+      fs.rmSync(dbPath, { recursive: true, force: true });
+    },
+    complete: () => {
+      app.quit();
+    },
   });
 
 secondInstance$.subscribe(([, argv]) => {
@@ -277,3 +258,10 @@ windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
 
   app.quit();
 });
+
+// activate$
+//   .pipe(filter(() => BrowserWindow.getAllWindows().length === 0))
+//   .subscribe(() => {
+//     const win = container.cradle.appWindow;
+//     win.show();
+//   });
