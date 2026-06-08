@@ -65,6 +65,16 @@ const useProfileForm = () => {
   const enableHMISProxy = useProfileStore((state) => state.enableHMISProxy);
   const hmisProxyPort = useProfileStore((state) => state.hmisProxyPort);
   const enableTray = useProfileStore((state) => state.enableTray);
+  const showHxzyHmisMenu = useProfileStore((s) => s.showHxzyHmisMenu);
+  const showJtvHmisMenu = useProfileStore((s) => s.showJtvHmisMenu);
+  const showGuangzhoubeiHmisMenu = useProfileStore(
+    (s) => s.showGuangzhoubeiHmisMenu,
+  );
+  const showGuangzhoujibaoduanHmisMenu = useProfileStore(
+    (s) => s.showGuangzhoujibaoduanHmisMenu,
+  );
+  const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
+  const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
 
   const form = useAppForm({
     defaultValues: {
@@ -76,6 +86,12 @@ const useProfileForm = () => {
       enableHMISProxy,
       hmisProxyPort,
       enableTray,
+      showHxzyHmisMenu,
+      showJtvHmisMenu,
+      showGuangzhoubeiHmisMenu,
+      showGuangzhoujibaoduanHmisMenu,
+      showKhHmisMenu,
+      showPLCMenu,
     },
     onSubmit: async ({ value }) => {
       useProfileStore.setState({
@@ -86,6 +102,12 @@ const useProfileForm = () => {
         enableHMISProxy: value.enableHMISProxy,
         hmisProxyPort: value.hmisProxyPort,
         enableTray: value.enableTray,
+        showHxzyHmisMenu: value.showHxzyHmisMenu,
+        showJtvHmisMenu: value.showJtvHmisMenu,
+        showGuangzhoubeiHmisMenu: value.showGuangzhoubeiHmisMenu,
+        showGuangzhoujibaoduanHmisMenu: value.showGuangzhoujibaoduanHmisMenu,
+        showKhHmisMenu: value.showKhHmisMenu,
+        showPLCMenu: value.showPLCMenu,
       });
       notifications.show("保存成功", { severity: "success" });
     },
@@ -159,6 +181,108 @@ export const Component = () => {
                       />
                     );
                   }}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={12}>
+                <profileForm.Field name="showHxzyHmisMenu">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={field.state.value}
+                          onChange={(_, checked) => {
+                            field.handleChange(checked);
+                          }}
+                        />
+                      }
+                      label="显示华兴致远HMIS菜单"
+                    />
+                  )}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={12}>
+                <profileForm.Field name="showHxzyHmisMenu">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={field.state.value}
+                          onChange={(_, checked) => {
+                            field.handleChange(checked);
+                          }}
+                        />
+                      }
+                      label="显示京天威统型HMIS菜单"
+                    />
+                  )}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={12}>
+                <profileForm.Field name="showGuangzhoubeiHmisMenu">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={field.state.value}
+                          onChange={(_, checked) => {
+                            field.handleChange(checked);
+                          }}
+                        />
+                      }
+                      label="显示广州北HMIS菜单"
+                    />
+                  )}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={12}>
+                <profileForm.Field name="showGuangzhoujibaoduanHmisMenu">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={field.state.value}
+                          onChange={(_, checked) => {
+                            field.handleChange(checked);
+                          }}
+                        />
+                      }
+                      label="显示广州机保段HMIS菜单"
+                    />
+                  )}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={12}>
+                <profileForm.Field name="showKhHmisMenu">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={field.state.value}
+                          onChange={(_, checked) => {
+                            field.handleChange(checked);
+                          }}
+                        />
+                      }
+                      label="显示康化HMIS菜单"
+                    />
+                  )}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={12}>
+                <profileForm.Field name="showPLCMenu">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={field.state.value}
+                          onChange={(_, checked) => {
+                            field.handleChange(checked);
+                          }}
+                        />
+                      }
+                      label="显示PLC菜单"
+                    />
+                  )}
                 </profileForm.Field>
               </Grid>
               <Grid size={12}>

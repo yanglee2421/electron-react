@@ -17,6 +17,13 @@ export const profile = z.object({
   mode: themeMode,
   enableTray: z.boolean().default(false),
   silentStartUp: z.boolean().default(false),
+  // For navigation
+  showHxzyHmisMenu: z.boolean().default(false),
+  showJtvHmisMenu: z.boolean().default(false),
+  showGuangzhoubeiHmisMenu: z.boolean().default(false),
+  showGuangzhoujibaoduanHmisMenu: z.boolean().default(false),
+  showKhHmisMenu: z.boolean().default(false),
+  showPLCMenu: z.boolean().default(false),
 
   // For Linux platform
   enableExternalDB: z.boolean().default(false),
