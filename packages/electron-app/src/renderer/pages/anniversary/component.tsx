@@ -48,32 +48,30 @@ export const Component = () => {
     }
 
     return (
-      <>
-        <List>
-          {rows.map((row) => (
-            <ListItemButton
-              key={row.id}
-              component={Link}
-              to={`/anniversary/${row.id}`}
-            >
-              <ListItemIcon>
-                <Grid3x3 />
-              </ListItemIcon>
-              <ListItemText
-                primary={row.id}
-                secondary={
-                  row.rows.at(0)?.tmNow
-                    ? dayjs(row.rows.at(0)?.tmNow).format(
-                        "YYYY年MM月DD日 HH:mm:ss",
-                      )
-                    : null
-                }
-              />
-              <ArrowForward />
-            </ListItemButton>
-          ))}
-        </List>
-      </>
+      <List>
+        {rows.map((row) => (
+          <ListItemButton
+            key={row.id}
+            component={Link}
+            to={`/anniversary/${row.id}`}
+          >
+            <ListItemIcon>
+              <Grid3x3 />
+            </ListItemIcon>
+            <ListItemText
+              primary={row.id}
+              secondary={
+                row.rows.at(0)?.tmNow
+                  ? dayjs(row.rows.at(0)?.tmNow).format(
+                      "YYYY年MM月DD日 HH:mm:ss",
+                    )
+                  : null
+              }
+            />
+            <ArrowForward />
+          </ListItemButton>
+        ))}
+      </List>
     );
   };
 
