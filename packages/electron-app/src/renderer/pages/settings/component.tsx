@@ -34,7 +34,6 @@ import {
   ListItem,
   ListItemText,
   MenuItem,
-  Paper,
   Stack,
   Switch,
   TextField,
@@ -64,17 +63,6 @@ const useProfileForm = () => {
   const enableExternalDB = useProfileStore((state) => state.enableExternalDB);
   const enableHMISProxy = useProfileStore((state) => state.enableHMISProxy);
   const hmisProxyPort = useProfileStore((state) => state.hmisProxyPort);
-  const enableTray = useProfileStore((state) => state.enableTray);
-  const showHxzyHmisMenu = useProfileStore((s) => s.showHxzyHmisMenu);
-  const showJtvHmisMenu = useProfileStore((s) => s.showJtvHmisMenu);
-  const showGuangzhoubeiHmisMenu = useProfileStore(
-    (s) => s.showGuangzhoubeiHmisMenu,
-  );
-  const showGuangzhoujibaoduanHmisMenu = useProfileStore(
-    (s) => s.showGuangzhoujibaoduanHmisMenu,
-  );
-  const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
-  const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
 
   const form = useAppForm({
     defaultValues: {
@@ -85,13 +73,6 @@ const useProfileForm = () => {
       externalDBPath,
       enableHMISProxy,
       hmisProxyPort,
-      enableTray,
-      showHxzyHmisMenu,
-      showJtvHmisMenu,
-      showGuangzhoubeiHmisMenu,
-      showGuangzhoujibaoduanHmisMenu,
-      showKhHmisMenu,
-      showPLCMenu,
     },
     onSubmit: async ({ value }) => {
       useProfileStore.setState({
@@ -102,12 +83,6 @@ const useProfileForm = () => {
         enableHMISProxy: value.enableHMISProxy,
         hmisProxyPort: value.hmisProxyPort,
         enableTray: value.enableTray,
-        showHxzyHmisMenu: value.showHxzyHmisMenu,
-        showJtvHmisMenu: value.showJtvHmisMenu,
-        showGuangzhoubeiHmisMenu: value.showGuangzhoubeiHmisMenu,
-        showGuangzhoujibaoduanHmisMenu: value.showGuangzhoujibaoduanHmisMenu,
-        showKhHmisMenu: value.showKhHmisMenu,
-        showPLCMenu: value.showPLCMenu,
       });
       notifications.show("保存成功", { severity: "success" });
     },
@@ -132,6 +107,17 @@ export const Component = () => {
   const version = useQuery(fetchVersion());
   const exportDB = useExportDB();
   const selectFile = useSelectFile();
+  const enableTray = useProfileStore((state) => state.enableTray);
+  const showHxzyHmisMenu = useProfileStore((s) => s.showHxzyHmisMenu);
+  const showJtvHmisMenu = useProfileStore((s) => s.showJtvHmisMenu);
+  const showGuangzhoubeiHmisMenu = useProfileStore(
+    (s) => s.showGuangzhoubeiHmisMenu,
+  );
+  const showGuangzhoujibaoduanHmisMenu = useProfileStore(
+    (s) => s.showGuangzhoujibaoduanHmisMenu,
+  );
+  const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
+  const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
 
   const handleDirectoryChange = () => {
     selectDirectory.mutate(void 0, {
@@ -164,127 +150,6 @@ export const Component = () => {
             onReset={() => profileForm.reset()}
           >
             <Grid spacing={1.5} container>
-              <Grid size={12}>
-                <profileForm.Field name="enableTray">
-                  {(field) => {
-                    return (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.state.value}
-                            onChange={(_, checked) => {
-                              field.handleChange(checked);
-                            }}
-                          />
-                        }
-                        label="启用系统托盘"
-                      />
-                    );
-                  }}
-                </profileForm.Field>
-              </Grid>
-              <Grid size={12}>
-                <profileForm.Field name="showHxzyHmisMenu">
-                  {(field) => (
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={field.state.value}
-                          onChange={(_, checked) => {
-                            field.handleChange(checked);
-                          }}
-                        />
-                      }
-                      label="显示华兴致远HMIS菜单"
-                    />
-                  )}
-                </profileForm.Field>
-              </Grid>
-              <Grid size={12}>
-                <profileForm.Field name="showHxzyHmisMenu">
-                  {(field) => (
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={field.state.value}
-                          onChange={(_, checked) => {
-                            field.handleChange(checked);
-                          }}
-                        />
-                      }
-                      label="显示京天威统型HMIS菜单"
-                    />
-                  )}
-                </profileForm.Field>
-              </Grid>
-              <Grid size={12}>
-                <profileForm.Field name="showGuangzhoubeiHmisMenu">
-                  {(field) => (
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={field.state.value}
-                          onChange={(_, checked) => {
-                            field.handleChange(checked);
-                          }}
-                        />
-                      }
-                      label="显示广州北HMIS菜单"
-                    />
-                  )}
-                </profileForm.Field>
-              </Grid>
-              <Grid size={12}>
-                <profileForm.Field name="showGuangzhoujibaoduanHmisMenu">
-                  {(field) => (
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={field.state.value}
-                          onChange={(_, checked) => {
-                            field.handleChange(checked);
-                          }}
-                        />
-                      }
-                      label="显示广州机保段HMIS菜单"
-                    />
-                  )}
-                </profileForm.Field>
-              </Grid>
-              <Grid size={12}>
-                <profileForm.Field name="showKhHmisMenu">
-                  {(field) => (
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={field.state.value}
-                          onChange={(_, checked) => {
-                            field.handleChange(checked);
-                          }}
-                        />
-                      }
-                      label="显示康化HMIS菜单"
-                    />
-                  )}
-                </profileForm.Field>
-              </Grid>
-              <Grid size={12}>
-                <profileForm.Field name="showPLCMenu">
-                  {(field) => (
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={field.state.value}
-                          onChange={(_, checked) => {
-                            field.handleChange(checked);
-                          }}
-                        />
-                      }
-                      label="显示PLC菜单"
-                    />
-                  )}
-                </profileForm.Field>
-              </Grid>
               <Grid size={12}>
                 <FormLabel>12通道相关</FormLabel>
               </Grid>
@@ -519,23 +384,15 @@ export const Component = () => {
   return (
     <Stack spacing={3}>
       <Card>
-        <CardHeader
-          title="设置"
-          action={
-            <IconButton onClick={handleOpenDevTools}>
-              <BugReportOutlined />
-            </IconButton>
-          }
-        />
-        {renderForm()}
-      </Card>
-      <React.Activity
-        mode={
-          window.electron.process.platform === "win32" ? "visible" : "hidden"
-        }
-      >
-        <Paper>
-          <List>
+        <CardHeader title="基础设置" />
+        <List>
+          <React.Activity
+            mode={
+              window.electron.process.platform === "win32"
+                ? "visible"
+                : "hidden"
+            }
+          >
             <ListItem
               secondaryAction={
                 <Switch
@@ -552,9 +409,118 @@ export const Component = () => {
             >
               <ListItemText primary="开机自启" />
             </ListItem>
-          </List>
-        </Paper>
-      </React.Activity>
+          </React.Activity>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={enableTray}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.enableTray = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"启用系统托盘"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showHxzyHmisMenu}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showHxzyHmisMenu = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示华兴致远HMIS菜单"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showJtvHmisMenu}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showJtvHmisMenu = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示京天威统型HMIS菜单"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showGuangzhoubeiHmisMenu}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showGuangzhoubeiHmisMenu = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示广州北HMIS菜单"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showGuangzhoujibaoduanHmisMenu}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showGuangzhoujibaoduanHmisMenu = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示广州机保段HMIS菜单"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showKhHmisMenu}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showKhHmisMenu = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示康华HMIS菜单"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showPLCMenu}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showPLCMenu = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示PLC菜单"} />
+          </ListItem>
+        </List>
+      </Card>
+      <Card>
+        <CardHeader
+          title="探伤软件设置"
+          action={
+            <IconButton onClick={handleOpenDevTools}>
+              <BugReportOutlined />
+            </IconButton>
+          }
+        />
+        {renderForm()}
+      </Card>
       <Card>
         <CardHeader title="关于" />
         <CardContent>
