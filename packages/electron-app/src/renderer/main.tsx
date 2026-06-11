@@ -8,7 +8,7 @@ import * as z from "zod";
 import { zhCN } from "zod/locales";
 import { App } from "./App";
 
-const main = async () => {
+const main = () => {
   dayjs.locale("zh");
   enableMapSet();
   z.config(zhCN());
@@ -31,6 +31,4 @@ const main = async () => {
   return root;
 };
 
-main().catch((error) => {
-  console.error("Error in main:", error);
-});
+main();
