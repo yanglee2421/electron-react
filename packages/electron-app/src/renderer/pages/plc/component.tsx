@@ -18,13 +18,18 @@ import { ipc } from "#renderer/lib/ipc";
 import {
   Add,
   Delete,
+  ExpandMore,
   KeyboardReturn,
   Refresh,
+  Remove,
   Replay,
   Restore,
   Save,
 } from "@mui/icons-material";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   AlertTitle,
   Box,
@@ -35,6 +40,7 @@ import {
   CardHeader,
   Checkbox,
   CircularProgress,
+  Collapse,
   Divider,
   FormControlLabel,
   FormLabel,
@@ -124,6 +130,7 @@ interface XInputProps {
   path: string;
   address: number;
   description?: React.ReactNode;
+  removable?: boolean;
 }
 
 const XInput = (props: XInputProps) => {
@@ -163,6 +170,7 @@ const XInput = (props: XInputProps) => {
       address={props.address}
       type="X"
       subheader={props.description}
+      removable={props.removable}
       action={
         <IconButton
           disabled={query.isRefetching}
@@ -185,6 +193,7 @@ interface YInputProps {
   path: string;
   address: number;
   description?: React.ReactNode;
+  removable?: boolean;
 }
 
 const YInput = (props: YInputProps) => {
@@ -234,6 +243,7 @@ const YInput = (props: YInputProps) => {
       address={props.address}
       type="Y"
       subheader={props.description}
+      removable={props.removable}
       action={
         <IconButton
           disabled={query.isRefetching}
@@ -256,6 +266,7 @@ interface MInputProps {
   path: string;
   address: number;
   description?: React.ReactNode;
+  removable?: boolean;
 }
 
 const MInput = (props: MInputProps) => {
@@ -305,6 +316,7 @@ const MInput = (props: MInputProps) => {
       type="M"
       address={props.address}
       subheader={props.description}
+      removable={props.removable}
       action={
         <IconButton
           disabled={query.isRefetching}
@@ -327,6 +339,7 @@ interface DInputProps {
   path: string;
   address: number;
   description?: React.ReactNode;
+  removable?: boolean;
 }
 
 const DInput = (props: DInputProps) => {
@@ -451,6 +464,7 @@ const DInput = (props: DInputProps) => {
       type="D"
       address={props.address}
       subheader={props.description}
+      removable={props.removable}
       action={
         <IconButton
           disabled={query.isRefetching}
@@ -629,7 +643,12 @@ const Form = () => {
                 );
               }}
             </form.Subscribe>
-            <Button variant="outlined" startIcon={<Restore />}>
+            <Button
+              type="reset"
+              form={formId}
+              variant="outlined"
+              startIcon={<Restore />}
+            >
               重置
             </Button>
           </Box>
@@ -645,6 +664,7 @@ interface BitInputWrapper {
   children?: React.ReactNode;
   subheader?: React.ReactNode;
   action?: React.ReactNode;
+  removable?: boolean;
 }
 
 const BitInputWrapper = (props: BitInputWrapper) => {
@@ -682,9 +702,11 @@ const BitInputWrapper = (props: BitInputWrapper) => {
         action={
           <>
             {props.action}
-            <IconButton onClick={handleDelete}>
-              <Delete />
-            </IconButton>
+            {props.removable && (
+              <IconButton onClick={handleDelete}>
+                <Delete />
+              </IconButton>
+            )}
           </>
         }
       />
@@ -693,14 +715,14 @@ const BitInputWrapper = (props: BitInputWrapper) => {
   );
 };
 
-export const Component = () => {
-  const [serialPort, setSerialPort] = React.useState("");
+interface PhasedArrayPresetProps {
+  serialPortPath: string;
+}
+
+const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
+  const { serialPortPath } = props;
 
   const formId = React.useId();
-
-  const serialPorts = useQuery(fetchSerialPortList());
-
-  const serialPortPath = serialPort || serialPorts.data?.at(0)?.path || "";
 
   const plcReadTest = useQuery({
     ...fetchPLCReadTest(serialPortPath),
@@ -715,10 +737,6 @@ export const Component = () => {
   });
   const plcWriteTest = usePLCWriteTest();
   const notifications = useNotifications();
-  const xList = usePLCStore((s) => s.x);
-  const yList = usePLCStore((s) => s.y);
-  const mList = usePLCStore((s) => s.m);
-  const dList = usePLCStore((s) => s.d);
 
   const form = useAppForm({
     defaultValues: {
@@ -744,14 +762,6 @@ export const Component = () => {
     },
     validators: { onChange: schema },
   });
-
-  React.useEffect(() => {
-    ipc.invoke("plc/open", serialPortPath);
-
-    return () => {
-      ipc.invoke("plc/close");
-    };
-  }, [serialPortPath]);
 
   const renderPLCReadQuery = () => {
     if (plcReadTest.isPending) {
@@ -797,532 +807,627 @@ export const Component = () => {
 
     return (
       <>
+        <CardContent>
+          <form
+            id={formId}
+            onSubmit={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              form.handleSubmit();
+            }}
+            onReset={() => {
+              form.reset();
+            }}
+            noValidate
+          >
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <TextField
+                  value={plcReadTest.data.D20}
+                  fullWidth
+                  slotProps={{ input: { readOnly: true } }}
+                  label="D20"
+                  helperText="左轴身实际值"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <TextField
+                  value={plcReadTest.data.D21}
+                  fullWidth
+                  slotProps={{ input: { readOnly: true } }}
+                  label="D21"
+                  helperText="右轴身实际值"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <TextField
+                  value={plcReadTest.data.D22}
+                  fullWidth
+                  slotProps={{ input: { readOnly: true } }}
+                  label="D22"
+                  helperText="左端面实际值"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <TextField
+                  value={plcReadTest.data.D23}
+                  fullWidth
+                  slotProps={{ input: { readOnly: true } }}
+                  label="D23"
+                  helperText="右端面实际值"
+                />
+              </Grid>
+              <Grid size={12}>
+                <Divider>分隔线</Divider>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <form.AppField name="D300">
+                  {(field) => {
+                    return (
+                      <field.NumberField
+                        fullWidth
+                        label="D300"
+                        placeholder={plcReadTest.data.D300 + ""}
+                        field={{
+                          value: field.state.value,
+                          onChange: field.handleChange,
+                          onBlur: field.handleBlur,
+                        }}
+                        _min={0}
+                        error={field.state.meta.errors.length > 0}
+                        helperText={
+                          field.state.meta.errors.at(0)?.message ||
+                          "左轴身降起始值"
+                        }
+                      />
+                    );
+                  }}
+                </form.AppField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <form.AppField name="D301">
+                  {(field) => {
+                    return (
+                      <field.NumberField
+                        fullWidth
+                        label="D301"
+                        placeholder={plcReadTest.data.D301 + ""}
+                        field={{
+                          value: field.state.value,
+                          onChange: field.handleChange,
+                          onBlur: field.handleBlur,
+                        }}
+                        _min={0}
+                        error={field.state.meta.errors.length > 0}
+                        helperText={
+                          field.state.meta.errors.at(0)?.message ||
+                          "右轴身降起始值"
+                        }
+                      />
+                    );
+                  }}
+                </form.AppField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <form.AppField name="D302">
+                  {(field) => {
+                    return (
+                      <field.NumberField
+                        fullWidth
+                        label="D302"
+                        placeholder={plcReadTest.data.D302 + ""}
+                        field={{
+                          value: field.state.value,
+                          onChange: field.handleChange,
+                          onBlur: field.handleBlur,
+                        }}
+                        _min={0}
+                        error={field.state.meta.errors.length > 0}
+                        helperText={
+                          field.state.meta.errors.at(0)?.message ||
+                          "左端面降起始值"
+                        }
+                      />
+                    );
+                  }}
+                </form.AppField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <form.AppField name="D303">
+                  {(field) => {
+                    return (
+                      <field.NumberField
+                        fullWidth
+                        label="D303"
+                        placeholder={plcReadTest.data.D303 + ""}
+                        field={{
+                          value: field.state.value,
+                          onChange: field.handleChange,
+                          onBlur: field.handleBlur,
+                        }}
+                        _min={0}
+                        error={field.state.meta.errors.length > 0}
+                        helperText={
+                          field.state.meta.errors.at(0)?.message ||
+                          "右端面降起始值"
+                        }
+                      />
+                    );
+                  }}
+                </form.AppField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <form.AppField name="D308">
+                  {(field) => {
+                    return (
+                      <field.NumberField
+                        fullWidth
+                        label="D308"
+                        placeholder={plcReadTest.data.D308 + ""}
+                        field={{
+                          value: field.state.value,
+                          onChange: field.handleChange,
+                          onBlur: field.handleBlur,
+                        }}
+                        _min={0}
+                        error={field.state.meta.errors.length > 0}
+                        helperText={
+                          field.state.meta.errors.at(0)?.message || "左轴身差值"
+                        }
+                      />
+                    );
+                  }}
+                </form.AppField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <form.AppField name="D309">
+                  {(field) => {
+                    return (
+                      <field.NumberField
+                        fullWidth
+                        label="D309"
+                        placeholder={plcReadTest.data.D309 + ""}
+                        field={{
+                          value: field.state.value,
+                          onChange: field.handleChange,
+                          onBlur: field.handleBlur,
+                        }}
+                        _min={0}
+                        error={field.state.meta.errors.length > 0}
+                        helperText={
+                          field.state.meta.errors.at(0)?.message || "右轴身差值"
+                        }
+                      />
+                    );
+                  }}
+                </form.AppField>
+              </Grid>
+            </Grid>
+          </form>
+        </CardContent>
+        <CardActions>
+          <Button
+            type="submit"
+            form={formId}
+            disabled={plcWriteTest.isPending}
+            startIcon={
+              <PendingIcon isPending={plcWriteTest.isPending}>
+                <Save />
+              </PendingIcon>
+            }
+          >
+            保存
+          </Button>
+          <Button type="reset" form={formId} startIcon={<Restore />}>
+            重置
+          </Button>
+        </CardActions>
+      </>
+    );
+  };
+
+  return renderPLCReadQuery();
+};
+
+export const Component = () => {
+  const [serialPort, setSerialPort] = React.useState("");
+  const [show12Preset, setShow12Preset] = React.useState(false);
+  const [showPhasedPreset, setShowPhasedPreset] = React.useState(false);
+
+  const serialPorts = useQuery(fetchSerialPortList());
+
+  const serialPortPath = serialPort || serialPorts.data?.at(0)?.path || "";
+
+  const xList = usePLCStore((s) => s.x);
+  const yList = usePLCStore((s) => s.y);
+  const mList = usePLCStore((s) => s.m);
+  const dList = usePLCStore((s) => s.d);
+
+  React.useEffect(() => {
+    ipc.invoke("plc/open", serialPortPath);
+
+    return () => {
+      ipc.invoke("plc/close");
+    };
+  }, [serialPortPath]);
+
+  const renderQuery = () => {
+    return (
+      <>
         <Card>
           <CardHeader
             title={"12通道预设"}
             subheader={"为12通道探伤机提供的预设点位"}
+            action={
+              <IconButton
+                onClick={() => {
+                  setShow12Preset((prev) => !prev);
+                }}
+              >
+                {show12Preset ? <Remove /> : <Add />}
+              </IconButton>
+            }
           />
-          <CardContent>
-            <Grid container spacing={1.5}>
-              <Grid size={12}>
-                <FormLabel>X点（控制）</FormLabel>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput address={26} path={serialPortPath} description="RD2" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput address={27} path={serialPortPath} description="RE2" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput address={14} path={serialPortPath} description="泵启" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput address={0} path={serialPortPath} description="总停" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput address={1} path={serialPortPath} description="自动" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput address={2} path={serialPortPath} description="手动" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput address={4} path={serialPortPath} description="推轮" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput address={3} path={serialPortPath} description="复位" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={5}
-                  path={serialPortPath}
-                  description="探头移动"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={7}
-                  path={serialPortPath}
-                  description="轮对反转"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={6}
-                  path={serialPortPath}
-                  description="轮对正转"
-                />
-              </Grid>
+          <Collapse in={show12Preset} unmountOnExit>
+            <CardContent>
+              <Grid container spacing={1.5}>
+                <Grid size={12}>
+                  <FormLabel>X点（控制）</FormLabel>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={26}
+                    path={serialPortPath}
+                    description="RD2"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={27}
+                    path={serialPortPath}
+                    description="RE2"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={14}
+                    path={serialPortPath}
+                    description="泵启"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={0}
+                    path={serialPortPath}
+                    description="总停"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={1}
+                    path={serialPortPath}
+                    description="自动"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={2}
+                    path={serialPortPath}
+                    description="手动"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={4}
+                    path={serialPortPath}
+                    description="推轮"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={3}
+                    path={serialPortPath}
+                    description="复位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={5}
+                    path={serialPortPath}
+                    description="探头移动"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={7}
+                    path={serialPortPath}
+                    description="轮对反转"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={6}
+                    path={serialPortPath}
+                    description="轮对正转"
+                  />
+                </Grid>
 
-              <Grid size={12}>
-                <FormLabel>X到位信号</FormLabel>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={16}
-                  path={serialPortPath}
-                  description="左量轮径到位"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={17}
-                  path={serialPortPath}
-                  description="右量轮径到位"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={22}
-                  path={serialPortPath}
-                  description="左侧中心到位"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={21}
-                  path={serialPortPath}
-                  description="右侧中心到位"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={30}
-                  path={serialPortPath}
-                  description="RE2左端进到位"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={31}
-                  path={serialPortPath}
-                  description="RE2右端进到位"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={23}
-                  path={serialPortPath}
-                  description="左端面探头退到位"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={20}
-                  path={serialPortPath}
-                  description="右端面探头退到位"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={24}
-                  path={serialPortPath}
-                  description="轮对到位信号"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={15}
-                  path={serialPortPath}
-                  description="左轴身探头升到位"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <XInput
-                  address={32}
-                  path={serialPortPath}
-                  description="右轴身探头升到位"
-                />
-              </Grid>
+                <Grid size={12}>
+                  <FormLabel>X到位信号</FormLabel>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={16}
+                    path={serialPortPath}
+                    description="左量轮径到位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={17}
+                    path={serialPortPath}
+                    description="右量轮径到位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={22}
+                    path={serialPortPath}
+                    description="左侧中心到位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={21}
+                    path={serialPortPath}
+                    description="右侧中心到位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={30}
+                    path={serialPortPath}
+                    description="RE2左端进到位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={31}
+                    path={serialPortPath}
+                    description="RE2右端进到位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={23}
+                    path={serialPortPath}
+                    description="左端面探头退到位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={20}
+                    path={serialPortPath}
+                    description="右端面探头退到位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={24}
+                    path={serialPortPath}
+                    description="轮对到位信号"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={15}
+                    path={serialPortPath}
+                    description="左轴身探头升到位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <XInput
+                    address={32}
+                    path={serialPortPath}
+                    description="右轴身探头升到位"
+                  />
+                </Grid>
 
-              <Grid size={12}>
-                <FormLabel>Y点（执行）</FormLabel>
+                <Grid size={12}>
+                  <FormLabel>Y点（执行）</FormLabel>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={2}
+                    path={serialPortPath}
+                    description="左量轮径降"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={6}
+                    path={serialPortPath}
+                    description="左量轮径升"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={3}
+                    path={serialPortPath}
+                    description="右量轮径降"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={7}
+                    path={serialPortPath}
+                    description="右量轮径升"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={16}
+                    path={serialPortPath}
+                    description="左端机构升"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={17}
+                    path={serialPortPath}
+                    description="右端机构升"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={24}
+                    path={serialPortPath}
+                    description="左右机构降"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={4}
+                    path={serialPortPath}
+                    description="左端面探头进"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={5}
+                    path={serialPortPath}
+                    description="右端面探头进"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={23}
+                    path={serialPortPath}
+                    description="左右端面探头退"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={14}
+                    path={serialPortPath}
+                    description="轴身左探头退"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={15}
+                    path={serialPortPath}
+                    description="轴身右探头退"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={27}
+                    path={serialPortPath}
+                    description="轴身左右探头进"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={20}
+                    path={serialPortPath}
+                    description="轮对正转"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={21}
+                    path={serialPortPath}
+                    description="轮对反转"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={31}
+                    path={serialPortPath}
+                    description="推轮/缓冲升"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={33}
+                    path={serialPortPath}
+                    description="缓冲缸降"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={32}
+                    path={serialPortPath}
+                    description="推杆复位"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={11}
+                    path={serialPortPath}
+                    description="RD2"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={10}
+                    path={serialPortPath}
+                    description="RE2"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={22}
+                    path={serialPortPath}
+                    description="探头移动"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={0}
+                    path={serialPortPath}
+                    description="油泵"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <YInput
+                    address={1}
+                    path={serialPortPath}
+                    description="耦合泵"
+                  />
+                </Grid>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={2}
-                  path={serialPortPath}
-                  description="左量轮径降"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={6}
-                  path={serialPortPath}
-                  description="左量轮径升"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={3}
-                  path={serialPortPath}
-                  description="右量轮径降"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={7}
-                  path={serialPortPath}
-                  description="右量轮径升"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={16}
-                  path={serialPortPath}
-                  description="左端机构升"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={17}
-                  path={serialPortPath}
-                  description="右端机构升"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={24}
-                  path={serialPortPath}
-                  description="左右机构降"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={4}
-                  path={serialPortPath}
-                  description="左端面探头进"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={5}
-                  path={serialPortPath}
-                  description="右端面探头进"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={23}
-                  path={serialPortPath}
-                  description="左右端面探头退"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={14}
-                  path={serialPortPath}
-                  description="轴身左探头退"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={15}
-                  path={serialPortPath}
-                  description="轴身右探头退"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={27}
-                  path={serialPortPath}
-                  description="轴身左右探头进"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={20}
-                  path={serialPortPath}
-                  description="轮对正转"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={21}
-                  path={serialPortPath}
-                  description="轮对反转"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={31}
-                  path={serialPortPath}
-                  description="推轮/缓冲升"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={33}
-                  path={serialPortPath}
-                  description="缓冲缸降"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={32}
-                  path={serialPortPath}
-                  description="推杆复位"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput address={11} path={serialPortPath} description="RD2" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput address={10} path={serialPortPath} description="RE2" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={22}
-                  path={serialPortPath}
-                  description="探头移动"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput address={0} path={serialPortPath} description="油泵" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <YInput
-                  address={1}
-                  path={serialPortPath}
-                  description="耦合泵"
-                />
-              </Grid>
-            </Grid>
-          </CardContent>
+            </CardContent>
+          </Collapse>
         </Card>
         <Card>
           <CardHeader
             title="相控阵预设"
             subheader="为相控阵预设探伤机提供的预设点位"
             action={
+              // <IconButton
+              //   onClick={() => {
+              //     plcReadTest.refetch();
+              //   }}
+              //   disabled={plcReadTest.isRefetching}
+              // >
+              //   <PendingIcon isPending={plcReadTest.isRefetching}>
+              //     <Refresh />
+              //   </PendingIcon>
+              // </IconButton>
               <IconButton
                 onClick={() => {
-                  plcReadTest.refetch();
+                  setShowPhasedPreset((prev) => !prev);
                 }}
-                disabled={plcReadTest.isRefetching}
               >
-                <PendingIcon isPending={plcReadTest.isRefetching}>
-                  <Refresh />
-                </PendingIcon>
+                {show12Preset ? <Remove /> : <Add />}
               </IconButton>
             }
           />
-          <CardContent>
-            <form
-              id={formId}
-              onSubmit={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                form.handleSubmit();
-              }}
-              onReset={() => {
-                form.reset();
-              }}
-              noValidate
-            >
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                  <TextField
-                    value={plcReadTest.data.D20}
-                    fullWidth
-                    slotProps={{ input: { readOnly: true } }}
-                    label="D20"
-                    helperText="左轴身实际值"
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                  <TextField
-                    value={plcReadTest.data.D21}
-                    fullWidth
-                    slotProps={{ input: { readOnly: true } }}
-                    label="D21"
-                    helperText="右轴身实际值"
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                  <TextField
-                    value={plcReadTest.data.D22}
-                    fullWidth
-                    slotProps={{ input: { readOnly: true } }}
-                    label="D22"
-                    helperText="左端面实际值"
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                  <TextField
-                    value={plcReadTest.data.D23}
-                    fullWidth
-                    slotProps={{ input: { readOnly: true } }}
-                    label="D23"
-                    helperText="右端面实际值"
-                  />
-                </Grid>
-                <Grid size={12}>
-                  <Divider>分隔线</Divider>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                  <form.AppField name="D300">
-                    {(field) => {
-                      return (
-                        <field.NumberField
-                          fullWidth
-                          label="D300"
-                          placeholder={plcReadTest.data.D300 + ""}
-                          field={{
-                            value: field.state.value,
-                            onChange: field.handleChange,
-                            onBlur: field.handleBlur,
-                          }}
-                          _min={0}
-                          error={field.state.meta.errors.length > 0}
-                          helperText={
-                            field.state.meta.errors.at(0)?.message ||
-                            "左轴身降起始值"
-                          }
-                        />
-                      );
-                    }}
-                  </form.AppField>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                  <form.AppField name="D301">
-                    {(field) => {
-                      return (
-                        <field.NumberField
-                          fullWidth
-                          label="D301"
-                          placeholder={plcReadTest.data.D301 + ""}
-                          field={{
-                            value: field.state.value,
-                            onChange: field.handleChange,
-                            onBlur: field.handleBlur,
-                          }}
-                          _min={0}
-                          error={field.state.meta.errors.length > 0}
-                          helperText={
-                            field.state.meta.errors.at(0)?.message ||
-                            "右轴身降起始值"
-                          }
-                        />
-                      );
-                    }}
-                  </form.AppField>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                  <form.AppField name="D302">
-                    {(field) => {
-                      return (
-                        <field.NumberField
-                          fullWidth
-                          label="D302"
-                          placeholder={plcReadTest.data.D302 + ""}
-                          field={{
-                            value: field.state.value,
-                            onChange: field.handleChange,
-                            onBlur: field.handleBlur,
-                          }}
-                          _min={0}
-                          error={field.state.meta.errors.length > 0}
-                          helperText={
-                            field.state.meta.errors.at(0)?.message ||
-                            "左端面降起始值"
-                          }
-                        />
-                      );
-                    }}
-                  </form.AppField>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                  <form.AppField name="D303">
-                    {(field) => {
-                      return (
-                        <field.NumberField
-                          fullWidth
-                          label="D303"
-                          placeholder={plcReadTest.data.D303 + ""}
-                          field={{
-                            value: field.state.value,
-                            onChange: field.handleChange,
-                            onBlur: field.handleBlur,
-                          }}
-                          _min={0}
-                          error={field.state.meta.errors.length > 0}
-                          helperText={
-                            field.state.meta.errors.at(0)?.message ||
-                            "右端面降起始值"
-                          }
-                        />
-                      );
-                    }}
-                  </form.AppField>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                  <form.AppField name="D308">
-                    {(field) => {
-                      return (
-                        <field.NumberField
-                          fullWidth
-                          label="D308"
-                          placeholder={plcReadTest.data.D308 + ""}
-                          field={{
-                            value: field.state.value,
-                            onChange: field.handleChange,
-                            onBlur: field.handleBlur,
-                          }}
-                          _min={0}
-                          error={field.state.meta.errors.length > 0}
-                          helperText={
-                            field.state.meta.errors.at(0)?.message ||
-                            "左轴身差值"
-                          }
-                        />
-                      );
-                    }}
-                  </form.AppField>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-                  <form.AppField name="D309">
-                    {(field) => {
-                      return (
-                        <field.NumberField
-                          fullWidth
-                          label="D309"
-                          placeholder={plcReadTest.data.D309 + ""}
-                          field={{
-                            value: field.state.value,
-                            onChange: field.handleChange,
-                            onBlur: field.handleBlur,
-                          }}
-                          _min={0}
-                          error={field.state.meta.errors.length > 0}
-                          helperText={
-                            field.state.meta.errors.at(0)?.message ||
-                            "右轴身差值"
-                          }
-                        />
-                      );
-                    }}
-                  </form.AppField>
-                </Grid>
-              </Grid>
-            </form>
-          </CardContent>
-          <CardActions>
-            <Button
-              type="submit"
-              form={formId}
-              disabled={plcWriteTest.isPending}
-              startIcon={
-                <PendingIcon isPending={plcWriteTest.isPending}>
-                  <Save />
-                </PendingIcon>
-              }
-            >
-              保存
-            </Button>
-            <Button type="reset" form={formId} startIcon={<Restore />}>
-              重置
-            </Button>
-          </CardActions>
+          <Collapse in={showPhasedPreset} unmountOnExit>
+            <PhasedArrayPreset serialPortPath={serialPortPath} />
+          </Collapse>
         </Card>
         <Card>
           <CardHeader
@@ -1332,68 +1437,85 @@ export const Component = () => {
           <CardContent>
             <Form />
           </CardContent>
-          <Divider></Divider>
-          <CardContent>
-            <Grid container spacing={2}>
-              <Grid size={12}>
-                <FormLabel>X点</FormLabel>
-              </Grid>
-              {xList.map((i) => {
-                return (
-                  <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
-                    <XInput
-                      path={serialPortPath}
-                      address={i.address}
-                      description={i.description}
-                    />
-                  </Grid>
-                );
-              })}
-              <Grid size={12}>
-                <FormLabel>Y点</FormLabel>
-              </Grid>
-              {yList.map((i) => {
-                return (
-                  <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
-                    <YInput
-                      path={serialPortPath}
-                      address={i.address}
-                      description={i.description}
-                    />
-                  </Grid>
-                );
-              })}
-              <Grid size={12}>
-                <FormLabel>M点</FormLabel>
-              </Grid>
-              {mList.map((i) => {
-                return (
-                  <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
-                    <MInput
-                      path={serialPortPath}
-                      address={i.address}
-                      description={i.description}
-                    />
-                  </Grid>
-                );
-              })}
-              <Grid size={12}>
-                <FormLabel>D点</FormLabel>
-              </Grid>
-              {dList.map((i) => {
-                return (
-                  <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
-                    <DInput
-                      path={serialPortPath}
-                      address={i.address}
-                      description={i.description}
-                    />
-                  </Grid>
-                );
-              })}
-            </Grid>
-          </CardContent>
         </Card>
+        <div>
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMore />}>X点</AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                {xList.map((i) => {
+                  return (
+                    <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <XInput
+                        path={serialPortPath}
+                        address={i.address}
+                        description={i.description}
+                        removable
+                      />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMore />}>Y点</AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                {yList.map((i) => {
+                  return (
+                    <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <YInput
+                        path={serialPortPath}
+                        address={i.address}
+                        description={i.description}
+                        removable
+                      />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMore />}>M点</AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                {mList.map((i) => {
+                  return (
+                    <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <MInput
+                        path={serialPortPath}
+                        address={i.address}
+                        description={i.description}
+                        removable
+                      />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMore />}>D点</AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                {dList.map((i) => {
+                  return (
+                    <Grid key={i.address} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <DInput
+                        path={serialPortPath}
+                        address={i.address}
+                        description={i.description}
+                        removable
+                      />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+        </div>
       </>
     );
   };
@@ -1473,7 +1595,7 @@ export const Component = () => {
             </Grid>
           </CardContent>
         </Card>
-        {renderPLCReadQuery()}
+        {renderQuery()}
       </>
     );
   };
