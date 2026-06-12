@@ -298,7 +298,7 @@ const useNavigation = () => {
     navMenus.push(
       {
         kind: "header",
-        title: "常规",
+        title: "常规12通道软件",
       },
       {
         segment: calcSegment("detection"),
@@ -323,9 +323,19 @@ const useNavigation = () => {
       {
         kind: "divider",
       },
+      {
+        kind: "header",
+        title: "QT版软件",
+      },
+      {
+        segment: calcSegment("qt", "anniversary"),
+        title: "anniversary",
+        icon: <QrCodeOutlined />,
+      },
     );
 
     navMenus.push(
+      { kind: "divider" },
       {
         kind: "header",
         title: "其它",
@@ -371,16 +381,6 @@ const useNavigation = () => {
           segment: calcSegment("qrcode"),
           title: "QRCode",
           icon: <QrCodeOutlined />,
-        },
-        {
-          title: "qt",
-          children: [
-            {
-              segment: calcSegment("qt", "anniversary"),
-              title: "anniversary",
-              icon: <QrCodeOutlined />,
-            },
-          ],
         },
       );
     }

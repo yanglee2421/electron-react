@@ -12,7 +12,6 @@ import {
   distinctUntilChanged,
   filter,
   fromEventPattern,
-  ignoreElements,
   map,
   take,
   tap,
@@ -24,11 +23,6 @@ const createWindowRx = (win: BrowserWindow) => {
     (handler) => win.off("ready-to-show", handler),
   );
 
-  const didFinishLoad$ = fromEventPattern(
-    (handler) => win.webContents.on("did-finish-load", handler),
-    (handler) => win.webContents.off("did-finish-load", handler),
-  );
-
   const closed$ = fromEventPattern(
     (handler) => win.on("closed", handler),
     (handler) => win.off("closed", handler),
@@ -36,7 +30,6 @@ const createWindowRx = (win: BrowserWindow) => {
 
   return {
     readyToShow$,
-    didFinishLoad$,
     closed$,
   };
 };
@@ -65,12 +58,8 @@ export class AppWindow {
         return concat(
           winRxs.readyToShow$.pipe(
             take(1),
-            tap(() => win.show()),
-            ignoreElements(),
-          ),
-          winRxs.didFinishLoad$.pipe(
-            take(1),
             map(() => win),
+            tap(() => win.show()),
           ),
           winRxs.closed$.pipe(
             take(1),
@@ -78,7 +67,6 @@ export class AppWindow {
           ),
         );
       }),
-      distinctUntilChanged(),
     );
 
     const modeChanged$ = this.profile.state$.pipe(
