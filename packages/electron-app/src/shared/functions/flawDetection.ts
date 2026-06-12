@@ -1,5 +1,5 @@
 import type { DetectionData } from "#main/features/mdb/types";
-import { isClamped, mapGroupBy } from "@yotulee/run";
+import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as mathjs from "mathjs";
 
@@ -63,43 +63,46 @@ const calculateXHCFlawsByFirstFlaw = <TFlaw extends Flaw>(
   flaws: TFlaw[],
   firstFlaw: TFlaw,
 ) => {
+  const result = [firstFlaw];
   const exceptedSecondFlawX = firstFlaw.fltValueX + 10;
   const secondFlaw = flaws
-    .filter((flaw) =>
-      isClamped(
-        flaw.fltValueX,
-        exceptedSecondFlawX - 3,
-        exceptedSecondFlawX + 3,
-      ),
-    )
-    .toSorted(
-      (a, b) =>
+    .filter((flaw) => {
+      return !result.some((item) => Object.is(flaw.fltValueX, item.fltValueX));
+    })
+    .toSorted((a, b) => {
+      return (
         Math.abs(a.fltValueX - exceptedSecondFlawX) -
-        Math.abs(b.fltValueX - exceptedSecondFlawX),
-    )
+        Math.abs(b.fltValueX - exceptedSecondFlawX)
+      );
+    })
     .at(0);
 
   if (!secondFlaw) {
-    return [firstFlaw];
+    return result;
+  } else {
+    result.push(secondFlaw);
   }
 
   const exceptedThirdFlawX = secondFlaw?.fltValueX + 5;
   const thirdFlaw = flaws
-    .filter((flaw) =>
-      isClamped(flaw.fltValueX, exceptedThirdFlawX - 3, exceptedThirdFlawX + 3),
-    )
-    .toSorted(
-      (a, b) =>
+    .filter((flaw) => {
+      return !result.some((item) => Object.is(flaw.fltValueX, item.fltValueX));
+    })
+    .toSorted((a, b) => {
+      return (
         Math.abs(a.fltValueX - exceptedThirdFlawX) -
-        Math.abs(b.fltValueX - exceptedThirdFlawX),
-    )
+        Math.abs(b.fltValueX - exceptedThirdFlawX)
+      );
+    })
     .at(0);
 
   if (!thirdFlaw) {
-    return [firstFlaw, secondFlaw];
+    return result;
+  } else {
+    result.push(thirdFlaw);
   }
 
-  return [firstFlaw, secondFlaw, thirdFlaw];
+  return result;
 };
 
 const uniqueList = <TEl, TKey>(
