@@ -195,6 +195,8 @@ primaryInstance$
 
       fs.cpSync(APP_DB_PATH, desktopDbPath, { recursive: true });
       fs.rmSync(APP_DB_PATH, { recursive: true, force: true });
+
+      app.quit();
     },
     complete: () => {
       app.quit();

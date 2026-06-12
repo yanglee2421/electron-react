@@ -30,3 +30,4 @@ out/
 bin/
 build/
 *.db
+packages/external-db/drizzle/

@@ -513,8 +513,8 @@ export const Component = () => {
 
     await autoInput.mutateAsync(
       {
-        zx: dataItem.ZX,
-        zh: dataItem.ZH,
+        zx: dataItem.ZX || "",
+        zh: dataItem.ZH || "",
         czzzdw: dataItem.CZZZDW || "",
         sczzdw: dataItem.SCZZDW || "",
         mczzdw: dataItem.MCZZDW || "",

@@ -40,7 +40,7 @@ import {
 } from "react-router";
 import { NprogressBar } from "./nprogress";
 
-const calculateSegment = (...args: string[]) => {
+const calcSegment = (...args: string[]) => {
   return args.join("/");
 };
 
@@ -178,17 +178,17 @@ const useNavigation = () => {
         title: "华兴致远",
         children: [
           {
-            segment: calculateSegment("hxzy"),
+            segment: calcSegment("hxzy"),
             title: "HMIS",
             icon: <QrCodeScannerOutlined />,
           },
           {
-            segment: calculateSegment("hxzy", "verifies"),
+            segment: calcSegment("hxzy", "verifies"),
             title: "日常校验",
             icon: <CalendarTodayOutlined />,
           },
           {
-            segment: calculateSegment("hxzy", "setting"),
+            segment: calcSegment("hxzy", "setting"),
             title: "设置",
             icon: <TuneOutlined />,
           },
@@ -201,12 +201,12 @@ const useNavigation = () => {
         title: "京天威",
         children: [
           {
-            segment: calculateSegment("jtv"),
+            segment: calcSegment("jtv"),
             title: "HMIS",
             icon: <QrCodeScannerOutlined />,
           },
           {
-            segment: calculateSegment("jtv", "setting"),
+            segment: calcSegment("jtv", "setting"),
             title: "设置",
             icon: <TuneOutlined />,
           },
@@ -219,12 +219,12 @@ const useNavigation = () => {
         title: "广州北",
         children: [
           {
-            segment: calculateSegment("jtv_guangzhoubei"),
+            segment: calcSegment("jtv_guangzhoubei"),
             title: "HMIS",
             icon: <QrCodeScannerOutlined />,
           },
           {
-            segment: calculateSegment("jtv_guangzhoubei", "setting"),
+            segment: calcSegment("jtv_guangzhoubei", "setting"),
             title: "设置",
             icon: <TuneOutlined />,
           },
@@ -237,12 +237,12 @@ const useNavigation = () => {
         title: "广州机保段",
         children: [
           {
-            segment: calculateSegment("jtv_guangzhoujibaoduan"),
+            segment: calcSegment("jtv_guangzhoujibaoduan"),
             title: "HMIS",
             icon: <QrCodeScannerOutlined />,
           },
           {
-            segment: calculateSegment("jtv_guangzhoujibaoduan", "setting"),
+            segment: calcSegment("jtv_guangzhoujibaoduan", "setting"),
             title: "设置",
             icon: <TuneOutlined />,
           },
@@ -255,27 +255,27 @@ const useNavigation = () => {
         title: "康华",
         children: [
           {
-            segment: calculateSegment("kh"),
+            segment: calcSegment("kh"),
             title: "HMIS",
             icon: <QrCodeScannerOutlined />,
           },
           {
-            segment: calculateSegment("kh", "verify"),
+            segment: calcSegment("kh", "verify"),
             title: "日常校验",
             icon: <CalendarTodayOutlined />,
           },
           {
-            segment: calculateSegment("kh", "quartor"),
+            segment: calcSegment("kh", "quartor"),
             title: "季度校验",
             icon: <CalendarMonthOutlined />,
           },
           {
-            segment: calculateSegment("kh", "annual"),
+            segment: calcSegment("kh", "annual"),
             title: "年度校验",
             icon: <CalendarViewMonthOutlined />,
           },
           {
-            segment: calculateSegment("kh", "setting"),
+            segment: calcSegment("kh", "setting"),
             title: "设置",
             icon: <TuneOutlined />,
           },
@@ -301,22 +301,22 @@ const useNavigation = () => {
         title: "常规",
       },
       {
-        segment: calculateSegment("detection"),
+        segment: calcSegment("detection"),
         title: "现车作业",
         icon: <TrainOutlined />,
       },
       {
-        segment: calculateSegment("verify"),
+        segment: calcSegment("verify"),
         title: "日常校验",
         icon: <CalendarTodayOutlined />,
       },
       {
-        segment: calculateSegment("quartors"),
+        segment: calcSegment("quartors"),
         title: "季度校验",
         icon: <CalendarMonthOutlined />,
       },
       {
-        segment: calculateSegment("anniversary"),
+        segment: calcSegment("anniversary"),
         title: "年度校验",
         icon: <CalendarMonthOutlined />,
       },
@@ -331,12 +331,12 @@ const useNavigation = () => {
         title: "其它",
       },
       {
-        segment: calculateSegment("log"),
+        segment: calcSegment("log"),
         title: "日志",
         icon: <InfoOutlined />,
       },
       {
-        segment: calculateSegment("settings"),
+        segment: calcSegment("settings"),
         title: "设置",
         icon: <SettingsOutlined />,
       },
@@ -344,7 +344,7 @@ const useNavigation = () => {
 
     if (showPLCMenu) {
       navMenus.push({
-        segment: calculateSegment("plc"),
+        segment: calcSegment("plc"),
         title: "PLC",
         icon: <Memory />,
       });
@@ -353,24 +353,34 @@ const useNavigation = () => {
     if (import.meta.env.DEV) {
       navMenus.push(
         {
-          segment: calculateSegment("md5_backup_image"),
+          segment: calcSegment("md5_backup_image"),
           title: "图片备份",
           icon: <PermMediaOutlined />,
         },
         {
-          segment: calculateSegment("lab"),
+          segment: calcSegment("lab"),
           title: "实验室",
           icon: <ScienceOutlined />,
         },
         {
-          segment: calculateSegment("minesweeper"),
+          segment: calcSegment("minesweeper"),
           title: "Minesweeper",
           icon: <SportsEsportsOutlined />,
         },
         {
-          segment: calculateSegment("qrcode"),
+          segment: calcSegment("qrcode"),
           title: "QRCode",
           icon: <QrCodeOutlined />,
+        },
+        {
+          title: "qt",
+          children: [
+            {
+              segment: calcSegment("qt", "anniversary"),
+              title: "anniversary",
+              icon: <QrCodeOutlined />,
+            },
+          ],
         },
       );
     }

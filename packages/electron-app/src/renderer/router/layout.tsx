@@ -9,6 +9,7 @@ import {
   PushPinOutlined,
 } from "@mui/icons-material";
 import {
+  Box,
   IconButton,
   ListItemIcon,
   ListItemText,
@@ -228,5 +229,20 @@ export const DashLayout = () => {
         <Outlet />
       </PageContainer>
     </DashboardLayout>
+  );
+};
+
+export const BlankLayout = () => {
+  return (
+    <Box
+      sx={{
+        blockSize: "100dvh",
+        inlineSize: "100dvw",
+        position: "fixed",
+        inset: 0,
+      }}
+    >
+      <Outlet />
+    </Box>
   );
 };

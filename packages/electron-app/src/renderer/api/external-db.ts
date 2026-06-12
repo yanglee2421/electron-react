@@ -11,3 +11,30 @@ export const fetchExternalDBTest = () => {
     },
   });
 };
+
+export const fetchExternalDBAnniversary = () => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "external-db/anniversary"],
+    queryFn: async () => {
+      return ipc.invoke("external-db/anniversary");
+    },
+  });
+};
+
+export const fetchExternalDBAnniversaryDetail = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "external-db/anniversary-detail", id],
+    queryFn: async () => {
+      return ipc.invoke("external-db/anniversary-detail", id);
+    },
+  });
+};
+
+export const fetchExternalDB503 = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "external-db/503", id],
+    queryFn: () => {
+      return ipc.invoke("external-db/503", id);
+    },
+  });
+};

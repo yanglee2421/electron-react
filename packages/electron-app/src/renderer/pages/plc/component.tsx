@@ -1029,6 +1029,10 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
   return renderPLCReadQuery();
 };
 
+// const PLCConnected = ()=>{
+//   const query = useQuery(fetchXRead({address:0,path:}))
+// }
+
 export const Component = () => {
   const [serialPort, setSerialPort] = React.useState("");
   const [show12Preset, setShow12Preset] = React.useState(false);

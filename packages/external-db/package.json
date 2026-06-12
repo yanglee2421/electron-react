@@ -2,7 +2,9 @@
   "name": "@yanglee2421/external-db",
   "scripts": {
     "dev": "tsdown",
-    "build": "tsdown"
+    "build": "tsdown",
+    "studio": "drizzle-kit studio",
+    "pull": "drizzle-kit pull"
   },
   "files": [
     "dist"

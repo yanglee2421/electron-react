@@ -1,6 +1,6 @@
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import type { RouteObject } from "react-router";
-import { DashLayout } from "./layout";
+import { BlankLayout, DashLayout } from "./layout";
 import { RootErrorBoundary, RootHydrateFallback, RootRoute } from "./root";
 
 export const routes: RouteObject[] = [
@@ -273,6 +273,40 @@ export const routes: RouteObject[] = [
           },
         ],
         Component: DashLayout,
+      },
+      {
+        children: [
+          {
+            path: "qt",
+            children: [
+              {
+                path: "anniversary",
+                children: [
+                  {
+                    index: true,
+                    lazy: () =>
+                      import("#renderer/pages/qt-anniversary/component"),
+                  },
+                  {
+                    path: ":id",
+                    children: [
+                      {
+                        index: true,
+                        lazy: () =>
+                          import("#renderer/pages/qt-anniversary-show/component"),
+                      },
+                      {
+                        path: "503",
+                        lazy: () => import("#renderer/pages/qt-503/component"),
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        Component: BlankLayout,
       },
     ],
     Component: RootRoute,
