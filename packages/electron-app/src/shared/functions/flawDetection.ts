@@ -64,18 +64,36 @@ const calculateXHCFlawsByFirstFlaw = <TFlaw extends Flaw>(
   firstFlaw: TFlaw,
 ) => {
   const exceptedSecondFlawX = firstFlaw.fltValueX + 10;
-  const secondFlaw = flaws.find((flaw) =>
-    isClamped(flaw.fltValueX, exceptedSecondFlawX - 3, exceptedSecondFlawX + 3),
-  );
+  const secondFlaw = flaws
+    .filter((flaw) =>
+      isClamped(
+        flaw.fltValueX,
+        exceptedSecondFlawX - 3,
+        exceptedSecondFlawX + 3,
+      ),
+    )
+    .toSorted(
+      (a, b) =>
+        Math.abs(a.fltValueX - exceptedSecondFlawX) -
+        Math.abs(b.fltValueX - exceptedSecondFlawX),
+    )
+    .at(0);
 
   if (!secondFlaw) {
     return [firstFlaw];
   }
 
   const exceptedThirdFlawX = secondFlaw?.fltValueX + 5;
-  const thirdFlaw = flaws.find((flaw) =>
-    isClamped(flaw.fltValueX, exceptedThirdFlawX - 3, exceptedThirdFlawX + 3),
-  );
+  const thirdFlaw = flaws
+    .filter((flaw) =>
+      isClamped(flaw.fltValueX, exceptedThirdFlawX - 3, exceptedThirdFlawX + 3),
+    )
+    .toSorted(
+      (a, b) =>
+        Math.abs(a.fltValueX - exceptedThirdFlawX) -
+        Math.abs(b.fltValueX - exceptedThirdFlawX),
+    )
+    .at(0);
 
   if (!thirdFlaw) {
     return [firstFlaw, secondFlaw];
