@@ -1,8 +1,9 @@
 packages:
   - "packages/*"
+  - "apps/*"
 
 allowBuilds:
-  '@serialport/bindings-cpp': true
+  "@serialport/bindings-cpp": true
   electron: true
   electron-winstaller: true
   esbuild: true
