@@ -56,21 +56,36 @@ importers:
       electron-builder:
         specifier: ^26.11.0
         version: 26.11.0(electron-builder-squirrel-windows@26.11.0(dmg-builder@26.11.0))
+      immer:
+        specifier: ^11.1.8
+        version: 11.1.8
       react:
         specifier: ^19.2.6
         version: 19.2.6
       react-dom:
         specifier: ^19.2.6
         version: 19.2.6(react@19.2.6)
+      react-router:
+        specifier: ^7.15.1
+        version: 7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
+      use-immer:
+        specifier: ^0.11.0
+        version: 0.11.0(immer@11.1.8)(react@19.2.6)
       vite:
         specifier: ^8.0.12
         version: 8.0.13(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0)
       vite-plugin-doubleshot:
         specifier: ^0.0.24
         version: 0.0.24(electron-builder@26.11.0(electron-builder-squirrel-windows@26.11.0(dmg-builder@26.11.0)))(electron@39.8.10)(esbuild@0.27.7)(typescript@6.0.3)(vite@8.0.13(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+      zustand:
+        specifier: ^5.0.13
+        version: 5.0.13(@types/react@19.2.14)(immer@11.1.8)(react@19.2.6)(use-sync-external-store@1.6.0(react@19.2.6))
 
   apps/ziyun:
     dependencies:

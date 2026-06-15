@@ -100,7 +100,7 @@ export const Component = () => {
                     </ReportTitle>
                     <View style={[styles.paddingB4]}>
                       <Row>
-                        <Col width={128}>
+                        <Col width={144}>
                           <Text style={[styles.textLeft]}>
                             单位名称:{corporation.Factory}
                           </Text>
