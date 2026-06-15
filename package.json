@@ -33,8 +33,8 @@
     "require": "./dist/index.cjs"
   },
   "scripts": {
-    "dev": "pnpm -r dev",
-    "build": "pnpm -r build",
+    "dev": "pnpm -F ./packages/* dev && pnpm -F app-ziyun dev",
+    "build": "pnpm -F ./packages/* build && pnpm -F app-ziyun build",
     "db:generate": "pnpm -F app-ziyun db:generate",
     "lint": "vp lint"
   },

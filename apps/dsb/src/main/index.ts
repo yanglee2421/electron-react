@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from "electron";
+import path from "node:path";
 import {
   defer,
   from,
@@ -37,7 +38,15 @@ primary$.pipe(switchMap(() => whenReady$)).subscribe(() => {
   const win = new BrowserWindow({});
   win.menuBarVisible = false;
 
-  win.loadURL(process.env.DS_RENDERER_URL!);
+  if (app.isPackaged) {
+    win.loadFile(path.resolve(__dirname, "../renderer/index.html"));
+  } else {
+    win.loadURL(process.env.DS_RENDERER_URL!);
+  }
 });
 
 browserWindowCreated$.pipe(map(([, win]) => win)).subscribe();
+void {
+  windowAllClosed$,
+  willQuit$,
+};

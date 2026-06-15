@@ -26,6 +26,13 @@ export default defineConfig({
           neverBundle: ["electron"],
         },
         clean: true,
+        alias: {
+          "#main": path.resolve(__dirname, "./src/main"),
+          "#preload": path.resolve(__dirname, "./src/preload"),
+          "#renderer": path.resolve(__dirname, "./src/renderer"),
+          "#resources": path.resolve(__dirname, "./resources"),
+          "#shared": path.resolve(__dirname, "./src/shared"),
+        },
       },
       electron: {
         preload: {
@@ -39,7 +46,17 @@ export default defineConfig({
               neverBundle: ["electron"],
             },
             clean: true,
+            alias: {
+              "#main": path.resolve(__dirname, "./src/main"),
+              "#preload": path.resolve(__dirname, "./src/preload"),
+              "#renderer": path.resolve(__dirname, "./src/renderer"),
+              "#resources": path.resolve(__dirname, "./resources"),
+              "#shared": path.resolve(__dirname, "./src/shared"),
+            },
           },
+        },
+        build: {
+          config: path.resolve(__dirname, "./electron-builder.ts"),
         },
       },
     }),
@@ -50,4 +67,13 @@ export default defineConfig({
     emptyOutDir: true,
   },
   base: "./",
+  resolve: {
+    alias: {
+      "#main": path.resolve(__dirname, "./src/main"),
+      "#preload": path.resolve(__dirname, "./src/preload"),
+      "#renderer": path.resolve(__dirname, "./src/renderer"),
+      "#resources": path.resolve(__dirname, "./resources"),
+      "#shared": path.resolve(__dirname, "./src/shared"),
+    },
+  },
 });

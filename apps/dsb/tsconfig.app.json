@@ -19,7 +19,15 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    "paths": {
+      "#main/*": ["./src/main/*"],
+      "#preload/*": ["./src/preload/*"],
+      "#renderer/*": ["./src/renderer/*"],
+      "#resources/*": ["./resources/*"],
+      "#shared/*": ["./src/shared/*"]
+    }
   },
   "include": ["src"]
 }
