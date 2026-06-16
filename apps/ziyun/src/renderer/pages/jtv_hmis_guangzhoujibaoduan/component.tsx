@@ -591,8 +591,10 @@ export const Component = () => {
 
                           clearTimeout(debounceRef.current);
                           debounceRef.current = setTimeout(() => {
+                            if (!e.target.value) return;
+
                             formRef.current?.requestSubmit();
-                          }, 1000 * 1);
+                          }, 1000 * 2);
                         }}
                         onBlur={field.handleBlur}
                         name={field.name}

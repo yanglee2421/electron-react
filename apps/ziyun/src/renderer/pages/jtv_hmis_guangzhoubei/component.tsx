@@ -615,8 +615,10 @@ export const Component = () => {
                             if (zhMode) return;
                             clearTimeout(debounceRef.current);
                             debounceRef.current = setTimeout(() => {
+                              if (!e.target.value) return;
+
                               formRef.current?.requestSubmit();
-                            }, 1000 * 1);
+                            }, 1000 * 2);
                           }}
                           onBlur={field.handleBlur}
                           error={!!field.state.meta.errors.length}
