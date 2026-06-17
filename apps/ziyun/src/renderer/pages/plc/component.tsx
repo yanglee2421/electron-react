@@ -681,13 +681,13 @@ const Channel12Preset = (props: Channel12PresetProps) => {
               <YInput address={23} path={path} description="左右端面探头退" />
             </Grid>
             <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-              <YInput address={14} path={path} description="轴身左探头退" />
+              <YInput address={14} path={path} description="轴身左探头升" />
             </Grid>
             <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-              <YInput address={15} path={path} description="轴身右探头退" />
+              <YInput address={15} path={path} description="轴身右探头升" />
             </Grid>
             <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-              <YInput address={27} path={path} description="轴身左右探头进" />
+              <YInput address={27} path={path} description="轴身左右探头降" />
             </Grid>
             <Grid size={{ xs: 6, sm: 4, md: 3 }}>
               <YInput address={20} path={path} description="轮对正转" />
