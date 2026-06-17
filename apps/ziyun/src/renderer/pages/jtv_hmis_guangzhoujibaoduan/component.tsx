@@ -9,6 +9,7 @@ import {
   useUploadGuangzhouJibaoduanData,
 } from "#renderer/api/guangzhouJibaoduan";
 import { ScrollToTopButton } from "#renderer/components/scroll";
+import { useAutoSubmitRef } from "#renderer/hooks/dom/use-auto-submit-ref";
 import { useGuangzhoujibaoduan } from "#renderer/hooks/stores/useGuangzhoujibaoduan";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
@@ -45,7 +46,7 @@ import {
   TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
-import { useForm } from "@tanstack/react-form";
+import { useField, useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
@@ -443,14 +444,12 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
 };
 
 export const Component = () => {
+  const formId = React.useId();
+
   const pageIndex = useSessionStore((store) => store.pageIndex);
   const pageSize = useSessionStore((store) => store.pageSize);
   const dateIso = useSessionStore((store) => store.date);
   const selectOptions = useSessionStore((store) => store.selectOptions);
-
-  const formId = React.useId();
-  const formRef = React.useRef<HTMLFormElement>(null);
-  const debounceRef = React.useRef<NodeJS.Timeout | number>(0);
 
   const date = dayjs(dateIso);
 
@@ -500,6 +499,8 @@ export const Component = () => {
       await handleRowSelect(record);
     },
   });
+  const barcodeField = useField({ form, name: "barCode" });
+  const formRef = useAutoSubmitRef(true, barcodeField.state.value);
 
   useSubscribe("api_set", () => {
     void barcode.refetch();
@@ -588,13 +589,6 @@ export const Component = () => {
                         value={field.state.value}
                         onChange={(e) => {
                           field.handleChange(e.target.value);
-
-                          clearTimeout(debounceRef.current);
-                          debounceRef.current = setTimeout(() => {
-                            if (!e.target.value) return;
-
-                            formRef.current?.requestSubmit();
-                          }, 1000 * 2);
                         }}
                         onBlur={field.handleBlur}
                         name={field.name}

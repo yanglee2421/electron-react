@@ -8,6 +8,7 @@ import {
   useInsertKhRecord,
   useUploadAxleInfo,
 } from "#renderer/api/kh";
+import { useAutoSubmitRef } from "#renderer/hooks/dom/use-auto-submit-ref";
 import { useKhHmisStore } from "#renderer/hooks/stores/useKhHmisStore";
 import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
 import { useSubscribe } from "#renderer/hooks/useSubscribe";
@@ -44,7 +45,7 @@ import {
   TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
-import { useForm } from "@tanstack/react-form";
+import { useField, useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
@@ -158,8 +159,6 @@ export const Component = () => {
   const [pageSize, setPageSize] = React.useState(10);
   const [showFilter, setShowFilter] = React.useState(false);
 
-  const formRef = React.useRef<HTMLFormElement>(null);
-
   const formId = React.useId();
 
   const params = {
@@ -204,6 +203,8 @@ export const Component = () => {
       });
     },
   });
+  const barcodeField = useField({ form, name: "barCode" });
+  const formRef = useAutoSubmitRef(true, barcodeField.state.value);
 
   const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
 
