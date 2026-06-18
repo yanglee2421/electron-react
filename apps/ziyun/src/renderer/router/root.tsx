@@ -2,20 +2,20 @@ import { useLogUpdate } from "#renderer/api/logger";
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import { ipc } from "#renderer/lib/ipc";
 import {
-  CalendarMonthOutlined,
-  CalendarTodayOutlined,
-  CalendarViewMonthOutlined,
-  HomeOutlined,
-  InfoOutlined,
+  CalendarMonth,
+  CalendarToday,
+  Home,
+  Info,
   Memory,
-  PermMediaOutlined,
-  QrCodeOutlined,
-  QrCodeScannerOutlined,
-  ScienceOutlined,
-  SettingsOutlined,
-  SportsEsportsOutlined,
-  TrainOutlined,
-  TuneOutlined,
+  PermMedia,
+  QrCode,
+  QrCodeScanner,
+  Science,
+  Settings,
+  SportsEsports,
+  Today,
+  Train,
+  Tune,
 } from "@mui/icons-material";
 import {
   Alert,
@@ -55,7 +55,7 @@ const ErrorAlertContent = ({ error }: ErrorAlertContentProps) => {
         <AlertTitle>{error.status}</AlertTitle>
         <Typography>{error.statusText}</Typography>
         <Link to="/">
-          <Button startIcon={<HomeOutlined />}>返回首页</Button>
+          <Button startIcon={<Home />}>返回首页</Button>
         </Link>
       </>
     );
@@ -68,7 +68,7 @@ const ErrorAlertContent = ({ error }: ErrorAlertContentProps) => {
         <Typography>{error.message}</Typography>
         <Typography variant="body2">{error.stack}</Typography>
         <Link to="/">
-          <Button startIcon={<HomeOutlined />} color="error">
+          <Button startIcon={<Home />} color="error">
             返回首页
           </Button>
         </Link>
@@ -81,7 +81,7 @@ const ErrorAlertContent = ({ error }: ErrorAlertContentProps) => {
       <AlertTitle>错误</AlertTitle>
       <Typography>未知错误，请联系服务人员</Typography>
       <Link to="/">
-        <Button startIcon={<HomeOutlined />} color="error">
+        <Button startIcon={<Home />} color="error">
           返回首页
         </Button>
       </Link>
@@ -180,17 +180,17 @@ const useNavigation = () => {
           {
             segment: calcSegment("hxzy"),
             title: "HMIS",
-            icon: <QrCodeScannerOutlined />,
+            icon: <QrCodeScanner />,
           },
           {
             segment: calcSegment("hxzy", "verifies"),
             title: "日常校验",
-            icon: <CalendarTodayOutlined />,
+            icon: <CalendarToday />,
           },
           {
             segment: calcSegment("hxzy", "setting"),
             title: "设置",
-            icon: <TuneOutlined />,
+            icon: <Tune />,
           },
         ],
       });
@@ -203,12 +203,12 @@ const useNavigation = () => {
           {
             segment: calcSegment("jtv"),
             title: "HMIS",
-            icon: <QrCodeScannerOutlined />,
+            icon: <QrCodeScanner />,
           },
           {
             segment: calcSegment("jtv", "setting"),
             title: "设置",
-            icon: <TuneOutlined />,
+            icon: <Tune />,
           },
         ],
       });
@@ -221,12 +221,12 @@ const useNavigation = () => {
           {
             segment: calcSegment("jtv_guangzhoubei"),
             title: "HMIS",
-            icon: <QrCodeScannerOutlined />,
+            icon: <QrCodeScanner />,
           },
           {
             segment: calcSegment("jtv_guangzhoubei", "setting"),
             title: "设置",
-            icon: <TuneOutlined />,
+            icon: <Tune />,
           },
         ],
       });
@@ -239,12 +239,12 @@ const useNavigation = () => {
           {
             segment: calcSegment("jtv_guangzhoujibaoduan"),
             title: "HMIS",
-            icon: <QrCodeScannerOutlined />,
+            icon: <QrCodeScanner />,
           },
           {
             segment: calcSegment("jtv_guangzhoujibaoduan", "setting"),
             title: "设置",
-            icon: <TuneOutlined />,
+            icon: <Tune />,
           },
         ],
       });
@@ -257,27 +257,27 @@ const useNavigation = () => {
           {
             segment: calcSegment("kh"),
             title: "HMIS",
-            icon: <QrCodeScannerOutlined />,
+            icon: <QrCodeScanner />,
           },
           {
             segment: calcSegment("kh", "verify"),
             title: "日常校验",
-            icon: <CalendarTodayOutlined />,
+            icon: <Today />,
           },
           {
             segment: calcSegment("kh", "quartor"),
             title: "季度校验",
-            icon: <CalendarMonthOutlined />,
+            icon: <CalendarMonth />,
           },
           {
             segment: calcSegment("kh", "annual"),
             title: "年度校验",
-            icon: <CalendarViewMonthOutlined />,
+            icon: <CalendarToday />,
           },
           {
             segment: calcSegment("kh", "setting"),
             title: "设置",
-            icon: <TuneOutlined />,
+            icon: <Tune />,
           },
         ],
       });
@@ -303,22 +303,22 @@ const useNavigation = () => {
       {
         segment: calcSegment("detection"),
         title: "现车作业",
-        icon: <TrainOutlined />,
+        icon: <Train />,
       },
       {
         segment: calcSegment("verify"),
         title: "日常校验",
-        icon: <CalendarTodayOutlined />,
+        icon: <Today />,
       },
       {
         segment: calcSegment("quartors"),
         title: "季度校验",
-        icon: <CalendarMonthOutlined />,
+        icon: <CalendarMonth />,
       },
       {
         segment: calcSegment("anniversary"),
         title: "年度校验",
-        icon: <CalendarMonthOutlined />,
+        icon: <CalendarToday />,
       },
       {
         kind: "divider",
@@ -330,7 +330,7 @@ const useNavigation = () => {
       {
         segment: calcSegment("qt", "anniversary"),
         title: "anniversary",
-        icon: <QrCodeOutlined />,
+        icon: <QrCode />,
       },
     );
 
@@ -343,12 +343,12 @@ const useNavigation = () => {
       {
         segment: calcSegment("log"),
         title: "日志",
-        icon: <InfoOutlined />,
+        icon: <Info />,
       },
       {
         segment: calcSegment("settings"),
         title: "设置",
-        icon: <SettingsOutlined />,
+        icon: <Settings />,
       },
     );
 
@@ -365,22 +365,22 @@ const useNavigation = () => {
         {
           segment: calcSegment("md5_backup_image"),
           title: "图片备份",
-          icon: <PermMediaOutlined />,
+          icon: <PermMedia />,
         },
         {
           segment: calcSegment("lab"),
           title: "实验室",
-          icon: <ScienceOutlined />,
+          icon: <Science />,
         },
         {
           segment: calcSegment("minesweeper"),
           title: "Minesweeper",
-          icon: <SportsEsportsOutlined />,
+          icon: <SportsEsports />,
         },
         {
           segment: calcSegment("qrcode"),
           title: "QRCode",
-          icon: <QrCodeOutlined />,
+          icon: <QrCode />,
         },
       );
     }
