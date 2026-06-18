@@ -23,14 +23,14 @@ export const Component = () => {
   const formId = React.useId();
 
   const snackbar = useNotifications();
-  const ip = useHxzyHmisStore((state) => state.ip);
-  const port = useHxzyHmisStore((state) => state.port);
-  const autoInput = useHxzyHmisStore((state) => state.autoInput);
-  const autoUpload = useHxzyHmisStore((state) => state.autoUpload);
-  const autoUploadInterval = useHxzyHmisStore(
-    (state) => state.autoUploadInterval,
-  );
-  const gd = useHxzyHmisStore((state) => state.gd);
+  const ip = useHxzyHmisStore((s) => s.ip);
+  const port = useHxzyHmisStore((s) => s.port);
+  const autoInput = useHxzyHmisStore((s) => s.autoInput);
+  const autoUpload = useHxzyHmisStore((s) => s.autoUpload);
+  const autoUploadInterval = useHxzyHmisStore((s) => s.autoUploadInterval);
+  const enableAutoSubmit = useHxzyHmisStore((s) => s.enableAutoSubmit);
+  const autoSubmitDelay = useHxzyHmisStore((s) => s.autoSubmitDelay);
+  const gd = useHxzyHmisStore((s) => s.gd);
 
   const form = useForm({
     defaultValues: {
@@ -39,6 +39,8 @@ export const Component = () => {
       autoInput,
       autoUpload,
       autoUploadInterval,
+      enableAutoSubmit,
+      autoSubmitDelay,
       gd,
     } as HXZY_HMIS,
     validators: {
@@ -51,6 +53,8 @@ export const Component = () => {
         draft.autoInput = value.autoInput;
         draft.autoUpload = value.autoUpload;
         draft.autoUploadInterval = value.autoUploadInterval;
+        draft.enableAutoSubmit = value.enableAutoSubmit;
+        draft.autoSubmitDelay = value.autoSubmitDelay;
         draft.gd = value.gd;
       });
       snackbar.show("保存成功", { severity: "success" });
@@ -67,6 +71,7 @@ export const Component = () => {
           autoComplete="off"
           onSubmit={(e) => {
             e.preventDefault();
+            e.stopPropagation();
             form.handleSubmit();
           }}
         >
@@ -151,12 +156,25 @@ export const Component = () => {
                     />
                   )}
                 />
+                <form.Field
+                  name="enableAutoSubmit"
+                  children={(field) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
+                        />
+                      }
+                      label="启用自动提交"
+                    />
+                  )}
+                />
               </FormGroup>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field
-                name="autoUploadInterval"
-                children={(field) => (
+              <form.Field name="autoUploadInterval">
+                {(field) => (
                   <NumberField
                     field={{
                       value: field.state.value,
@@ -164,12 +182,32 @@ export const Component = () => {
                       onBlur: () => field.handleBlur(),
                     }}
                     error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors.at(0)?.message}
-                    label="自动上传间隔"
+                    helperText={field.state.meta.errors[0]?.message}
+                    label="自动上传间隔 ( 秒 )"
                     fullWidth
                   />
                 )}
-              />
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="autoSubmitDelay">
+                {(field) => (
+                  <NumberField
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: () => field.handleBlur(),
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={
+                      field.state.meta.errors[0]?.message ||
+                      "条形输入一段时间后自动提交查询, 适用于扫码枪不支持自动回车的情况"
+                    }
+                    label="自动提交延迟 ( 毫秒 )"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
             </Grid>
           </Grid>
         </form>

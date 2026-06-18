@@ -168,7 +168,9 @@ export const Component = () => {
   const barcode = useQuery(fetchHxzyRecord(params));
   const autoInput = useAutoInputToVC();
   const inputRef = useAutoFocusInputRef();
-  const isAutoInput = useHxzyHmisStore((state) => state.autoInput);
+  const isAutoInput = useHxzyHmisStore((s) => s.autoInput);
+  const enableAutoSubmit = useHxzyHmisStore((s) => s.enableAutoSubmit);
+  const autoSubmitDelay = useHxzyHmisStore((s) => s.autoSubmitDelay);
   const insertRecordToDB = useInsertHxzyRecord();
 
   const form = useForm({
@@ -205,7 +207,11 @@ export const Component = () => {
     },
   });
   const barcodeField = useField({ form, name: "barCode" });
-  const formRef = useAutoSubmitRef(true, barcodeField.state.value);
+  const formRef = useAutoSubmitRef(
+    enableAutoSubmit,
+    barcodeField.state.value,
+    autoSubmitDelay,
+  );
   const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
 
   const table = useReactTable({

@@ -173,7 +173,9 @@ export const Component = () => {
   const snackbar = useNotifications();
   const autoInput = useAutoInputToVC();
   const barcode = useQuery(fetchKhRecord(params));
-  const isAutoInput = useKhHmisStore((store) => store.autoInput);
+  const isAutoInput = useKhHmisStore((s) => s.autoInput);
+  const enableAutoSubmit = useKhHmisStore((s) => s.enableAutoSubmit);
+  const autoSubmitDelay = useKhHmisStore((s) => s.autoSubmitDelay);
   const insertRecord = useInsertKhRecord();
 
   const form = useForm({
@@ -204,7 +206,11 @@ export const Component = () => {
     },
   });
   const barcodeField = useField({ form, name: "barCode" });
-  const formRef = useAutoSubmitRef(true, barcodeField.state.value);
+  const formRef = useAutoSubmitRef(
+    enableAutoSubmit,
+    barcodeField.state.value,
+    autoSubmitDelay,
+  );
 
   const data = React.useMemo(() => barcode.data?.rows || [], [barcode.data]);
 

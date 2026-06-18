@@ -23,20 +23,20 @@ export const Component = () => {
   const formId = React.useId();
 
   const snackbar = useNotifications();
-  const ip = useKhHmisStore((store) => store.ip);
-  const port = useKhHmisStore((store) => store.port);
-  const autoInput = useKhHmisStore((store) => store.autoInput);
-  const autoUpload = useKhHmisStore((store) => store.autoUpload);
-  const autoUploadInterval = useKhHmisStore(
-    (store) => store.autoUploadInterval,
-  );
-  const tsgz = useKhHmisStore((store) => store.tsgz);
-  const tszjy = useKhHmisStore((store) => store.tszjy);
-  const tsysy = useKhHmisStore((store) => store.tsysy);
-  const tswxg = useKhHmisStore((store) => store.tswxg);
-  const zgld = useKhHmisStore((store) => store.zgld);
-  const sbzz = useKhHmisStore((store) => store.sbzz);
-  const tszz = useKhHmisStore((store) => store.tszz);
+  const ip = useKhHmisStore((s) => s.ip);
+  const port = useKhHmisStore((s) => s.port);
+  const autoInput = useKhHmisStore((s) => s.autoInput);
+  const autoUpload = useKhHmisStore((s) => s.autoUpload);
+  const autoUploadInterval = useKhHmisStore((s) => s.autoUploadInterval);
+  const enableAutoSubmit = useKhHmisStore((s) => s.enableAutoSubmit);
+  const autoSubmitDelay = useKhHmisStore((s) => s.autoSubmitDelay);
+  const tsgz = useKhHmisStore((s) => s.tsgz);
+  const tszjy = useKhHmisStore((s) => s.tszjy);
+  const tsysy = useKhHmisStore((s) => s.tsysy);
+  const tswxg = useKhHmisStore((s) => s.tswxg);
+  const zgld = useKhHmisStore((s) => s.zgld);
+  const sbzz = useKhHmisStore((s) => s.sbzz);
+  const tszz = useKhHmisStore((s) => s.tszz);
 
   const form = useForm({
     defaultValues: {
@@ -45,6 +45,8 @@ export const Component = () => {
       autoInput,
       autoUpload,
       autoUploadInterval,
+      enableAutoSubmit,
+      autoSubmitDelay,
       tsgz,
       tszjy,
       tsysy,
@@ -63,6 +65,8 @@ export const Component = () => {
         draft.autoInput = value.autoInput;
         draft.autoUpload = value.autoUpload;
         draft.autoUploadInterval = value.autoUploadInterval;
+        draft.enableAutoSubmit = value.enableAutoSubmit;
+        draft.autoSubmitDelay = value.autoSubmitDelay;
         draft.tsgz = value.tsgz;
         draft.tszjy = value.tszjy;
         draft.tsysy = value.tsysy;
@@ -85,6 +89,7 @@ export const Component = () => {
           autoComplete="off"
           onSubmit={(e) => {
             e.preventDefault();
+            e.stopPropagation();
             void form.handleSubmit();
           }}
         >
@@ -255,6 +260,21 @@ export const Component = () => {
                     />
                   )}
                 </form.Field>
+                <form.Field name="enableAutoSubmit">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={field.state.value}
+                          onChange={(_, checked) => {
+                            field.handleChange(checked);
+                          }}
+                        />
+                      }
+                      label="启用自动提交"
+                    />
+                  )}
+                </form.Field>
               </FormGroup>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -264,11 +284,31 @@ export const Component = () => {
                     field={{
                       value: field.state.value,
                       onChange: (value) => field.handleChange(value),
-                      onBlur: field.handleBlur,
+                      onBlur: () => field.handleBlur(),
                     }}
                     error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors.at(0)?.message}
-                    label="自动上传间隔"
+                    helperText={field.state.meta.errors[0]?.message}
+                    label="自动上传间隔 ( 秒 )"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="autoSubmitDelay">
+                {(field) => (
+                  <NumberField
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: () => field.handleBlur(),
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={
+                      field.state.meta.errors[0]?.message ||
+                      "条形输入一段时间后自动提交查询, 适用于扫码枪不支持自动回车的情况"
+                    }
+                    label="自动提交延迟 ( 毫秒 )"
                     fullWidth
                   />
                 )}

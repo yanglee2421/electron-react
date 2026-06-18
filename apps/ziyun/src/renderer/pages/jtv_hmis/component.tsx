@@ -184,15 +184,11 @@ const ActionCell = (props: ActionCellProps) => {
 
   const handleUpload = () => {
     saveData.mutate(props.id, {
-      onError(error) {
-        snackbar.show(error.message, {
-          severity: "error",
-        });
+      onError: (error) => {
+        snackbar.show(error.message, { severity: "error" });
       },
-      onSuccess() {
-        snackbar.show("上传成功", {
-          severity: "success",
-        });
+      onSuccess: () => {
+        snackbar.show("上传成功", { severity: "success" });
       },
     });
   };
@@ -445,12 +441,21 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
 };
 
 export const Component = () => {
-  const pageIndex = useSessionStore((store) => store.pageIndex);
-  const pageSize = useSessionStore((store) => store.pageSize);
-  const dateIso = useSessionStore((store) => store.date);
-  const selectOptions = useSessionStore((store) => store.selectOptions);
-
   const formId = React.useId();
+
+  const pageIndex = useSessionStore((s) => s.pageIndex);
+  const pageSize = useSessionStore((s) => s.pageSize);
+  const dateIso = useSessionStore((s) => s.date);
+  const selectOptions = useSessionStore((s) => s.selectOptions);
+  const getData = useFetchAxleInfo();
+  const snackbar = useNotifications();
+  const zhMode = useJTVHmisStore((s) => s.isZhMode);
+  const isAutoInput = useJTVHmisStore((s) => s.autoInput);
+  const enableAutoSubmit = useJTVHmisStore((s) => s.enableAutoSubmit);
+  const autoSubmitDelay = useJTVHmisStore((s) => s.autoSubmitDelay);
+  const autoInput = useAutoInputToVC();
+  const inputRef = useAutoFocusInputRef();
+  const insertBarcode = useInsertJTVRecord();
 
   const date = dayjs(dateIso);
 
@@ -461,13 +466,6 @@ export const Component = () => {
     endDate: date.endOf("day").toISOString(),
   };
 
-  const getData = useFetchAxleInfo();
-  const snackbar = useNotifications();
-  const zhMode = useJTVHmisStore((store) => store.isZhMode);
-  const isAutoInput = useJTVHmisStore((store) => store.autoInput);
-  const autoInput = useAutoInputToVC();
-  const inputRef = useAutoFocusInputRef();
-  const insertBarcode = useInsertJTVRecord();
   const barcode = useQuery(fetchJtvHmisSqliteGet(params));
 
   const form = useForm({
@@ -484,9 +482,7 @@ export const Component = () => {
         { barcode: value.barCode, isZhMode: zhMode },
         {
           onError: (error) => {
-            snackbar.show(error.message, {
-              severity: "error",
-            });
+            snackbar.show(error.message, { severity: "error" });
           },
         },
       );
@@ -506,7 +502,11 @@ export const Component = () => {
   });
 
   const barcodeField = useField({ form, name: "barCode" });
-  const formRef = useAutoSubmitRef(!zhMode, barcodeField.state.value);
+  const formRef = useAutoSubmitRef(
+    enableAutoSubmit,
+    barcodeField.state.value,
+    autoSubmitDelay,
+  );
 
   useSubscribe("api_set", () => {
     barcode.refetch();

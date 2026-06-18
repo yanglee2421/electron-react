@@ -1,6 +1,7 @@
 import { NumberField } from "#renderer/components/number";
 import { useJTVHmisStore } from "#renderer/hooks/stores/useJTVHmisStore";
-import { jtv_hmis, type JTV_HMIS } from "#shared/instances/schema";
+import type { JTV_HMIS } from "#shared/instances/schema";
+import { jtv_hmis } from "#shared/instances/schema";
 import { SaveOutlined } from "@mui/icons-material";
 import {
   Button,
@@ -23,19 +24,20 @@ export const Component = () => {
   const formId = React.useId();
 
   const snackbar = useNotifications();
-  const ip = useJTVHmisStore((store) => store.ip);
-  const port = useJTVHmisStore((store) => store.port);
-  const autoInput = useJTVHmisStore((store) => store.autoInput);
-  const autoUpload = useJTVHmisStore((store) => store.autoUpload);
-  const autoUploadInterval = useJTVHmisStore(
-    (store) => store.autoUploadInterval,
-  );
-  const unitCode = useJTVHmisStore((store) => store.unitCode);
-  const signature_prefix = useJTVHmisStore((store) => store.signature_prefix);
-  const isZhMode = useJTVHmisStore((store) => store.isZhMode);
+  const ip = useJTVHmisStore((s) => s.ip);
+  const port = useJTVHmisStore((s) => s.port);
+  const autoInput = useJTVHmisStore((s) => s.autoInput);
+  const autoUpload = useJTVHmisStore((s) => s.autoUpload);
+  const autoUploadInterval = useJTVHmisStore((s) => s.autoUploadInterval);
+  const unitCode = useJTVHmisStore((s) => s.unitCode);
+  const signature_prefix = useJTVHmisStore((s) => s.signature_prefix);
+  const isZhMode = useJTVHmisStore((s) => s.isZhMode);
+  const enableAutoSubmit = useJTVHmisStore((s) => s.enableAutoSubmit);
+  const autoSubmitDelay = useJTVHmisStore((s) => s.autoSubmitDelay);
 
   const form = useForm({
     defaultValues: {
+      ...useJTVHmisStore.getState(),
       ip,
       port,
       autoInput,
@@ -44,6 +46,8 @@ export const Component = () => {
       unitCode,
       signature_prefix,
       isZhMode,
+      enableAutoSubmit,
+      autoSubmitDelay,
     } as JTV_HMIS,
     validators: {
       onChange: jtv_hmis.required(),
@@ -57,6 +61,8 @@ export const Component = () => {
         draft.autoUploadInterval = value.autoUploadInterval;
         draft.unitCode = value.unitCode;
         draft.signature_prefix = value.signature_prefix;
+        draft.enableAutoSubmit = value.enableAutoSubmit;
+        draft.autoSubmitDelay = value.autoSubmitDelay;
       });
 
       snackbar.show("设置已保存", { severity: "success" });
@@ -160,10 +166,25 @@ export const Component = () => {
                       control={
                         <Checkbox
                           checked={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.checked)}
+                          onChange={(_, checked) => field.handleChange(checked)}
                         />
                       }
                       label="自动上传"
+                    />
+                  )}
+                </form.Field>
+                <form.Field name="enableAutoSubmit">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={field.state.value}
+                          onChange={(_, checked) => {
+                            field.handleChange(checked);
+                          }}
+                        />
+                      }
+                      label="启用自动提交"
                     />
                   )}
                 </form.Field>
@@ -180,7 +201,27 @@ export const Component = () => {
                     }}
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors[0]?.message}
-                    label="自动上传间隔"
+                    label="自动上传间隔 ( 秒 )"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="autoSubmitDelay">
+                {(field) => (
+                  <NumberField
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: () => field.handleBlur(),
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={
+                      field.state.meta.errors[0]?.message ||
+                      "条形输入一段时间后自动提交查询, 适用于扫码枪不支持自动回车的情况"
+                    }
+                    label="自动提交延迟 ( 毫秒 )"
                     fullWidth
                   />
                 )}

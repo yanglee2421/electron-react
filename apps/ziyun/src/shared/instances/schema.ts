@@ -40,6 +40,9 @@ export const kh_hmis = z.object({
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),
+  enableAutoSubmit: z.boolean().default(false),
+  autoSubmitDelay: z.number().default(1000 * 2),
+
   tsgz: z.string().default(""),
   tszjy: z.string().default(""),
   tsysy: z.string().default(""),
@@ -57,6 +60,9 @@ export const hxzy_hmis = z.object({
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),
+  enableAutoSubmit: z.boolean().default(false),
+  autoSubmitDelay: z.number().default(1000 * 2),
+
   gd: z.string().default(""),
 });
 
@@ -68,23 +74,15 @@ export const jtv_hmis = z.object({
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),
+  enableAutoSubmit: z.boolean().default(false),
+  autoSubmitDelay: z.number().default(1000 * 2),
+
   unitCode: z.string().default(""),
   signature_prefix: z.string().default("W"),
   isZhMode: z.boolean().default(true),
 });
 
 export type JTV_HMIS = z.infer<typeof jtv_hmis>;
-
-export const jtv_hmis_xuzhoubei = z.object({
-  ip: ipv4Schema,
-  port: portSchema,
-  autoInput: z.boolean().default(false),
-  autoUpload: z.boolean().default(false),
-  autoUploadInterval: z.number().default(30),
-  username_prefix: z.string().default(""),
-});
-
-export type JTV_HMIS_XUZHOUBEI = z.infer<typeof jtv_hmis_xuzhoubei>;
 
 export const jtv_hmis_guangzhoubei = z.object({
   get_ip: ipv4Schema,
@@ -94,6 +92,9 @@ export const jtv_hmis_guangzhoubei = z.object({
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),
+  enableAutoSubmit: z.boolean().default(false),
+  autoSubmitDelay: z.number().default(1000 * 2),
+
   unitCode: z.string().default(""),
   signature_prefix: z.string().default("W"),
   isZhMode: z.boolean().default(true),
@@ -106,11 +107,14 @@ export const guangzhoujibaoduan = z.object({
   get_port: portSchema,
   post_ip: ipv4Schema,
   post_port: portSchema,
-  unitCode: z.string().default(""),
-  signature_prefix: z.string().default("W"),
   autoInput: z.boolean().default(false),
   autoUpload: z.boolean().default(false),
   autoUploadInterval: z.number().default(30),
+  enableAutoSubmit: z.boolean().default(false),
+  autoSubmitDelay: z.number().default(1000 * 2),
+
+  unitCode: z.string().default(""),
+  signature_prefix: z.string().default("W"),
 });
 
 export type Guangzhoujibaoduan = z.infer<typeof guangzhoujibaoduan>;
