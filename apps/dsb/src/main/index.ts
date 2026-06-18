@@ -38,6 +38,10 @@ primary$.pipe(switchMap(() => whenReady$)).subscribe(() => {
   const win = new BrowserWindow({});
   win.menuBarVisible = false;
 
+  win.webContents.on("did-finish-load", () => {
+    win.webContents.openDevTools();
+  });
+
   if (app.isPackaged) {
     win.loadFile(path.resolve(__dirname, "../renderer/index.html"));
   } else {
