@@ -1,4 +1,5 @@
 import type { RouteObject } from "react-router";
+import { RootHydrateFallback } from "./root";
 
 export const createRoutes = (): RouteObject[] => {
   return [
@@ -13,6 +14,7 @@ export const createRoutes = (): RouteObject[] => {
           lazy: () => import("#renderer/pages/crud-dashboard/component"),
         },
       ],
+      HydrateFallback: RootHydrateFallback,
     },
   ];
 };

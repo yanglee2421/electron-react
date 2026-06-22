@@ -8,6 +8,7 @@ import {
   of,
   partition,
   switchMap,
+  take,
 } from "rxjs";
 
 const whenReady$ = from(app.whenReady());
@@ -35,12 +36,23 @@ duplicate$.subscribe(() => {
 });
 
 primary$.pipe(switchMap(() => whenReady$)).subscribe(() => {
-  const win = new BrowserWindow({});
+  const win = new BrowserWindow({
+    show: false,
+  });
   win.menuBarVisible = false;
 
-  win.webContents.on("did-finish-load", () => {
-    win.webContents.openDevTools();
-  });
+  fromEventPattern(
+    (f) => win.on("ready-to-show", f),
+    (f) => win.off("ready-to-show", f),
+  )
+    .pipe(take(1))
+    .subscribe(() => {
+      win.show();
+    });
+
+  // win.webContents.on("did-finish-load", () => {
+  // win.webContents.openDevTools();
+  // });
 
   if (app.isPackaged) {
     win.loadFile(path.resolve(__dirname, "../renderer/index.html"));
