@@ -15,6 +15,7 @@ import {
   ListItemText,
   Stack,
 } from "@mui/material";
+import { Link } from "react-router";
 
 const mainListItems = [
   { text: "Home", icon: <HomeRounded /> },
@@ -34,7 +35,15 @@ export default function MenuContent() {
     <Stack sx={{ flexGrow: 1, p: 1, justifyContent: "space-between" }}>
       <List dense>
         {mainListItems.map((item, index) => (
-          <ListItem key={index} disablePadding sx={{ display: "block" }}>
+          <ListItem
+            key={index}
+            disablePadding
+            sx={{ display: "block", color: "inherit" }}
+            component={Link}
+            to={{
+              pathname: "/crud-dashboard",
+            }}
+          >
             <ListItemButton selected={index === 0}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
