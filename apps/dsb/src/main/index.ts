@@ -1,4 +1,4 @@
-import { platform } from "@electron-toolkit/utils";
+import { optimizer, platform } from "@electron-toolkit/utils";
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import {
@@ -21,9 +21,25 @@ import {
   using,
 } from "rxjs";
 
-const createWindow = () => {
+interface CreateWindowOptions {
+  additionalArguments?: string[];
+  alwaysOnTop?: boolean;
+}
+
+const createWindow = ({
+  additionalArguments,
+  alwaysOnTop,
+}: CreateWindowOptions = {}) => {
   const win = new BrowserWindow({
     show: false,
+    webPreferences: {
+      sandbox: true,
+      webSecurity: true,
+      nodeIntegration: false,
+      contextIsolation: true,
+      additionalArguments,
+    },
+    alwaysOnTop,
   });
   win.menuBarVisible = false;
 
@@ -84,7 +100,7 @@ concat(
 });
 
 secondInstance$.subscribe(() => {
-  const win = createWindow();
+  createWindow();
 });
 
 browserWindowCreated$
@@ -107,5 +123,15 @@ windowAllClosed$
   .pipe(
     filter(() => !platform.isMacOS),
     tap(() => app.quit()),
+  )
+  .subscribe();
+
+browserWindowCreated$
+  .pipe(
+    map(([, win]) => win),
+    filter((win) => !win.isDestroyed()),
+    tap((win) => {
+      optimizer.watchWindowShortcuts(win);
+    }),
   )
   .subscribe();

@@ -7,6 +7,13 @@ import { VitePluginDoubleshot } from "vite-plugin-doubleshot";
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const alias = {
+  "#main": path.resolve(__dirname, "./src/main"),
+  "#preload": path.resolve(__dirname, "./src/preload"),
+  "#renderer": path.resolve(__dirname, "./src/renderer"),
+  "#resources": path.resolve(__dirname, "./resources"),
+  "#shared": path.resolve(__dirname, "./src/shared"),
+};
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -26,13 +33,7 @@ export default defineConfig({
           neverBundle: ["electron"],
         },
         clean: true,
-        alias: {
-          "#main": path.resolve(__dirname, "./src/main"),
-          "#preload": path.resolve(__dirname, "./src/preload"),
-          "#renderer": path.resolve(__dirname, "./src/renderer"),
-          "#resources": path.resolve(__dirname, "./resources"),
-          "#shared": path.resolve(__dirname, "./src/shared"),
-        },
+        alias,
       },
       electron: {
         preload: {
@@ -46,13 +47,7 @@ export default defineConfig({
               neverBundle: ["electron"],
             },
             clean: true,
-            alias: {
-              "#main": path.resolve(__dirname, "./src/main"),
-              "#preload": path.resolve(__dirname, "./src/preload"),
-              "#renderer": path.resolve(__dirname, "./src/renderer"),
-              "#resources": path.resolve(__dirname, "./resources"),
-              "#shared": path.resolve(__dirname, "./src/shared"),
-            },
+            alias,
           },
         },
         build: {
@@ -67,13 +62,5 @@ export default defineConfig({
     emptyOutDir: true,
   },
   base: "./",
-  resolve: {
-    alias: {
-      "#main": path.resolve(__dirname, "./src/main"),
-      "#preload": path.resolve(__dirname, "./src/preload"),
-      "#renderer": path.resolve(__dirname, "./src/renderer"),
-      "#resources": path.resolve(__dirname, "./resources"),
-      "#shared": path.resolve(__dirname, "./src/shared"),
-    },
-  },
+  resolve: { alias },
 });
