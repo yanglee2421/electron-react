@@ -13,7 +13,7 @@ interface ElectronProcess {
 declare global {
   interface Window {
     electron: ElectronAPI;
-    electronProcess: ElectronProcess;
+    $process: ElectronProcess;
   }
 
   // interface ImportMeta {
