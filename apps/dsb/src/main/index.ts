@@ -1,8 +1,7 @@
+import { platform } from "@electron-toolkit/utils";
 import { app, BrowserWindow } from "electron";
-import { platform } from "node:os";
 import path from "node:path";
 import {
-  BehaviorSubject,
   concat,
   defer,
   filter,
@@ -14,6 +13,7 @@ import {
   NEVER,
   of,
   partition,
+  shareReplay,
   startWith,
   take,
   takeUntil,
@@ -21,9 +21,7 @@ import {
   using,
 } from "rxjs";
 
-const window$ = new BehaviorSubject<null | BrowserWindow>(null);
-const mainWindow$ = defer(() => {
-  // Create Browser Window and load page
+const createWindow = () => {
   const win = new BrowserWindow({
     show: false,
   });
@@ -35,21 +33,14 @@ const mainWindow$ = defer(() => {
     win.loadURL(process.env.DS_RENDERER_URL!);
   }
 
-  //
-  const closed$ = fromEventPattern(
-    (f) => win.on("closed", f),
-    (f) => win.off("closed", f),
-  );
-
-  return NEVER.pipe(startWith(win), takeUntil(closed$));
-});
+  return win;
+};
 
 const whenReady$ = from(app.whenReady());
 const willQuit$ = fromEventPattern(
   (f) => app.on("will-quit", f),
   (f) => app.off("will-quit", f),
 );
-
 const browserWindowCreated$ = fromEventPattern<[Electron.Event, BrowserWindow]>(
   (f) => app.on("browser-window-created", f),
   (f) => app.off("browser-window-created", f),
@@ -58,10 +49,13 @@ const windowAllClosed$ = fromEventPattern(
   (f) => app.on("window-all-closed", f),
   (f) => app.off("window-all-closed", f),
 );
-
 const [primary$, duplicate$] = partition(
   defer(() => of(app.requestSingleInstanceLock())),
   (i) => i,
+);
+const secondInstance$ = fromEventPattern(
+  (f) => app.on("second-instance", f),
+  (f) => app.off("second-instance", f),
 );
 
 const resource$ = using(
@@ -75,7 +69,7 @@ const resource$ = using(
     };
   },
   () => NEVER.pipe(startWith(null), takeUntil(willQuit$)),
-);
+).pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
 duplicate$.subscribe(() => {
   app.quit();
@@ -86,16 +80,17 @@ concat(
   whenReady$.pipe(ignoreElements()),
   resource$,
 ).subscribe(() => {
-  // win.webContents.on("did-finish-load", () => {
-  // win.webContents.openDevTools();
-  // });
+  createWindow();
+});
 
-  mainWindow$.subscribe(window$);
+secondInstance$.subscribe(() => {
+  const win = createWindow();
 });
 
 browserWindowCreated$
   .pipe(
     map(([, win]) => win),
+    filter((win) => !win.isVisible()),
     mergeMap((win) => {
       return fromEventPattern(
         (f) => win.on("ready-to-show", f),
@@ -110,7 +105,7 @@ browserWindowCreated$
 
 windowAllClosed$
   .pipe(
-    filter(() => platform() !== "darwin"),
+    filter(() => !platform.isMacOS),
     tap(() => app.quit()),
   )
   .subscribe();

@@ -15,12 +15,16 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import {
+  concat,
   filter,
+  fromEventPattern,
+  ignoreElements,
   map,
+  mergeMap,
   NEVER,
   shareReplay,
   startWith,
-  switchMap,
+  take,
   takeUntil,
   tap,
   using,
@@ -71,7 +75,7 @@ if (platform.isLinux) {
 
 const APP_DB_PATH = path.resolve(app.getPath("userData"), "db.db");
 
-const ioc$ = using(
+const resource$ = using(
   () => {
     container.register({ dbPath: asValue(APP_DB_PATH) });
 
@@ -165,49 +169,74 @@ duplicateInstance$.subscribe(() => {
   app.quit();
 });
 
-primaryInstance$
-  .pipe(
-    switchMap(() => whenReady$),
-    switchMap(() => ioc$),
-  )
-  .subscribe({
-    next: () => {
-      Menu.setApplicationMenu(null);
+concat(
+  primaryInstance$.pipe(ignoreElements()),
+  whenReady$.pipe(ignoreElements()),
+  resource$,
+).subscribe({
+  next: () => {
+    Menu.setApplicationMenu(null);
 
-      if (platform.isWindows) {
-        electronApp.setAppUserModelId("com.electron");
-      }
+    if (platform.isWindows) {
+      electronApp.setAppUserModelId("com.electron");
+    }
 
-      const { appWindow } = container.cradle;
-      const openURL = process.argv.find((arg) => {
-        return arg.startsWith("app-ziyun://");
-      });
+    const { appWindow } = container.cradle;
+    const openURL = process.argv.find((arg) => {
+      return arg.startsWith("app-ziyun://");
+    });
 
-      appWindow.show(openURL);
-    },
-    error: () => {
-      container.dispose();
+    appWindow.show(openURL);
+  },
+  error: () => {
+    container.dispose();
 
-      const desktopDbPath = path.resolve(
-        app.getPath("desktop"),
-        `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
-      );
+    const desktopDbPath = path.resolve(
+      app.getPath("desktop"),
+      `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
+    );
 
-      fs.cpSync(APP_DB_PATH, desktopDbPath, { recursive: true });
-      fs.rmSync(APP_DB_PATH, { recursive: true, force: true });
+    fs.cpSync(APP_DB_PATH, desktopDbPath, { recursive: true });
+    fs.rmSync(APP_DB_PATH, { recursive: true, force: true });
 
-      app.quit();
-    },
-    complete: () => {
-      app.quit();
-    },
-  });
+    app.quit();
+  },
+  complete: () => {
+    app.quit();
+  },
+});
 
 secondInstance$.subscribe(([, argv]) => {
   const url = argv.find((arg) => arg.startsWith("app-ziyun://"));
   const { appWindow } = container.cradle;
 
   appWindow.show(url);
+});
+
+browserWindowCreated$
+  .pipe(
+    map(([, win]) => win),
+    filter((win) => !win.isVisible()),
+    mergeMap((win) => {
+      return fromEventPattern(
+        (f) => win.on("ready-to-show", f),
+        (f) => win.off("ready-to-show", f),
+      ).pipe(
+        take(1),
+        tap(() => win.show()),
+      );
+    }),
+  )
+  .subscribe();
+
+windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
+  const profile = container.cradle.profile;
+
+  if (profile.state.enableTray) {
+    return;
+  }
+
+  app.quit();
 });
 
 browserWindowCreated$
@@ -231,13 +260,3 @@ browserWindowCreated$
     }),
   )
   .subscribe();
-
-windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
-  const profile = container.cradle.profile;
-
-  if (profile.state.enableTray) {
-    return;
-  }
-
-  app.quit();
-});
