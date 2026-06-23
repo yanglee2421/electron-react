@@ -1,6 +1,6 @@
 import type { BrowserWindow } from "electron";
 import { app } from "electron";
-import { from, fromEventPattern, of, partition } from "rxjs";
+import { from, fromEventPattern } from "rxjs";
 
 export const whenReady$ = from(app.whenReady());
 export const willQuit$ = fromEventPattern(
@@ -24,8 +24,4 @@ export const windowAllClosed$ = fromEventPattern(
 export const secondInstance$ = fromEventPattern<[Electron.Event, string[]]>(
   (handler) => app.on("second-instance", handler),
   (handler) => app.off("second-instance", handler),
-);
-export const [primaryInstance$, duplicateInstance$] = partition(
-  of(app.requestSingleInstanceLock()),
-  (hasLock) => hasLock,
 );

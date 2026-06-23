@@ -1,7 +1,5 @@
 import {
   browserWindowCreated$,
-  duplicateInstance$,
-  primaryInstance$,
   secondInstance$,
   whenReady$,
   willQuit$,
@@ -15,13 +13,18 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import {
+  catchError,
   concat,
+  defer,
+  EMPTY,
   filter,
+  finalize,
   fromEventPattern,
   ignoreElements,
   map,
   mergeMap,
   NEVER,
+  of,
   shareReplay,
   startWith,
   take,
@@ -159,59 +162,70 @@ const resource$ = using(
   () => NEVER.pipe(startWith(null), takeUntil(willQuit$)),
 ).pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
-duplicateInstance$.subscribe(() => {
-  if (is.dev) {
-    console.warn(
-      "Another instance of the app is already running. This instance will be closed.",
+const app$ = defer(() => {
+  const hasLock = app.requestSingleInstanceLock();
+
+  // 当前实例为第二实例则触发自杀
+  if (!hasLock) {
+    return of(false).pipe(
+      tap(() => {
+        console.warn(
+          "Another instance of the app is already running. This instance will be closed.",
+        );
+        app.quit();
+      }),
     );
   }
 
-  app.quit();
+  // 当前实例为第一实例则进入启动流程
+  return concat(whenReady$.pipe(ignoreElements()), resource$).pipe(
+    tap(() => {
+      Menu.setApplicationMenu(null);
+
+      if (platform.isWindows) {
+        electronApp.setAppUserModelId("com.electron");
+      }
+
+      const { appWindow } = container.cradle;
+      const openURL = process.argv.find((arg) => {
+        return arg.startsWith("app-ziyun://");
+      });
+
+      appWindow.show(openURL);
+    }),
+    catchError(() => {
+      container.dispose();
+
+      const desktopDbPath = path.resolve(
+        app.getPath("desktop"),
+        `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
+      );
+
+      fs.cpSync(APP_DB_PATH, desktopDbPath, { recursive: true });
+      fs.rmSync(APP_DB_PATH, { recursive: true, force: true });
+
+      app.quit();
+
+      return EMPTY;
+    }),
+    finalize(() => {
+      app.quit();
+    }),
+  );
 });
 
-concat(
-  primaryInstance$.pipe(ignoreElements()),
-  whenReady$.pipe(ignoreElements()),
-  resource$,
-).subscribe({
-  next: () => {
-    Menu.setApplicationMenu(null);
+app$.subscribe();
 
-    if (platform.isWindows) {
-      electronApp.setAppUserModelId("com.electron");
-    }
+secondInstance$
+  .pipe(
+    tap(([, argv]) => {
+      const url = argv.find((arg) => arg.startsWith("app-ziyun://"));
+      const { appWindow } = container.cradle;
 
-    const { appWindow } = container.cradle;
-    const openURL = process.argv.find((arg) => {
-      return arg.startsWith("app-ziyun://");
-    });
-
-    appWindow.show(openURL);
-  },
-  error: () => {
-    container.dispose();
-
-    const desktopDbPath = path.resolve(
-      app.getPath("desktop"),
-      `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
-    );
-
-    fs.cpSync(APP_DB_PATH, desktopDbPath, { recursive: true });
-    fs.rmSync(APP_DB_PATH, { recursive: true, force: true });
-
-    app.quit();
-  },
-  complete: () => {
-    app.quit();
-  },
-});
-
-secondInstance$.subscribe(([, argv]) => {
-  const url = argv.find((arg) => arg.startsWith("app-ziyun://"));
-  const { appWindow } = container.cradle;
-
-  appWindow.show(url);
-});
+      appWindow.show(url);
+    }),
+  )
+  .subscribe();
 
 browserWindowCreated$
   .pipe(

@@ -1,6 +1,6 @@
 import type { Profile } from "#main/features/profile";
 import type { AppCradle } from "#main/features/types";
-import { app, BrowserWindow } from "electron";
+import { BrowserWindow, app } from "electron";
 import path from "node:path";
 import type { Subscription } from "rxjs";
 import { distinctUntilChanged } from "rxjs";
@@ -33,56 +33,53 @@ export class AppWindow {
     });
   }
 
-  createWindow(url: string = "") {
+  createWindow(customURL: string = "") {
     const alwaysOnTop = this.profile.state.alwaysOnTop;
 
     const win = new BrowserWindow({
       webPreferences: {
         preload: path.join(__dirname, "../preload/index.cjs"),
+
         sandbox: true,
+        webSecurity: true,
         nodeIntegration: false,
         contextIsolation: true,
-        webSecurity: true,
-        plugins: false,
+
+        // plugins: false,
+        // additionalArguments: [],
       },
 
-      autoHideMenuBar: false,
+      show: false,
       alwaysOnTop,
+      autoHideMenuBar: false,
 
       width: 1024,
       height: 768,
       minWidth: 380,
-      show: false,
     });
 
     if (app.isPackaged) {
-      const PRODUCTION_RENDERER_PATH = path.join(
-        __dirname,
-        "../renderer/index.html",
-      );
-
-      win.loadFile(PRODUCTION_RENDERER_PATH, {
-        hash: URL.canParse(url) ? new URL(url).pathname : void 0,
+      const RENDERER_FILE = path.resolve(__dirname, "../renderer/index.html");
+      win.loadFile(RENDERER_FILE, {
+        hash: URL.canParse(customURL) ? new URL(customURL).pathname : void 0,
       });
-
       return;
     }
 
-    const ELECTRON_RENDERER_URL = process.env["ELECTRON_RENDERER_URL"]!;
+    const RENDERER_URL = process.env["ELECTRON_RENDERER_URL"]!;
 
-    if (!URL.canParse(ELECTRON_RENDERER_URL)) {
+    if (!URL.canParse(RENDERER_URL)) {
       app.quit();
       return;
     }
 
-    if (!URL.canParse(url)) {
-      win.loadURL(ELECTRON_RENDERER_URL);
-      return;
+    const renderURL = new URL(RENDERER_URL);
+
+    if (URL.canParse(customURL)) {
+      renderURL.hash = new URL(customURL).pathname;
     }
 
-    const devURL = new URL(ELECTRON_RENDERER_URL);
-    devURL.hash = new URL(url).pathname;
-    win.loadURL(devURL.href);
+    win.loadURL(renderURL.href);
   }
 
   focusWindow(win: BrowserWindow) {

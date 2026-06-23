@@ -31,15 +31,19 @@ const createWindow = ({
   alwaysOnTop,
 }: CreateWindowOptions = {}) => {
   const win = new BrowserWindow({
-    show: false,
     webPreferences: {
       preload: path.resolve(__dirname, "../preload/index.cjs"),
+
       sandbox: true,
       webSecurity: true,
       nodeIntegration: false,
       contextIsolation: true,
+
+      // plugins: false,
       additionalArguments,
     },
+
+    show: false,
     alwaysOnTop,
   });
   win.menuBarVisible = false;
