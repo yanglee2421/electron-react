@@ -34,8 +34,13 @@ if (is.dev) {
     path.resolve(__dirname, "../../package.json"),
     "utf-8",
   );
-  const name = JSON.parse(packageJson).name;
-  app.setName(name);
+
+  try {
+    const name = JSON.parse(packageJson).name || app.getName();
+    app.setName(name);
+  } catch (error) {
+    console.error(error);
+  }
 
   const USER_DATA_PATH_DEV = path.resolve(
     app.getPath("appData"),
@@ -64,7 +69,7 @@ const createWindow = ({
       nodeIntegration: false,
       contextIsolation: true,
 
-      // plugins: false,
+      plugins: false,
       additionalArguments,
     },
 
@@ -84,7 +89,7 @@ const createWindow = ({
   const RENDERER_URL = process.env.DS_RENDERER_URL!;
 
   if (!URL.canParse(RENDERER_URL)) {
-    console.warn(`process.env.DS_RENDERER_URL is not exist !`);
+    console.warn(`process.env.DS_RENDERER_URL can not parse to URL !`);
     app.quit();
     return win;
   }
