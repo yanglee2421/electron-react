@@ -13,8 +13,10 @@ export default defineConfig({
     overrides: [
       {
         files: [
-          "packages/electron-app/src/renderer/**/*.ts",
-          "packages/electron-app/src/renderer/**/*.tsx",
+          "apps/dsb/src/renderer/**/*.ts",
+          "apps/dsb/src/renderer/**/*.tsx",
+          "apps/ziyun/src/renderer/**/*.ts",
+          "apps/ziyun/src/renderer/**/*.tsx",
         ],
         plugins: ["eslint", "oxc", "typescript", "react", "react-perf"],
       },
