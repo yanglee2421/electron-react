@@ -6,7 +6,7 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 export default defineConfig({
   out: "./drizzle",
-  schema: "./src/main/features/db/schema.ts",
+  schema: "./src/main/ioc/app-db/schema.ts",
   dialect: "sqlite",
   // Dynamic database path for Electron
   dbCredentials: {

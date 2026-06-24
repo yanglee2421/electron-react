@@ -240,15 +240,20 @@ browserWindowCreated$
   )
   .subscribe();
 
-windowAllClosed$.pipe(filter(() => !platform.isMacOS)).subscribe(() => {
-  const profile = container.cradle.profile;
+windowAllClosed$
+  .pipe(
+    filter(() => !platform.isMacOS),
+    tap(() => {
+      const profile = container.cradle.profile;
 
-  if (profile.state.enableTray) {
-    return;
-  }
+      if (profile.state.enableTray) {
+        return;
+      }
 
-  app.quit();
-});
+      app.quit();
+    }),
+  )
+  .subscribe();
 
 browserWindowCreated$
   .pipe(

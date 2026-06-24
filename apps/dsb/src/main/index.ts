@@ -1,4 +1,5 @@
-import { optimizer, platform } from "@electron-toolkit/utils";
+import { is, optimizer, platform } from "@electron-toolkit/utils";
+import { asValue } from "awilix";
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import {
@@ -22,6 +23,15 @@ import {
   tap,
   using,
 } from "rxjs";
+import { container } from "./ioc";
+
+if (is.dev) {
+  const USER_DATA_PATH_DEV = path.resolve(
+    app.getPath("appData"),
+    `./${app.getName()}-dev`,
+  );
+  app.setPath("userData", USER_DATA_PATH_DEV);
+}
 
 interface CreateWindowOptions {
   additionalArguments?: string[];
@@ -63,6 +73,7 @@ const createWindow = ({
   const RENDERER_URL = process.env.DS_RENDERER_URL!;
 
   if (!URL.canParse(RENDERER_URL)) {
+    console.warn(`process.env.DS_RENDERER_URL is not exist !`);
     app.quit();
     return win;
   }
@@ -99,11 +110,21 @@ const secondInstance$ = fromEventPattern(
 
 const resource$ = using(
   () => {
-    console.log("subscribe");
+    console.log("subscribe", app.getPath("userData"));
+
+    const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
+
+    container.register({ DB_PATH: asValue(DB_PATH) });
+
+    const { appDb } = container.cradle;
+
+    void appDb;
 
     return {
       unsubscribe: () => {
         console.log("unsubscribe");
+
+        container.dispose();
       },
     };
   },
