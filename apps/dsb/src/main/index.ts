@@ -1,7 +1,9 @@
 import { is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import { app, BrowserWindow } from "electron";
+import fs from "node:fs";
 import path from "node:path";
+import url from "node:url";
 import {
   catchError,
   concat,
@@ -26,6 +28,15 @@ import {
 import { container } from "./ioc";
 
 if (is.dev) {
+  const __filename = url.fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const packageJson = fs.readFileSync(
+    path.resolve(__dirname, "../../package.json"),
+    "utf-8",
+  );
+  const name = JSON.parse(packageJson).name;
+  app.setName(name);
+
   const USER_DATA_PATH_DEV = path.resolve(
     app.getPath("appData"),
     `./${app.getName()}-dev`,
