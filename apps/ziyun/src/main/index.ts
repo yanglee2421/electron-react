@@ -162,7 +162,10 @@ const resource$ = using(
   () => NEVER.pipe(startWith(null), takeUntil(willQuit$)),
 ).pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
-const app$ = defer(() => {
+/**
+ * Main App Subscription
+ */
+defer(() => {
   const hasLock = app.requestSingleInstanceLock();
 
   // 当前实例为第二实例则触发自杀
@@ -209,9 +212,7 @@ const app$ = defer(() => {
       app.quit();
     }),
   );
-});
-
-app$.subscribe();
+}).subscribe();
 
 secondInstance$
   .pipe(
@@ -243,15 +244,8 @@ browserWindowCreated$
 windowAllClosed$
   .pipe(
     filter(() => !platform.isMacOS),
-    tap(() => {
-      const profile = container.cradle.profile;
-
-      if (profile.state.enableTray) {
-        return;
-      }
-
-      app.quit();
-    }),
+    filter(() => !container.cradle.profile.state.enableTray),
+    tap(() => app.quit()),
   )
   .subscribe();
 
@@ -272,8 +266,6 @@ browserWindowCreated$
 browserWindowCreated$
   .pipe(
     map(([, win]) => win),
-    tap((win) => {
-      optimizer.watchWindowShortcuts(win);
-    }),
+    tap((win) => optimizer.watchWindowShortcuts(win)),
   )
   .subscribe();
