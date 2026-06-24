@@ -5,7 +5,7 @@ import {
   willQuit$,
   windowAllClosed$,
 } from "#main/infra/app-rxjs";
-import { electronApp, is, platform } from "@electron-toolkit/utils";
+import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import dayjs from "dayjs";
 import { app, Menu } from "electron";
@@ -265,14 +265,15 @@ browserWindowCreated$
       win.on("blur", () => {
         win.webContents.send("windowBlur");
       });
-      // Only fire when the win.show is called on Windows
-      win.on("show", () => {
-        win.webContents.send("windowShow");
-      });
-      // Only fire when the win.hide is called on Windows
-      win.on("hide", () => {
-        win.webContents.send("windowHide");
-      });
+    }),
+  )
+  .subscribe();
+
+browserWindowCreated$
+  .pipe(
+    map(([, win]) => win),
+    tap((win) => {
+      optimizer.watchWindowShortcuts(win);
     }),
   )
   .subscribe();
