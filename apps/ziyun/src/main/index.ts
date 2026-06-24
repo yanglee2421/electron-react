@@ -194,21 +194,18 @@ const app$ = defer(() => {
       appWindow.show(openURL);
     }),
     catchError(() => {
-      container.dispose();
-
-      const desktopDbPath = path.resolve(
+      const BACKUP_DB_PATH = path.resolve(
         app.getPath("desktop"),
         `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
       );
 
-      fs.cpSync(APP_DB_PATH, desktopDbPath, { recursive: true });
+      fs.cpSync(APP_DB_PATH, BACKUP_DB_PATH, { recursive: true });
       fs.rmSync(APP_DB_PATH, { recursive: true, force: true });
-
-      app.quit();
 
       return EMPTY;
     }),
     finalize(() => {
+      container.dispose();
       app.quit();
     }),
   );

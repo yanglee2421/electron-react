@@ -51,35 +51,41 @@ export class AppWindow {
 
       show: false,
       alwaysOnTop,
-      autoHideMenuBar: false,
+      autoHideMenuBar: true,
 
       width: 1024,
       height: 768,
       minWidth: 380,
     });
 
+    win.menuBarVisible = true;
+
     if (app.isPackaged) {
       const RENDERER_FILE = path.resolve(__dirname, "../renderer/index.html");
+
       win.loadFile(RENDERER_FILE, {
         hash: URL.canParse(customURL) ? new URL(customURL).pathname : void 0,
       });
-      return;
+      return win;
     }
 
     const RENDERER_URL = process.env["ELECTRON_RENDERER_URL"]!;
 
     if (!URL.canParse(RENDERER_URL)) {
       app.quit();
-      return;
+      return win;
     }
 
-    const renderURL = new URL(RENDERER_URL);
-
-    if (URL.canParse(customURL)) {
-      renderURL.hash = new URL(customURL).pathname;
+    if (!URL.canParse(customURL)) {
+      win.loadURL(RENDERER_URL);
+      return win;
     }
 
-    win.loadURL(renderURL.href);
+    const CUSTOM_RENDERER_URL = new URL(RENDERER_URL);
+    CUSTOM_RENDERER_URL.hash = new URL(customURL).pathname;
+    win.loadURL(CUSTOM_RENDERER_URL.href);
+
+    return win;
   }
 
   focusWindow(win: BrowserWindow) {

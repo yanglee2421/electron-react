@@ -2,9 +2,12 @@ import { optimizer, platform } from "@electron-toolkit/utils";
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import {
+  catchError,
   concat,
   defer,
+  EMPTY,
   filter,
+  finalize,
   from,
   fromEventPattern,
   ignoreElements,
@@ -12,7 +15,6 @@ import {
   mergeMap,
   NEVER,
   of,
-  partition,
   shareReplay,
   startWith,
   take,
@@ -24,11 +26,13 @@ import {
 interface CreateWindowOptions {
   additionalArguments?: string[];
   alwaysOnTop?: boolean;
+  customURL?: string;
 }
 
 const createWindow = ({
   additionalArguments,
   alwaysOnTop,
+  customURL = "",
 }: CreateWindowOptions = {}) => {
   const win = new BrowserWindow({
     webPreferences: {
@@ -49,10 +53,28 @@ const createWindow = ({
   win.menuBarVisible = false;
 
   if (app.isPackaged) {
-    win.loadFile(path.resolve(__dirname, "../renderer/index.html"));
-  } else {
-    win.loadURL(process.env.DS_RENDERER_URL!);
+    const RENDERER_FILE = path.resolve(__dirname, "../renderer/index.html");
+    win.loadFile(RENDERER_FILE, {
+      hash: URL.canParse(customURL) ? new URL(customURL).pathname : void 0,
+    });
+    return win;
   }
+
+  const RENDERER_URL = process.env.DS_RENDERER_URL!;
+
+  if (!URL.canParse(RENDERER_URL)) {
+    app.quit();
+    return win;
+  }
+
+  if (!URL.canParse(customURL)) {
+    win.loadURL(RENDERER_URL);
+    return win;
+  }
+
+  const CUSTOM_RENDERER_URL = new URL(RENDERER_URL);
+  CUSTOM_RENDERER_URL.hash = new URL(customURL).pathname;
+  win.loadURL(CUSTOM_RENDERER_URL.href);
 
   return win;
 };
@@ -69,10 +91,6 @@ const browserWindowCreated$ = fromEventPattern<[Electron.Event, BrowserWindow]>(
 const windowAllClosed$ = fromEventPattern(
   (f) => app.on("window-all-closed", f),
   (f) => app.off("window-all-closed", f),
-);
-const [primary$, duplicate$] = partition(
-  defer(() => of(app.requestSingleInstanceLock())),
-  (i) => i,
 );
 const secondInstance$ = fromEventPattern(
   (f) => app.on("second-instance", f),
@@ -92,21 +110,34 @@ const resource$ = using(
   () => NEVER.pipe(startWith(null), takeUntil(willQuit$)),
 ).pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
-duplicate$.subscribe(() => {
-  app.quit();
+const app$ = defer(() => {
+  const hasLocked = app.requestSingleInstanceLock();
+
+  if (!hasLocked) {
+    return of(null).pipe(
+      tap(() => {
+        console.warn(
+          "Another instance of the app is already running. This instance will be closed.",
+        );
+        app.quit();
+      }),
+    );
+  }
+
+  return concat(whenReady$.pipe(ignoreElements()), resource$).pipe(
+    tap(() => createWindow()),
+    catchError((error) => {
+      console.error(error);
+
+      return EMPTY;
+    }),
+    finalize(() => {}),
+  );
 });
 
-concat(
-  primary$.pipe(ignoreElements()),
-  whenReady$.pipe(ignoreElements()),
-  resource$,
-).subscribe(() => {
-  createWindow();
-});
+app$.subscribe();
 
-secondInstance$.subscribe(() => {
-  createWindow();
-});
+secondInstance$.pipe(tap(() => createWindow())).subscribe();
 
 browserWindowCreated$
   .pipe(
