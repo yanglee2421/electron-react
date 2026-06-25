@@ -110,26 +110,23 @@ export const Component = () => {
 
     return (
       <>
-        {logQuery.data.rows
-          .slice()
-          .reverse()
-          .map((log) => (
-            <Grid size={12} key={log.id}>
-              <Card variant="outlined">
-                <CardHeader
-                  title={log.title}
-                  subheader={log.date?.toLocaleString()}
-                  action={<DeleteButton id={log.id} />}
-                />
-                <CardContent
-                  sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
-                >
-                  {log.message}
-                </CardContent>
-                {log.json && <CodeBlock code={log.json} />}
-              </Card>
-            </Grid>
-          ))}
+        {logQuery.data.rows.map((log) => (
+          <Grid size={12} key={log.id}>
+            <Card variant="outlined">
+              <CardHeader
+                title={log.title}
+                subheader={log.date?.toLocaleString()}
+                action={<DeleteButton id={log.id} />}
+              />
+              <CardContent
+                sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+              >
+                {log.message}
+              </CardContent>
+              {log.json && <CodeBlock code={log.json} />}
+            </Card>
+          </Grid>
+        ))}
       </>
     );
   };

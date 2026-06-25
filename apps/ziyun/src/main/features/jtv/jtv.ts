@@ -375,9 +375,8 @@ export class JTV {
       .root()
       .detections()
       .equal("szIDsWheel", record.zh)
-      .equal("szIDsMake", record.CZZZDW)
-      .equal("szTMMake", record.CZZZRQ)
-      .date("tmnow", new Date(startDate), new Date(endDate));
+      .date("tmnow", new Date(startDate), new Date(endDate))
+      .orderBy("tmnow", "desc");
 
     const detection = atFirstOrThrow(
       detections.rows,
@@ -484,6 +483,8 @@ export class JTV {
         zh: data.ZH,
         date: new Date(),
         isUploaded: false,
+        CZZZDW: data.CZZZDW,
+        CZZZRQ: data.CZZZRQ,
       })
       .returning();
   }

@@ -105,6 +105,7 @@ export class Logger {
           ),
         ),
       )
+      .orderBy(sql.desc(schema.logTable.date))
       .offset(pageIndex * pageSize)
       .limit(pageSize);
 

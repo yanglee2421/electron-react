@@ -11,6 +11,8 @@ export interface JTVNormalizeResponse {
   MCZZRQ: string;
   SCZZDW: string;
   SCZZRQ: string;
+  ZTX?: string;
+  YTX?: string;
 }
 
 export interface IPCContract {

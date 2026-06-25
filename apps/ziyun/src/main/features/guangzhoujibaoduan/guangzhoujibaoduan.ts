@@ -281,9 +281,8 @@ export class JTV_HMIS_Guangzhoujibaoduan {
       .root()
       .detections()
       .equal("szIDsWheel", record.zh)
-      .equal("szIDsMake", record.CZZZDW)
-      .equal("szTMMake", record.CZZZRQ)
-      .date("tmnow", new Date(startDate), new Date(endDate));
+      .date("tmnow", new Date(startDate), new Date(endDate))
+      .orderBy("tmnow", "desc");
 
     const detection = atFirstOrThrow(
       detections.rows,
