@@ -24,49 +24,49 @@ container.register({
   cmd: asClass(Cmd).singleton(),
   db: asClass(DB)
     .singleton()
-    .disposer((db) => db.dispose()),
+    .disposer((i) => i.dispose()),
   externalDB: asClass(ExternalDB)
     .singleton()
-    .disposer((instance) => instance.dispose()),
+    .disposer((i) => i.dispose()),
   guangzhoubei: asClass(Guangzhoubei)
     .singleton()
-    .disposer((instance) => instance.dispose()),
+    .disposer((i) => i.dispose()),
   guangzhoujibaoduan: asClass(JTV_HMIS_Guangzhoujibaoduan)
     .singleton()
-    .disposer((instance) => instance.dispose()),
+    .disposer((i) => i.dispose()),
   hmisProxy: asClass(HmisProxy)
     .singleton()
-    .disposer((hmisProxy) => hmisProxy.dispose()),
+    .disposer((i) => i.dispose()),
   hxzy: asClass(Hxzy)
     .singleton()
-    .disposer((instance) => instance.dispose()),
+    .disposer((i) => i.dispose()),
   image: asClass(ImageModule)
     .singleton()
-    .disposer((image) => image.dispose()),
+    .disposer((i) => i.dispose()),
   jtv: asClass(JTV)
     .singleton()
-    .disposer((instance) => instance.dispose()),
+    .disposer((i) => i.dispose()),
   kh: asClass(KH)
     .singleton()
-    .disposer((instance) => instance.dispose()),
+    .disposer((i) => i.dispose()),
   kv: asClass(KV)
     .singleton()
-    .disposer((kv) => kv.dispose()),
+    .disposer((i) => i.dispose()),
   logger: asClass(Logger)
     .singleton()
-    .disposer((logger) => logger.dispose()),
+    .disposer((i) => i.dispose()),
   mdb: asClass(MDB)
     .singleton()
-    .disposer((mdb) => mdb.dispose()),
+    .disposer((i) => i.dispose()),
   plc: asClass(PLC)
     .singleton()
-    .disposer((plc) => plc.dispose()),
+    .disposer((i) => i.dispose()),
   printer: asClass(Printer)
     .singleton()
-    .disposer((printer) => printer.dispose()),
+    .disposer((i) => i.dispose()),
   profile: asClass(Profile)
     .singleton()
-    .disposer((profile) => profile.dispose()),
+    .disposer((i) => i.dispose()),
 
   appProtocol: asClass(AppProtocol)
     .singleton()
@@ -76,8 +76,8 @@ container.register({
     .disposer((i) => i.dispose()),
   appTray: asClass(AppTray)
     .singleton()
-    .disposer((instance) => instance.dispose()),
+    .disposer((i) => i.dispose()),
   appWindow: asClass(AppWindow)
     .singleton()
-    .disposer((win) => win.dispose()),
+    .disposer((i) => i.dispose()),
 });

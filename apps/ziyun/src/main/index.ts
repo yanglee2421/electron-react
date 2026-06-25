@@ -168,7 +168,7 @@ const resource$ = using(
 defer(() => {
   const hasLock = app.requestSingleInstanceLock();
 
-  // 当前实例为第二实例则触发自杀
+  // If this instance is the second instance, quit immediately
   if (!hasLock) {
     return of(false).pipe(
       tap(() => {
@@ -180,7 +180,7 @@ defer(() => {
     );
   }
 
-  // 当前实例为第一实例则进入启动流程
+  // If this instance is the first instance, proceed with startup
   return concat(whenReady$.pipe(ignoreElements()), resource$).pipe(
     tap(() => {
       Menu.setApplicationMenu(null);
@@ -207,10 +207,7 @@ defer(() => {
 
       return EMPTY;
     }),
-    finalize(() => {
-      container.dispose();
-      app.quit();
-    }),
+    finalize(() => app.quit()),
   );
 }).subscribe();
 
