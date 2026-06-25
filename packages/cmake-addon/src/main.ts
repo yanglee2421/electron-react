@@ -2,7 +2,8 @@ import module from "node:module";
 import path from "node:path";
 import url from "node:url";
 
-const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const require = module.createRequire(import.meta.url);
 
 interface CmakeAddonParams {
@@ -28,7 +29,7 @@ export const cmakeAddon = require(
 
 export default cmakeAddon;
 
-export const WindowsMessages = {
+export const WindowsMessages = Object.freeze({
   WM_SETTEXT: 0x000c,
   WM_GETTEXT: 0x000d,
   WM_GETTEXTLENGTH: 0x000e,
@@ -41,4 +42,4 @@ export const WindowsMessages = {
   CB_GETCURSEL: 0x0147,
   WM_LBUTTONDOWN: 0x0201,
   WM_LBUTTONUP: 0x0202,
-} as const;
+});
