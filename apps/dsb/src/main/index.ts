@@ -129,11 +129,9 @@ const resource$ = using(
     console.log("subscribe", app.getPath("userData"));
 
     const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
-
     container.register({ DB_PATH: asValue(DB_PATH) });
 
     const { appDb } = container.cradle;
-
     void appDb;
 
     return {
@@ -168,7 +166,9 @@ const app$ = defer(() => {
 
       return EMPTY;
     }),
-    finalize(() => {}),
+    finalize(() => {
+      app.quit();
+    }),
   );
 });
 
@@ -203,8 +203,6 @@ browserWindowCreated$
   .pipe(
     map(([, win]) => win),
     filter((win) => !win.isDestroyed()),
-    tap((win) => {
-      optimizer.watchWindowShortcuts(win);
-    }),
+    tap((win) => optimizer.watchWindowShortcuts(win)),
   )
   .subscribe();
