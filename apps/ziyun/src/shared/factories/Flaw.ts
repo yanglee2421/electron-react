@@ -252,6 +252,7 @@ class FlawCTQuery<TFlaw extends Flaw> implements ChannelQuery {
   }
   flawX(no: number = 1) {
     const flaw = this.flaw(no);
+    console.log(flaw);
 
     if (!flaw) {
       return "";
