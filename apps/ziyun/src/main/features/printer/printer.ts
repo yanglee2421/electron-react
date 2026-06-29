@@ -103,7 +103,13 @@ export class Printer {
       .orderBy("tmnow", "desc")
       .limit(1);
 
-    const firstRecord = records.rows.at(0);
+    const firstRecord = records.rows
+      .toSorted(
+        (a, b) =>
+          (a.tmnow?.getTime() || Number.POSITIVE_INFINITY) -
+          (b.tmnow?.getTime() || Number.POSITIVE_INFINITY),
+      )
+      .at(0);
 
     if (firstRecord) {
       const firstDay = dayjs(firstRecord.tmnow).toDate().getTime();
