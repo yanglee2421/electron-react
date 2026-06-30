@@ -1,13 +1,10 @@
-import type { Filter, User, Verify } from "#main/features/mdb/types";
-import {
-  fetchDataFromAppDB,
-  fetchDataFromRootDB,
-} from "#renderer/api/fetch_preload";
+import type { Verify } from "#main/features/mdb/types";
 import { useUploadCHR501 } from "#renderer/api/kh";
-import { Loading } from "#renderer/components/Loading";
+import { fetchUser, fetchVerifies } from "#renderer/api/mdb";
+import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { RefreshOutlined, Upload } from "@mui/icons-material";
+import { RefreshOutlined, UploadRounded } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -18,8 +15,6 @@ import {
   Grid,
   IconButton,
   LinearProgress,
-  Link,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -41,12 +36,37 @@ import {
 import { useNotifications } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
-import { Link as RouterLink } from "react-router";
-import { useSessionStore } from "./hooks";
 
-const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
+interface Upload501Props {
+  id: string;
+}
+
+const Upload501 = (props: Upload501Props) => {
+  const upload501 = useUploadCHR501();
+  const notifications = useNotifications();
+
+  return (
+    <IconButton
+      onClick={() => {
+        upload501.mutate(props.id, {
+          onError: (error) => {
+            notifications.show(error.message, { severity: "error" });
+          },
+          onSuccess: () => {
+            notifications.show("校验记录已上传", { severity: "success" });
+          },
+        });
+      }}
+      disabled={upload501.isPending}
+    >
+      <PendingIcon isPending={upload501.isPending}>
+        <UploadRounded />
+      </PendingIcon>
+    </IconButton>
+  );
+};
+
 const columnHelper = createColumnHelper<Verify>();
-
 const columns = [
   columnHelper.accessor("szIDs", {
     header: "ID",
@@ -54,23 +74,10 @@ const columns = [
     cell: ({ getValue }) => {
       const szID = getValue();
 
-      return (
-        <Link component={RouterLink} to={`/kh/verify/${szID}`}>
-          #{szIDToId(szID)}
-        </Link>
-      );
+      return <Upload501 id={szID} />;
     },
   }),
-  columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
-  // columnHelper.accessor("szIDsFirst", {
-  //   header: "首装单位",
-  //   footer: "首装单位",
-  // }),
-  // columnHelper.accessor("szTMFirst", {
-  //   header: "首装时间",
-  //   footer: "首装时间",
-  // }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
   columnHelper.accessor("tmNow", {
     header: "时间",
@@ -82,87 +89,82 @@ const columns = [
       return new Date(tmnow).toLocaleString();
     },
   }),
-  columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
-  columnHelper.display({
-    id: "operation",
-    header: "操作",
-    footer: "操作",
-    cell: ({ row }) => {
-      return <UploadButton szIDs={row.original.szIDs} />;
-    },
-  }),
 ];
 
-const UploadButton = ({ szIDs }: { szIDs: string }) => {
-  const uploadCHR501 = useUploadCHR501();
-  const notification = useNotifications();
-
-  return (
-    <IconButton
-      onClick={() => {
-        uploadCHR501.mutate(szIDs, {
-          onError: (error) => {
-            notification.show(error.message, { severity: "error" });
-          },
-          onSuccess: () => {
-            notification.show("上传成功", { severity: "success" });
-          },
-        });
-      }}
-      disabled={uploadCHR501.isPending}
-    >
-      <Upload />
-    </IconButton>
-  );
-};
-
-type DataGridProps = {
-  data?: Verify[];
-  isPending?: boolean;
-  isError?: boolean;
-  error?: Error | null;
-  isFetching?: boolean;
-};
-
-const DataGrid = (props: DataGridProps) => {
+export const Component = () => {
   "use no memo";
-  const [selected, setSelected] = React.useState("");
+  const [date, setDate] = React.useState<dayjs.Dayjs | null>(() => dayjs());
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(100);
+  const [user, setUser] = React.useState("");
+  const [zx, setZx] = React.useState("");
 
-  const data = React.useMemo(() => props.data || [], [props.data]);
+  const userDataListId = React.useId();
+  const zxDataListId = React.useId();
+
+  const query = useQuery(
+    fetchVerifies({
+      pageIndex,
+      pageSize,
+      date: date?.toISOString() || "",
+      user,
+      zx,
+    }),
+  );
+
+  const usersQuery = useQuery(fetchUser({ pageIndex: 0, pageSize: 1000 }));
 
   const table = useReactTable({
-    columns,
-    data,
-    getRowId: (row) => row.szIDs,
-
     getCoreRowModel: getCoreRowModel(),
+    columns,
+    data: query.data?.rows || [],
+    getRowId: (row) => row.szIDs,
     manualPagination: true,
   });
 
+  const renderUserSelect = () => {
+    if (!usersQuery.isSuccess) {
+      return null;
+    }
+
+    return (
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <TextField
+          fullWidth
+          value={user}
+          onChange={(e) => {
+            setUser(e.target.value);
+          }}
+          label="检测员"
+          slotProps={{ htmlInput: { list: userDataListId } }}
+        />
+        <datalist id={userDataListId}>
+          {usersQuery.data.rows.map((user) => (
+            <option key={user.szUid} value={user.szUid}></option>
+          ))}
+        </datalist>
+      </Grid>
+    );
+  };
+
   const renderRow = () => {
-    if (props.isPending) {
+    if (query.isPending) {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            <Loading
-              slotProps={{
-                box: {
-                  padding: 0,
-                },
-              }}
-            />
+            <Loading slotProps={{ box: { padding: 0 } }} />
           </TableCell>
         </TableRow>
       );
     }
 
-    if (props.isError) {
+    if (query.isError) {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length}>
             <Alert severity="error" variant="filled">
               <AlertTitle>错误</AlertTitle>
-              {props.error?.message}
+              {query.error?.message}
             </Alert>
           </TableCell>
         </TableRow>
@@ -180,13 +182,7 @@ const DataGrid = (props: DataGridProps) => {
     }
 
     return table.getRowModel().rows.map((row) => (
-      <TableRow
-        key={row.id}
-        selected={Object.is(selected, row.id)}
-        hover
-        sx={{ cursor: "pointer" }}
-        onClick={() => setSelected(row.id)}
-      >
+      <TableRow key={row.id}>
         {row.getVisibleCells().map((cell) => (
           <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -197,8 +193,56 @@ const DataGrid = (props: DataGridProps) => {
   };
 
   return (
-    <>
-      {props.isFetching && <LinearProgress />}
+    <Card>
+      <ScrollToTopButton />
+      <CardHeader
+        title="日常校验"
+        action={
+          <IconButton
+            onClick={() => query.refetch()}
+            disabled={query.isRefetching}
+          >
+            <RefreshOutlined />
+          </IconButton>
+        }
+      />
+      <CardContent>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <DatePicker
+              value={date}
+              onChange={(day) => {
+                setDate(day);
+              }}
+              slotProps={{
+                textField: {
+                  label: "日期",
+                  fullWidth: true,
+                },
+                field: {
+                  clearable: true,
+                },
+              }}
+            />
+          </Grid>
+          {renderUserSelect()}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="轴型"
+              value={zx}
+              onChange={(e) => setZx(e.target.value)}
+              fullWidth
+              slotProps={{ htmlInput: { list: zxDataListId } }}
+            />
+            <datalist id={zxDataListId}>
+              <option value={"RE2B"}></option>
+              <option value={"RD2"}></option>
+            </datalist>
+          </Grid>
+        </Grid>
+      </CardContent>
+      <Divider />
+      {query.isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
           <TableHead>
@@ -238,210 +282,20 @@ const DataGrid = (props: DataGridProps) => {
           </TableFooter>
         </Table>
       </TableContainer>
-    </>
-  );
-};
-
-export const Component = () => {
-  const selectDate = useSessionStore((s) => s.date);
-  const pageIndex = useSessionStore((s) => s.pageIndex);
-  const pageSize = useSessionStore((s) => s.pageSize);
-  const username = useSessionStore((s) => s.username);
-  const whModel = useSessionStore((s) => s.whModel);
-  const idsWheel = useSessionStore((s) => s.idsWheel);
-  const result = useSessionStore((s) => s.result);
-
-  const date = selectDate ? dayjs(selectDate) : null;
-  const filters: Filter[] = [
-    date
-      ? {
-          type: "date" as const,
-          field: "tmNow",
-          startAt: date.startOf("day").toISOString(),
-          endAt: date.endOf("day").toISOString(),
-        }
-      : false,
-    {
-      type: "like" as const,
-      field: "szUsername",
-      value: username,
-    },
-    {
-      type: "like" as const,
-      field: "szWHModel",
-      value: whModel,
-    },
-    {
-      type: "like" as const,
-      field: "szIDsWheel",
-      value: idsWheel,
-    },
-    {
-      type: "like" as const,
-      field: "szResult",
-      value: result,
-    },
-  ].filter((i) => typeof i === "object");
-
-  const query = useQuery(
-    fetchDataFromRootDB<Verify>({
-      tableName: "verifies",
-      pageIndex,
-      pageSize,
-      filters,
-    }),
-  );
-
-  const usersQuery = useQuery(
-    fetchDataFromAppDB<User>({
-      tableName: "users",
-      pageIndex: 0,
-      pageSize: 100,
-    }),
-  );
-
-  const set = useSessionStore.setState;
-
-  const setDate = (day: dayjs.Dayjs | null) =>
-    set((d) => {
-      d.date = day ? day.toISOString() : null;
-    });
-
-  const setPageIndex = (page: number) =>
-    set((d) => {
-      d.pageIndex = page;
-    });
-
-  const setPageSize = (pageSize: number) =>
-    set((d) => {
-      d.pageSize = pageSize;
-    });
-
-  const setWHModel = (whModel: string) =>
-    set((d) => {
-      d.whModel = whModel;
-    });
-
-  const setIdsWheel = (idsWheel: string) =>
-    set((d) => {
-      d.idsWheel = idsWheel;
-    });
-
-  const setResult = (result: string) =>
-    set((d) => {
-      d.result = result;
-    });
-
-  const renderUserSelect = () => {
-    if (!usersQuery.isSuccess) return null;
-
-    return (
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <TextField
-          fullWidth
-          value={username}
-          onChange={(e) => {
-            set((d) => {
-              d.username = e.target.value;
-            });
-          }}
-          label="检测员"
-          select
-        >
-          {usersQuery.data.rows.map((user) => (
-            <MenuItem key={user.szUid} value={user.szUid}>
-              {user.szUid}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Grid>
-    );
-  };
-
-  return (
-    <>
-      <ScrollToTopButton />
-      <Card>
-        <CardHeader
-          title="日常校验"
-          action={
-            <IconButton
-              onClick={() => query.refetch()}
-              disabled={query.isRefetching}
-            >
-              <RefreshOutlined />
-            </IconButton>
-          }
-        />
-        <CardContent>
-          <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <DatePicker
-                value={date}
-                onChange={(day) => {
-                  setDate(day);
-                }}
-                slotProps={{
-                  textField: {
-                    label: "日期",
-                    fullWidth: true,
-                  },
-                  field: {
-                    clearable: true,
-                  },
-                }}
-              />
-            </Grid>
-            {renderUserSelect()}
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="轴型"
-                value={whModel}
-                onChange={(e) => setWHModel(e.target.value)}
-                fullWidth
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="轴号"
-                value={idsWheel}
-                onChange={(e) => setIdsWheel(e.target.value)}
-                fullWidth
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="检测结果"
-                value={result}
-                onChange={(e) => setResult(e.target.value)}
-                fullWidth
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-        <Divider />
-        <DataGrid
-          data={query.data?.rows}
-          isPending={query.isPending}
-          isError={query.isError}
-          error={query.error}
-          isFetching={query.isFetching}
-        />
-        <TablePagination
-          component={"div"}
-          count={query.data?.total || 0}
-          page={pageIndex}
-          rowsPerPage={pageSize}
-          rowsPerPageOptions={rowsPerPageOptions}
-          onPageChange={(_, page) => {
-            setPageIndex(page);
-          }}
-          onRowsPerPageChange={(e) => {
-            setPageSize(Number.parseInt(e.target.value, 10));
-          }}
-          labelRowsPerPage="每页行数"
-        />
-      </Card>
-    </>
+      <TablePagination
+        component={"div"}
+        count={query.data?.count || 0}
+        page={pageIndex}
+        rowsPerPage={pageSize}
+        rowsPerPageOptions={rowsPerPageOptions}
+        onPageChange={(_, page) => {
+          setPageIndex(page);
+        }}
+        onRowsPerPageChange={(e) => {
+          setPageSize(Number.parseInt(e.target.value, 10));
+        }}
+        labelRowsPerPage="每页行数"
+      />
+    </Card>
   );
 };

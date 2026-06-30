@@ -170,7 +170,6 @@ export const routes: RouteObject[] = [
                       import("#renderer/pages/hxzy_verifies/component"),
                   },
                 ],
-                loader: async () => {},
               },
               {
                 path: "jtv",
@@ -185,7 +184,6 @@ export const routes: RouteObject[] = [
                       import("#renderer/pages/jtv_hmis_setting/component"),
                   },
                 ],
-                loader: async () => {},
               },
               {
                 path: "jtv_guangzhoubei",
@@ -201,7 +199,6 @@ export const routes: RouteObject[] = [
                       import("#renderer/pages/jtv_hmis_guangzhoubei_setting/component"),
                   },
                 ],
-                loader: async () => {},
               },
               {
                 path: "jtv_guangzhoujibaoduan",
@@ -217,7 +214,6 @@ export const routes: RouteObject[] = [
                       import("#renderer/pages/jtv_hmis_guangzhoujibaoduan_setting/component"),
                   },
                 ],
-                loader: async () => {},
               },
               {
                 path: "kh",
@@ -233,33 +229,13 @@ export const routes: RouteObject[] = [
                   },
                   {
                     path: "verify",
-                    children: [
-                      {
-                        index: true,
-                        lazy: () =>
-                          import("#renderer/pages/kh_hmis_verify/component"),
-                      },
-                      {
-                        path: ":id",
-                        lazy: () =>
-                          import("#renderer/pages/kh_hmis_verify_show/component"),
-                      },
-                    ],
+                    lazy: () =>
+                      import("#renderer/pages/kh_hmis_verify/component"),
                   },
                   {
                     path: "quartor",
-                    children: [
-                      {
-                        index: true,
-                        lazy: () =>
-                          import("#renderer/pages/kh_hmis_quartor/component"),
-                      },
-                      {
-                        path: ":id",
-                        lazy: () =>
-                          import("#renderer/pages/kh_hmis_quartors_show/component"),
-                      },
-                    ],
+                    lazy: () =>
+                      import("#renderer/pages/kh_hmis_quartor/component"),
                   },
                   {
                     path: "annual",
@@ -272,7 +248,6 @@ export const routes: RouteObject[] = [
                       import("#renderer/pages/kh_hmis_setting/component"),
                   },
                 ],
-                loader: async () => {},
               },
             ],
           },

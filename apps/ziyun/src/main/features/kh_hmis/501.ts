@@ -2,7 +2,7 @@ export interface I501Record {
   /**
    * 主键，uuid
    */
-  id: string;
+  // id: string;
   /**
    * 写入时间
    */
