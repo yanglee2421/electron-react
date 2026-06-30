@@ -544,59 +544,160 @@ export class KH {
   }
 
   async resolveCHR501InputParams(id: string): Promise<I501Record> {
+    const { rows } = await this.mdb.root().verifies().equal("szIDs", id);
+    const firstRecord = rows.at(0);
+
+    if (!firstRecord) {
+      throw new Error(`未能找到#${id}对应的记录`);
+    }
+
+    const corporation = await this.mdb.app().corporation();
+    const { rows: detectors } = await this.mdb
+      .app()
+      .detectors()
+      .equal("szwheel", firstRecord.szWHModel || "");
+    const { rows: datas } = await this.mdb
+      .root()
+      .verifies_data()
+      .equal("opid", firstRecord.szIDs);
+
+    const detectorGroup = mapGroupBy(
+      detectors,
+      (i) => `${i.nBoard}-${i.nChannel}`,
+    );
+
+    const dataGroup = mapGroupBy(datas, (i) => `${i.nBoard}-${i.nChannel}`);
+
+    const images = await this.upload501ImagesByFtp(
+      firstRecord.szIDs,
+      corporation.DeviceNO || "",
+    );
+
     return {
-      xrsj: "",
-      sbbh: "",
-      sbmc: "",
-      ggxh: "",
-      zzcj: "",
-      dwmc: "",
-      jyrq: "",
-      swmkxh: "",
+      xrsj: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+      sbbh: corporation.DeviceNO || "",
+      sbmc: corporation.DeviceName || "",
+      ggxh: corporation.DeviceType || "",
+      zzcj: "紫云公司",
+      dwmc: corporation.Factory || "",
+      jyrq: dayjs(firstRecord.tmNow).format("YYYY-MM-DD HH:mm:ss"),
+      swmkxh: firstRecord.szWHModel || "",
 
       // 左01
-      ztdbh1: "",
-      zzsj1: "",
-      zjy1: "",
-      zbc1: "",
-      zts1: "",
-      zqx1_1: "",
-      zqx1_2: "",
-      zqx1_3: "",
-      zqx1_4: "",
-      zqx1_5: "",
-      zqx1_6: "",
-      zqx1_7: "",
-      zqx1_8: "",
-      zqx1_9: "",
-      zqx1_10: "",
-      zqx1_11: "",
-      zqx1_12: "",
-      zqx1_13: "",
-      zqx1_14: "",
-      zqx1_15: "",
+      ztdbh1: detectorGroup.get("0-3")?.at(0)?.szName || "",
+      zzsj1: divideBy10(detectorGroup.get("0-3")?.at(0)?.nWAngle || 0),
+      zjy1: divideBy10(dataGroup.get(`0-3`)?.at(0)?.nAtten || 0),
+      zbc1: divideBy10(detectorGroup.get("0-3")?.at(0)?.nDBSub || 0),
+      zts1: divideBy10(
+        (dataGroup.get(`0-3`)?.at(0)?.nAtten || 0) +
+          (detectorGroup.get("0-3")?.at(0)?.nDBSub || 0),
+      ),
+      zqx1_1: mathFormat(dataGroup.get(`0-3`)?.at(0)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_2: mathFormat(dataGroup.get(`0-3`)?.at(1)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_3: mathFormat(dataGroup.get(`0-3`)?.at(2)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_4: mathFormat(dataGroup.get(`0-3`)?.at(3)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_5: mathFormat(dataGroup.get(`0-3`)?.at(4)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_6: mathFormat(dataGroup.get(`0-3`)?.at(5)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_7: mathFormat(dataGroup.get(`0-3`)?.at(6)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_8: mathFormat(dataGroup.get(`0-3`)?.at(7)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_9: mathFormat(dataGroup.get(`0-3`)?.at(8)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_10: mathFormat(dataGroup.get(`0-3`)?.at(9)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_11: mathFormat(dataGroup.get(`0-3`)?.at(10)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx1_12: dataGroup.get(`0-3`)?.at(11)?.fltValueX
+        ? mathFormat(dataGroup.get(`0-3`)?.at(11)?.fltValueX || 0, {
+            precision: 0,
+          })
+        : "",
+      zqx1_13: dataGroup.get(`0-3`)?.at(12)?.fltValueX
+        ? mathFormat(dataGroup.get(`0-3`)?.at(12)?.fltValueX || 0, {
+            precision: 0,
+          })
+        : "",
+      zqx1_14: dataGroup.get(`0-3`)?.at(13)?.fltValueX
+        ? mathFormat(dataGroup.get(`0-3`)?.at(13)?.fltValueX || 0, {
+            precision: 0,
+          })
+        : "",
+      zqx1_15: mathFormat(dataGroup.get(`0-3`)?.at(14)?.fltValueX || 0, {
+        precision: 0,
+      }),
 
       // 左02
-      ztdbh2: "",
-      zzsj2: "",
-      zjy2: "",
-      zbc2: "",
-      zts2: "",
-      zqx2_1: "",
-      zqx2_2: "",
-      zqx2_3: "",
-      zqx2_4: "",
-      zqx2_5: "",
-      zqx2_6: "",
-      zqx2_7: "",
-      zqx2_8: "",
-      zqx2_9: "",
-      zqx2_10: "",
-      zqx2_11: "",
-      zqx2_12: "",
-      zqx2_13: "",
-      zqx2_14: "",
-      zqx2_15: "",
+      ztdbh2: detectorGroup.get("0-4")?.at(0)?.szName || "",
+      zzsj2: divideBy10(detectorGroup.get("0-4")?.at(0)?.nWAngle || 0),
+      zjy2: divideBy10(dataGroup.get(`0-4`)?.at(0)?.nAtten || 0),
+      zbc2: divideBy10(detectorGroup.get("0-4")?.at(0)?.nDBSub || 0),
+      zts2: divideBy10(
+        (dataGroup.get(`0-4`)?.at(0)?.nAtten || 0) +
+          (detectorGroup.get("0-4")?.at(0)?.nDBSub || 0),
+      ),
+      zqx2_1: mathFormat(dataGroup.get(`0-4`)?.at(0)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_2: mathFormat(dataGroup.get(`0-4`)?.at(1)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_3: mathFormat(dataGroup.get(`0-4`)?.at(2)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_4: mathFormat(dataGroup.get(`0-4`)?.at(3)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_5: mathFormat(dataGroup.get(`0-4`)?.at(4)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_6: mathFormat(dataGroup.get(`0-4`)?.at(5)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_7: mathFormat(dataGroup.get(`0-4`)?.at(6)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_8: mathFormat(dataGroup.get(`0-4`)?.at(7)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_9: mathFormat(dataGroup.get(`0-4`)?.at(8)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_10: mathFormat(dataGroup.get(`0-4`)?.at(9)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_11: mathFormat(dataGroup.get(`0-4`)?.at(10)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_12: mathFormat(dataGroup.get(`0-4`)?.at(11)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_13: mathFormat(dataGroup.get(`0-4`)?.at(12)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_14: mathFormat(dataGroup.get(`0-4`)?.at(13)?.fltValueX || 0, {
+        precision: 0,
+      }),
+      zqx2_15: mathFormat(dataGroup.get(`0-4`)?.at(14)?.fltValueX || 0, {
+        precision: 0,
+      }),
 
       // 左A3
       ztdbh3: "",
@@ -726,7 +827,45 @@ export class KH {
       yct_qx1_2: "",
       yct_qx1_3: "",
 
+      // 设备无以下通道，直接传空
+      zzj_tdbh2: "",
+      zzj_zsj2: "",
+      zzj_jy2: "",
+      zzj_bc2: "",
+      zzj_ts2: "",
+      zzj_qx2_1: "",
+      zzj_qx2_2: "",
+      zzj_qx2_3: "",
+
+      zzj_tdbh3: "",
+      zzj_zsj3: "",
+      zzj_jy3: "",
+      zzj_bc3: "",
+      zzj_ts3: "",
+      zzj_qx3_1: "",
+      zzj_qx3_2: "",
+      zzj_qx3_3: "",
+
+      yzj_tdbh2: "",
+      yzj_zsj2: "",
+      yzj_jy2: "",
+      yzj_bc2: "",
+      yzj_ts2: "",
+      yzj_qx2_1: "",
+      yzj_qx2_2: "",
+      yzj_qx2_3: "",
+
+      yzj_tdbh3: "",
+      yzj_zsj3: "",
+      yzj_jy3: "",
+      yzj_bc3: "",
+      yzj_ts3: "",
+      yzj_qx3_1: "",
+      yzj_qx3_2: "",
+      yzj_qx3_3: "",
+
       ztdbh4: "",
+      zzsj4: "",
       ztdbh5: "",
       ztdbh6: "",
       ztdbh7: "",
@@ -738,7 +877,6 @@ export class KH {
       ztdbh13: "",
       ztdbh14: "",
       ztdbh15: "",
-
       ytdbh4: "",
       ytdbh5: "",
       ytdbh6: "",
@@ -751,8 +889,6 @@ export class KH {
       ytdbh13: "",
       ytdbh14: "",
       ytdbh15: "",
-
-      zzsj4: "",
       zzsj5: "",
       zzsj6: "",
       zzsj7: "",
@@ -764,7 +900,6 @@ export class KH {
       zzsj13: "",
       zzsj14: "",
       zzsj15: "",
-
       yzsj4: "",
       yzsj5: "",
       yzsj6: "",
@@ -777,7 +912,6 @@ export class KH {
       yzsj13: "",
       yzsj14: "",
       yzsj15: "",
-
       zjy4: "",
       zjy5: "",
       zjy6: "",
@@ -790,7 +924,6 @@ export class KH {
       zjy13: "",
       zjy14: "",
       zjy15: "",
-
       yjy4: "",
       yjy5: "",
       yjy6: "",
@@ -803,7 +936,6 @@ export class KH {
       yjy13: "",
       yjy14: "",
       yjy15: "",
-
       zbc4: "",
       zbc5: "",
       zbc6: "",
@@ -816,7 +948,6 @@ export class KH {
       zbc13: "",
       zbc14: "",
       zbc15: "",
-
       ybc4: "",
       ybc5: "",
       ybc6: "",
@@ -829,7 +960,6 @@ export class KH {
       ybc13: "",
       ybc14: "",
       ybc15: "",
-
       zts4: "",
       zts5: "",
       zts6: "",
@@ -842,7 +972,6 @@ export class KH {
       zts13: "",
       zts14: "",
       zts15: "",
-
       yts4: "",
       yts5: "",
       yts6: "",
@@ -855,7 +984,6 @@ export class KH {
       yts13: "",
       yts14: "",
       yts15: "",
-
       zqx4_1: "",
       zqx4_2: "",
       zqx4_3: "",
@@ -871,7 +999,6 @@ export class KH {
       zqx4_13: "",
       zqx4_14: "",
       zqx4_15: "",
-
       yqx4_1: "",
       yqx4_2: "",
       yqx4_3: "",
@@ -887,7 +1014,6 @@ export class KH {
       yqx4_13: "",
       yqx4_14: "",
       yqx4_15: "",
-
       zqx5_1: "",
       zqx5_2: "",
       zqx5_3: "",
@@ -903,7 +1029,6 @@ export class KH {
       zqx5_13: "",
       zqx5_14: "",
       zqx5_15: "",
-
       yqx5_1: "",
       yqx5_2: "",
       yqx5_3: "",
@@ -919,7 +1044,6 @@ export class KH {
       yqx5_13: "",
       yqx5_14: "",
       yqx5_15: "",
-
       zqx6_1: "",
       zqx6_2: "",
       zqx6_3: "",
@@ -935,7 +1059,6 @@ export class KH {
       zqx6_13: "",
       zqx6_14: "",
       zqx6_15: "",
-
       yqx6_1: "",
       yqx6_2: "",
       yqx6_3: "",
@@ -951,7 +1074,6 @@ export class KH {
       yqx6_13: "",
       yqx6_14: "",
       yqx6_15: "",
-
       zqx7_1: "",
       zqx7_2: "",
       zqx7_3: "",
@@ -967,7 +1089,6 @@ export class KH {
       zqx7_13: "",
       zqx7_14: "",
       zqx7_15: "",
-
       yqx7_1: "",
       yqx7_2: "",
       yqx7_3: "",
@@ -983,7 +1104,6 @@ export class KH {
       yqx7_13: "",
       yqx7_14: "",
       yqx7_15: "",
-
       zqx8_1: "",
       zqx8_2: "",
       zqx8_3: "",
@@ -999,7 +1119,6 @@ export class KH {
       zqx8_13: "",
       zqx8_14: "",
       zqx8_15: "",
-
       yqx8_1: "",
       yqx8_2: "",
       yqx8_3: "",
@@ -1015,7 +1134,6 @@ export class KH {
       yqx8_13: "",
       yqx8_14: "",
       yqx8_15: "",
-
       zqx9_1: "",
       zqx9_2: "",
       zqx9_3: "",
@@ -1031,7 +1149,6 @@ export class KH {
       zqx9_13: "",
       zqx9_14: "",
       zqx9_15: "",
-
       yqx9_1: "",
       yqx9_2: "",
       yqx9_3: "",
@@ -1047,7 +1164,6 @@ export class KH {
       yqx9_13: "",
       yqx9_14: "",
       yqx9_15: "",
-
       zqx10_1: "",
       zqx10_2: "",
       zqx10_3: "",
@@ -1063,7 +1179,6 @@ export class KH {
       zqx10_13: "",
       zqx10_14: "",
       zqx10_15: "",
-
       yqx10_1: "",
       yqx10_2: "",
       yqx10_3: "",
@@ -1079,7 +1194,6 @@ export class KH {
       yqx10_13: "",
       yqx10_14: "",
       yqx10_15: "",
-
       zqx11_1: "",
       zqx11_2: "",
       zqx11_3: "",
@@ -1095,7 +1209,6 @@ export class KH {
       zqx11_13: "",
       zqx11_14: "",
       zqx11_15: "",
-
       yqx11_1: "",
       yqx11_2: "",
       yqx11_3: "",
@@ -1111,7 +1224,6 @@ export class KH {
       yqx11_13: "",
       yqx11_14: "",
       yqx11_15: "",
-
       zqx12_1: "",
       zqx12_2: "",
       zqx12_3: "",
@@ -1127,7 +1239,6 @@ export class KH {
       zqx12_13: "",
       zqx12_14: "",
       zqx12_15: "",
-
       yqx12_1: "",
       yqx12_2: "",
       yqx12_3: "",
@@ -1143,7 +1254,6 @@ export class KH {
       yqx12_13: "",
       yqx12_14: "",
       yqx12_15: "",
-
       zqx13_1: "",
       zqx13_2: "",
       zqx13_3: "",
@@ -1159,7 +1269,6 @@ export class KH {
       zqx13_13: "",
       zqx13_14: "",
       zqx13_15: "",
-
       yqx13_1: "",
       yqx13_2: "",
       yqx13_3: "",
@@ -1175,7 +1284,6 @@ export class KH {
       yqx13_13: "",
       yqx13_14: "",
       yqx13_15: "",
-
       zqx14_1: "",
       zqx14_2: "",
       zqx14_3: "",
@@ -1191,7 +1299,6 @@ export class KH {
       zqx14_13: "",
       zqx14_14: "",
       zqx14_15: "",
-
       yqx14_1: "",
       yqx14_2: "",
       yqx14_3: "",
@@ -1207,7 +1314,6 @@ export class KH {
       yqx14_13: "",
       yqx14_14: "",
       yqx14_15: "",
-
       zqx15_1: "",
       zqx15_2: "",
       zqx15_3: "",
@@ -1223,7 +1329,6 @@ export class KH {
       zqx15_13: "",
       zqx15_14: "",
       zqx15_15: "",
-
       yqx15_1: "",
       yqx15_2: "",
       yqx15_3: "",
@@ -1241,61 +1346,25 @@ export class KH {
       yqx15_15: "",
       yqx15_16: "",
 
-      zzj_tdbh2: "",
-      zzj_zsj2: "",
-      zzj_jy2: "",
-      zzj_bc2: "",
-      zzj_ts2: "",
-      zzj_qx2_1: "",
-      zzj_qx2_2: "",
-      zzj_qx2_3: "",
-
-      yzj_tdbh2: "",
-      yzj_zsj2: "",
-      yzj_jy2: "",
-      yzj_bc2: "",
-      yzj_ts2: "",
-      yzj_qx2_1: "",
-      yzj_qx2_2: "",
-      yzj_qx2_3: "",
-
-      zzj_tdbh3: "",
-      zzj_zsj3: "",
-      zzj_jy3: "",
-      zzj_bc3: "",
-      zzj_ts3: "",
-      zzj_qx3_1: "",
-      zzj_qx3_2: "",
-      zzj_qx3_3: "",
-
-      yzj_tdbh3: "",
-      yzj_zsj3: "",
-      yzj_jy3: "",
-      yzj_bc3: "",
-      yzj_ts3: "",
-      yzj_qx3_1: "",
-      yzj_qx3_2: "",
-      yzj_qx3_3: "",
-
-      czz: "",
-      gz: "",
-      wxg: "",
-      zjy: "",
-      ysy: "",
+      czz: firstRecord.szUsername || "",
+      gz: this.state.tsgz,
+      wxg: this.state.tswxg,
+      zjy: this.state.tszjy,
+      ysy: this.state.tsysy,
       bz: "",
 
       img1_mc: "",
-      img1_lj: "",
+      img1_lj: images.lxhFtpPath,
       img2_mc: "",
-      img2_lj: "",
+      img2_lj: images.rxhFtpPath,
       img3_mc: "",
-      img3_lj: "",
+      img3_lj: images.llzFtpPath,
       img4_mc: "",
-      img4_lj: "",
+      img4_lj: images.rlzFtpPath,
       img5_mc: "",
-      img5_lj: "",
+      img5_lj: images.lctFtpPath,
       img6_mc: "",
-      img6_lj: "",
+      img6_lj: images.rctFtpPath,
       img7_mc: "",
       img7_lj: "",
       img8_mc: "",
