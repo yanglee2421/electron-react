@@ -11,79 +11,21 @@ import {
   Row,
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
+import type { FlawGroup, MemoInfo } from "#shared/functions/chr52a";
+import {
+  calcFlawType,
+  calcNote,
+  resolveMemoInfo,
+} from "#shared/functions/chr52a";
 import { divideBy10, mathFormat } from "#shared/functions/math";
 import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Alert, AlertTitle } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
-import { chunk, mapGroupBy } from "@yotulee/run";
+import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import React from "react";
 import { useParams } from "react-router";
-
-type MemoInfo = Map<string, number>;
-type FlawGroup = Map<string, DetectionData[]>;
-
-const resolveMemoInfo = (params: string | null): MemoInfo => {
-  const result = new Map<string, number>();
-
-  if (!params) {
-    return result;
-  }
-
-  return chunk(params.split(""), 8).reduce((map, item) => {
-    const board = Number(item.at(0)) ? 1 : 0;
-    const channel = item.at(1);
-    const flawType = Number(item.at(-1));
-
-    map.set(`${board}-${channel}`, flawType);
-
-    return map;
-  }, result);
-};
-
-const calcFlawType = (type?: number) => {
-  switch (type) {
-    case 2:
-      return "透声不良";
-    case 4:
-      return "晶粗";
-    case 8:
-      return "压装不良";
-    case 1:
-      return "裂纹";
-    default:
-      return "";
-  }
-};
-
-const calcPlace = (board: number, channel: number) => {
-  const direction = board ? "右" : "左";
-
-  switch (channel) {
-    case 0:
-      return direction + "穿透";
-    case 1:
-      return direction + "卸荷槽";
-    case 2:
-    case 3:
-    case 4:
-      return direction + "轮座";
-    default:
-      return "";
-  }
-};
-
-const calcPlaceNote = (type: string, place: string, flawMap: FlawGroup) => {
-  if (type !== "裂纹") {
-    return type;
-  }
-
-  return flawMap
-    .get(place)
-    ?.map((flaw) => mathFormat(flaw.fltValueX, { precision: 0 }))
-    .join(" ");
-};
 
 const MemoInfoContext = React.createContext<MemoInfo>(new Map());
 const FlawGroupContext = React.createContext<FlawGroup>(new Map());
@@ -120,24 +62,7 @@ interface NoteCellProps {
 const NoteCell = (props: NoteCellProps): string => {
   const { record, datas } = props;
 
-  if (!record.szMemo) {
-    return "";
-  }
-
-  const chunks = chunk(record.szMemo?.split("") || [], 8);
-  const flawMap = mapGroupBy(datas, (el) => calcPlace(el.nBoard, el.nChannel));
-  const flawsNote = chunks
-    .map((item) => {
-      const board = Number(item.at(0)) ? 1 : 0;
-      const channel = Number(item.at(1));
-      const type = calcFlawType(Number(item.at(-1)));
-      const place = calcPlace(board, channel);
-
-      return `${place}: ${calcPlaceNote(type, place, flawMap)}`;
-    })
-    .join("; ");
-
-  return "不合格(" + flawsNote + "), 请人工复探!";
+  return calcNote(datas, record.szMemo);
 };
 
 export const Component = () => {

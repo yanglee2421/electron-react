@@ -4,7 +4,7 @@ export interface I52a {
    * 数据项：主键，UUID
    * 备注：-
    */
-  id: string;
+  // id: string;
   /**
    * 序号：2
    * 数据项：写入时间
