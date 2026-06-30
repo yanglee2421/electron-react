@@ -16,6 +16,7 @@ export const registerIPCHandlers = (hmis: KH) => {
   ipcHandle("HMIS/kh_hmis_chr501", (_, id) => hmis.handleUploadCHR501(id));
   ipcHandle("HMIS/kh_hmis_chr502", (_, id) => hmis.handleUploadCHR502(id));
   ipcHandle("HMIS/kh_hmis_chr503", (_, id) => hmis.handleUploadCHR503(id));
+  ipcHandle("HMIS/kh_hmis_chr52a", (_, id) => hmis.handleUploadCHR52A(id));
 
   return () => {
     ipcRemoveHandle("HMIS/kh_hmis_sqlite_get");
@@ -26,5 +27,6 @@ export const registerIPCHandlers = (hmis: KH) => {
     ipcRemoveHandle("HMIS/kh_hmis_chr501");
     ipcRemoveHandle("HMIS/kh_hmis_chr502");
     ipcRemoveHandle("HMIS/kh_hmis_chr503");
+    ipcRemoveHandle("HMIS/kh_hmis_chr52a");
   };
 };

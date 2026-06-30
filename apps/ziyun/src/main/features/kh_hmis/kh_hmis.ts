@@ -13,7 +13,9 @@ import { KH_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { KH_HMIS } from "#shared/instances/schema";
 import { kh_hmis } from "#shared/instances/schema";
 import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
+import { is } from "@electron-toolkit/utils";
 import { atFirstOrThrow, mapGroupBy } from "@yotulee/run";
+import { Client } from "basic-ftp";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
@@ -27,88 +29,12 @@ import type { I501Record } from "./501";
 import type { I502Record } from "./502";
 import type { I503 } from "./503";
 import type { I52a } from "./52a";
-
-export interface KHGetResponse {
-  data: {
-    mesureId: string;
-    zh: string;
-    zx: string;
-    clbjLeft: string;
-    clbjRight: string;
-    czzzrq: string;
-    czzzdw: string;
-    ldszrq: string;
-    ldszdw: string;
-    ldmzrq: string;
-    ldmzdw: string;
-  };
-  code: number;
-  msg: string;
-}
-
-interface QXDataParams {
-  mesureid: string;
-  zh: string;
-  testdatetime: string;
-  testtype: string;
-  btcw: string;
-  tsr: string;
-  tsgz: string;
-  tszjy: string;
-  tsysy: string;
-  gzmc: string;
-  clff: string;
-  qxlzzdmjlnc?: string;
-  qxlzzdmjlwc?: string;
-  qxlzydmjlnc?: string;
-  qxlzydmjlwc?: string;
-  qxlzzlwcnc?: string;
-  qxlzzlwcwc?: string;
-  qxlzylwcnc?: string;
-  qxlzylwcwc?: string;
-  qxlzzlwsnc?: string;
-  qxlzzlwswc?: string;
-  qxlzylwsnc?: string;
-  qxlzylwswc?: string;
-  qxzjzdmjlzj?: string;
-  qxzjzdmjlzs?: string;
-  qxzjydmjlzj?: string;
-  qxzjydmjlzs?: string;
-  qxzjzlwczj?: string;
-  qxzjzlwczs?: string;
-  qxzjylwczj?: string;
-  qxzjylwczs?: string;
-  qxzjzlwszj?: string;
-  qxzjzlwszs?: string;
-  qxzjylwszj?: string;
-  qxzjylwszs?: string;
-  qxclzlwcz?: string;
-  qxclzlwcy?: string;
-  qxclylwcz?: string;
-  qxclylwcy?: string;
-  bz: string;
-}
-
-interface PostRequestItem {
-  mesureId?: string;
-  ZH: string;
-  ZCTJG: string;
-  ZZJJG: string;
-  ZLZJG: string;
-  YCTJG: string;
-  YZJJG: string;
-  YLZJG: string;
-  JCJG: string;
-  BZ?: string;
-  TSRY: string;
-  JCSJ: string;
-  sbbh: string;
-}
-
-interface PostResponse {
-  code: number;
-  msg: string;
-}
+import type {
+  KHGetResponse,
+  PostRequestItem,
+  PostResponse,
+  QXDataParams,
+} from "./types";
 
 const emit = createEmit("api_set");
 
@@ -1004,7 +930,7 @@ export class KH {
     };
   }
   async resolveCHR52AInputParams(id: string): Promise<I52a> {
-    const { rows } = await this.mdb.root().verifies().equal("szIDs", id);
+    const { rows } = await this.mdb.root().detections().equal("szIDs", id);
     const firstRecord = rows.at(0);
 
     if (!firstRecord) {
@@ -1039,6 +965,13 @@ export class KH {
 
       return `${divideBy10(db)}dB;${flaws.map((flaw) => mathFormat(flaw.fltValueX, { precision: 0 })).join(" ")}`;
     };
+
+    console.log(firstRecord.szIDs, firstRecord.szIDsWheel);
+
+    const images = await this.upload52aImageByFtp(
+      firstRecord.szIDs,
+      firstRecord.szIDsWheel || "",
+    );
 
     return {
       xrsj: dayjs().format("YYYY-MM-DD HH:mm:ss"),
@@ -1113,18 +1046,83 @@ export class KH {
       qxslwz15: "",
       qxlx15: "",
 
-      zzjsmt: "",
-      yzjsmt: "",
-      zlzsmt: "",
-      ylzsmt: "",
-      zctsmt: "",
-      yctsmt: "",
+      zzjsmt: images.lxhFtpPath,
+      yzjsmt: images.rxhFtpPath,
+      zlzsmt: images.llzFtpPath,
+      ylzsmt: images.rlzFtpPath,
+      zctsmt: images.lctFtpPath,
+      yctsmt: images.rctFtpPath,
 
       clff: calcNote(datas, firstRecord.szMemo),
       tsg: firstRecord.szUsername || "",
       gz: this.state.tsgz,
       zjy: this.state.tszjy,
       ysy: this.state.tsysy,
+    };
+  }
+  async upload501ImagesByFtp(id: string) {}
+  async upload52aImageByFtp(id: string, zh: string) {
+    const rootPath = await this.mdb.rootFolder();
+    const lxhImage = this.mdb.dataImagePath(rootPath, `${id}.LXH.bmp`);
+    const rxhImage = this.mdb.dataImagePath(rootPath, `${id}.RXH.bmp`);
+    const llzImage = this.mdb.dataImagePath(rootPath, `${id}.LLZ.bmp`);
+    const rlzImage = this.mdb.dataImagePath(rootPath, `${id}.RLZ.bmp`);
+    const lctImage = this.mdb.dataImagePath(rootPath, `${id}.LCT.bmp`);
+    const rctImage = this.mdb.dataImagePath(rootPath, `${id}.RCT.bmp`);
+    const date = dayjs().format("YYYYMMDD");
+    let lxhFtpPath = `/csbts/${date + zh}01.bmp`;
+    let rxhFtpPath = `/csbts/${date + zh}02.bmp`;
+    let llzFtpPath = `/csbts/${date + zh}03.bmp`;
+    let rlzFtpPath = `/csbts/${date + zh}04.bmp`;
+    let lctFtpPath = `/csbts/${date + zh}05.bmp`;
+    let rctFtpPath = `/csbts/${date + zh}06.bmp`;
+
+    const ftpClient = new Client();
+
+    try {
+      await ftpClient.access({
+        host: this.state.ftpHost,
+        port: this.state.ftpPort,
+        user: this.state.ftpUser,
+        password: this.state.ftpPassword,
+      });
+
+      await ftpClient.ensureDir("/csbts/");
+      await ftpClient.uploadFrom(lxhImage, lxhFtpPath).catch(() => {
+        lxhFtpPath = "";
+      });
+      await ftpClient.uploadFrom(rxhImage, rxhFtpPath).catch(() => {
+        rxhFtpPath = "";
+      });
+      await ftpClient.uploadFrom(llzImage, llzFtpPath).catch(() => {
+        llzFtpPath = "";
+      });
+      await ftpClient.uploadFrom(rlzImage, rlzFtpPath).catch(() => {
+        rlzFtpPath = "";
+      });
+      await ftpClient.uploadFrom(lctImage, lctFtpPath).catch(() => {
+        lctFtpPath = "";
+      });
+      await ftpClient.uploadFrom(rctImage, rctFtpPath).catch(() => {
+        rctFtpPath = "";
+      });
+    } catch (error) {
+      if (is.dev) {
+        console.error(error);
+      }
+
+      throw error;
+    } finally {
+      ftpClient.close();
+    }
+
+    return {
+      lxhFtpPath,
+      rxhFtpPath,
+      llzFtpPath,
+      rlzFtpPath,
+      lctFtpPath,
+      rctFtpPath,
     };
   }
 }

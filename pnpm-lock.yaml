@@ -279,6 +279,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: ^1.0.0
         version: 1.0.0
+      basic-ftp:
+        specifier: ^6.0.1
+        version: 6.0.1
       electron:
         specifier: ^39.8.10
         version: 39.8.10
@@ -3310,6 +3313,10 @@ packages:
     resolution: {integrity: sha512-MujYO3eP72uvmSE0i4wltsodRfIpZATP3jvzRNRGGxgzId7aVocVJJV3nf01qnzzKFGxQVC9bpWxl5cjxTr/7Q==}
     engines: {node: '>=6.0.0'}
     hasBin: true
+
+  basic-ftp@6.0.1:
+    resolution: {integrity: sha512-3ilxa3n4276wGQp/ImRAuz4ALdsj/2Wd3FqoZBZlajDYnByCZ0JMb4+26Rde0wGXIbM0G2HWSfr/Fi8b21KX8g==}
+    engines: {node: '>=10.0.0'}
 
   bezier-easing@3.0.0:
     resolution: {integrity: sha512-lE85voPXiK99T8NHOfhaUqCZpJdP1gBbbTEvdBDdPB+phyvPZPNWalBe42eb6lKOYchP0qZrtBiRCARtT4edRQ==}
@@ -8857,6 +8864,8 @@ snapshots:
   base64-js@1.5.1: {}
 
   baseline-browser-mapping@2.10.31: {}
+
+  basic-ftp@6.0.1: {}
 
   bezier-easing@3.0.0: {}
 

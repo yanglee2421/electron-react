@@ -260,6 +260,11 @@ const useNavigation = () => {
             icon: <QrCodeScannerRounded />,
           },
           {
+            segment: calcSegment("kh", "detections"),
+            title: "现车作业",
+            icon: <TrainRounded />,
+          },
+          {
             segment: calcSegment("kh", "verify"),
             title: "日常校验",
             icon: <TodayRounded />,

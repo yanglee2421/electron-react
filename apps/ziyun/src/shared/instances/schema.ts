@@ -50,6 +50,11 @@ export const kh_hmis = z.object({
   tszz: z.string().default(""),
   sbzz: z.string().default(""),
   zgld: z.string().default(""),
+
+  ftpHost: z.ipv4().default("10.109.245.4"),
+  ftpPort: z.number().int().min(1).max(65535).default(21),
+  ftpUser: z.string().default("administrator"),
+  ftpPassword: z.string().default("tech@963852"),
 });
 
 export type KH_HMIS = z.infer<typeof kh_hmis>;

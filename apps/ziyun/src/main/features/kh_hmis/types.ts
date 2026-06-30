@@ -34,4 +34,90 @@ export interface IPCContract {
     args: [string];
     return: ReturnType<KH["handleUploadCHR503"]>;
   };
+  "HMIS/kh_hmis_chr52a": {
+    args: [string];
+    return: ReturnType<KH["handleUploadCHR52A"]>;
+  };
+}
+
+export interface KHGetResponse {
+  data: {
+    mesureId: string;
+    zh: string;
+    zx: string;
+    clbjLeft: string;
+    clbjRight: string;
+    czzzrq: string;
+    czzzdw: string;
+    ldszrq: string;
+    ldszdw: string;
+    ldmzrq: string;
+    ldmzdw: string;
+  };
+  code: number;
+  msg: string;
+}
+
+export interface QXDataParams {
+  mesureid: string;
+  zh: string;
+  testdatetime: string;
+  testtype: string;
+  btcw: string;
+  tsr: string;
+  tsgz: string;
+  tszjy: string;
+  tsysy: string;
+  gzmc: string;
+  clff: string;
+  qxlzzdmjlnc?: string;
+  qxlzzdmjlwc?: string;
+  qxlzydmjlnc?: string;
+  qxlzydmjlwc?: string;
+  qxlzzlwcnc?: string;
+  qxlzzlwcwc?: string;
+  qxlzylwcnc?: string;
+  qxlzylwcwc?: string;
+  qxlzzlwsnc?: string;
+  qxlzzlwswc?: string;
+  qxlzylwsnc?: string;
+  qxlzylwswc?: string;
+  qxzjzdmjlzj?: string;
+  qxzjzdmjlzs?: string;
+  qxzjydmjlzj?: string;
+  qxzjydmjlzs?: string;
+  qxzjzlwczj?: string;
+  qxzjzlwczs?: string;
+  qxzjylwczj?: string;
+  qxzjylwczs?: string;
+  qxzjzlwszj?: string;
+  qxzjzlwszs?: string;
+  qxzjylwszj?: string;
+  qxzjylwszs?: string;
+  qxclzlwcz?: string;
+  qxclzlwcy?: string;
+  qxclylwcz?: string;
+  qxclylwcy?: string;
+  bz: string;
+}
+
+export interface PostRequestItem {
+  mesureId?: string;
+  ZH: string;
+  ZCTJG: string;
+  ZZJJG: string;
+  ZLZJG: string;
+  YCTJG: string;
+  YZJJG: string;
+  YLZJG: string;
+  JCJG: string;
+  BZ?: string;
+  TSRY: string;
+  JCSJ: string;
+  sbbh: string;
+}
+
+export interface PostResponse {
+  code: number;
+  msg: string;
 }

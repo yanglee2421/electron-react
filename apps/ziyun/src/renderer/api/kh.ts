@@ -121,3 +121,18 @@ export const useUploadCHR503 = () => {
     },
   });
 };
+
+export const useUploadCHR52A = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      return ipc.invoke("HMIS/kh_hmis_chr52a", id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY],
+      });
+    },
+  });
+};

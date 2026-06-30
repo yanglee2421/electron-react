@@ -227,6 +227,11 @@ export const routes: RouteObject[] = [
                     lazy: () => import("#renderer/pages/kh_hmis/component"),
                   },
                   {
+                    path: "detections",
+                    lazy: () =>
+                      import("#renderer/pages/kh_detections/component"),
+                  },
+                  {
                     path: "verify",
                     children: [
                       {

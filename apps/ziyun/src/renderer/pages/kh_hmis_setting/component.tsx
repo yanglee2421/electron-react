@@ -12,6 +12,7 @@ import {
   CircularProgress,
   FormControlLabel,
   FormGroup,
+  FormLabel,
   Grid,
   TextField,
 } from "@mui/material";
@@ -37,6 +38,10 @@ export const Component = () => {
   const zgld = useKhHmisStore((s) => s.zgld);
   const sbzz = useKhHmisStore((s) => s.sbzz);
   const tszz = useKhHmisStore((s) => s.tszz);
+  const ftpHost = useKhHmisStore((s) => s.ftpHost);
+  const ftpPort = useKhHmisStore((s) => s.ftpPort);
+  const ftpUser = useKhHmisStore((s) => s.ftpUser);
+  const ftpPassword = useKhHmisStore((s) => s.ftpPassword);
 
   const form = useForm({
     defaultValues: {
@@ -54,6 +59,10 @@ export const Component = () => {
       tszz,
       zgld,
       sbzz,
+      ftpHost,
+      ftpPort,
+      ftpUser,
+      ftpPassword,
     },
     validators: {
       onChange: kh_hmis.required(),
@@ -74,6 +83,10 @@ export const Component = () => {
         draft.zgld = value.zgld;
         draft.sbzz = value.sbzz;
         draft.tszz = value.tszz;
+        draft.ftpHost = value.ftpHost;
+        draft.ftpPort = value.ftpPort;
+        draft.ftpUser = value.ftpUser;
+        draft.ftpPassword = value.ftpPassword;
       });
       snackbar.show("保存成功", { severity: "success" });
     },
@@ -94,6 +107,9 @@ export const Component = () => {
           }}
         >
           <Grid container spacing={1.5}>
+            <Grid size={12}>
+              <FormLabel>网络相关</FormLabel>
+            </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <form.Field name="ip">
                 {(field) => (
@@ -125,6 +141,71 @@ export const Component = () => {
                   />
                 )}
               </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="ftpHost">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="FTP地址"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="ftpPort">
+                {(field) => (
+                  <NumberField
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: field.handleBlur,
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="FTP端口号"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="ftpUser">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="FTP用户名"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="ftpPassword">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="FTP密码"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={12}>
+              <FormLabel>表格相关</FormLabel>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <form.Field name="tsgz">
@@ -231,7 +312,9 @@ export const Component = () => {
                 )}
               </form.Field>
             </Grid>
-
+            <Grid size={12}>
+              <FormLabel>自动录入与上传</FormLabel>
+            </Grid>
             <Grid size={{ xs: 12 }}>
               <FormGroup row>
                 <form.Field name="autoInput">
