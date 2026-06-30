@@ -81,7 +81,7 @@ const columns = [
   columnHelper.display({
     id: "actions",
     cell: ({ row }) => {
-      return <UploadCHR52A id={row.getValue("szIDs")} />;
+      return <UploadCHR52A id={row.original.szIDs} />;
     },
   }),
   columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
