@@ -175,7 +175,7 @@ const useNavigation = () => {
 
     if (showHxzyHmisMenu) {
       navMenus.push({
-        title: "华兴致远",
+        title: "成都北车辆段",
         children: [
           {
             segment: calcSegment("hxzy"),
@@ -198,7 +198,7 @@ const useNavigation = () => {
 
     if (showJtvHmisMenu) {
       navMenus.push({
-        title: "京天威",
+        title: "京天威统信",
         children: [
           {
             segment: calcSegment("jtv"),
@@ -216,7 +216,7 @@ const useNavigation = () => {
 
     if (showGuangzhoubeiHmisMenu) {
       navMenus.push({
-        title: "广州北",
+        title: "广州北车辆段",
         children: [
           {
             segment: calcSegment("jtv_guangzhoubei"),
@@ -252,7 +252,7 @@ const useNavigation = () => {
 
     if (showKhHmisMenu) {
       navMenus.push({
-        title: "康华",
+        title: "安康车辆段",
         children: [
           {
             segment: calcSegment("kh"),
