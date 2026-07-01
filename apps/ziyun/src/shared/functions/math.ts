@@ -1,7 +1,13 @@
 import * as mathjs from "mathjs";
 
-export const mathFormat = (value: number, options?: mathjs.FormatOptions) => {
-  return mathjs.format(mathjs.bignumber(value), {
+export const mathFormat = (value?: unknown, options?: mathjs.FormatOptions) => {
+  const numberfiyValue = Number.parseFloat(String(value));
+
+  if (Number.isNaN(numberfiyValue)) {
+    return "";
+  }
+
+  return mathjs.format(mathjs.bignumber(numberfiyValue), {
     notation: "fixed",
     precision: 2,
     ...options,

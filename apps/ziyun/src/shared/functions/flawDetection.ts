@@ -1,7 +1,5 @@
 import type { DetectionData } from "#main/features/mdb/types";
-import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
-import * as mathjs from "mathjs";
 
 export const calculateDirection = (nBoard: number) => {
   //board(板卡)：0.左 1.右
@@ -20,8 +18,9 @@ export const calculatePlace = (nChannel: number) => {
     case 0:
       return "穿透";
     case 1:
-    case 2:
       return "卸荷槽";
+    case 2:
+      return "轮座";
     case 3:
       // 51deg
       return "外";
@@ -151,122 +150,7 @@ interface Flaw {
   nAtten: number;
 }
 
-export const calculateNAttenDiff = (...attens: string[]) => {
-  const attenBignumbers = attens.map((atten) => mathjs.bignumber(atten));
-  const minAtten = mathjs.min(...attenBignumbers);
-  const maxAtten = mathjs.max(...attenBignumbers);
-
-  return mathjs.subtract(maxAtten, minAtten).toString();
-};
-
-export const calculateQuartorResult = (...attens: string[]) => {
-  const isOk = attens.every((atten) => {
-    return mathjs.smallerEq(mathjs.bignumber(atten), mathjs.bignumber(6));
-  });
-
-  return isOk ? "合格" : "不合格";
-};
-
 interface Flaw {
   nBoard: number;
   nChannel: number;
 }
-
-interface FlawLike {
-  nBoard: number;
-  nChannel: number;
-}
-
-export const groupByNChannel = <TFlaw extends FlawLike>(flaws: TFlaw[]) => {
-  return mapGroupBy(flaws, (flaw) => {
-    if (flaw.nBoard === 0) {
-      switch (flaw.nChannel) {
-        case 0:
-          return "left1";
-        case 1:
-          return "left2";
-        case 2:
-          return "left3";
-        case 3:
-          return "left4";
-        case 4:
-          return "left5";
-        case 5:
-          return "left6";
-        default:
-          return "_trash";
-      }
-    } else {
-      switch (flaw.nChannel) {
-        case 0:
-          return "right7";
-        case 1:
-          return "right8";
-        case 2:
-          return "right9";
-        case 3:
-          return "right10";
-        case 4:
-          return "right11";
-        case 5:
-          return "right12";
-        default:
-          return "_trash";
-      }
-    }
-  });
-};
-
-export const createNChannelGroup = <TFlaw extends FlawLike>(flaws: TFlaw[]) => {
-  const flawMap = groupByNChannel(flaws);
-  const left1 = flawMap.get("left1") || [];
-  const left2 = flawMap.get("left2") || [];
-  const left3 = flawMap.get("left3") || [];
-  const left4 = flawMap.get("left4") || [];
-  const left5 = flawMap.get("left5") || [];
-  const left6 = flawMap.get("left6") || [];
-  const right7 = flawMap.get("right7") || [];
-  const right8 = flawMap.get("right8") || [];
-  const right9 = flawMap.get("right9") || [];
-  const right10 = flawMap.get("right10") || [];
-  const right11 = flawMap.get("right11") || [];
-  const right12 = flawMap.get("right12") || [];
-
-  return {
-    left1,
-    left2,
-    left3,
-    left4,
-    left5,
-    left6,
-    right7,
-    right8,
-    right9,
-    right10,
-    right11,
-    right12,
-  };
-};
-
-export const calculateDecResult = (Dec_Max: number) => {
-  return mathjs
-    .divide(mathjs.bignumber(Dec_Max), mathjs.bignumber(10))
-    .toString();
-};
-
-export const calculateAttResult = (Att_Max: number) => {
-  return mathjs
-    .divide(mathjs.bignumber(Att_Max), mathjs.bignumber(10))
-    .toString();
-};
-
-export const calculateXHCChNo = (nBoard: number, zx: string) => {
-  switch (zx) {
-    case "RD2":
-      return nBoard ? "ch10" : "ch4";
-    case "RE2B":
-      return nBoard ? "ch11" : "ch5";
-    default:
-      return "";
-  }
-};
