@@ -1,5 +1,4 @@
 import { atFirstOrThrow } from "@yotulee/run";
-import dayjs from "dayjs";
 import { app, BrowserWindow } from "electron";
 import fs from "node:fs";
 import os from "node:os";
@@ -97,12 +96,6 @@ export class Printer {
       .in("szIDs", ids)
       .limit(5);
 
-    const queryPreviousRecord = this.mdb
-      .root()
-      .quartors()
-      .orderBy("tmnow", "desc")
-      .limit(1);
-
     const firstRecord = records.rows
       .toSorted(
         (a, b) =>
@@ -111,15 +104,18 @@ export class Printer {
       )
       .at(0);
 
-    if (firstRecord) {
-      const firstDay = dayjs(firstRecord.tmnow).toDate().getTime();
-
-      queryPreviousRecord
-        .lt("tmnow", firstDay)
-        .equal("szWHModel", firstRecord.szWHModel || "");
+    if (!firstRecord) {
+      throw new Error(`未找到ID为${ids.join(",")}的检测数据`);
     }
 
-    const previousRecord = await queryPreviousRecord;
+    const firstDay = firstRecord.tmnow?.getTime() || Number.NEGATIVE_INFINITY;
+    const previousRecord = await this.mdb
+      .root()
+      .quartors()
+      .equal("szWHModel", firstRecord.szWHModel || "")
+      .lt("tmnow", firstDay)
+      .orderBy("tmnow", "desc")
+      .limit(1);
 
     const datas = await this.mdb
       .root()

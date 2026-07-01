@@ -1,5 +1,5 @@
 import type { KhBarcode } from "#main/features/db/schema";
-import type { KHGetResponse } from "#main/features/kh_hmis/kh_hmis";
+import type { KHGetResponse } from "#main/features/kh_hmis/types";
 import { useAutoInputToVC } from "#renderer/api/fetch_preload";
 import {
   fetchKhRecord,
@@ -183,13 +183,13 @@ export const Component = () => {
       barCode: "",
     },
     validators: { onChange: schema },
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
       const data = await getData.mutateAsync(value.barCode, {
         onError: (error) => {
           snackbar.show(error.message, { severity: "error" });
         },
         onSuccess: () => {
-          form.reset();
+          formApi.reset();
         },
       });
 

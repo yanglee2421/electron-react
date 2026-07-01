@@ -72,7 +72,7 @@ const flawsToMetaData = (flaws: QuartorData[]): ChannelMeta => {
   );
 };
 
-const calculateMaxDiff = (...args: string[]) => {
+export const calculateMaxDiff = (...args: string[]) => {
   const nums = args.map((arg) => Number.parseFloat(arg));
 
   if (nums.length === 0) {
@@ -100,7 +100,7 @@ interface ResultInfo {
   ct: string;
 }
 
-const calculateResult = (left: string, right: string): string => {
+export const calculateResult = (left: string, right: string): string => {
   const leftNum = Number.parseFloat(left);
   const rightNum = Number.parseFloat(right);
 

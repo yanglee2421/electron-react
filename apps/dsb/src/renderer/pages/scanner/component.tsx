@@ -47,8 +47,6 @@ const Scanner = () => {
       .pipe(
         distinctUntilChanged(),
         concatMap((qrcode) => {
-          console.log("generate");
-
           return of({ qrcode }).pipe(delay(Math.random() * 1000 * 2 + 1000));
         }),
         tap((item) => {

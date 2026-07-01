@@ -61,19 +61,6 @@ import { useDialogs, useNotifications } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
 import { z } from "zod";
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import { immer } from "zustand/middleware/immer";
-
-const storeInitializer = () => {
-  return {
-    showFilter: false,
-    pageIndex: 0,
-    pageSize: 100,
-    date: new Date().toISOString(),
-    selectOptions: [] as JTVNormalizeResponse[],
-  };
-};
 
 const schema = z.object({
   barCode: z.string().min(1),
@@ -164,13 +151,6 @@ const rowSelectColumns = [
     footer: "单号",
   }),
 ];
-
-const useSessionStore = create<ReturnType<typeof storeInitializer>>()(
-  persist(immer(storeInitializer), {
-    name: "useSessionStore:jtv_hmis",
-    storage: createJSONStorage(() => sessionStorage),
-  }),
-);
 
 type ActionCellProps = {
   id: number;
@@ -441,12 +421,15 @@ const RowSelectGrid = (props: RowSelectGridProps) => {
 };
 
 export const Component = () => {
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(100);
+  const [dateIso, setDate] = React.useState(() => new Date().toISOString());
+  const [selectOptions, setSelectOptions] = React.useState<
+    JTVNormalizeResponse[]
+  >([]);
+
   const formId = React.useId();
 
-  const pageIndex = useSessionStore((s) => s.pageIndex);
-  const pageSize = useSessionStore((s) => s.pageSize);
-  const dateIso = useSessionStore((s) => s.date);
-  const selectOptions = useSessionStore((s) => s.selectOptions);
   const getData = useFetchAxleInfo();
   const snackbar = useNotifications();
   const zhMode = useJTVHmisStore((s) => s.isZhMode);
@@ -475,21 +458,20 @@ export const Component = () => {
     validators: {
       onChange: schema,
     },
-    onSubmit: async ({ value }) => {
-      form.reset();
-
+    onSubmit: async ({ value, formApi }) => {
       const data = await getData.mutateAsync(
         { barcode: value.barCode, isZhMode: zhMode },
         {
           onError: (error) => {
             snackbar.show(error.message, { severity: "error" });
           },
+          onSuccess: () => {
+            formApi.reset();
+          },
         },
       );
 
-      useSessionStore.setState((draft) => {
-        draft.selectOptions = data;
-      });
+      setSelectOptions(data);
 
       const isSingleElement = Object.is(data.length, 1);
       if (!isSingleElement) return;
@@ -548,24 +530,6 @@ export const Component = () => {
     });
   };
 
-  const setDate = (day: dayjs.Dayjs) => {
-    useSessionStore.setState((draft) => {
-      draft.date = day.toISOString();
-    });
-  };
-
-  const setPageIndex = (page: number) => {
-    useSessionStore.setState((draft) => {
-      draft.pageIndex = page;
-    });
-  };
-
-  const setPageSize = (size: number) => {
-    useSessionStore.setState((draft) => {
-      draft.pageSize = size;
-    });
-  };
-
   const setZhMode = (value: boolean) => {
     useJTVHmisStore.setState((draft) => {
       draft.isZhMode = value;
@@ -589,7 +553,7 @@ export const Component = () => {
                 value={date}
                 onChange={(e) => {
                   if (!e) return;
-                  setDate(e);
+                  setDate(e.toISOString());
                 }}
                 slotProps={{
                   textField: {
@@ -633,6 +597,7 @@ export const Component = () => {
                   autoComplete="off"
                   onSubmit={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     form.handleSubmit();
                   }}
                   onReset={() => form.reset()}

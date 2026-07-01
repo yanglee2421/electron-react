@@ -13,7 +13,7 @@ import * as sql from "drizzle-orm";
 import { net } from "electron";
 import pLimit from "p-limit";
 import type { Subscription } from "rxjs";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, distinctUntilChanged, tap } from "rxjs";
 import type { DBClient } from "../db/types";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
@@ -54,7 +54,8 @@ export class Hxzy {
   private db: DBClient;
   private mdb: MDB;
   private logger: Logger;
-  private subscription: Subscription;
+  private subscriptions: Subscription[];
+  private timer: NodeJS.Timeout | number = 0;
 
   constructor({ db, mdb, logger, kv }: AppCradle) {
     this.db = db.client;
@@ -66,66 +67,87 @@ export class Hxzy {
     const state = hxzy_hmis.parse(data);
     this.state$ = new BehaviorSubject(state);
 
-    this.subscription = kv.events$.subscribe((e) => {
-      if (e.key !== HXZY_HMIS_STORAGE_KEY) {
-        return;
-      }
+    const sub1 = kv.events$
+      .pipe(
+        tap((e) => {
+          if (e.key !== HXZY_HMIS_STORAGE_KEY) {
+            return;
+          }
 
-      switch (e.action) {
-        case "set":
-          const stateJSON = e.value;
-          const data = stateJSON ? JSON.parse(stateJSON).state : {};
-          const state = hxzy_hmis.parse(data);
-          this.state$.next(state);
-          break;
-        case "remove":
-        case "clear":
-          this.state$.next(hxzy_hmis.parse({}));
-          break;
-      }
-    });
+          switch (e.action) {
+            case "set":
+              const stateJSON = e.value;
+              const data = stateJSON ? JSON.parse(stateJSON).state : {};
+              const state = hxzy_hmis.parse(data);
+              this.state$.next(state);
+              break;
+            case "remove":
+            case "clear":
+              this.state$.next(hxzy_hmis.parse({}));
+              break;
+          }
+        }),
+      )
+      .subscribe();
+
+    const sub2 = this.state$
+      .pipe(
+        distinctUntilChanged(
+          (prev, next) =>
+            prev.autoUpload === next.autoUpload &&
+            prev.autoUploadInterval === next.autoUploadInterval,
+        ),
+        tap((state) => {
+          this.stopAutoUpload();
+
+          if (state.autoUpload) {
+            this.startAutoUpload();
+          }
+        }),
+      )
+      .subscribe();
+
+    this.subscriptions = [sub1, sub2];
   }
 
   dispose() {
-    this.subscription.unsubscribe();
     this.state$.complete();
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
   get state() {
     return this.state$.getValue();
   }
 
+  startAutoUpload() {
+    const store = this.state;
+    const delay = store.autoUploadInterval * 1000;
+    this.timer = setTimeout(this.autoUploadLoop.bind(this), delay);
+  }
+
+  stopAutoUpload() {
+    clearInterval(this.timer);
+  }
+
   async autoUploadLoop() {
-    if (!this.state.autoUpload) {
-      return;
-    }
-
     const limit = pLimit(1);
-
-    try {
-      const barcodes = await this.db
-        .select()
-        .from(schema.hxzyBarcodeTable)
-        .where(
-          sql.and(
-            sql.eq(schema.hxzyBarcodeTable.isUploaded, false),
-            sql.between(
-              schema.hxzyBarcodeTable.date,
-              dayjs().startOf("day").toDate(),
-              dayjs().endOf("day").toDate(),
-            ),
+    const barcodes = await this.db
+      .select()
+      .from(schema.hxzyBarcodeTable)
+      .where(
+        sql.and(
+          sql.eq(schema.hxzyBarcodeTable.isUploaded, false),
+          sql.between(
+            schema.hxzyBarcodeTable.date,
+            dayjs().startOf("day").toDate(),
+            dayjs().endOf("day").toDate(),
           ),
-        );
-
-      await Promise.allSettled(
-        barcodes.map((dh) => limit(() => this.handleUpload(dh.id))),
+        ),
       );
-    } finally {
-      const store = this.state;
-      const delay = store.autoUploadInterval * 1000;
 
-      setTimeout(this.autoUploadLoop.bind(this), delay);
-    }
+    await Promise.allSettled(
+      barcodes.map((dh) => limit(() => this.handleUpload(dh.id))),
+    );
   }
 
   async sendPostRequest(request: PostRequestItem[]) {

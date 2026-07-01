@@ -1,7 +1,9 @@
 // 康华 安康
 import * as schema from "#main/features/db/schema";
 import type { Logger } from "#main/features/logger";
+import type { QuartorData } from "#main/features/mdb/types";
 import { createEmit } from "#main/lib";
+import { calculateMaxDiff, calculateResult } from "#shared/functions/chr502";
 import { resolveCHR503 } from "#shared/functions/chr503";
 import {
   calcFlawType,
@@ -23,7 +25,7 @@ import { net } from "electron";
 import path from "node:path";
 import pLimit from "p-limit";
 import type { Subscription } from "rxjs";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, distinctUntilChanged, tap } from "rxjs";
 import type { DBClient } from "../db/types";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
@@ -45,7 +47,8 @@ export class KH {
   private db: DBClient;
   private mdb: MDB;
   private logger: Logger;
-  private subscription: Subscription;
+  private subscriptions: Subscription[];
+  private timer: NodeJS.Timeout | number = 0;
 
   constructor({ db, mdb, logger, kv }: AppCradle) {
     this.db = db.client;
@@ -57,66 +60,92 @@ export class KH {
     const state = kh_hmis.parse(data);
     this.state$ = new BehaviorSubject(state);
 
-    this.subscription = kv.events$.subscribe((e) => {
-      if (e.key !== KH_HMIS_STORAGE_KEY) {
-        return;
-      }
+    const subscription1 = kv.events$
+      .pipe(
+        tap((e) => {
+          if (e.key !== KH_HMIS_STORAGE_KEY) {
+            return;
+          }
 
-      switch (e.action) {
-        case "set":
-          const stateJSON = e.value;
-          const data = stateJSON ? JSON.parse(stateJSON).state : {};
-          const state = kh_hmis.parse(data);
-          this.state$.next(state);
-          break;
-        case "remove":
-        case "clear":
-          this.state$.next(kh_hmis.parse({}));
-          break;
-      }
-    });
+          switch (e.action) {
+            case "set":
+              const stateJSON = e.value;
+              const data = stateJSON ? JSON.parse(stateJSON).state : {};
+              const state = kh_hmis.parse(data);
+              this.state$.next(state);
+              break;
+            case "remove":
+            case "clear":
+              this.state$.next(kh_hmis.parse({}));
+              break;
+          }
+        }),
+      )
+      .subscribe();
+
+    const subscription2 = this.state$
+      .pipe(
+        distinctUntilChanged(
+          (prev, next) =>
+            prev.autoUpload === next.autoUpload &&
+            prev.autoUploadInterval === next.autoUploadInterval,
+        ),
+        tap((state) => {
+          /**
+           * 配置发生变化时，停止自动上传以让旧配置失效
+           * 如果配置中仍然启用了自动上传，则重新启动自动上传
+           */
+          this.stopAutoUpload();
+
+          if (state.autoUpload) {
+            this.startAutoUpload();
+          }
+        }),
+      )
+      .subscribe();
+
+    this.subscriptions = [subscription1, subscription2];
   }
 
   dispose() {
     this.state$.complete();
-    this.subscription.unsubscribe();
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
   get state() {
     return this.state$.getValue();
   }
 
-  async autoUploadLoop() {
-    if (!this.state.autoUpload) {
-      return;
-    }
+  startAutoUpload() {
+    const store = this.state;
+    const delay = store.autoUploadInterval * 1000;
+    this.timer = setInterval(this.autoUploadLoop.bind(this), delay);
+  }
 
+  stopAutoUpload() {
+    clearInterval(this.timer);
+  }
+
+  async autoUploadLoop() {
     const limit = pLimit(1);
 
-    try {
-      const barcodes = await this.db
-        .select()
-        .from(schema.khBarcodeTable)
-        .where(
-          sql.and(
-            sql.eq(schema.khBarcodeTable.isUploaded, false),
-            sql.between(
-              schema.khBarcodeTable.date,
-              dayjs().startOf("day").toDate(),
-              dayjs().endOf("day").toDate(),
-            ),
+    const barcodes = await this.db
+      .select()
+      .from(schema.khBarcodeTable)
+      .where(
+        sql.and(
+          sql.eq(schema.khBarcodeTable.isUploaded, false),
+          sql.between(
+            schema.khBarcodeTable.date,
+            dayjs().startOf("day").toDate(),
+            dayjs().endOf("day").toDate(),
           ),
-        );
-
-      await Promise.allSettled(
-        barcodes.map((barcode) => limit(() => this.handleUpload(barcode.id))),
+        ),
       );
-    } finally {
-      const store = this.state;
-      const delay = store.autoUploadInterval * 1000;
 
-      setTimeout(this.autoUploadLoop.bind(this), delay);
-    }
+    await Promise.allSettled(
+      barcodes.map((barcode) => limit(() => this.handleUpload(barcode.id))),
+    );
   }
 
   async sendQxToServer(params: QXDataParams) {
@@ -1596,7 +1625,773 @@ export class KH {
     };
   }
   async resolveCHR502InputParams(ids: string[]): Promise<I502Record> {
-    return {};
+    const { rows } = await this.mdb.root().quartors().in("szIDs", ids);
+
+    const records = rows.toSorted(
+      (a, b) =>
+        (a.tmnow?.getTime() || Number.POSITIVE_INFINITY) -
+        (b.tmnow?.getTime() || Number.POSITIVE_INFINITY),
+    );
+    const firstRecord = records.at(0);
+
+    if (!firstRecord) {
+      throw new Error(`未找到与ID ${ids.join(", ")} 相关的记录`);
+    }
+
+    const {
+      rows: [previousRecord],
+    } = await this.mdb
+      .root()
+      .quartors()
+      .equal("szWHModel", firstRecord.szWHModel)
+      .lt("tmnow", firstRecord.tmnow?.getTime() || Number.NEGATIVE_INFINITY)
+      .orderBy("tmnow", "desc")
+      .limit(1);
+
+    const corporation = await this.mdb.app().corporation();
+    const { rows: datas } = await this.mdb
+      .root()
+      .quartors_data()
+      .in("opid", ids);
+    const datasMap = mapGroupBy(datas, (item) => item.opid);
+    const opid2DataMap = Array.from(datasMap).reduce((map, [opid, datas]) => {
+      if (typeof opid === "string") {
+        map.set(
+          opid,
+          mapGroupBy(datas, (item) => `${item.nBoard}-${item.nChannel}`),
+        );
+      }
+
+      return map;
+    }, new Map<string, Map<string, QuartorData[]>>());
+
+    const calcAtten = (count: number, channel: string) => {
+      return divideBy10(
+        opid2DataMap
+          .get(records.at(count)?.szIDs || "")
+          ?.get(channel)
+          ?.at(0)?.nAtten || 0,
+      );
+    };
+
+    return {
+      xrsj: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+      sbbh: corporation.DeviceNO || "",
+      sbmc: corporation.DeviceName || "",
+      dwmc: corporation.Factory || "",
+      zzsj: firstRecord.szTMMake || "",
+      zzdw: firstRecord.szIDsMake || "",
+      scjxsj: previousRecord.tmnow
+        ? dayjs(previousRecord.tmnow).format("YYYY-MM-DD HH:mm:ss")
+        : "",
+      jyrq: dayjs(firstRecord.tmnow).format("YYYY-MM-DD HH:mm:ss"),
+
+      // 全轴穿透
+      qzct_1_td: "1",
+      qzct_11_z: calcAtten(0, "0-0"),
+      qzct_12_z: calcAtten(1, "0-0"),
+      qzct_13_z: calcAtten(2, "0-0"),
+      qzct_14_z: calcAtten(3, "0-0"),
+      qzct_15_z: calcAtten(4, "0-0"),
+      qzct_1cz_z: calculateMaxDiff(
+        calcAtten(0, "0-0"),
+        calcAtten(1, "0-0"),
+        calcAtten(2, "0-0"),
+        calcAtten(3, "0-0"),
+        calcAtten(4, "0-0"),
+      ),
+      qzct_11_y: calcAtten(0, "1-0"),
+      qzct_12_y: calcAtten(1, "1-0"),
+      qzct_13_y: calcAtten(2, "1-0"),
+      qzct_14_y: calcAtten(3, "1-0"),
+      qzct_15_y: calcAtten(4, "1-0"),
+      qzct_1cz_y: calculateMaxDiff(
+        calcAtten(0, "1-0"),
+        calcAtten(1, "1-0"),
+        calcAtten(2, "1-0"),
+        calcAtten(3, "1-0"),
+        calcAtten(4, "1-0"),
+      ),
+      qzct_1jg: calculateResult(
+        calculateMaxDiff(
+          calcAtten(0, "0-0"),
+          calcAtten(1, "0-0"),
+          calcAtten(2, "0-0"),
+          calcAtten(3, "0-0"),
+          calcAtten(4, "0-0"),
+        ),
+        calculateMaxDiff(
+          calcAtten(0, "1-0"),
+          calcAtten(1, "1-0"),
+          calcAtten(2, "1-0"),
+          calcAtten(3, "1-0"),
+          calcAtten(4, "1-0"),
+        ),
+      ),
+
+      // A1或A2
+      zjgb_1_td: "1",
+      zjgb_11_z: calcAtten(0, "0-1"),
+      zjgb_12_z: calcAtten(1, "0-1"),
+      zjgb_13_z: calcAtten(2, "0-1"),
+      zjgb_14_z: calcAtten(3, "0-1"),
+      zjgb_15_z: calcAtten(4, "0-1"),
+      zjgb_1cz_z: calculateMaxDiff(
+        calcAtten(0, "0-1"),
+        calcAtten(1, "0-1"),
+        calcAtten(2, "0-1"),
+        calcAtten(3, "0-1"),
+        calcAtten(4, "0-1"),
+      ),
+      zjgb_11_y: calcAtten(0, "1-1"),
+      zjgb_12_y: calcAtten(1, "1-1"),
+      zjgb_13_y: calcAtten(2, "1-1"),
+      zjgb_14_y: calcAtten(3, "1-1"),
+      zjgb_15_y: calcAtten(4, "1-1"),
+      zjgb_1cz_y: calculateMaxDiff(
+        calcAtten(0, "1-1"),
+        calcAtten(1, "1-1"),
+        calcAtten(2, "1-1"),
+        calcAtten(3, "1-1"),
+        calcAtten(4, "1-1"),
+      ),
+      zjgb_1jg: calculateResult(
+        calculateMaxDiff(
+          calcAtten(0, "0-1"),
+          calcAtten(1, "0-1"),
+          calcAtten(2, "0-1"),
+          calcAtten(3, "0-1"),
+          calcAtten(4, "0-1"),
+        ),
+        calculateMaxDiff(
+          calcAtten(0, "1-1"),
+          calcAtten(1, "1-1"),
+          calcAtten(2, "1-1"),
+          calcAtten(3, "1-1"),
+          calcAtten(4, "1-1"),
+        ),
+      ),
+
+      // A3
+      zjgb_2_td: "2",
+      zjgb_21_z: calcAtten(0, "0-2"),
+      zjgb_22_z: calcAtten(1, "0-2"),
+      zjgb_23_z: calcAtten(2, "0-2"),
+      zjgb_24_z: calcAtten(3, "0-2"),
+      zjgb_25_z: calcAtten(4, "0-2"),
+      zjgb_2cz_z: calculateMaxDiff(
+        calcAtten(0, "0-2"),
+        calcAtten(1, "0-2"),
+        calcAtten(2, "0-2"),
+        calcAtten(3, "0-2"),
+        calcAtten(4, "0-2"),
+      ),
+      zjgb_21_y: calcAtten(0, "1-2"),
+      zjgb_22_y: calcAtten(1, "1-2"),
+      zjgb_23_y: calcAtten(2, "1-2"),
+      zjgb_24_y: calcAtten(3, "1-2"),
+      zjgb_25_y: calcAtten(4, "1-2"),
+      zjgb_2cz_y: calculateMaxDiff(
+        calcAtten(0, "1-2"),
+        calcAtten(1, "1-2"),
+        calcAtten(2, "1-2"),
+        calcAtten(3, "1-2"),
+        calcAtten(4, "1-2"),
+      ),
+      zjgb_2jg: calculateResult(
+        calculateMaxDiff(
+          calcAtten(0, "0-2"),
+          calcAtten(1, "0-2"),
+          calcAtten(2, "0-2"),
+          calcAtten(3, "0-2"),
+          calcAtten(4, "0-2"),
+        ),
+        calculateMaxDiff(
+          calcAtten(0, "1-2"),
+          calcAtten(1, "1-2"),
+          calcAtten(2, "1-2"),
+          calcAtten(3, "1-2"),
+          calcAtten(4, "1-2"),
+        ),
+      ),
+
+      // 01
+      lzxrb_1_td: "1",
+      lzxrb_11_z: calcAtten(0, "0-3"),
+      lzxrb_12_z: calcAtten(1, "0-3"),
+      lzxrb_13_z: calcAtten(2, "0-3"),
+      lzxrb_14_z: calcAtten(3, "0-3"),
+      lzxrb_15_z: calcAtten(4, "0-3"),
+      lzxrb_1cz_z: calculateMaxDiff(
+        calcAtten(0, "0-3"),
+        calcAtten(1, "0-3"),
+        calcAtten(2, "0-3"),
+        calcAtten(3, "0-3"),
+        calcAtten(4, "0-3"),
+      ),
+      lzxrb_11_y: calcAtten(0, "1-3"),
+      lzxrb_12_y: calcAtten(1, "1-3"),
+      lzxrb_13_y: calcAtten(2, "1-3"),
+      lzxrb_14_y: calcAtten(3, "1-3"),
+      lzxrb_15_y: calcAtten(4, "1-3"),
+      lzxrb_1cz_y: calculateMaxDiff(
+        calcAtten(0, "1-3"),
+        calcAtten(1, "1-3"),
+        calcAtten(2, "1-3"),
+        calcAtten(3, "1-3"),
+        calcAtten(4, "1-3"),
+      ),
+      lzxrb_1jg: calculateResult(
+        calculateMaxDiff(
+          calcAtten(0, "0-3"),
+          calcAtten(1, "0-3"),
+          calcAtten(2, "0-3"),
+          calcAtten(3, "0-3"),
+          calcAtten(4, "0-3"),
+        ),
+        calculateMaxDiff(
+          calcAtten(0, "1-3"),
+          calcAtten(1, "1-3"),
+          calcAtten(2, "1-3"),
+          calcAtten(3, "1-3"),
+          calcAtten(4, "1-3"),
+        ),
+      ),
+
+      // 02
+      lzxrb_2_td: "2",
+      lzxrb_21_z: calcAtten(0, "0-4"),
+      lzxrb_22_z: calcAtten(1, "0-4"),
+      lzxrb_23_z: calcAtten(2, "0-4"),
+      lzxrb_24_z: calcAtten(3, "0-4"),
+      lzxrb_25_z: calcAtten(4, "0-4"),
+      lzxrb_2cz_z: calculateMaxDiff(
+        calcAtten(0, "0-4"),
+        calcAtten(1, "0-4"),
+        calcAtten(2, "0-4"),
+        calcAtten(3, "0-4"),
+        calcAtten(4, "0-4"),
+      ),
+      lzxrb_21_y: calcAtten(0, "1-4"),
+      lzxrb_22_y: calcAtten(1, "1-4"),
+      lzxrb_23_y: calcAtten(2, "1-4"),
+      lzxrb_24_y: calcAtten(3, "1-4"),
+      lzxrb_25_y: calcAtten(4, "1-4"),
+      lzxrb_2cz_y: calculateMaxDiff(
+        calcAtten(0, "1-4"),
+        calcAtten(1, "1-4"),
+        calcAtten(2, "1-4"),
+        calcAtten(3, "1-4"),
+        calcAtten(4, "1-4"),
+      ),
+      lzxrb_2jg: calculateResult(
+        calculateMaxDiff(
+          calcAtten(0, "0-4"),
+          calcAtten(1, "0-4"),
+          calcAtten(2, "0-4"),
+          calcAtten(3, "0-4"),
+          calcAtten(4, "0-4"),
+        ),
+        calculateMaxDiff(
+          calcAtten(0, "1-4"),
+          calcAtten(1, "1-4"),
+          calcAtten(2, "1-4"),
+          calcAtten(3, "1-4"),
+          calcAtten(4, "1-4"),
+        ),
+      ),
+
+      // 12通道设备无以下通道，传空
+      zjgb_3_td: "",
+      zjgb_31_z: "",
+      zjgb_32_z: "",
+      zjgb_33_z: "",
+      zjgb_34_z: "",
+      zjgb_35_z: "",
+      zjgb_3cz_z: "",
+      zjgb_31_y: "",
+      zjgb_32_y: "",
+      zjgb_33_y: "",
+      zjgb_34_y: "",
+      zjgb_35_y: "",
+      zjgb_3cz_y: "",
+      zjgb_3jg: "",
+
+      lzxrb_3_td: "",
+      lzxrb_31_z: "",
+      lzxrb_31_y: "",
+      lzxrb_32_z: "",
+      lzxrb_32_y: "",
+      lzxrb_33_z: "",
+      lzxrb_33_y: "",
+      lzxrb_34_z: "",
+      lzxrb_34_y: "",
+      lzxrb_35_z: "",
+      lzxrb_35_y: "",
+      lzxrb_3cz_z: "",
+      lzxrb_3cz_y: "",
+      lzxrb_3jg: "",
+
+      lzxrb_4_td: "",
+      lzxrb_41_z: "",
+      lzxrb_41_y: "",
+      lzxrb_42_z: "",
+      lzxrb_42_y: "",
+      lzxrb_43_z: "",
+      lzxrb_43_y: "",
+      lzxrb_44_z: "",
+      lzxrb_44_y: "",
+      lzxrb_45_z: "",
+      lzxrb_45_y: "",
+      lzxrb_4cz_z: "",
+      lzxrb_4cz_y: "",
+      lzxrb_4jg: "",
+
+      lzxrb_5_td: "",
+      lzxrb_51_z: "",
+      lzxrb_51_y: "",
+      lzxrb_52_z: "",
+      lzxrb_52_y: "",
+      lzxrb_53_z: "",
+      lzxrb_53_y: "",
+      lzxrb_54_z: "",
+      lzxrb_54_y: "",
+      lzxrb_55_z: "",
+      lzxrb_55_y: "",
+      lzxrb_5cz_z: "",
+      lzxrb_5cz_y: "",
+      lzxrb_5jg: "",
+
+      lzxrb_6_td: "",
+      lzxrb_61_z: "",
+      lzxrb_61_y: "",
+      lzxrb_62_z: "",
+      lzxrb_62_y: "",
+      lzxrb_63_z: "",
+      lzxrb_63_y: "",
+      lzxrb_64_z: "",
+      lzxrb_64_y: "",
+      lzxrb_65_z: "",
+      lzxrb_65_y: "",
+      lzxrb_6cz_z: "",
+      lzxrb_6cz_y: "",
+      lzxrb_6jg: "",
+
+      lzxrb_7_td: "",
+      lzxrb_71_z: "",
+      lzxrb_71_y: "",
+      lzxrb_72_z: "",
+      lzxrb_72_y: "",
+      lzxrb_73_z: "",
+      lzxrb_73_y: "",
+      lzxrb_74_z: "",
+      lzxrb_74_y: "",
+      lzxrb_75_z: "",
+      lzxrb_75_y: "",
+      lzxrb_7cz_z: "",
+      lzxrb_7cz_y: "",
+      lzxrb_7jg: "",
+
+      lzxrb_8_td: "",
+      lzxrb_81_z: "",
+      lzxrb_81_y: "",
+      lzxrb_82_z: "",
+      lzxrb_82_y: "",
+      lzxrb_83_z: "",
+      lzxrb_83_y: "",
+      lzxrb_84_z: "",
+      lzxrb_84_y: "",
+      lzxrb_85_z: "",
+      lzxrb_85_y: "",
+      lzxrb_8cz_z: "",
+      lzxrb_8cz_y: "",
+      lzxrb_8jg: "",
+
+      lzxrb_9_td: "",
+      lzxrb_91_z: "",
+      lzxrb_91_y: "",
+      lzxrb_92_z: "",
+      lzxrb_92_y: "",
+      lzxrb_93_z: "",
+      lzxrb_93_y: "",
+      lzxrb_94_z: "",
+      lzxrb_94_y: "",
+      lzxrb_95_z: "",
+      lzxrb_95_y: "",
+      lzxrb_9cz_z: "",
+      lzxrb_9cz_y: "",
+      lzxrb_9jg: "",
+
+      lzxrb_10_td: "",
+      lzxrb_101_z: "",
+      lzxrb_101_y: "",
+      lzxrb_102_z: "",
+      lzxrb_102_y: "",
+      lzxrb_103_z: "",
+      lzxrb_103_y: "",
+      lzxrb_104_z: "",
+      lzxrb_104_y: "",
+      lzxrb_105_z: "",
+      lzxrb_105_y: "",
+      lzxrb_10cz_z: "",
+      lzxrb_10cz_y: "",
+      lzxrb_10jg: "",
+
+      lzxrb_11_td: "",
+      lzxrb_111_z: "",
+      lzxrb_111_y: "",
+      lzxrb_112_z: "",
+      lzxrb_112_y: "",
+      lzxrb_113_z: "",
+      lzxrb_113_y: "",
+      lzxrb_114_z: "",
+      lzxrb_114_y: "",
+      lzxrb_115_z: "",
+      lzxrb_115_y: "",
+      lzxrb_11cz_z: "",
+      lzxrb_11cz_y: "",
+      lzxrb_11jg: "",
+
+      lzxrb_12_td: "",
+      lzxrb_121_z: "",
+      lzxrb_121_y: "",
+      lzxrb_122_z: "",
+      lzxrb_122_y: "",
+      lzxrb_123_z: "",
+      lzxrb_123_y: "",
+      lzxrb_124_z: "",
+      lzxrb_124_y: "",
+      lzxrb_125_z: "",
+      lzxrb_125_y: "",
+      lzxrb_12cz_z: "",
+      lzxrb_12cz_y: "",
+      lzxrb_12jg: "",
+
+      lzxrb_13_td: "",
+      lzxrb_131_z: "",
+      lzxrb_131_y: "",
+      lzxrb_132_z: "",
+      lzxrb_132_y: "",
+      lzxrb_133_z: "",
+      lzxrb_133_y: "",
+      lzxrb_134_z: "",
+      lzxrb_134_y: "",
+      lzxrb_135_z: "",
+      lzxrb_135_y: "",
+      lzxrb_13cz_z: "",
+      lzxrb_13cz_y: "",
+      lzxrb_13jg: "",
+
+      lzxrb_14_td: "",
+      lzxrb_141_z: "",
+      lzxrb_141_y: "",
+      lzxrb_142_z: "",
+      lzxrb_142_y: "",
+      lzxrb_143_z: "",
+      lzxrb_143_y: "",
+      lzxrb_144_z: "",
+      lzxrb_144_y: "",
+      lzxrb_145_z: "",
+      lzxrb_145_y: "",
+      lzxrb_14cz_z: "",
+      lzxrb_14cz_y: "",
+      lzxrb_14jg: "",
+
+      lzxrb_15_td: "",
+      lzxrb_151_z: "",
+      lzxrb_151_y: "",
+      lzxrb_152_z: "",
+      lzxrb_152_y: "",
+      lzxrb_153_z: "",
+      lzxrb_153_y: "",
+      lzxrb_154_z: "",
+      lzxrb_154_y: "",
+      lzxrb_155_z: "",
+      lzxrb_155_y: "",
+      lzxrb_15cz_z: "",
+      lzxrb_15cz_y: "",
+      lzxrb_15jg: "",
+
+      lzxrb_16_td: "",
+      lzxrb_161_z: "",
+      lzxrb_161_y: "",
+      lzxrb_162_z: "",
+      lzxrb_162_y: "",
+      lzxrb_163_z: "",
+      lzxrb_163_y: "",
+      lzxrb_164_z: "",
+      lzxrb_164_y: "",
+      lzxrb_165_z: "",
+      lzxrb_165_y: "",
+      lzxrb_16cz_z: "",
+      lzxrb_16cz_y: "",
+      lzxrb_16jg: "",
+
+      lzxrb_17_td: "",
+      lzxrb_171_z: "",
+      lzxrb_171_y: "",
+      lzxrb_172_z: "",
+      lzxrb_172_y: "",
+      lzxrb_173_z: "",
+      lzxrb_173_y: "",
+      lzxrb_174_z: "",
+      lzxrb_174_y: "",
+      lzxrb_175_z: "",
+      lzxrb_175_y: "",
+      lzxrb_17cz_z: "",
+      lzxrb_17cz_y: "",
+      lzxrb_17jg: "",
+
+      lzxrb_18_td: "",
+      lzxrb_181_z: "",
+      lzxrb_181_y: "",
+      lzxrb_182_z: "",
+      lzxrb_182_y: "",
+      lzxrb_183_z: "",
+      lzxrb_183_y: "",
+      lzxrb_184_z: "",
+      lzxrb_184_y: "",
+      lzxrb_185_z: "",
+      lzxrb_185_y: "",
+      lzxrb_18cz_z: "",
+      lzxrb_18cz_y: "",
+      lzxrb_18jg: "",
+
+      lzxrb_19_td: "",
+      lzxrb_191_z: "",
+      lzxrb_191_y: "",
+      lzxrb_192_z: "",
+      lzxrb_192_y: "",
+      lzxrb_193_z: "",
+      lzxrb_193_y: "",
+      lzxrb_194_z: "",
+      lzxrb_194_y: "",
+      lzxrb_195_z: "",
+      lzxrb_195_y: "",
+      lzxrb_19cz_z: "",
+      lzxrb_19cz_y: "",
+      lzxrb_19jg: "",
+
+      lzxrb_20_td: "",
+      lzxrb_201_z: "",
+      lzxrb_201_y: "",
+      lzxrb_202_z: "",
+      lzxrb_202_y: "",
+      lzxrb_203_z: "",
+      lzxrb_203_y: "",
+      lzxrb_204_z: "",
+      lzxrb_204_y: "",
+      lzxrb_205_z: "",
+      lzxrb_205_y: "",
+      lzxrb_20cz_z: "",
+      lzxrb_20cz_y: "",
+      lzxrb_20jg: "",
+
+      lzxrb_21_td: "",
+      lzxrb_211_z: "",
+      lzxrb_211_y: "",
+      lzxrb_212_z: "",
+      lzxrb_212_y: "",
+      lzxrb_213_z: "",
+      lzxrb_213_y: "",
+      lzxrb_214_z: "",
+      lzxrb_214_y: "",
+      lzxrb_215_z: "",
+      lzxrb_215_y: "",
+      lzxrb_21cz_z: "",
+      lzxrb_21cz_y: "",
+      lzxrb_21jg: "",
+
+      lzxrb_22_td: "",
+      lzxrb_221_z: "",
+      lzxrb_221_y: "",
+      lzxrb_222_z: "",
+      lzxrb_222_y: "",
+      lzxrb_223_z: "",
+      lzxrb_223_y: "",
+      lzxrb_224_z: "",
+      lzxrb_224_y: "",
+      lzxrb_225_z: "",
+      lzxrb_225_y: "",
+      lzxrb_22cz_z: "",
+      lzxrb_22cz_y: "",
+      lzxrb_22jg: "",
+
+      lzxrb_23_td: "",
+      lzxrb_231_z: "",
+      lzxrb_231_y: "",
+      lzxrb_232_z: "",
+      lzxrb_232_y: "",
+      lzxrb_233_z: "",
+      lzxrb_233_y: "",
+      lzxrb_234_z: "",
+      lzxrb_234_y: "",
+      lzxrb_235_z: "",
+      lzxrb_235_y: "",
+      lzxrb_23cz_z: "",
+      lzxrb_23cz_y: "",
+      lzxrb_23jg: "",
+
+      lzxrb_24_td: "",
+      lzxrb_241_z: "",
+      lzxrb_241_y: "",
+      lzxrb_242_z: "",
+      lzxrb_242_y: "",
+      lzxrb_243_z: "",
+      lzxrb_243_y: "",
+      lzxrb_244_z: "",
+      lzxrb_244_y: "",
+      lzxrb_245_z: "",
+      lzxrb_245_y: "",
+      lzxrb_24cz_z: "",
+      lzxrb_24cz_y: "",
+      lzxrb_24jg: "",
+
+      lzxrb_25_td: "",
+      lzxrb_251_z: "",
+      lzxrb_251_y: "",
+      lzxrb_252_z: "",
+      lzxrb_252_y: "",
+      lzxrb_253_z: "",
+      lzxrb_253_y: "",
+      lzxrb_254_z: "",
+      lzxrb_254_y: "",
+      lzxrb_255_z: "",
+      lzxrb_255_y: "",
+      lzxrb_25cz_z: "",
+      lzxrb_25cz_y: "",
+      lzxrb_25jg: "",
+
+      lzxrb_26_td: "",
+      lzxrb_261_z: "",
+      lzxrb_261_y: "",
+      lzxrb_262_z: "",
+      lzxrb_262_y: "",
+      lzxrb_263_z: "",
+      lzxrb_263_y: "",
+      lzxrb_264_z: "",
+      lzxrb_264_y: "",
+      lzxrb_265_z: "",
+      lzxrb_265_y: "",
+      lzxrb_26cz_z: "",
+      lzxrb_26cz_y: "",
+      lzxrb_26jg: "",
+
+      lzxrb_27_td: "",
+      lzxrb_271_z: "",
+      lzxrb_271_y: "",
+      lzxrb_272_z: "",
+      lzxrb_272_y: "",
+      lzxrb_273_z: "",
+      lzxrb_273_y: "",
+      lzxrb_274_z: "",
+      lzxrb_274_y: "",
+      lzxrb_275_z: "",
+      lzxrb_275_y: "",
+      lzxrb_27cz_z: "",
+      lzxrb_27cz_y: "",
+      lzxrb_27jg: "",
+
+      lzxrb_28_td: "",
+      lzxrb_281_z: "",
+      lzxrb_281_y: "",
+      lzxrb_282_z: "",
+      lzxrb_282_y: "",
+      lzxrb_283_z: "",
+      lzxrb_283_y: "",
+      lzxrb_284_z: "",
+      lzxrb_284_y: "",
+      lzxrb_285_z: "",
+      lzxrb_285_y: "",
+      lzxrb_28cz_z: "",
+      lzxrb_28cz_y: "",
+      lzxrb_28jg: "",
+
+      lzxrb_29_td: "",
+      lzxrb_291_z: "",
+      lzxrb_291_y: "",
+      lzxrb_292_z: "",
+      lzxrb_292_y: "",
+      lzxrb_293_z: "",
+      lzxrb_293_y: "",
+      lzxrb_294_z: "",
+      lzxrb_294_y: "",
+      lzxrb_295_z: "",
+      lzxrb_295_y: "",
+      lzxrb_29cz_z: "",
+      lzxrb_29cz_y: "",
+      lzxrb_29jg: "",
+
+      lzxrb_30_td: "",
+      lzxrb_301_z: "",
+      lzxrb_301_y: "",
+      lzxrb_302_z: "",
+      lzxrb_302_y: "",
+      lzxrb_303_z: "",
+      lzxrb_303_y: "",
+      lzxrb_304_z: "",
+      lzxrb_304_y: "",
+      lzxrb_305_z: "",
+      lzxrb_305_y: "",
+      lzxrb_30cz_z: "",
+      lzxrb_30cz_y: "",
+      lzxrb_30jg: "",
+
+      lzxrb_31_td: "",
+      lzxrb_311_z: "",
+      lzxrb_311_y: "",
+      lzxrb_312_z: "",
+      lzxrb_312_y: "",
+      lzxrb_313_z: "",
+      lzxrb_313_y: "",
+      lzxrb_314_z: "",
+      lzxrb_314_y: "",
+      lzxrb_315_z: "",
+      lzxrb_315_y: "",
+      lzxrb_31cz_z: "",
+      lzxrb_31cz_y: "",
+      lzxrb_31jg: "",
+
+      lzxrb_32_td: "",
+      lzxrb_321_z: "",
+      lzxrb_321_y: "",
+      lzxrb_322_z: "",
+      lzxrb_322_y: "",
+      lzxrb_323_z: "",
+      lzxrb_323_y: "",
+      lzxrb_324_z: "",
+      lzxrb_324_y: "",
+      lzxrb_325_z: "",
+      lzxrb_325_y: "",
+      lzxrb_32cz_z: "",
+      lzxrb_32cz_y: "",
+      lzxrb_32jg: "",
+
+      lzxrb_33_td: "",
+      lzxrb_331_z: "",
+      lzxrb_331_y: "",
+      lzxrb_332_z: "",
+      lzxrb_332_y: "",
+      lzxrb_333_z: "",
+      lzxrb_333_y: "",
+      lzxrb_334_z: "",
+      lzxrb_334_y: "",
+      lzxrb_335_z: "",
+      lzxrb_335_y: "",
+      lzxrb_33cz_z: "",
+      lzxrb_33cz_y: "",
+      lzxrb_33jg: "",
+
+      tsg: firstRecord.szUsername || "",
+      gz: this.state.tsgz,
+      zjy: this.state.tszjy,
+      ysy: this.state.tsysy,
+      wxg: this.state.tswxg,
+      sbzz: this.state.sbzz,
+      tszz: this.state.tszz,
+      zgld: this.state.zgld,
+      bz: "",
+    };
   }
   async resolveCHR503InputParams(id: string): Promise<I503> {
     const { rows } = await this.mdb.root().Quartor().equal("szIDs", id);

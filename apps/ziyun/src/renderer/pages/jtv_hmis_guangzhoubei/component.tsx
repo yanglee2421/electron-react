@@ -335,10 +335,10 @@ const DataGrid = (props: DataGridProps) => {
   );
 };
 
-type RowSelectGridProps = {
+interface RowSelectGridProps {
   data?: NormalizeResponse[];
   onRowSelect?: (record: NormalizeResponse) => void;
-};
+}
 
 const RowSelectGrid = (props: RowSelectGridProps) => {
   "use no memo";
@@ -474,7 +474,7 @@ export const Component = () => {
     validators: {
       onChange: schema,
     },
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
       const data = await getData.mutateAsync(
         { barcode: value.barCode, isZhMode: zhMode },
         {
@@ -484,7 +484,7 @@ export const Component = () => {
             });
           },
           onSuccess: () => {
-            form.reset();
+            formApi.reset();
           },
         },
       );

@@ -19,7 +19,7 @@ import * as sql from "drizzle-orm";
 import { net } from "electron";
 import pLimit from "p-limit";
 import type { Subscription } from "rxjs";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, distinctUntilChanged, tap } from "rxjs";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
 
@@ -156,7 +156,8 @@ export class JTV {
   private db: DBClient;
   private mdb: MDB;
   private logger: Logger;
-  private subscription: Subscription;
+  private subscriptions: Subscription[];
+  private timer: NodeJS.Timeout | number = 0;
 
   constructor({ db, mdb, logger, kv }: AppCradle) {
     this.db = db.client;
@@ -168,65 +169,88 @@ export class JTV {
     const initialState = jtv_hmis.parse(state);
     this.state$ = new BehaviorSubject<JTV_HMIS>(initialState);
 
-    this.subscription = kv.events$.subscribe((event) => {
-      if (event.key !== JTV_HMIS_STORAGE_KEY) {
-        return;
-      }
+    const subscription1 = kv.events$
+      .pipe(
+        tap((event) => {
+          if (event.key !== JTV_HMIS_STORAGE_KEY) {
+            return;
+          }
 
-      switch (event.action) {
-        case "set":
-          this.state$.next(
-            jtv_hmis.parse(event.value ? JSON.parse(event.value).state : {}),
-          );
-          break;
-        case "remove":
-        case "clear":
-          this.state$.next(jtv_hmis.parse({}));
-          break;
-      }
-    });
+          switch (event.action) {
+            case "set":
+              this.state$.next(
+                jtv_hmis.parse(
+                  event.value ? JSON.parse(event.value).state : {},
+                ),
+              );
+              break;
+            case "remove":
+            case "clear":
+              this.state$.next(jtv_hmis.parse({}));
+              break;
+          }
+        }),
+      )
+      .subscribe();
+
+    const subscription2 = this.state$
+      .pipe(
+        distinctUntilChanged(
+          (prev, next) =>
+            prev.autoUpload === next.autoUpload &&
+            prev.autoUploadInterval === next.autoUploadInterval,
+        ),
+        tap((state) => {
+          this.stopAutoUpload();
+
+          if (state.autoUpload) {
+            this.startAutoUpload();
+          }
+        }),
+      )
+      .subscribe();
+
+    this.subscriptions = [subscription1, subscription2];
   }
 
   dispose() {
     this.state$.complete();
-    this.subscription.unsubscribe();
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
   get state() {
     return this.state$.getValue();
   }
 
+  startAutoUpload() {
+    const store = this.state;
+    const timeout = store.autoUploadInterval * 1000;
+    this.timer = setInterval(this.autoUploadLoop.bind(this), timeout);
+  }
+
+  stopAutoUpload() {
+    clearInterval(this.timer);
+  }
+
   async autoUploadLoop() {
-    if (!this.state.autoUpload) {
-      return;
-    }
-
     const limit = pLimit(1);
-
-    try {
-      const barcodes = await this.db
-        .select()
-        .from(schema.jtvBarcodeTable)
-        .where(
-          sql.and(
-            sql.eq(schema.jtvBarcodeTable.isUploaded, false),
-            sql.between(
-              schema.jtvBarcodeTable.date,
-              dayjs().startOf("day").toDate(),
-              dayjs().endOf("day").toDate(),
-            ),
+    const barcodes = await this.db
+      .select()
+      .from(schema.jtvBarcodeTable)
+      .where(
+        sql.and(
+          sql.eq(schema.jtvBarcodeTable.isUploaded, false),
+          sql.between(
+            schema.jtvBarcodeTable.date,
+            dayjs().startOf("day").toDate(),
+            dayjs().endOf("day").toDate(),
           ),
-        );
-
-      await Promise.allSettled(
-        barcodes.map((barcode) => limit(() => this.handleUpload(barcode.id))),
+        ),
       );
-    } finally {
-      const store = this.state;
-      const timeout = store.autoUploadInterval * 1000;
 
-      setTimeout(this.autoUploadLoop.bind(this), timeout);
-    }
+    await Promise.allSettled(
+      barcodes.map((barcode) => limit(() => this.handleUpload(barcode.id))),
+    );
   }
 
   makeDataRequestURL(dh: string) {

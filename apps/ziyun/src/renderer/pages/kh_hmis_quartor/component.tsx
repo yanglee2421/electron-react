@@ -4,7 +4,7 @@ import { fetchQuartor, fetchUser } from "#renderer/api/mdb";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { Print, RefreshOutlined } from "@mui/icons-material";
+import { RefreshOutlined, UploadRounded } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -307,7 +307,7 @@ export const Component = () => {
           variant="outlined"
           startIcon={
             <PendingIcon isPending={upload502.isPending}>
-              <Print />
+              <UploadRounded />
             </PendingIcon>
           }
           onClick={() => {
@@ -326,7 +326,7 @@ export const Component = () => {
           }}
           disabled={printCheck.disabledPrint}
         >
-          打印
+          上传
         </Button>
       </CardContent>
       {query.isFetching && <LinearProgress />}
