@@ -99,7 +99,7 @@
     "basic-ftp": "^6.0.1",
     "electron": "^39.8.10",
     "electron-builder": "^26.11.0",
-    "electron-vite": "workspace:*",
+    "electron-vite": "6.0.0-beta.1",
     "immer": "^11.0.1",
     "mathjs": "^15.2.0",
     "nprogress": "^0.2.0",

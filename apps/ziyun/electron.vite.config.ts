@@ -1,6 +1,7 @@
 import babel from "@rolldown/plugin-babel";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig } from "electron-vite";
+import path from "node:path";
 import url from "node:url";
 import type { Plugin } from "vite";
 
@@ -22,42 +23,49 @@ const reactDevtoolsPlugin = (enabled?: boolean): Plugin => {
   };
 };
 
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const alias = {
-  "#main": url.fileURLToPath(new URL("./src/main", import.meta.url)),
-  "#preload": url.fileURLToPath(new URL("./src/preload", import.meta.url)),
-  "#renderer": url.fileURLToPath(new URL("./src/renderer", import.meta.url)),
-  "#resources": url.fileURLToPath(new URL("./resources", import.meta.url)),
-  "#shared": url.fileURLToPath(new URL("./src/shared", import.meta.url)),
+  "#main": path.resolve(__dirname, "./src/main"),
+  "#preload": path.resolve(__dirname, "./src/preload"),
+  "#renderer": path.resolve(__dirname, "./src/renderer"),
+  "#resources": path.resolve(__dirname, "./resources"),
+  "#shared": path.resolve(__dirname, "./src/shared"),
 };
 
-export default defineConfig({
-  main: {
-    resolve: { alias },
-    build: {
-      watch: {},
-      rolldownOptions: {
-        treeshake: false,
-      },
-    },
-  },
-  preload: {
-    resolve: { alias },
-    build: {
-      rolldownOptions: {
-        output: {
-          format: "cjs" as const,
+export default defineConfig(async () => {
+  /**
+   * electron-vite use deepClone resolve vite configs
+   * And promise can not be deepCloned
+   * So need await it to get plain object
+   */
+  const babelPlugin = await babel({
+    presets: [reactCompilerPreset({ target: "19" })],
+  });
+
+  return {
+    main: {
+      resolve: { alias },
+      build: {
+        watch: {},
+        rolldownOptions: {
+          treeshake: false,
         },
       },
-      externalizeDeps: false,
     },
-  },
-  renderer: {
-    plugins: [
-      react(),
-      reactDevtoolsPlugin(),
-      babel({ presets: [reactCompilerPreset({ target: "19" })] }),
-    ],
-    resolve: { alias },
-    build: {},
-  },
+    preload: {
+      resolve: { alias },
+      build: {
+        rolldownOptions: {
+          output: { format: "cjs" as const },
+        },
+        externalizeDeps: false,
+      },
+    },
+    renderer: {
+      plugins: [react(), reactDevtoolsPlugin(), babelPlugin],
+      resolve: { alias },
+      build: {},
+    },
+  };
 });
