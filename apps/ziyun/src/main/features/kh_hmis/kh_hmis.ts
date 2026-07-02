@@ -122,8 +122,6 @@ export class KH {
   }
 
   async autoUploadLoop() {
-    console.log("autoUploadLoop");
-
     const limit = pLimit(1);
     const barcodes = await this.db
       .select()
