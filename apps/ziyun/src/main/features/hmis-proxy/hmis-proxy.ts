@@ -46,7 +46,7 @@ export class HmisProxy {
               ),
           );
         }),
-        shareReplay(1),
+        shareReplay({ refCount: true, bufferSize: 1 }),
       )
       .subscribe();
   }
