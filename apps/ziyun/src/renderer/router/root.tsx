@@ -198,7 +198,7 @@ const useNavigation = () => {
 
     if (showJtvHmisMenu) {
       navMenus.push({
-        title: "京天威统信",
+        title: "京天威统型",
         children: [
           {
             segment: calcSegment("jtv"),
