@@ -126,20 +126,16 @@ const secondInstance$ = fromEventPattern(
 
 const resource$ = using(
   () => {
-    console.log("subscribe", app.getPath("userData"));
-
     const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
     container.register({ DB_PATH: asValue(DB_PATH) });
 
     const { appDb } = container.cradle;
-    void appDb;
 
     return {
       unsubscribe: () => {
-        console.log("unsubscribe");
-
         container.dispose();
       },
+      appDb,
     };
   },
   () => NEVER.pipe(startWith(null), takeUntil(willQuit$)),
@@ -162,7 +158,9 @@ const app$ = defer(() => {
   return concat(whenReady$.pipe(ignoreElements()), resource$).pipe(
     tap(() => createWindow()),
     catchError((error) => {
-      console.error(error);
+      if (is.dev) {
+        console.error(error);
+      }
 
       return EMPTY;
     }),

@@ -3,9 +3,9 @@ import type { Observable, Subscription } from "rxjs";
 import {
   BehaviorSubject,
   distinctUntilChanged,
+  EMPTY,
   last,
   NEVER,
-  of,
   shareReplay,
   startWith,
   switchMap,
@@ -57,7 +57,7 @@ export class PLC {
       distinctUntilChanged(),
       switchMap((path) => {
         if (!path) {
-          return of(null);
+          return EMPTY;
         }
 
         return using(
@@ -74,11 +74,13 @@ export class PLC {
           (c) => {
             const plc: FXPLCClient = Reflect.get(Object(c), "plc");
 
-            return NEVER.pipe(startWith(plc));
+            return NEVER.pipe(
+              startWith(plc),
+              takeUntil(this.path$.pipe(last())),
+            );
           },
         );
       }),
-      takeUntil(this.path$.pipe(last())),
       shareReplay({ refCount: true, bufferSize: 1 }),
     );
 

@@ -13,7 +13,14 @@ import * as sql from "drizzle-orm";
 import { net } from "electron";
 import pLimit from "p-limit";
 import type { Subscription } from "rxjs";
-import { BehaviorSubject, distinctUntilChanged, tap } from "rxjs";
+import {
+  BehaviorSubject,
+  distinctUntilChanged,
+  EMPTY,
+  interval,
+  switchMap,
+  tap,
+} from "rxjs";
 import type { DBClient } from "../db/types";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
@@ -55,7 +62,6 @@ export class Hxzy {
   private mdb: MDB;
   private logger: Logger;
   private subscriptions: Subscription[];
-  private timer: NodeJS.Timeout | number = 0;
 
   constructor({ db, mdb, logger, kv }: AppCradle) {
     this.db = db.client;
@@ -93,16 +99,19 @@ export class Hxzy {
     const sub2 = this.state$
       .pipe(
         distinctUntilChanged(
-          (prev, next) =>
-            prev.autoUpload === next.autoUpload &&
-            prev.autoUploadInterval === next.autoUploadInterval,
+          (previous, current) =>
+            previous.autoUpload === current.autoUpload &&
+            previous.autoUploadInterval === current.autoUploadInterval,
         ),
-        tap((state) => {
-          this.stopAutoUpload();
-
-          if (state.autoUpload) {
-            this.startAutoUpload();
+        switchMap((state) => {
+          if (!state.autoUpload) {
+            return EMPTY;
           }
+
+          return interval(state.autoUploadInterval * 1000);
+        }),
+        tap(() => {
+          this.autoUploadLoop();
         }),
       )
       .subscribe();
@@ -117,16 +126,6 @@ export class Hxzy {
 
   get state() {
     return this.state$.getValue();
-  }
-
-  startAutoUpload() {
-    const store = this.state;
-    const delay = store.autoUploadInterval * 1000;
-    this.timer = setTimeout(this.autoUploadLoop.bind(this), delay);
-  }
-
-  stopAutoUpload() {
-    clearInterval(this.timer);
   }
 
   async autoUploadLoop() {

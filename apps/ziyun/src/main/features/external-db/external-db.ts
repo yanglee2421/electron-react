@@ -7,9 +7,9 @@ import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
   distinctUntilChanged,
+  EMPTY,
   last,
   NEVER,
-  of,
   shareReplay,
   startWith,
   switchMap,
@@ -31,14 +31,14 @@ export class ExternalDB {
             previous.externalDBPath === current.externalDBPath
           );
         }),
-        switchMap((profile) => {
-          if (!profile.enableExternalDB) {
-            return of(null);
+        switchMap((state) => {
+          if (!state.enableExternalDB) {
+            return EMPTY;
           }
 
           return using(
             () => {
-              const client = new DatabaseSync(profile.externalDBPath);
+              const client = new DatabaseSync(state.externalDBPath);
               const db = drizzle({ client, schema, relations });
 
               return {
@@ -51,11 +51,13 @@ export class ExternalDB {
             (c) => {
               const db: DBClient = Reflect.get(Object(c), "db");
 
-              return NEVER.pipe(startWith(db));
+              return NEVER.pipe(
+                startWith(db),
+                takeUntil(profile.state$.pipe(last())),
+              );
             },
           );
         }),
-        takeUntil(profile.state$.pipe(last())),
         shareReplay({ bufferSize: 1, refCount: true }),
       )
       .subscribe(this.client$);

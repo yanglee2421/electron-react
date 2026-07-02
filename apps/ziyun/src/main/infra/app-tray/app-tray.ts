@@ -5,10 +5,10 @@ import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
   distinctUntilChanged,
+  EMPTY,
   fromEventPattern,
   last,
   NEVER,
-  of,
   shareReplay,
   startWith,
   switchMap,
@@ -23,10 +23,12 @@ export class AppTray {
   constructor({ profile, appWindow }: AppCradle) {
     this.subscription = profile.state$
       .pipe(
-        distinctUntilChanged((a, b) => a.enableTray === b.enableTray),
+        distinctUntilChanged(
+          (previous, current) => previous.enableTray === current.enableTray,
+        ),
         switchMap((state) => {
           if (!state.enableTray) {
-            return of(null);
+            return EMPTY;
           }
 
           return using(
@@ -76,11 +78,13 @@ export class AppTray {
             (c) => {
               const tray: Tray = Reflect.get(Object(c), "tray");
 
-              return NEVER.pipe(startWith(tray));
+              return NEVER.pipe(
+                startWith(tray),
+                takeUntil(profile.state$.pipe(last())),
+              );
             },
           );
         }),
-        takeUntil(profile.state$.pipe(last())),
         shareReplay({ refCount: true, bufferSize: 1 }),
       )
       .subscribe(this.tray$);

@@ -25,7 +25,14 @@ import { net } from "electron";
 import path from "node:path";
 import pLimit from "p-limit";
 import type { Subscription } from "rxjs";
-import { BehaviorSubject, distinctUntilChanged, tap } from "rxjs";
+import {
+  BehaviorSubject,
+  distinctUntilChanged,
+  EMPTY,
+  interval,
+  switchMap,
+  tap,
+} from "rxjs";
 import type { DBClient } from "../db/types";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
@@ -48,7 +55,6 @@ export class KH {
   private mdb: MDB;
   private logger: Logger;
   private subscriptions: Subscription[];
-  private timer: NodeJS.Timeout | number = 0;
 
   constructor({ db, mdb, logger, kv }: AppCradle) {
     this.db = db.client;
@@ -86,20 +92,19 @@ export class KH {
     const subscription2 = this.state$
       .pipe(
         distinctUntilChanged(
-          (prev, next) =>
-            prev.autoUpload === next.autoUpload &&
-            prev.autoUploadInterval === next.autoUploadInterval,
+          (previous, current) =>
+            previous.autoUpload === current.autoUpload &&
+            previous.autoUploadInterval === current.autoUploadInterval,
         ),
-        tap((state) => {
-          /**
-           * 配置发生变化时，停止自动上传以让旧配置失效
-           * 如果配置中仍然启用了自动上传，则重新启动自动上传
-           */
-          this.stopAutoUpload();
-
-          if (state.autoUpload) {
-            this.startAutoUpload();
+        switchMap((state) => {
+          if (!state.autoUpload) {
+            return EMPTY;
           }
+
+          return interval(state.autoUploadInterval * 1000);
+        }),
+        tap(() => {
+          this.autoUploadLoop();
         }),
       )
       .subscribe();
@@ -116,19 +121,10 @@ export class KH {
     return this.state$.getValue();
   }
 
-  startAutoUpload() {
-    const store = this.state;
-    const delay = store.autoUploadInterval * 1000;
-    this.timer = setInterval(this.autoUploadLoop.bind(this), delay);
-  }
-
-  stopAutoUpload() {
-    clearInterval(this.timer);
-  }
-
   async autoUploadLoop() {
-    const limit = pLimit(1);
+    console.log("autoUploadLoop");
 
+    const limit = pLimit(1);
     const barcodes = await this.db
       .select()
       .from(schema.khBarcodeTable)

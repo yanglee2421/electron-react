@@ -2,9 +2,9 @@ import { createServer } from "@yanglee2421/hmis-proxy";
 import type { Subscription } from "rxjs";
 import {
   distinctUntilChanged,
+  EMPTY,
   last,
   NEVER,
-  of,
   shareReplay,
   startWith,
   switchMap,
@@ -26,7 +26,7 @@ export class HmisProxy {
         }),
         switchMap((state) => {
           if (!state.enableHMISProxy) {
-            return of(null);
+            return EMPTY;
           }
 
           return using(
@@ -39,10 +39,13 @@ export class HmisProxy {
                 },
               };
             },
-            () => NEVER.pipe(startWith(null)),
+            () =>
+              NEVER.pipe(
+                startWith(null),
+                takeUntil(profile.state$.pipe(last())),
+              ),
           );
         }),
-        takeUntil(profile.state$.pipe(last())),
         shareReplay(1),
       )
       .subscribe();
