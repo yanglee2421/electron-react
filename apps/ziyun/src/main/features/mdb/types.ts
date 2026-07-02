@@ -286,44 +286,6 @@ export type TableQueryResult<TRow> = {
 
 export type DatabaseType = "app" | "root";
 
-export interface LikeFilter {
-  type: "like";
-  field: string;
-  value: string;
-}
-
-export interface DateFilter {
-  type: "date";
-  field: string;
-  startAt: string;
-  endAt: string;
-}
-
-export interface InFilter {
-  type: "in";
-  field: string;
-  value: string[];
-}
-
-export interface EqualFilter {
-  type: "equal";
-  field: string;
-  value: string | number | boolean;
-}
-
-export type Filter = LikeFilter | DateFilter | InFilter | EqualFilter;
-
-export interface MDBWorkerData {
-  databasePath: string;
-  tableName: string;
-  pageIndex?: number;
-  pageSize?: number;
-  filters?: Filter[];
-  with?: boolean;
-}
-
-export type MDBPayload = Omit<MDBWorkerData, "databasePath">;
-
 export interface ListQuartorInput {
   pageIndex: number;
   pageSize: number;
@@ -366,14 +328,6 @@ export interface ListDetectionInput {
 }
 
 export interface IPCContract {
-  "MDB/MDB_ROOT_GET": {
-    args: [MDBPayload];
-    return: { total: number; rows: unknown[] };
-  };
-  "MDB/MDB_APP_GET": {
-    args: [MDBPayload];
-    return: { total: number; rows: unknown[] };
-  };
   "mdb/user": {
     args: [ListUserInput];
     return: { count: number; rows: User[] };

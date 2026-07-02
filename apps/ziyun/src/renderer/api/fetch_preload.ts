@@ -1,5 +1,4 @@
 import type { AutoInputToVCParams } from "#main/features/cmd/types";
-import type { MDBPayload } from "#main/features/mdb/types";
 import { ipc } from "#renderer/lib/ipc";
 import {
   queryOptions,
@@ -64,11 +63,6 @@ export const useMobileMode = () => {
   });
 };
 
-type Result<TRow> = {
-  total: number;
-  rows: TRow[];
-};
-
 export const useSelectDirectory = () => {
   return useMutation({
     mutationFn: async () => {
@@ -84,26 +78,6 @@ export const useSelectFile = () => {
     },
   });
 };
-
-export const fetchDataFromRootDB = <TRow>(data: MDBPayload) =>
-  queryOptions({
-    queryKey: ["MDB/MDB_ROOT_GET", data],
-    queryFn: async () => {
-      const result = await ipc.invoke("MDB/MDB_ROOT_GET", data);
-
-      return result as Result<TRow>;
-    },
-  });
-
-export const fetchDataFromAppDB = <TRow>(data: MDBPayload) =>
-  queryOptions({
-    queryKey: ["MDB/MDB_APP_GET", data],
-    queryFn: async () => {
-      const result = await ipc.invoke("MDB/MDB_APP_GET", data);
-
-      return result as Result<TRow>;
-    },
-  });
 
 export const useMD5BackupImage = () => {
   return useMutation({

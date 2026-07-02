@@ -16,7 +16,6 @@ import type {
   FilterDateValue,
   FilterInValues,
   FilterValue,
-  MDBPayload,
   Quartor,
   QuartorData,
   QuartorYearlyData,
@@ -323,42 +322,6 @@ export class MDB {
     return this.database();
   }
 
-  async getDataForCHR502({ ids }: GetDataForCHR502Params): Promise<{
-    previous: Quartor | null;
-    rows: QuartorWithData[];
-  }> {
-    const databasePath = await this.appPathInfo.rootDb();
-
-    return this.piscina.run({ ids, databasePath }, { name: "handleCHR502" });
-  }
-  async getDataFromRootDB<TRow>(data: MDBPayload): Promise<{
-    total: number;
-    rows: TRow[];
-  }> {
-    const databasePath = await this.appPathInfo.rootDb();
-
-    return this.piscina.run(
-      {
-        ...data,
-        databasePath,
-      },
-      { name: "getDataFromMDB" },
-    );
-  }
-  getDataFromAppDB<TRow>(data: MDBPayload): Promise<{
-    total: number;
-    rows: TRow[];
-  }> {
-    const databasePath = this.appPathInfo.appDb();
-
-    return this.piscina.run(
-      {
-        ...data,
-        databasePath,
-      },
-      { name: "getDataFromMDB" },
-    );
-  }
   rootFolder() {
     return this.appPathInfo.rootFolder();
   }
@@ -372,11 +335,3 @@ export class MDB {
     return this.appPathInfo.quartorImagePath(rootPath, fileName);
   }
 }
-
-interface GetDataForCHR502Params {
-  ids: string[];
-}
-
-type QuartorWithData = Quartor & {
-  with: QuartorData[];
-};

@@ -1,18 +1,9 @@
 import { ipcHandle, ipcRemoveHandle } from "#main/ipc";
-
 import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import type { MDB } from "./mdb";
 
 export const registerIPCHandlers = (mdb: MDB) => {
-  // DEPRECATED
-  ipcHandle("MDB/MDB_ROOT_GET", async (_, data) => {
-    return mdb.getDataFromRootDB(data);
-  });
-  ipcHandle("MDB/MDB_APP_GET", async (_, data) => {
-    return mdb.getDataFromAppDB(data);
-  });
-
   // Basic
   ipcHandle("mdb/user", async (_, payload) => {
     const { pageIndex, pageSize } = payload;
@@ -178,10 +169,6 @@ export const registerIPCHandlers = (mdb: MDB) => {
   });
 
   return () => {
-    // DEPRECATED
-    ipcRemoveHandle("MDB/MDB_ROOT_GET");
-    ipcRemoveHandle("MDB/MDB_APP_GET");
-
     ipcRemoveHandle("mdb/user");
     ipcRemoveHandle("mdb/verifies");
     ipcRemoveHandle("mdb/verifies/id");

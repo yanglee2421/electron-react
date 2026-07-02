@@ -1,6 +1,7 @@
 import type { Verify } from "#main/features/mdb/types";
-import { fetchDataFromRootDB } from "#renderer/api/fetch_preload";
+import { fetchUser, fetchVerifies } from "#renderer/api/mdb";
 import { Loading } from "#renderer/components/Loading";
+import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { RefreshOutlined } from "@mui/icons-material";
 import {
@@ -9,9 +10,11 @@ import {
   Card,
   CardContent,
   CardHeader,
+  Divider,
   Grid,
   IconButton,
   LinearProgress,
+  Link,
   Table,
   TableBody,
   TableCell,
@@ -20,6 +23,7 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
@@ -32,13 +36,18 @@ import {
 import dayjs from "dayjs";
 import React from "react";
 
-const initDate = () => dayjs();
-
+const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Verify>();
-
 const columns = [
-  columnHelper.accessor("szIDs", { header: "ID", footer: "ID" }),
-  columnHelper.accessor("szIDsWheel", { header: "轴号", footer: "轴号" }),
+  columnHelper.accessor("szIDs", {
+    header: "ID",
+    footer: "ID",
+    cell: ({ getValue }) => {
+      const szID = getValue();
+
+      return <Link>#{szIDToId(szID)}</Link>;
+    },
+  }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
   columnHelper.accessor("tmNow", {
@@ -51,56 +60,70 @@ const columns = [
       return new Date(tmnow).toLocaleString();
     },
   }),
-  columnHelper.accessor("szResult", { header: "检测结果", footer: "检测结果" }),
-  columnHelper.display({
-    id: "actions",
-    header: "操作",
-    footer: "操作",
-    cell: () => <></>,
-  }),
 ];
 
 export const Component = () => {
   "use no memo";
-  const [date, setDate] = React.useState(initDate);
+  const [date, setDate] = React.useState<dayjs.Dayjs | null>(() => dayjs());
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(100);
+  const [user, setUser] = React.useState("");
+  const [zx, setZx] = React.useState("");
+
+  const userDataListId = React.useId();
+  const zxDataListId = React.useId();
 
   const query = useQuery(
-    fetchDataFromRootDB<Verify>({
-      tableName: "verifies",
-      filters: [
-        {
-          type: "date",
-          field: "tmNow",
-          startAt: dayjs(date).startOf("day").toISOString(),
-          endAt: dayjs(date).endOf("day").toISOString(),
-        },
-      ],
+    fetchVerifies({
+      pageIndex,
+      pageSize,
+      date: date?.toISOString() || "",
+      user,
+      zx,
     }),
   );
 
-  const data = React.useMemo(() => query.data?.rows || [], [query.data]);
+  const usersQuery = useQuery(fetchUser({ pageIndex: 0, pageSize: 1000 }));
 
   const table = useReactTable({
-    columns,
-    data,
-    getRowId: (row) => row.szIDs,
-
     getCoreRowModel: getCoreRowModel(),
+    columns,
+    data: query.data?.rows || [],
+    getRowId: (row) => row.szIDs,
     manualPagination: true,
   });
+
+  const renderUserSelect = () => {
+    if (!usersQuery.isSuccess) {
+      return null;
+    }
+
+    return (
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <TextField
+          fullWidth
+          value={user}
+          onChange={(e) => {
+            setUser(e.target.value);
+          }}
+          label="检测员"
+          slotProps={{ htmlInput: { list: userDataListId } }}
+        />
+        <datalist id={userDataListId}>
+          {usersQuery.data.rows.map((user) => (
+            <option key={user.szUid} value={user.szUid}></option>
+          ))}
+        </datalist>
+      </Grid>
+    );
+  };
 
   const renderRow = () => {
     if (query.isPending) {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            <Loading
-              slotProps={{
-                box: {
-                  padding: 0,
-                },
-              }}
-            />
+            <Loading slotProps={{ box: { padding: 0 } }} />
           </TableCell>
         </TableRow>
       );
@@ -112,7 +135,7 @@ export const Component = () => {
           <TableCell colSpan={table.getAllLeafColumns().length}>
             <Alert severity="error" variant="filled">
               <AlertTitle>错误</AlertTitle>
-              {query.error.message}
+              {query.error?.message}
             </Alert>
           </TableCell>
         </TableRow>
@@ -142,9 +165,9 @@ export const Component = () => {
 
   return (
     <Card>
+      <ScrollToTopButton />
       <CardHeader
-        title="华兴致远日常校验"
-        subheader="成都北"
+        title="日常校验"
         action={
           <IconButton
             onClick={() => query.refetch()}
@@ -155,23 +178,41 @@ export const Component = () => {
         }
       />
       <CardContent>
-        <Grid container spacing={6}>
-          <Grid size={12}>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <DatePicker
               value={date}
               onChange={(day) => {
-                if (!day) return;
                 setDate(day);
               }}
               slotProps={{
                 textField: {
                   label: "日期",
+                  fullWidth: true,
+                },
+                field: {
+                  clearable: true,
                 },
               }}
             />
           </Grid>
+          {renderUserSelect()}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="轴型"
+              value={zx}
+              onChange={(e) => setZx(e.target.value)}
+              fullWidth
+              slotProps={{ htmlInput: { list: zxDataListId } }}
+            />
+            <datalist id={zxDataListId}>
+              <option value={"RE2B"}></option>
+              <option value={"RD2"}></option>
+            </datalist>
+          </Grid>
         </Grid>
       </CardContent>
+      <Divider />
       {query.isFetching && <LinearProgress />}
       <TableContainer>
         <Table sx={{ minWidth: 720 }}>
@@ -214,16 +255,15 @@ export const Component = () => {
       </TableContainer>
       <TablePagination
         component={"div"}
-        page={table.getState().pagination.pageIndex}
-        count={table.getRowCount()}
-        rowsPerPage={table.getState().pagination.pageSize}
+        count={query.data?.count || 0}
+        page={pageIndex}
+        rowsPerPage={pageSize}
         rowsPerPageOptions={rowsPerPageOptions}
-        onPageChange={(e, page) => {
-          void e;
-          table.setPageIndex(page);
+        onPageChange={(_, page) => {
+          setPageIndex(page);
         }}
         onRowsPerPageChange={(e) => {
-          table.setPageSize(Number.parseInt(e.target.value, 10));
+          setPageSize(Number.parseInt(e.target.value, 10));
         }}
         labelRowsPerPage="每页行数"
       />

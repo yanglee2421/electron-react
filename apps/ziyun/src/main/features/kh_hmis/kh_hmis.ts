@@ -545,14 +545,6 @@ export class KH {
     return this.sendCHR501ToServer(chr501Params);
   }
   async handleUploadCHR502(ids: string[]) {
-    const records = await this.mdb.getDataForCHR502({ ids });
-
-    if (records.rows.length < 5) {
-      throw new Error(
-        `CHR502接口至少需要5条记录，当前仅${records.rows.length}条`,
-      );
-    }
-
     const chr502Params = await this.resolveCHR502InputParams(ids);
 
     return this.sendCHR502ToServer(chr502Params);
@@ -1620,6 +1612,10 @@ export class KH {
   }
   async resolveCHR502InputParams(ids: string[]): Promise<I502Record> {
     const { rows } = await this.mdb.root().quartors().in("szIDs", ids);
+
+    if (rows.length < 5) {
+      throw new Error(`CHR502接口至少需要5条记录，当前仅${rows.length}条`);
+    }
 
     const records = rows.toSorted(
       (a, b) =>
