@@ -23,6 +23,7 @@ import {
   BehaviorSubject,
   distinctUntilChanged,
   EMPTY,
+  filter,
   interval,
   switchMap,
   tap,
@@ -177,11 +178,8 @@ export class JTV {
 
     const subscription1 = kv.events$
       .pipe(
+        filter((e) => e.key === JTV_HMIS_STORAGE_KEY),
         tap((event) => {
-          if (event.key !== JTV_HMIS_STORAGE_KEY) {
-            return;
-          }
-
           switch (event.action) {
             case "set":
               this.state$.next(

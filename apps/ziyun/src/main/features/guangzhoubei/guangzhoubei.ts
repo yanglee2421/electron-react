@@ -20,6 +20,7 @@ import {
   BehaviorSubject,
   distinctUntilChanged,
   EMPTY,
+  filter,
   interval,
   switchMap,
   tap,
@@ -178,24 +179,25 @@ export class Guangzhoubei {
     );
     this.state$ = new BehaviorSubject<JTV_HMIS_Guangzhoubei>(state);
 
-    const sub1 = kv.events$.subscribe((event) => {
-      if (event.key !== JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY) {
-        return;
-      }
-
-      switch (event.action) {
-        case "set":
-          const newState = jtv_hmis_guangzhoubei.parse(
-            event.value ? JSON.parse(event.value).state : {},
-          );
-          this.state$.next(newState);
-          break;
-        case "remove":
-        case "clear":
-          this.state$.next(jtv_hmis_guangzhoubei.parse({}));
-          break;
-      }
-    });
+    const sub1 = kv.events$
+      .pipe(
+        filter((e) => e.key === JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY),
+        tap((event) => {
+          switch (event.action) {
+            case "set":
+              const newState = jtv_hmis_guangzhoubei.parse(
+                event.value ? JSON.parse(event.value).state : {},
+              );
+              this.state$.next(newState);
+              break;
+            case "remove":
+            case "clear":
+              this.state$.next(jtv_hmis_guangzhoubei.parse({}));
+              break;
+          }
+        }),
+      )
+      .subscribe();
 
     const sub2 = this.state$
       .pipe(

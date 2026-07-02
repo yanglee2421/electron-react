@@ -17,6 +17,7 @@ import {
   BehaviorSubject,
   distinctUntilChanged,
   EMPTY,
+  filter,
   interval,
   switchMap,
   tap,
@@ -75,11 +76,8 @@ export class Hxzy {
 
     const sub1 = kv.events$
       .pipe(
+        filter((e) => e.key === HXZY_HMIS_STORAGE_KEY),
         tap((e) => {
-          if (e.key !== HXZY_HMIS_STORAGE_KEY) {
-            return;
-          }
-
           switch (e.action) {
             case "set":
               const stateJSON = e.value;

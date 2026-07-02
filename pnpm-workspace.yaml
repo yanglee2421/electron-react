@@ -4,9 +4,11 @@ packages:
 
 allowBuilds:
   "@serialport/bindings-cpp": true
+  '@swc/core': true
   electron: true
   electron-winstaller: true
   esbuild: true
+  simple-git-hooks: true
 
 minimumReleaseAgeExclude:
   - app-builder-lib@26.11.0

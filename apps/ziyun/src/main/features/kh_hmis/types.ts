@@ -1,5 +1,9 @@
 import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
 import type { KH } from "./kh_hmis";
+export type { I501Record } from "./501";
+export type { I502Record } from "./502";
+export type { I503 } from "./503";
+export type { I52a } from "./52a";
 
 export interface IPCContract {
   "HMIS/kh_hmis_api_get": {

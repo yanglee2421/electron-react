@@ -2,8 +2,12 @@ import type { Profile } from "#main/features/profile";
 import type { AppCradle } from "#main/features/types";
 import { BrowserWindow, app } from "electron";
 import path from "node:path";
+import url from "node:url";
 import type { Subscription } from "rxjs";
 import { distinctUntilChanged } from "rxjs";
+
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export class AppWindow {
   private profile: Profile;
