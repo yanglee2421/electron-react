@@ -17,56 +17,71 @@ export const registerIPCHandlers = () => {
 
   ipcHandle("APP/OPEN_DEV_TOOLS", async () => {
     const win = BrowserWindow.getAllWindows().at(0);
-    if (!win) return;
-    win.webContents.openDevTools();
+
+    win?.webContents.openDevTools();
   });
 
   ipcHandle("APP/OPEN_PATH", async (_, path: string) => {
     const data = await shell.openPath(path);
+
     return data;
   });
 
   ipcHandle("APP/MOBILE_MODE", async (_, mobile: boolean) => {
     BrowserWindow.getAllWindows().forEach((win) => {
       if (mobile) {
-        win.setSize(500, 800);
+        win.setSize(430, 500);
       } else {
         win.setSize(1024, 768);
       }
       win.center();
     });
+
     return mobile;
   });
 
   ipcHandle("APP/SELECT_DIRECTORY", async () => {
     const win = BrowserWindow.getAllWindows().at(0);
-    if (!win) throw new Error("No active window");
+
+    if (!win) {
+      throw new Error("No active window");
+    }
+
     const result = await dialog.showOpenDialog(win, {
       properties: ["openDirectory"],
     });
+
     return result.filePaths;
   });
 
   ipcHandle("APP/SELECT_FILE", async (_, filters: Electron.FileFilter[]) => {
     const win = BrowserWindow.getAllWindows().at(0);
-    if (!win) throw new Error("No active window");
+
+    if (!win) {
+      throw new Error("No active window");
+    }
+
     const result = await dialog.showOpenDialog(win, {
       properties: ["openFile"],
       filters,
     });
+
     return result.filePaths;
   });
 
-  ipcHandle("app/version", () => {
-    return app.getVersion();
-  });
+  ipcHandle("app/version", () => app.getVersion());
 
   ipcHandle(
     "APP/SHOW_OPEN_DIALOG",
     async (_, options: Electron.OpenDialogOptions) => {
       const win = BrowserWindow.getAllWindows().at(0);
-      if (!win) throw new Error("No active window");
+
+      if (!win) {
+        throw new Error("No active window");
+      }
+
       const result = await dialog.showOpenDialog(win, options);
+
       return result.filePaths;
     },
   );

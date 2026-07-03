@@ -59,7 +59,7 @@ export class AppWindow {
 
       width: 1024,
       height: 768,
-      minWidth: 380,
+      minWidth: 430,
     });
 
     win.menuBarVisible = true;
