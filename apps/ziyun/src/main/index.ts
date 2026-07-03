@@ -196,14 +196,18 @@ defer(() => {
 
       appWindow.show(openURL);
     }),
-    catchError(() => {
-      const BACKUP_DB_PATH = path.resolve(
-        app.getPath("desktop"),
-        `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
-      );
+    catchError((error) => {
+      console.error(error);
 
-      fs.cpSync(APP_DB_PATH, BACKUP_DB_PATH, { recursive: true });
-      fs.rmSync(APP_DB_PATH, { recursive: true, force: true });
+      container.dispose().then(() => {
+        const BACKUP_DB_PATH = path.resolve(
+          app.getPath("desktop"),
+          `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
+        );
+
+        fs.cpSync(APP_DB_PATH, BACKUP_DB_PATH, { recursive: true });
+        fs.rmSync(APP_DB_PATH, { recursive: true, force: true });
+      });
 
       return EMPTY;
     }),

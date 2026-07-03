@@ -25,6 +25,7 @@ const reactDevtoolsPlugin = (enabled?: boolean): Plugin => {
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const shimFile = path.resolve(import.meta.dirname, "./esm-shims.js");
 const alias = {
   "#main": path.resolve(__dirname, "./src/main"),
   "#preload": path.resolve(__dirname, "./src/preload"),
@@ -50,6 +51,12 @@ export default defineConfig(async () => {
         watch: {},
         rolldownOptions: {
           treeshake: false,
+          transform: {
+            inject: {
+              __dirname: [shimFile, "__dirname"] as [string, string],
+              __filename: [shimFile, "__filename"] as [string, string],
+            },
+          },
         },
       },
     },
