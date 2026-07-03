@@ -1,4 +1,4 @@
-import { KeyboardReturn } from "@mui/icons-material";
+import { KeyboardReturn, Remove } from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -7,6 +7,7 @@ import {
   CardHeader,
   createTheme,
   CssBaseline,
+  IconButton,
   InputAdornment,
   List,
   ListItem,
@@ -47,7 +48,7 @@ const Scanner = () => {
       .pipe(
         distinctUntilChanged(),
         concatMap((qrcode) => {
-          return of({ qrcode }).pipe(delay(Math.random() * 1000 * 2 + 1000));
+          return of({ qrcode }).pipe(delay(Math.random() * 100 * 2 + 100));
         }),
         tap((item) => {
           setList((list) => [...list, item]);
@@ -63,7 +64,18 @@ const Scanner = () => {
   return (
     <Stack>
       <Card>
-        <CardHeader title="Scanner" />
+        <CardHeader
+          title="Scanner"
+          action={
+            <IconButton
+              onClick={() => {
+                setList([]);
+              }}
+            >
+              <Remove />
+            </IconButton>
+          }
+        />
         <CardContent>
           <form
             id={formId}

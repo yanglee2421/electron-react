@@ -78,7 +78,7 @@ const createWindow = ({
   });
   win.menuBarVisible = false;
 
-  if (app.isPackaged) {
+  if (!is.dev) {
     const RENDERER_FILE = path.resolve(__dirname, "../renderer/index.html");
     win.loadFile(RENDERER_FILE, {
       hash: URL.canParse(customURL) ? new URL(customURL).pathname : void 0,
@@ -158,9 +158,7 @@ const app$ = defer(() => {
   return concat(whenReady$.pipe(ignoreElements()), resource$).pipe(
     tap(() => createWindow()),
     catchError((error) => {
-      if (is.dev) {
-        console.error(error);
-      }
+      console.error(error);
 
       return EMPTY;
     }),
