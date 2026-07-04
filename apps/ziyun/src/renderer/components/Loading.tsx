@@ -17,7 +17,7 @@ export const Loading = (props: LoadingProps) => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        padding: 6,
+        padding: slotProps.box ? 0 : 6,
       }}
       {...slotProps.box}
     >
