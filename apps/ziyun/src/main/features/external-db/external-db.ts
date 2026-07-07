@@ -6,6 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
+  defaultIfEmpty,
   distinctUntilChanged,
   EMPTY,
   last,
@@ -53,7 +54,7 @@ export class ExternalDB {
 
               return NEVER.pipe(
                 startWith(db),
-                takeUntil(profile.state$.pipe(last())),
+                takeUntil(profile.state$.pipe(last(), defaultIfEmpty(null))),
               );
             },
           );

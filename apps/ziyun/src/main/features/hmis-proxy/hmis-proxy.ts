@@ -1,6 +1,7 @@
 import { createServer } from "@yanglee2421/hmis-proxy";
 import type { Subscription } from "rxjs";
 import {
+  defaultIfEmpty,
   distinctUntilChanged,
   EMPTY,
   last,
@@ -42,7 +43,7 @@ export class HmisProxy {
             () =>
               NEVER.pipe(
                 startWith(null),
-                takeUntil(profile.state$.pipe(last())),
+                takeUntil(profile.state$.pipe(last(), defaultIfEmpty(null))),
               ),
           );
         }),
