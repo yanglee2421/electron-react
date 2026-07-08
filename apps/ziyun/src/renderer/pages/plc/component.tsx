@@ -573,7 +573,7 @@ const Channel12Preset = (props: Channel12PresetProps) => {
       />
       <Collapse in={show12Preset} unmountOnExit>
         <CardContent>
-          <Grid container spacing={1.5}>
+          <Grid container spacing={1}>
             <Grid size={12}>
               <FormLabel>X点（控制）</FormLabel>
             </Grid>
@@ -846,8 +846,8 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
               }}
               noValidate
             >
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+              <Grid container spacing={1}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <TextField
                     value={query.data.D20}
                     fullWidth
@@ -856,7 +856,7 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
                     helperText="左轴身实际值"
                   />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <TextField
                     value={query.data.D21}
                     fullWidth
@@ -865,7 +865,7 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
                     helperText="右轴身实际值"
                   />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <TextField
                     value={query.data.D22}
                     fullWidth
@@ -874,7 +874,7 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
                     helperText="左端面实际值"
                   />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <TextField
                     value={query.data.D23}
                     fullWidth
@@ -886,7 +886,7 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
                 <Grid size={12}>
                   <Divider>分隔线</Divider>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <form.AppField name="D300">
                     {(field) => {
                       return (
@@ -910,7 +910,7 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
                     }}
                   </form.AppField>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <form.AppField name="D301">
                     {(field) => {
                       return (
@@ -934,7 +934,7 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
                     }}
                   </form.AppField>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <form.AppField name="D302">
                     {(field) => {
                       return (
@@ -958,7 +958,7 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
                     }}
                   </form.AppField>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <form.AppField name="D303">
                     {(field) => {
                       return (
@@ -982,7 +982,7 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
                     }}
                   </form.AppField>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <form.AppField name="D308">
                     {(field) => {
                       return (
@@ -1006,7 +1006,7 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
                     }}
                   </form.AppField>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <form.AppField name="D309">
                     {(field) => {
                       return (
@@ -1143,7 +1143,7 @@ const CustomBitAddForm = () => {
             form.reset();
           }}
         >
-          <Grid container spacing={2}>
+          <Grid container spacing={1}>
             <Grid size={12}>
               <form.Field name="type">
                 {(field) => {
@@ -1257,81 +1257,129 @@ const CustomBit = (props: CustomBitProps) => {
   const mList = usePLCStore((s) => s.m);
   const dList = usePLCStore((s) => s.d);
 
+  const renderXInputs = () => {
+    if (!xList.length) {
+      return (
+        <Grid size={12}>
+          <Typography>未添加任何点位至此</Typography>
+        </Grid>
+      );
+    }
+
+    return xList.map((i) => {
+      return (
+        <Grid key={i.address} size={{ xs: 6, sm: 4 }}>
+          <XInput
+            path={path}
+            address={i.address}
+            description={i.description}
+            removable
+          />
+        </Grid>
+      );
+    });
+  };
+
+  const renderYInputs = () => {
+    if (!yList.length) {
+      return (
+        <Grid size={12}>
+          <Typography>未添加任何点位至此</Typography>
+        </Grid>
+      );
+    }
+
+    return yList.map((i) => {
+      return (
+        <Grid key={i.address} size={{ xs: 6, sm: 4 }}>
+          <YInput
+            path={path}
+            address={i.address}
+            description={i.description}
+            removable
+          />
+        </Grid>
+      );
+    });
+  };
+
+  const renderMInputs = () => {
+    if (!mList.length) {
+      return (
+        <Grid size={12}>
+          <Typography>未添加任何点位至此</Typography>
+        </Grid>
+      );
+    }
+
+    return mList.map((i) => {
+      return (
+        <Grid key={i.address} size={{ xs: 6, sm: 4 }}>
+          <MInput
+            path={path}
+            address={i.address}
+            description={i.description}
+            removable
+          />
+        </Grid>
+      );
+    });
+  };
+
+  const renderDInputs = () => {
+    if (!dList.length) {
+      return (
+        <Grid size={12}>
+          <Typography>未添加任何点位至此</Typography>
+        </Grid>
+      );
+    }
+
+    return dList.map((i) => {
+      return (
+        <Grid key={i.address} size={{ xs: 6, sm: 4 }}>
+          <DInput
+            path={path}
+            address={i.address}
+            description={i.description}
+            removable
+          />
+        </Grid>
+      );
+    });
+  };
+
   return (
     <div>
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>X点</AccordionSummary>
         <AccordionDetails>
-          <Grid container spacing={2}>
-            {xList.map((i) => {
-              return (
-                <Grid key={i.address} size={{ xs: 6, sm: 4, md: 3 }}>
-                  <XInput
-                    path={path}
-                    address={i.address}
-                    description={i.description}
-                    removable
-                  />
-                </Grid>
-              );
-            })}
+          <Grid container spacing={1}>
+            {renderXInputs()}
           </Grid>
         </AccordionDetails>
       </Accordion>
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>Y点</AccordionSummary>
         <AccordionDetails>
-          <Grid container spacing={2}>
-            {yList.map((i) => {
-              return (
-                <Grid key={i.address} size={{ xs: 6, sm: 4, md: 3 }}>
-                  <YInput
-                    path={path}
-                    address={i.address}
-                    description={i.description}
-                    removable
-                  />
-                </Grid>
-              );
-            })}
+          <Grid container spacing={1}>
+            {renderYInputs()}
           </Grid>
         </AccordionDetails>
       </Accordion>
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>M点</AccordionSummary>
         <AccordionDetails>
-          <Grid container spacing={2}>
-            {mList.map((i) => {
-              return (
-                <Grid key={i.address} size={{ xs: 6, sm: 4, md: 3 }}>
-                  <MInput
-                    path={path}
-                    address={i.address}
-                    description={i.description}
-                    removable
-                  />
-                </Grid>
-              );
-            })}
+          <Grid container spacing={1}>
+            {renderMInputs()}
           </Grid>
         </AccordionDetails>
       </Accordion>
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>D点</AccordionSummary>
         <AccordionDetails>
-          <Grid container spacing={2}>
-            {dList.map((i) => {
-              return (
-                <Grid key={i.address} size={{ xs: 6, sm: 4, md: 3 }}>
-                  <DInput
-                    path={path}
-                    address={i.address}
-                    description={i.description}
-                    removable
-                  />
-                </Grid>
-              );
-            })}
+          <Grid container spacing={1}>
+            {renderDInputs()}
           </Grid>
         </AccordionDetails>
       </Accordion>
@@ -1447,7 +1495,7 @@ export const Component = () => {
             }
           />
           <CardContent>
-            <Grid container spacing={2}>
+            <Grid container>
               <Grid size={{ xs: 12, sm: 12, md: 6, lg: 4 }}>
                 <TextField
                   value={serialPortPath}
