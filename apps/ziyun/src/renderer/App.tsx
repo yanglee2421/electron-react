@@ -7,6 +7,7 @@ import {
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import React from "react";
+import { ToastContainer } from "react-toastify";
 import { QueryProvider } from "./components/query";
 import { useColorScheme } from "./hooks/dom/useColorScheme";
 import { AppRouter } from "./router";
@@ -40,15 +41,14 @@ const MuiProvider = (props: MuiProviderProps) => {
 
   return (
     <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <ToastContainer theme={isDark ? "dark" : "light"} />
+      <GlobalStyles
+        styles={{ html: { colorScheme: isDark ? "dark" : "light" } }}
+      />
       <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="zh">
         {props.children}
       </LocalizationProvider>
-      <CssBaseline />
-      <GlobalStyles
-        styles={{
-          html: { colorScheme: isDark ? "dark" : "light" },
-        }}
-      />
     </ThemeProvider>
   );
 };

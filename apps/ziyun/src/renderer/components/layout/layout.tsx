@@ -8,22 +8,26 @@ import {
   useTheme,
 } from "@mui/material";
 import React from "react";
+import { useLocation } from "react-router";
 import { Footer } from "./footer";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 
 export const Layout = (props: React.PropsWithChildren) => {
-  const [showSidebarDownSmall, setShowSidebarDownSmall] = React.useState(false);
+  const [showSidebarInPath, setShowSidebarInPath] = React.useState("");
   const [showSidebarUpSmall, setShowSidebarUpSmall] = React.useState(true);
 
   const theme = useTheme();
+  const location = useLocation();
   const isDownSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  const showSidebarDownSmall = Object.is(location.pathname, showSidebarInPath);
   const showSidebar = isDownSmall ? showSidebarDownSmall : showSidebarUpSmall;
 
   return (
-    <Box sx={{ "--sidebar-width": theme.spacing(32) }}>
+    <Box sx={{ "--sidebar-width": theme.spacing(36) }}>
       <Paper
         aria-hidden={showSidebar}
+        component={"aside"}
         sx={{
           position: "fixed",
           zIndex: theme.zIndex.drawer,
@@ -48,7 +52,6 @@ export const Layout = (props: React.PropsWithChildren) => {
                 duration: theme.transitions.duration.enteringScreen,
               }),
             },
-
             ["&:where([aria-hidden=false])"]: {
               insetInlineStart: "-100%",
               transition: theme.transitions.create("inset-inline-start", {
@@ -57,7 +60,6 @@ export const Layout = (props: React.PropsWithChildren) => {
               }),
             },
           },
-
           [theme.breakpoints.up("sm")]: {
             inlineSize: "var(--sidebar-width)",
 
@@ -68,7 +70,6 @@ export const Layout = (props: React.PropsWithChildren) => {
                 duration: theme.transitions.duration.enteringScreen,
               }),
             },
-
             ["&:where([aria-hidden=false])"]: {
               insetInlineStart: "calc(-1 * var(--sidebar-width))",
               transition: theme.transitions.create("inset-inline-start", {
@@ -83,7 +84,9 @@ export const Layout = (props: React.PropsWithChildren) => {
           action={
             <IconButton
               onClick={() => {
-                setShowSidebarDownSmall((p) => !p);
+                setShowSidebarInPath(
+                  showSidebarDownSmall ? "" : location.pathname,
+                );
               }}
               sx={{ display: { sm: "none" } }}
             >
@@ -93,16 +96,21 @@ export const Layout = (props: React.PropsWithChildren) => {
         />
       </Paper>
       <Box
+        component={"main"}
         sx={{
+          minBlockSize: "100dvh",
+
+          display: "flex",
+          flexDirection: "column",
+
           [theme.breakpoints.between("xs", "sm")]: {
             ["[aria-hidden=true] + &"]: {
               display: "none",
             },
             ["[aria-hidden=false] + &"]: {
-              display: "block",
+              display: "flex",
             },
           },
-
           [theme.breakpoints.up("sm")]: {
             ["[aria-hidden=true] + &"]: {
               paddingInlineStart: "var(--sidebar-width)",
@@ -125,7 +133,9 @@ export const Layout = (props: React.PropsWithChildren) => {
           <IconButton
             onClick={() => {
               if (isDownSmall) {
-                setShowSidebarDownSmall((p) => !p);
+                setShowSidebarInPath(
+                  showSidebarDownSmall ? "" : location.pathname,
+                );
               } else {
                 setShowSidebarUpSmall((p) => !p);
               }
@@ -134,7 +144,16 @@ export const Layout = (props: React.PropsWithChildren) => {
             {showSidebar ? <MenuOpen /> : <Menu />}
           </IconButton>
         </Header>
-        <Container>
+        <Container
+          sx={{
+            flexGrow: 1,
+            flexShrink: 0,
+            flexBasis: 0,
+
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           {props.children}
           <Footer />
         </Container>

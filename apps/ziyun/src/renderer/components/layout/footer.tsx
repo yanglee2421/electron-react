@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
 
 export const Footer = () => {
-  return <Box sx={{ py: 1 }}></Box>;
+  return <Box component={"footer"} sx={{ py: 1 }}></Box>;
 };

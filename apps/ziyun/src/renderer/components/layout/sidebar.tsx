@@ -25,9 +25,10 @@ import {
   styled,
   Toolbar,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { normalizePathname } from "@yotulee/run";
-import type React from "react";
+import React from "react";
 import { Link, useLocation } from "react-router";
 
 const StyledLink = styled(Link)(({ theme }) => {
@@ -45,6 +46,14 @@ interface SidebarProps {
 }
 
 export const Sidebar = (props: SidebarProps) => {
+  const [hxzyOpen, setHxzyOpen] = React.useState(true);
+  const [jtvOpen, setJtvOpen] = React.useState(true);
+  const [guangzhoubeiOpen, setGuangzhoubeiOpen] = React.useState(true);
+  const [guangzhoujibaoduanOpen, setGuangzhoujibaoduanOpen] =
+    React.useState(true);
+  const [khOpen, setKhOpen] = React.useState(true);
+
+  const theme = useTheme();
   const location = useLocation();
   const showHxzyHmisMenu = useProfileStore((s) => s.showHxzyHmisMenu);
   const showJtvHmisMenu = useProfileStore((s) => s.showJtvHmisMenu);
@@ -77,6 +86,7 @@ export const Sidebar = (props: SidebarProps) => {
       </Toolbar>
       <Divider />
       <Box
+        component={"nav"}
         sx={{
           flexGrow: 1,
           flexShrink: 1,
@@ -97,18 +107,23 @@ export const Sidebar = (props: SidebarProps) => {
           >
             {showHxzyHmisMenu && (
               <>
-                <ListItemButton>
+                <ListItemButton
+                  onClick={() => {
+                    setHxzyOpen((p) => !p);
+                  }}
+                >
                   <ListItemIcon>
                     <PrecisionManufacturing />
                   </ListItemIcon>
                   <ListItemText primary={"成都北车辆段"} />
-                  <ExpandMore sx={{ rotate: "-90deg" }} />
+                  <ExpandMore
+                    sx={{
+                      rotate: hxzyOpen ? 0 : "-90deg",
+                      transition: theme.transitions.create("rotate"),
+                    }}
+                  />
                 </ListItemButton>
-                <Collapse
-                  in={true}
-                  unmountOnExit
-                  sx={{ paddingInlineStart: 2 }}
-                >
+                <Collapse in={hxzyOpen} unmountOnExit>
                   <ListItemButton
                     component={Link}
                     to={{ pathname: "/hxzy" }}
@@ -117,6 +132,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/hxzy",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <QrCodeScannerRounded />
                     </ListItemIcon>
@@ -130,6 +146,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/hxzy/verifies",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <CalendarTodayRounded />
                     </ListItemIcon>
@@ -143,6 +160,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/hxzy/setting",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <TuneRounded />
                     </ListItemIcon>
@@ -153,18 +171,23 @@ export const Sidebar = (props: SidebarProps) => {
             )}
             {showJtvHmisMenu && (
               <>
-                <ListItemButton>
+                <ListItemButton
+                  onClick={() => {
+                    setJtvOpen((p) => !p);
+                  }}
+                >
                   <ListItemIcon>
                     <PrecisionManufacturing />
                   </ListItemIcon>
                   <ListItemText primary={"京天威统型"} />
-                  <ExpandMore sx={{ rotate: "-90deg" }} />
+                  <ExpandMore
+                    sx={{
+                      rotate: jtvOpen ? 0 : "-90deg",
+                      transition: theme.transitions.create("rotate"),
+                    }}
+                  />
                 </ListItemButton>
-                <Collapse
-                  in={true}
-                  unmountOnExit
-                  sx={{ paddingInlineStart: 2 }}
-                >
+                <Collapse in={jtvOpen} unmountOnExit>
                   <ListItemButton
                     component={Link}
                     to={{ pathname: "/jtv" }}
@@ -173,6 +196,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/jtv",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <QrCodeScannerRounded />
                     </ListItemIcon>
@@ -186,6 +210,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/jtv/setting",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <TuneRounded />
                     </ListItemIcon>
@@ -196,18 +221,23 @@ export const Sidebar = (props: SidebarProps) => {
             )}
             {showGuangzhoubeiHmisMenu && (
               <>
-                <ListItemButton>
+                <ListItemButton
+                  onClick={() => {
+                    setGuangzhoubeiOpen((p) => !p);
+                  }}
+                >
                   <ListItemIcon>
                     <PrecisionManufacturing />
                   </ListItemIcon>
                   <ListItemText primary={"广州北车辆段"} />
-                  <ExpandMore sx={{ rotate: "-90deg" }} />
+                  <ExpandMore
+                    sx={{
+                      rotate: guangzhoubeiOpen ? 0 : "-90deg",
+                      transition: theme.transitions.create("rotate"),
+                    }}
+                  />
                 </ListItemButton>
-                <Collapse
-                  in={true}
-                  unmountOnExit
-                  sx={{ paddingInlineStart: 2 }}
-                >
+                <Collapse in={guangzhoubeiOpen} unmountOnExit>
                   <ListItemButton
                     component={Link}
                     to={{ pathname: "/jtv_guangzhoubei" }}
@@ -216,6 +246,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/jtv_guangzhoubei",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <QrCodeScannerRounded />
                     </ListItemIcon>
@@ -229,6 +260,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/jtv_guangzhoubei/setting",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <TuneRounded />
                     </ListItemIcon>
@@ -239,18 +271,23 @@ export const Sidebar = (props: SidebarProps) => {
             )}
             {showGuangzhoujibaoduanHmisMenu && (
               <>
-                <ListItemButton>
+                <ListItemButton
+                  onClick={() => {
+                    setGuangzhoujibaoduanOpen((p) => !p);
+                  }}
+                >
                   <ListItemIcon>
                     <PrecisionManufacturing />
                   </ListItemIcon>
                   <ListItemText primary={"广州机保段"} />
-                  <ExpandMore sx={{ rotate: "-90deg" }} />
+                  <ExpandMore
+                    sx={{
+                      rotate: guangzhoujibaoduanOpen ? 0 : "-90deg",
+                      transition: theme.transitions.create("rotate"),
+                    }}
+                  />
                 </ListItemButton>
-                <Collapse
-                  in={true}
-                  unmountOnExit
-                  sx={{ paddingInlineStart: 2 }}
-                >
+                <Collapse in={guangzhoujibaoduanOpen} unmountOnExit>
                   <ListItemButton
                     component={Link}
                     to={{ pathname: "/jtv_guangzhoujibaoduan" }}
@@ -259,6 +296,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/jtv_guangzhoujibaoduan",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <QrCodeScannerRounded />
                     </ListItemIcon>
@@ -272,6 +310,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/jtv_guangzhoujibaoduan/setting",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <TuneRounded />
                     </ListItemIcon>
@@ -282,18 +321,23 @@ export const Sidebar = (props: SidebarProps) => {
             )}
             {showKhHmisMenu && (
               <>
-                <ListItemButton>
+                <ListItemButton
+                  onClick={() => {
+                    setKhOpen((p) => !p);
+                  }}
+                >
                   <ListItemIcon>
                     <PrecisionManufacturing />
                   </ListItemIcon>
                   <ListItemText primary={"安康车辆段"} />
-                  <ExpandMore sx={{ rotate: "-90deg" }} />
+                  <ExpandMore
+                    sx={{
+                      rotate: khOpen ? 0 : "-90deg",
+                      transition: theme.transitions.create("rotate"),
+                    }}
+                  />
                 </ListItemButton>
-                <Collapse
-                  in={true}
-                  unmountOnExit
-                  sx={{ paddingInlineStart: 2 }}
-                >
+                <Collapse in={khOpen} unmountOnExit>
                   <ListItemButton
                     component={Link}
                     to={{ pathname: "/kh" }}
@@ -302,6 +346,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/kh",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <QrCodeScannerRounded />
                     </ListItemIcon>
@@ -315,8 +360,9 @@ export const Sidebar = (props: SidebarProps) => {
                       "/kh/detections",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
-                      <CalendarTodayRounded />
+                      <Train />
                     </ListItemIcon>
                     <ListItemText primary={"现车作业"} />
                   </ListItemButton>
@@ -328,6 +374,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/kh/verify",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <CalendarTodayRounded />
                     </ListItemIcon>
@@ -341,6 +388,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/kh/quartor",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <CalendarMonthRounded />
                     </ListItemIcon>
@@ -354,6 +402,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/kh/annual",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <CalendarTodayRounded />
                     </ListItemIcon>
@@ -367,6 +416,7 @@ export const Sidebar = (props: SidebarProps) => {
                       "/kh/setting",
                     )}
                   >
+                    <Box sx={{ paddingInlineStart: 2 }} />
                     <ListItemIcon>
                       <TuneRounded />
                     </ListItemIcon>
@@ -511,8 +561,8 @@ export const Sidebar = (props: SidebarProps) => {
           )}
         </List>
       </Box>
-      <Divider />
-      <Toolbar></Toolbar>
+      {/* <Divider />
+      <Toolbar></Toolbar> */}
     </>
   );
 };

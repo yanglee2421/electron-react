@@ -77,6 +77,7 @@ export const Header = (props: React.PropsWithChildren) => {
 
   return (
     <Toolbar
+      component={"header"}
       sx={{
         position: "sticky",
         insetBlockStart: 0,
@@ -88,7 +89,7 @@ export const Header = (props: React.PropsWithChildren) => {
       }}
     >
       {props.children}
-      <Breadcrumbs>
+      <Breadcrumbs sx={{ display: { xs: "none", sm: "flex" } }}>
         {breadcrumbs.map((item) => {
           if (item.path) {
             return (
@@ -104,12 +105,10 @@ export const Header = (props: React.PropsWithChildren) => {
             );
           }
 
-          return (
-            <Typography sx={{ color: "text.primary" }}>{item.title}</Typography>
-          );
+          return <Typography color="textPrimary">{item.title}</Typography>;
         })}
       </Breadcrumbs>
-      <Box sx={{ mx: "auto" }}></Box>
+      <Box sx={{ mx: "auto" }} />
       <MobileModeButton />
       <AlwaysOnTop />
       <ModeToggle />
