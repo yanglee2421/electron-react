@@ -40,8 +40,8 @@ import {
 } from "@mui/material";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNotifications } from "@toolpad/core";
 import React from "react";
+import { toast } from "react-toastify";
 
 const { fieldContext, formContext } = createFormHookContexts();
 const { useAppForm } = createFormHook({
@@ -56,7 +56,6 @@ const { useAppForm } = createFormHook({
 });
 
 const useProfileForm = () => {
-  const notifications = useNotifications();
   const appPath = useProfileStore((state) => state.appPath);
   const encoding = useProfileStore((state) => state.encoding);
   const externalDBPath = useProfileStore((state) => state.externalDBPath);
@@ -84,7 +83,7 @@ const useProfileForm = () => {
         hmisProxyPort: value.hmisProxyPort,
         enableTray: value.enableTray,
       });
-      notifications.show("保存成功", { severity: "success" });
+      toast.success("保存成功");
     },
     validators: {
       onChange: profileSchema.required(),

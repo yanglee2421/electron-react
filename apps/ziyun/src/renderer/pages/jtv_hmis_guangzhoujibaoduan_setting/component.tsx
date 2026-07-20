@@ -19,13 +19,12 @@ import {
   TextField,
 } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
-import { useNotifications } from "@toolpad/core";
 import React from "react";
+import { toast } from "react-toastify";
 
 export const Component = () => {
   const formId = React.useId();
 
-  const snackbar = useNotifications();
   const get_ip = useGuangzhoujibaoduan((store) => store.get_ip);
   const get_port = useGuangzhoujibaoduan((store) => store.get_port);
   const post_ip = useGuangzhoujibaoduan((store) => store.post_ip);
@@ -67,8 +66,7 @@ export const Component = () => {
         draft.autoUpload = value.autoUpload;
         draft.autoUploadInterval = value.autoUploadInterval;
       });
-
-      snackbar.show("保存成功", { severity: "success" });
+      toast.success("保存成功");
     },
   });
 

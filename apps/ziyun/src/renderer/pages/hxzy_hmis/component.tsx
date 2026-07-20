@@ -52,9 +52,10 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useDialogs, useNotifications } from "@toolpad/core";
+import { useDialogs } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
+import { toast } from "react-toastify";
 import { z } from "zod";
 
 const dateInitializer = () => dayjs();
@@ -103,17 +104,16 @@ type ActionCellProps = {
 
 const ActionCell = (props: ActionCellProps) => {
   const saveData = useUploadDetecion();
-  const snackbar = useNotifications();
   const dialog = useDialogs();
   const deleteBarcode = useDeleteHxzyRecord();
 
   const handleUpload = () => {
     saveData.mutate(props.id, {
       onError(error) {
-        snackbar.show(error.message, { severity: "error" });
+        toast.error(error.message);
       },
       onSuccess(data) {
-        snackbar.show(`#${data.id}上传成功`, { severity: "success" });
+        toast.success(`#${data.id}上传成功`);
       },
     });
   };
@@ -134,7 +134,7 @@ const ActionCell = (props: ActionCellProps) => {
           if (confirmed) {
             deleteBarcode.mutate(props.id, {
               onError: (error) => {
-                snackbar.show(error.message, { severity: "error" });
+                toast.error(error.message);
               },
             });
           }
@@ -164,7 +164,6 @@ export const Component = () => {
   };
 
   const getData = useFetchAxleInfo();
-  const snackbar = useNotifications();
   const barcode = useQuery(fetchHxzyRecord(params));
   const autoInput = useAutoInputToVC();
   const inputRef = useAutoFocusInputRef();
@@ -181,7 +180,7 @@ export const Component = () => {
     onSubmit: async ({ value }) => {
       const data = await getData.mutateAsync(value.barCode, {
         onError: (error) => {
-          snackbar.show(error.message, { severity: "error" });
+          toast.error(error.message);
         },
         onSuccess: () => {
           form.reset();
@@ -190,7 +189,7 @@ export const Component = () => {
 
       const [record] = data.data;
       if (!record) {
-        snackbar.show("未查询到相关轴承信息", { severity: "warning" });
+        toast.warn("未查询到相关轴承信息");
         return;
       }
 
@@ -242,7 +241,7 @@ export const Component = () => {
       },
       {
         onError: (error) => {
-          snackbar.show(error.message, { severity: "error" });
+          toast.error(error.message);
         },
       },
     );

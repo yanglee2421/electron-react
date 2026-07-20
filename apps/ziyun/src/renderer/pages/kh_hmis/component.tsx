@@ -53,9 +53,10 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useDialogs, useNotifications } from "@toolpad/core";
+import { useDialogs } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
+import { toast } from "react-toastify";
 import { z } from "zod";
 
 const dateInitializer = () => dayjs();
@@ -104,21 +105,16 @@ type ActionCellProps = {
 
 const ActionCell = (props: ActionCellProps) => {
   const saveData = useUploadAxleInfo();
-  const snackbar = useNotifications();
   const dialog = useDialogs();
   const deleteBarcode = useDeleteKhRecord();
 
   const handleUpload = () => {
     saveData.mutate(props.id, {
-      onError(error) {
-        snackbar.show(error.message, {
-          severity: "error",
-        });
+      onError: (error) => {
+        toast.error(error.message);
       },
-      onSuccess() {
-        snackbar.show("上传成功", {
-          severity: "success",
-        });
+      onSuccess: () => {
+        toast.success("上传成功");
       },
     });
   };
@@ -137,10 +133,8 @@ const ActionCell = (props: ActionCellProps) => {
           });
           if (confirmed) {
             deleteBarcode.mutate(props.id, {
-              onError(error) {
-                snackbar.show(error.message, {
-                  severity: "error",
-                });
+              onError: (error) => {
+                toast.error(error.message);
               },
             });
           }
@@ -170,7 +164,6 @@ export const Component = () => {
 
   const inputRef = useAutoFocusInputRef();
   const getData = useFetchKhAxleInfo();
-  const snackbar = useNotifications();
   const autoInput = useAutoInputToVC();
   const barcode = useQuery(fetchKhRecord(params));
   const isAutoInput = useKhHmisStore((s) => s.autoInput);
@@ -186,7 +179,7 @@ export const Component = () => {
     onSubmit: async ({ value, formApi }) => {
       const data = await getData.mutateAsync(value.barCode, {
         onError: (error) => {
-          snackbar.show(error.message, { severity: "error" });
+          toast.error(error.message);
         },
         onSuccess: () => {
           formApi.reset();
@@ -244,7 +237,7 @@ export const Component = () => {
       },
       {
         onError: (error) => {
-          snackbar.show(error.message, { severity: "error" });
+          toast.error(error.message);
         },
       },
     );

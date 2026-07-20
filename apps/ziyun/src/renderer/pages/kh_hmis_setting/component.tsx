@@ -17,13 +17,12 @@ import {
   TextField,
 } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
-import { useNotifications } from "@toolpad/core";
 import React from "react";
+import { toast } from "react-toastify";
 
 export const Component = () => {
   const formId = React.useId();
 
-  const snackbar = useNotifications();
   const ip = useKhHmisStore((s) => s.ip);
   const port = useKhHmisStore((s) => s.port);
   const autoInput = useKhHmisStore((s) => s.autoInput);
@@ -88,7 +87,7 @@ export const Component = () => {
         draft.ftpUser = value.ftpUser;
         draft.ftpPassword = value.ftpPassword;
       });
-      snackbar.show("保存成功", { severity: "success" });
+      toast.success("保存成功");
     },
   });
 

@@ -18,9 +18,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useNotifications } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
+import { toast } from "react-toastify";
 
 interface UploadItemProps {
   id: string;
@@ -29,17 +29,16 @@ interface UploadItemProps {
 
 const UploadItem = (props: UploadItemProps) => {
   const upload = useUploadCHR503();
-  const notifications = useNotifications();
 
   return (
     <ListItemButton
       onClick={() => {
         upload.mutate(props.id, {
           onError: (error) => {
-            notifications.show(error.message, { severity: "error" });
+            toast.error(error.message);
           },
           onSuccess: () => {
-            notifications.show("校验记录已上传", { severity: "success" });
+            toast.success("校验记录已上传");
           },
         });
       }}
@@ -61,7 +60,7 @@ export const Component = () => {
 
   const renderRow = () => {
     if (query.isPending) {
-      return <Loading slotProps={{ box: { padding: 0 } }} />;
+      return <Loading slotProps={{ box: { sx: { padding: 0 } } }} />;
     }
 
     if (query.isError) {

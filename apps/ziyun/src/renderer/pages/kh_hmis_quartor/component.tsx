@@ -35,9 +35,9 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useNotifications } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
+import { toast } from "react-toastify";
 
 const columnHelper = createColumnHelper<Quartor>();
 const columns = [
@@ -144,7 +144,6 @@ export const Component = () => {
   const zxDataListId = React.useId();
 
   const upload502 = useUploadCHR502();
-  const notifications = useNotifications();
 
   const usersQuery = useQuery(
     fetchUser({
@@ -209,7 +208,7 @@ export const Component = () => {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            <Loading slotProps={{ box: { padding: 0 } }} />
+            <Loading slotProps={{ box: { sx: { padding: 0 } } }} />
           </TableCell>
         </TableRow>
       );
@@ -317,10 +316,10 @@ export const Component = () => {
 
             upload502.mutate(selectedIds, {
               onError: (error) => {
-                notifications.show(error.message, { severity: "error" });
+                toast.error(error.message);
               },
               onSuccess: () => {
-                notifications.show("校验记录已上传", { severity: "success" });
+                toast.success("校验记录已上传");
               },
             });
           }}

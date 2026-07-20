@@ -39,9 +39,9 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useNotifications } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
+import { toast } from "react-toastify";
 
 interface UploadCHR52A {
   id: string;
@@ -49,17 +49,16 @@ interface UploadCHR52A {
 
 const UploadCHR52A = (props: UploadCHR52A) => {
   const mutation = useUploadCHR52A();
-  const notifications = useNotifications();
 
   return (
     <IconButton
       onClick={() => {
         mutation.mutate(props.id, {
           onError: (error) => {
-            notifications.show(error.message, { severity: "error" });
+            toast.error(error.message);
           },
           onSuccess: () => {
-            notifications.show("缺陷记录已上传", { severity: "success" });
+            toast.success("缺陷记录已上传");
           },
         });
       }}
@@ -167,7 +166,7 @@ export const Component = () => {
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
             <Loading
               slotProps={{
-                box: { padding: 0 },
+                box: { sx: { padding: 0 } },
               }}
             />
           </TableCell>

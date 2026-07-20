@@ -33,9 +33,9 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useNotifications } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
+import { toast } from "react-toastify";
 
 interface Upload501Props {
   id: string;
@@ -43,17 +43,16 @@ interface Upload501Props {
 
 const Upload501 = (props: Upload501Props) => {
   const upload501 = useUploadCHR501();
-  const notifications = useNotifications();
 
   return (
     <IconButton
       onClick={() => {
         upload501.mutate(props.id, {
           onError: (error) => {
-            notifications.show(error.message, { severity: "error" });
+            toast.error(error.message);
           },
           onSuccess: () => {
-            notifications.show("校验记录已上传", { severity: "success" });
+            toast.success("校验记录已上传");
           },
         });
       }}
@@ -152,7 +151,7 @@ export const Component = () => {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            <Loading slotProps={{ box: { padding: 0 } }} />
+            <Loading slotProps={{ box: { sx: { padding: 0 } } }} />
           </TableCell>
         </TableRow>
       );

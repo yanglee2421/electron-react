@@ -57,9 +57,10 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useDialogs, useNotifications } from "@toolpad/core";
+import { useDialogs } from "@toolpad/core";
 import dayjs from "dayjs";
 import React from "react";
+import { toast } from "react-toastify";
 import { z } from "zod";
 
 const schema = z.object({
@@ -157,7 +158,6 @@ type ActionCellProps = {
 };
 
 const ActionCell = (props: ActionCellProps) => {
-  const snackbar = useNotifications();
   const dialog = useDialogs();
   const saveData = useUploadAxleInfo();
   const deleteBarcode = useDeleteJTVRecord();
@@ -165,10 +165,10 @@ const ActionCell = (props: ActionCellProps) => {
   const handleUpload = () => {
     saveData.mutate(props.id, {
       onError: (error) => {
-        snackbar.show(error.message, { severity: "error" });
+        toast.error(error.message);
       },
       onSuccess: () => {
-        snackbar.show("上传成功", { severity: "success" });
+        toast.success("上传成功");
       },
     });
   };
@@ -187,10 +187,8 @@ const ActionCell = (props: ActionCellProps) => {
           });
           if (confirmed) {
             deleteBarcode.mutate(props.id, {
-              onError(error) {
-                snackbar.show(error.message, {
-                  severity: "error",
-                });
+              onError: (error) => {
+                toast.error(error.message);
               },
             });
           }
@@ -431,7 +429,6 @@ export const Component = () => {
   const formId = React.useId();
 
   const getData = useFetchAxleInfo();
-  const snackbar = useNotifications();
   const zhMode = useJTVHmisStore((s) => s.isZhMode);
   const isAutoInput = useJTVHmisStore((s) => s.autoInput);
   const enableAutoSubmit = useJTVHmisStore((s) => s.enableAutoSubmit);
@@ -463,7 +460,7 @@ export const Component = () => {
         { barcode: value.barCode, isZhMode: zhMode },
         {
           onError: (error) => {
-            snackbar.show(error.message, { severity: "error" });
+            toast.error(error.message);
           },
           onSuccess: () => {
             formApi.reset();
@@ -511,10 +508,8 @@ export const Component = () => {
         ytx: dataItem.YTX ? "0" : "1",
       },
       {
-        onError(error) {
-          snackbar.show(error.message, {
-            severity: "error",
-          });
+        onError: (error) => {
+          toast.error(error.message);
         },
       },
     );
@@ -522,10 +517,8 @@ export const Component = () => {
 
   const inserDataItemToDB = async (dataItem: JTVNormalizeResponse) => {
     await insertBarcode.mutateAsync(dataItem, {
-      onError(error) {
-        snackbar.show(error.message, {
-          severity: "error",
-        });
+      onError: (error) => {
+        toast.error(error.message);
       },
     });
   };

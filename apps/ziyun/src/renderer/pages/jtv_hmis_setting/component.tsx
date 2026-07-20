@@ -17,13 +17,12 @@ import {
   TextField,
 } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
-import { useNotifications } from "@toolpad/core";
 import React from "react";
+import { toast } from "react-toastify";
 
 export const Component = () => {
   const formId = React.useId();
 
-  const snackbar = useNotifications();
   const ip = useJTVHmisStore((s) => s.ip);
   const port = useJTVHmisStore((s) => s.port);
   const autoInput = useJTVHmisStore((s) => s.autoInput);
@@ -64,8 +63,7 @@ export const Component = () => {
         draft.enableAutoSubmit = value.enableAutoSubmit;
         draft.autoSubmitDelay = value.autoSubmitDelay;
       });
-
-      snackbar.show("设置已保存", { severity: "success" });
+      toast.success("设置已保存");
     },
   });
 

@@ -1,4 +1,9 @@
-import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import {
+  CssBaseline,
+  GlobalStyles,
+  ThemeProvider,
+  createTheme,
+} from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import React from "react";
@@ -11,16 +16,6 @@ const calculateTheme = (isDark: boolean) => {
     const darkTheme = createTheme({
       palette: {
         mode: "dark",
-        // primary: {
-        //   main: "#3d5afe",
-        //   dark: "#2137b1",
-        //   light: "#637bfe",
-        // },
-      },
-      components: {
-        MuiAlert: {
-          defaultProps: { variant: "filled" },
-        },
       },
     });
 
@@ -30,16 +25,6 @@ const calculateTheme = (isDark: boolean) => {
   const lightTheme = createTheme({
     palette: {
       mode: "light",
-      // primary: {
-      //   main: "#3d5afe",
-      //   dark: "#2137b1",
-      //   light: "#637bfe",
-      // },
-    },
-    components: {
-      MuiAlert: {
-        defaultProps: { variant: "filled" },
-      },
     },
   });
 
@@ -59,6 +44,11 @@ const MuiProvider = (props: MuiProviderProps) => {
         {props.children}
       </LocalizationProvider>
       <CssBaseline />
+      <GlobalStyles
+        styles={{
+          html: { colorScheme: isDark ? "dark" : "light" },
+        }}
+      />
     </ThemeProvider>
   );
 };

@@ -13,8 +13,8 @@ import {
   TextField,
 } from "@mui/material";
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
-import { useNotifications } from "@toolpad/core";
 import React from "react";
+import { toast } from "react-toastify";
 import { z } from "zod";
 
 const { fieldContext, formContext } = createFormHookContexts();
@@ -40,7 +40,6 @@ export const Md5Compute = () => {
 
   const md5BackupImage = useMD5Compute();
   const selectDirectory = useSelectFile();
-  const notifications = useNotifications();
   const form = useAppForm({
     defaultValues: {
       directory: "",
@@ -51,7 +50,7 @@ export const Md5Compute = () => {
     async onSubmit({ value }) {
       await md5BackupImage.mutateAsync(value.directory, {
         onError: (error) => {
-          notifications.show(error.message, { severity: "error" });
+          toast.error(error.message);
         },
         onSuccess: (data) => {
           setMD5(Object.keys(data).at(0) || "");

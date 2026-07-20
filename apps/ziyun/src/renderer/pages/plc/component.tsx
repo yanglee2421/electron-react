@@ -61,8 +61,8 @@ import {
   useForm,
 } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNotifications } from "@toolpad/core";
 import React from "react";
+import { toast } from "react-toastify";
 import { z } from "zod";
 
 const { fieldContext, formContext } = createFormHookContexts();
@@ -358,7 +358,6 @@ const DInput = (props: DInputProps) => {
   });
 
   const writeD = useDWrite();
-  const notifications = useNotifications();
   const query = useQuery({ ...queryInput, enabled: !!props.path });
 
   const defaultValue = typeof query.data === "number" ? query.data : 0;
@@ -375,13 +374,11 @@ const DInput = (props: DInputProps) => {
           value: c.value.value,
         },
         {
-          onError: async (error) => {
-            notifications.show(error.message, { severity: "error" });
+          onError: (error) => {
+            toast.error(error.message);
           },
           onSuccess: async () => {
-            notifications.show(`更改D${props.address}成功`, {
-              severity: "success",
-            });
+            toast.success(`更改D${props.address}成功`);
           },
         },
       );
@@ -749,7 +746,6 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
     enabled: !!serialPortPath,
   });
   const plcWriteTest = usePLCWriteTest();
-  const notifications = useNotifications();
 
   const form = useAppForm({
     defaultValues: {
@@ -765,10 +761,10 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
         { path: serialPortPath, ...value },
         {
           onError: (error) => {
-            notifications.show(error.message, { severity: "error" });
+            toast.error(error.message);
           },
           onSuccess: () => {
-            notifications.show("保存成功", { severity: "success" });
+            toast.success("保存成功");
           },
         },
       );
@@ -1061,8 +1057,6 @@ const PhasedArrayPreset = (props: PhasedArrayPresetProps) => {
 const CustomBitAddForm = () => {
   const formId = React.useId();
 
-  const notifications = useNotifications();
-
   const form = useForm({
     defaultValues: {
       type: "X",
@@ -1078,36 +1072,28 @@ const CustomBitAddForm = () => {
         switch (type) {
           case "X":
             if (draft.x.some((item) => item.address === address)) {
-              notifications.show(`${type + address} 已存在`, {
-                severity: "warning",
-              });
+              toast.warn(`${type + address} 已存在`);
             } else {
               draft.x.push({ address, description });
             }
             break;
           case "Y":
             if (draft.y.some((item) => item.address === address)) {
-              notifications.show(`${type + address} 已存在`, {
-                severity: "warning",
-              });
+              toast.warn(`${type + address} 已存在`);
             } else {
               draft.y.push({ address, description });
             }
             break;
           case "D":
             if (draft.d.some((item) => item.address === address)) {
-              notifications.show(`${type + address} 已存在`, {
-                severity: "warning",
-              });
+              toast.warn(`${type + address} 已存在`);
             } else {
               draft.d.push({ address, description });
             }
             break;
           case "M":
             if (draft.m.some((item) => item.address === address)) {
-              notifications.show(`${type + address} 已存在`, {
-                severity: "warning",
-              });
+              toast.warn(`${type + address} 已存在`);
             } else {
               draft.m.push({ address, description });
             }

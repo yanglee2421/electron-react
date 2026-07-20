@@ -42,7 +42,7 @@
     "@electron/rebuild": "^4.0.3",
     "@types/node": "^25.3.0",
     "drizzle-kit": "1.0.0-beta.22",
-    "tsdown": "0.22.0",
+    "tsdown": "0.22.9",
     "typescript": "^7.0.2",
     "vite-plus": "^0.2.1"
   },
