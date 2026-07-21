@@ -76,3 +76,18 @@ export const useUploadDetecion = () => {
     },
   });
 };
+
+export const useUpload501 = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return ipc.invoke("hmis/hxzy_upload_501", id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY],
+      });
+    },
+  });
+};

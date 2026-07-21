@@ -124,48 +124,50 @@ export const Sidebar = (props: SidebarProps) => {
                   />
                 </ListItemButton>
                 <Collapse in={hxzyOpen} unmountOnExit>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/hxzy" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/hxzy",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <QrCodeScannerRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"HMIS"} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/hxzy/verifies" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/hxzy/verifies",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <CalendarTodayRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"日常校验"} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/hxzy/setting" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/hxzy/setting",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <TuneRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"设置"} />
-                  </ListItemButton>
+                  <List disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/hxzy" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/hxzy",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <QrCodeScannerRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"HMIS"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/hxzy/verifies" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/hxzy/verifies",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <CalendarTodayRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"日常校验"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/hxzy/setting" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/hxzy/setting",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <TuneRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"设置"} />
+                    </ListItemButton>
+                  </List>
                 </Collapse>
               </>
             )}
@@ -188,34 +190,36 @@ export const Sidebar = (props: SidebarProps) => {
                   />
                 </ListItemButton>
                 <Collapse in={jtvOpen} unmountOnExit>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/jtv" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/jtv",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <QrCodeScannerRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"HMIS"} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/jtv/setting" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/jtv/setting",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <TuneRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"设置"} />
-                  </ListItemButton>
+                  <List disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/jtv" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/jtv",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <QrCodeScannerRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"HMIS"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/jtv/setting" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/jtv/setting",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <TuneRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"设置"} />
+                    </ListItemButton>
+                  </List>
                 </Collapse>
               </>
             )}
@@ -238,34 +242,36 @@ export const Sidebar = (props: SidebarProps) => {
                   />
                 </ListItemButton>
                 <Collapse in={guangzhoubeiOpen} unmountOnExit>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/jtv_guangzhoubei" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/jtv_guangzhoubei",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <QrCodeScannerRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"HMIS"} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/jtv_guangzhoubei/setting" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/jtv_guangzhoubei/setting",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <TuneRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"设置"} />
-                  </ListItemButton>
+                  <List disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/jtv_guangzhoubei" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/jtv_guangzhoubei",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <QrCodeScannerRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"HMIS"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/jtv_guangzhoubei/setting" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/jtv_guangzhoubei/setting",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <TuneRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"设置"} />
+                    </ListItemButton>
+                  </List>
                 </Collapse>
               </>
             )}
@@ -288,34 +294,36 @@ export const Sidebar = (props: SidebarProps) => {
                   />
                 </ListItemButton>
                 <Collapse in={guangzhoujibaoduanOpen} unmountOnExit>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/jtv_guangzhoujibaoduan" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/jtv_guangzhoujibaoduan",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <QrCodeScannerRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"HMIS"} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/jtv_guangzhoujibaoduan/setting" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/jtv_guangzhoujibaoduan/setting",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <TuneRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"设置"} />
-                  </ListItemButton>
+                  <List disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/jtv_guangzhoujibaoduan" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/jtv_guangzhoujibaoduan",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <QrCodeScannerRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"HMIS"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/jtv_guangzhoujibaoduan/setting" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/jtv_guangzhoujibaoduan/setting",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <TuneRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"设置"} />
+                    </ListItemButton>
+                  </List>
                 </Collapse>
               </>
             )}
@@ -338,90 +346,92 @@ export const Sidebar = (props: SidebarProps) => {
                   />
                 </ListItemButton>
                 <Collapse in={khOpen} unmountOnExit>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/kh" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/kh",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <QrCodeScannerRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"HMIS"} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/kh/detections" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/kh/detections",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <Train />
-                    </ListItemIcon>
-                    <ListItemText primary={"现车作业"} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/kh/verify" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/kh/verify",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <CalendarTodayRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"日常校验"} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/kh/quartor" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/kh/quartor",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <CalendarMonthRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"季度校验"} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/kh/annual" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/kh/annual",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <CalendarTodayRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"年度校验"} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={Link}
-                    to={{ pathname: "/kh/setting" }}
-                    selected={Object.is(
-                      normalizePathname(location.pathname),
-                      "/kh/setting",
-                    )}
-                  >
-                    <Box sx={{ paddingInlineStart: 2 }} />
-                    <ListItemIcon>
-                      <TuneRounded />
-                    </ListItemIcon>
-                    <ListItemText primary={"设置"} />
-                  </ListItemButton>
+                  <List disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/kh" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/kh",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <QrCodeScannerRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"HMIS"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/kh/detections" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/kh/detections",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <Train />
+                      </ListItemIcon>
+                      <ListItemText primary={"现车作业"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/kh/verify" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/kh/verify",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <CalendarTodayRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"日常校验"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/kh/quartor" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/kh/quartor",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <CalendarMonthRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"季度校验"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/kh/annual" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/kh/annual",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <CalendarTodayRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"年度校验"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/kh/setting" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/kh/setting",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <TuneRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"设置"} />
+                    </ListItemButton>
+                  </List>
                 </Collapse>
               </>
             )}
@@ -486,30 +496,6 @@ export const Sidebar = (props: SidebarProps) => {
           >
             <ListItemIcon>
               <CalendarTodayRounded />
-            </ListItemIcon>
-            <ListItemText primary={"年度校验"} />
-          </ListItemButton>
-        </List>
-        <List
-          subheader={
-            <ListSubheader
-              disableSticky
-              sx={{ backgroundColor: "transparent" }}
-            >
-              QT版软件
-            </ListSubheader>
-          }
-        >
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/qt/anniversary" }}
-            selected={Object.is(
-              normalizePathname(location.pathname),
-              "/qt/anniversary",
-            )}
-          >
-            <ListItemIcon>
-              <Train />
             </ListItemIcon>
             <ListItemText primary={"年度校验"} />
           </ListItemButton>

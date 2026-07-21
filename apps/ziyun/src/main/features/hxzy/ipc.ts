@@ -17,6 +17,7 @@ export const registerIPCHandlers = (hmis: Hxzy) => {
   ipcHandle("HMIS/hxzy_hmis_sqlite_insert", (_, params) => {
     return hmis.handleRecordInsert(params);
   });
+  ipcHandle("hmis/hxzy_upload_501", (_, id) => hmis.upload501(id));
 
   return () => {
     ipcRemoveHandle("HMIS/hxzy_hmis_api_get");
@@ -24,5 +25,6 @@ export const registerIPCHandlers = (hmis: Hxzy) => {
     ipcRemoveHandle("HMIS/hxzy_hmis_sqlite_get");
     ipcRemoveHandle("HMIS/hxzy_hmis_sqlite_delete");
     ipcRemoveHandle("HMIS/hxzy_hmis_sqlite_insert");
+    ipcRemoveHandle("hmis/hxzy_upload_501");
   };
 };

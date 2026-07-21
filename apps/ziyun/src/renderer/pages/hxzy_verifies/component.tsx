@@ -1,9 +1,10 @@
 import type { Verify } from "#main/features/mdb/types";
+import { useUpload501 } from "#renderer/api/hxzy";
 import { fetchUser, fetchVerifies } from "#renderer/api/mdb";
-import { Loading } from "#renderer/components/Loading";
+import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { RefreshOutlined } from "@mui/icons-material";
+import { RefreshOutlined, Upload } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -14,7 +15,6 @@ import {
   Grid,
   IconButton,
   LinearProgress,
-  Link,
   Table,
   TableBody,
   TableCell,
@@ -35,17 +35,35 @@ import {
 } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import React from "react";
+import { toast } from "react-toastify";
 
-const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Verify>();
 const columns = [
-  columnHelper.accessor("szIDs", {
-    header: "ID",
-    footer: "ID",
-    cell: ({ getValue }) => {
-      const szID = getValue();
+  columnHelper.display({
+    id: "action",
+    header: "上传",
+    cell: (row) => {
+      const upload = useUpload501();
 
-      return <Link>#{szIDToId(szID)}</Link>;
+      return (
+        <IconButton
+          onClick={() => {
+            upload.mutate(row.row.original.szIDs, {
+              onError: (error) => {
+                toast.error(error.message);
+              },
+              onSuccess: () => {
+                toast.success(`上传${row.row.original.szIDs}成功`);
+              },
+            });
+          }}
+          disabled={upload.isPending}
+        >
+          <PendingIcon isPending={upload.isPending}>
+            <Upload />
+          </PendingIcon>
+        </IconButton>
+      );
     },
   }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
@@ -123,7 +141,7 @@ export const Component = () => {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            <Loading slotProps={{ box: { padding: 0 } }} />
+            <Loading slotProps={{ box: { sx: { padding: 0 } } }} />
           </TableCell>
         </TableRow>
       );

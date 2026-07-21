@@ -21,6 +21,11 @@ export interface HxzyGetResponse {
   ];
 }
 
+export interface Upload501Response {
+  code: string;
+  msg: string;
+}
+
 export interface IPCContract {
   "HMIS/hxzy_hmis_api_get": {
     args: [string];
@@ -41,5 +46,9 @@ export interface IPCContract {
   "HMIS/hxzy_hmis_sqlite_insert": {
     args: [InsertRecordParams];
     return: ReturnType<Hxzy["handleRecordInsert"]>;
+  };
+  "hmis/hxzy_upload_501": {
+    args: [string];
+    return: ReturnType<Hxzy["upload501"]>;
   };
 }
