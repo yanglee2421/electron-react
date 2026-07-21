@@ -1,7 +1,11 @@
 // 成都北 华兴致远
 import * as schema from "#main/features/db/schema";
 import type { Logger } from "#main/features/logger";
-import type { DetectionData } from "#main/features/mdb/types";
+import type {
+  Detecotor,
+  DetectionData,
+  VerifyData,
+} from "#main/features/mdb/types";
 import { createEmit, getIP } from "#main/lib";
 import { divideBy10, mathFormat } from "#shared/functions/math";
 import { HXZY_HMIS_STORAGE_KEY } from "#shared/instances/constants";
@@ -27,37 +31,78 @@ import type { DBClient } from "../db/types";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
 import type { CHR501Input } from "./501";
-import type { HxzyGetResponse, Upload501Response } from "./types";
-
-interface PostRequestItem {
-  EQ_IP: string; // 设备IP
-  EQ_BH: string; // 设备编号
-  GD: string; // 股道号
-  dh: string; // 扫码单号
-  zx: string; // RE2B
-  zh: string; // 03684
-  TSFF: string;
-  TSSJ: string;
-  TFLAW_PLACE: string; // 缺陷部位
-  TFLAW_TYPE: string; // 缺陷类型
-  TVIEW: string; // 处理意见
-  CZCTZ: string; // 左穿透签章
-  CZCTY: string; // 右穿透签章
-  LZXRBZ: string; // 左轮座签章
-  LZXRBY: string; // 右轮座签章
-  XHCZ: string; // 左轴颈签章
-  XHCY: string; // 右轴颈签章
-  TSZ: string; // 探伤者左
-  TSZY: string; // 探伤者右
-  CT_RESULT: string; // 合格
-}
-
-interface PostResponse {
-  code: string;
-  msg: "数据上传成功";
-}
+import type {
+  HxzyGetResponse,
+  PostRequestItem,
+  PostResponse,
+  Upload501Response,
+} from "./types";
 
 const emit = createEmit("api_set");
+
+const resolveFlawGroup = (datas: VerifyData[]) => {
+  const group = mapGroupBy(datas, (row) => `${row.nBoard}-${row.nChannel}`);
+  const result = new Map<string, string[]>();
+
+  for (const [key, flaws] of group) {
+    const type = flaws.at(0)?.nChannel;
+
+    switch (type) {
+      case 0:
+        result.set(key, []);
+        break;
+      case 1:
+        result.set(key, []);
+        break;
+      case 2:
+      case 3:
+        result.set(key, []);
+        break;
+      case 4:
+        result.set(key, []);
+        break;
+      default:
+        result.set(key, []);
+        break;
+    }
+  }
+
+  return result;
+};
+
+interface DetectorMeta {
+  zsj: string;
+  jy: string;
+  bc: string;
+  ts: string;
+}
+
+const resolveDetectorGroup = (detectors: Detecotor[], datas: VerifyData[]) => {
+  const detectorGroup = mapGroupBy(
+    detectors,
+    (d) => `${d.nBoard}-${d.nChannel}`,
+  );
+  const flawGroup = mapGroupBy(datas, (d) => `${d.nBoard}-${d.nChannel}`);
+  const map = new Map<string, DetectorMeta>();
+
+  for (const [key, list] of detectorGroup) {
+    const detector = list.at(0);
+    const flaw = flawGroup.get(key)?.at(0);
+
+    if (!detector) {
+      continue;
+    }
+
+    map.set(key, {
+      zsj: divideBy10(detector.nWAngle),
+      jy: flaw ? divideBy10(flaw.nAtten) : "",
+      bc: flaw ? divideBy10(detector.nDBSub) : "",
+      ts: flaw ? divideBy10(flaw.nAtten + detector.nDBSub) : "",
+    });
+  }
+
+  return map;
+};
 
 export class Hxzy {
   readonly state$: BehaviorSubject<HXZY_HMIS>;
