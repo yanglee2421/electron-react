@@ -26,7 +26,7 @@ export const Layout = (props: React.PropsWithChildren) => {
   return (
     <Box sx={{ "--sidebar-width": theme.spacing(36) }}>
       <Paper
-        aria-hidden={showSidebar}
+        aria-hidden={!showSidebar}
         component={"aside"}
         sx={{
           position: "fixed",
@@ -46,17 +46,17 @@ export const Layout = (props: React.PropsWithChildren) => {
             inlineSize: "100%",
 
             ["&:where([aria-hidden=true])"]: {
-              insetInlineStart: 0,
-              transition: theme.transitions.create("inset-inline-start", {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-            },
-            ["&:where([aria-hidden=false])"]: {
               insetInlineStart: "-100%",
               transition: theme.transitions.create("inset-inline-start", {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.leavingScreen,
+              }),
+            },
+            ["&:where([aria-hidden=false])"]: {
+              insetInlineStart: 0,
+              transition: theme.transitions.create("inset-inline-start", {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
               }),
             },
           },
@@ -64,17 +64,17 @@ export const Layout = (props: React.PropsWithChildren) => {
             inlineSize: "var(--sidebar-width)",
 
             ["&:where([aria-hidden=true])"]: {
-              insetInlineStart: 0,
-              transition: theme.transitions.create("inset-inline-start", {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-            },
-            ["&:where([aria-hidden=false])"]: {
               insetInlineStart: "calc(-1 * var(--sidebar-width))",
               transition: theme.transitions.create("inset-inline-start", {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.leavingScreen,
+              }),
+            },
+            ["&:where([aria-hidden=false])"]: {
+              insetInlineStart: 0,
+              transition: theme.transitions.create("inset-inline-start", {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
               }),
             },
           },
@@ -105,25 +105,25 @@ export const Layout = (props: React.PropsWithChildren) => {
 
           [theme.breakpoints.between("xs", "sm")]: {
             ["[aria-hidden=true] + &"]: {
-              display: "none",
+              display: "flex",
             },
             ["[aria-hidden=false] + &"]: {
-              display: "flex",
+              display: "none",
             },
           },
           [theme.breakpoints.up("sm")]: {
             ["[aria-hidden=true] + &"]: {
-              paddingInlineStart: "var(--sidebar-width)",
-              transition: theme.transitions.create("padding-inline-start", {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-            },
-            ["[aria-hidden=false] + &"]: {
               paddingInlineStart: 0,
               transition: theme.transitions.create("padding-inline-start", {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.leavingScreen,
+              }),
+            },
+            ["[aria-hidden=false] + &"]: {
+              paddingInlineStart: "var(--sidebar-width)",
+              transition: theme.transitions.create("padding-inline-start", {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
               }),
             },
           },
