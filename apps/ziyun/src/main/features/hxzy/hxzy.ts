@@ -7,6 +7,7 @@ import type {
   VerifyData,
 } from "#main/features/mdb/types";
 import { createEmit, getIP } from "#main/lib";
+import { calculateXHCFlaws } from "#shared/functions/flawDetection";
 import { divideBy10, mathFormat } from "#shared/functions/math";
 import { HXZY_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { HXZY_HMIS } from "#shared/instances/schema";
@@ -40,8 +41,7 @@ import type {
 
 const emit = createEmit("api_set");
 
-const resolveFlawGroup = (datas: VerifyData[]) => {
-  const group = mapGroupBy(datas, (row) => `${row.nBoard}-${row.nChannel}`);
+const calcFlawMap = (group: Map<string, VerifyData[]>) => {
   const result = new Map<string, string[]>();
 
   for (const [key, flaws] of group) {
@@ -49,18 +49,48 @@ const resolveFlawGroup = (datas: VerifyData[]) => {
 
     switch (type) {
       case 0:
-        result.set(key, []);
+        result.set(key, [
+          ...new Set(
+            flaws
+              .toSorted((a, b) => a.fltValueX - b.fltValueX)
+              .map((i) => mathFormat(i.fltValueX, { precision: 0 })),
+          ),
+        ]);
         break;
       case 1:
-        result.set(key, []);
+        result.set(
+          key,
+          calculateXHCFlaws(flaws).map((i) =>
+            mathFormat(i.fltValueX, { precision: 0 }),
+          ),
+        );
         break;
       case 2:
       case 3:
-        result.set(key, []);
+        result.set(key, [
+          ...new Set(
+            flaws
+              .toSorted((a, b) => a.fltValueX - b.fltValueX)
+              .map((i) => mathFormat(i.fltValueX, { precision: 0 })),
+          ),
+        ]);
         break;
-      case 4:
-        result.set(key, []);
+      case 4: {
+        const list = [
+          ...new Set(
+            flaws
+              .toSorted((a, b) => a.fltValueX - b.fltValueX)
+              .map((i) => mathFormat(i.fltValueX, { precision: 0 })),
+          ),
+        ];
+        result.set(
+          key,
+          Array.from<string>({ length: 11 - list.length })
+            .map(() => "")
+            .concat(list),
+        );
         break;
+      }
       default:
         result.set(key, []);
         break;
@@ -77,15 +107,14 @@ interface DetectorMeta {
   ts: string;
 }
 
-const resolveDetectorGroup = (detectors: Detecotor[], datas: VerifyData[]) => {
-  const detectorGroup = mapGroupBy(
-    detectors,
-    (d) => `${d.nBoard}-${d.nChannel}`,
-  );
-  const flawGroup = mapGroupBy(datas, (d) => `${d.nBoard}-${d.nChannel}`);
+const calcDetectorMap = (
+  detectors: Detecotor[],
+  flawGroup: Map<string, VerifyData[]>,
+) => {
+  const group = mapGroupBy(detectors, (d) => `${d.nBoard}-${d.nChannel}`);
   const map = new Map<string, DetectorMeta>();
 
-  for (const [key, list] of detectorGroup) {
+  for (const [key, list] of group) {
     const detector = list.at(0);
     const flaw = flawGroup.get(key)?.at(0);
 
@@ -474,14 +503,12 @@ export class Hxzy {
       .detectors()
       .equal("szwheel", record.szWHModel || "");
 
-    const detectorMap = mapGroupBy(
-      detectors.rows,
-      (row) => `${row.nBoard}-${row.nChannel}`,
-    );
-    const flawMap = mapGroupBy(
+    const flawGroup = mapGroupBy(
       datas.rows,
       (row) => `${row.nBoard}-${row.nChannel}`,
     );
+    const flawMap = calcFlawMap(flawGroup);
+    const detectorMap = calcDetectorMap(detectors.rows, flawGroup);
 
     return {
       dwmc: corporation.Factory || "",
@@ -491,207 +518,197 @@ export class Hxzy {
       Sbxh: corporation.DeviceType || "",
       Sbbh: corporation.DeviceNO || "",
       Swskxh: [record.szIDsWheel, record.szWHModel].join("-"),
-      zsjZw: divideBy10(detectorMap.get("0-3")?.at(0)?.nWAngle || 0),
-      zsjZn: divideBy10(detectorMap.get("0-4")?.at(0)?.nWAngle || 0),
-      zsjZa1: divideBy10(detectorMap.get("0-2")?.at(0)?.nWAngle || 0),
-      zsjYw: divideBy10(detectorMap.get("1-3")?.at(0)?.nWAngle || 0),
-      zsjYn: divideBy10(detectorMap.get("1-4")?.at(0)?.nWAngle || 0),
-      zsjYa1: divideBy10(detectorMap.get("1-2")?.at(0)?.nWAngle || 0),
-      lmdJyZw: divideBy10(flawMap.get("0-3")?.at(0)?.nAtten || 0),
-      lmdJyZn: divideBy10(flawMap.get("0-4")?.at(0)?.nAtten || 0),
-      lmdJyZa1: divideBy10(flawMap.get("0-2")?.at(0)?.nAtten || 0),
-      lmdJyYw: divideBy10(flawMap.get("1-3")?.at(0)?.nAtten || 0),
-      lmdJyYn: divideBy10(flawMap.get("1-4")?.at(0)?.nAtten || 0),
-      lmdJyYa1: divideBy10(flawMap.get("1-2")?.at(0)?.nAtten || 0),
-      lmdBcZw: divideBy10(detectorMap.get("0-3")?.at(0)?.nDBSub || 0),
-      lmdBcZn: divideBy10(detectorMap.get("0-4")?.at(0)?.nDBSub || 0),
-      lmdBcZa1: divideBy10(detectorMap.get("0-2")?.at(0)?.nDBSub || 0),
-      lmdBcYw: divideBy10(detectorMap.get("1-3")?.at(0)?.nDBSub || 0),
-      lmdBcYn: divideBy10(detectorMap.get("1-4")?.at(0)?.nDBSub || 0),
-      lmdBcYa1: divideBy10(detectorMap.get("1-2")?.at(0)?.nDBSub || 0),
-      lmdTsZw: divideBy10(
-        (detectorMap.get("0-3")?.at(0)?.nDBSub || 0) +
-          (flawMap.get("0-3")?.at(0)?.nAtten || 0),
-      ),
-      lmdTsZn: divideBy10(
-        (detectorMap.get("0-4")?.at(0)?.nDBSub || 0) +
-          (flawMap.get("0-4")?.at(0)?.nAtten || 0),
-      ),
-      lmdTsZa1: divideBy10(
-        (detectorMap.get("0-2")?.at(0)?.nDBSub || 0) +
-          (flawMap.get("0-2")?.at(0)?.nAtten || 0),
-      ),
-      lmdTsYw: divideBy10(
-        (detectorMap.get("1-3")?.at(0)?.nDBSub || 0) +
-          (flawMap.get("1-3")?.at(0)?.nAtten || 0),
-      ),
-      lmdTsYn: divideBy10(
-        (detectorMap.get("1-4")?.at(0)?.nDBSub || 0) +
-          (flawMap.get("1-4")?.at(0)?.nAtten || 0),
-      ),
-      lmdTsYa1: divideBy10(
-        (detectorMap.get("1-2")?.at(0)?.nDBSub || 0) +
-          (flawMap.get("1-2")?.at(0)?.nAtten || 0),
-      ),
+      zsjZw: detectorMap.get("0-3")?.zsj || "",
+      zsjZn: detectorMap.get("0-4")?.zsj || "",
+      zsjZa1: detectorMap.get("0-2")?.zsj || "",
+      zsjYw: detectorMap.get("1-3")?.zsj || "",
+      zsjYn: detectorMap.get("1-4")?.zsj || "",
+      zsjYa1: detectorMap.get("1-2")?.zsj || "",
+      lmdJyZw: detectorMap.get("0-3")?.jy || "",
+      lmdJyZn: detectorMap.get("0-4")?.jy || "",
+      lmdJyZa1: detectorMap.get("0-2")?.jy || "",
+      lmdJyYw: detectorMap.get("1-3")?.jy || "",
+      lmdJyYn: detectorMap.get("1-4")?.jy || "",
+      lmdJyYa1: detectorMap.get("1-2")?.jy || "",
+      lmdBcZw: detectorMap.get("0-3")?.bc || "",
+      lmdBcZn: detectorMap.get("0-4")?.bc || "",
+      lmdBcZa1: detectorMap.get("0-2")?.bc || "",
+      lmdBcYw: detectorMap.get("1-3")?.bc || "",
+      lmdBcYn: detectorMap.get("1-4")?.bc || "",
+      lmdBcYa1: detectorMap.get("1-2")?.bc || "",
+      lmdTsZw: detectorMap.get("0-3")?.ts || "",
+      lmdTsZn: detectorMap.get("0-4")?.ts || "",
+      lmdTsZa1: detectorMap.get("0-2")?.ts || "",
+      lmdTsYw: detectorMap.get("1-3")?.ts || "",
+      lmdTsYn: detectorMap.get("1-4")?.ts || "",
+      lmdTsYa1: detectorMap.get("1-2")?.ts || "",
+
       syzTd1Zw: flawMap.get("0-3")?.at(0) ? "√" : "",
-      syzTd1Zn: flawMap.get("0-4")?.at(-11) ? "√" : "",
+      syzTd1Zn: flawMap.get("0-4")?.at(0) ? "√" : "",
       syzTd1Za1: flawMap.get("0-2")?.at(0) ? "√" : "",
       syzTd1Yw: flawMap.get("1-3")?.at(0) ? "√" : "",
-      syzTd1Yn: flawMap.get("1-4")?.at(-11) ? "√" : "",
+      syzTd1Yn: flawMap.get("1-4")?.at(0) ? "√" : "",
       syzTd1Ya1: flawMap.get("1-2")?.at(0) ? "√" : "",
 
       syzTd2Zw: flawMap.get("0-3")?.at(1) ? "√" : "",
-      syzTd2Zn: flawMap.get("0-4")?.at(-10) ? "√" : "",
+      syzTd2Zn: flawMap.get("0-4")?.at(1) ? "√" : "",
       syzTd2Za1: flawMap.get("0-2")?.at(1) ? "√" : "",
       syzTd2Yw: flawMap.get("1-3")?.at(1) ? "√" : "",
-      syzTd2Yn: flawMap.get("1-4")?.at(-10) ? "√" : "",
+      syzTd2Yn: flawMap.get("1-4")?.at(1) ? "√" : "",
       syzTd2Ya1: flawMap.get("1-2")?.at(1) ? "√" : "",
 
       syzTd3Zw: flawMap.get("0-3")?.at(2) ? "√" : "",
-      syzTd3Zn: flawMap.get("0-4")?.at(-9) ? "√" : "",
+      syzTd3Zn: flawMap.get("0-4")?.at(2) ? "√" : "",
       syzTd3Za1: flawMap.get("0-2")?.at(2) ? "√" : "",
       syzTd3Yw: flawMap.get("1-3")?.at(2) ? "√" : "",
-      syzTd3Yn: flawMap.get("1-4")?.at(-9) ? "√" : "",
+      syzTd3Yn: flawMap.get("1-4")?.at(2) ? "√" : "",
       syzTd3Ya1: flawMap.get("1-2")?.at(2) ? "√" : "",
 
       syzTd4Zw: flawMap.get("0-3")?.at(3) ? "√" : "",
-      syzTd4Zn: flawMap.get("0-4")?.at(-8) ? "√" : "",
+      syzTd4Zn: flawMap.get("0-4")?.at(3) ? "√" : "",
       syzTd4Za1: flawMap.get("0-2")?.at(3) ? "√" : "",
       syzTd4Yw: flawMap.get("1-3")?.at(3) ? "√" : "",
-      syzTd4Yn: flawMap.get("1-4")?.at(-8) ? "√" : "",
+      syzTd4Yn: flawMap.get("1-4")?.at(3) ? "√" : "",
       syzTd4Ya1: flawMap.get("1-2")?.at(3) ? "√" : "",
 
       syzTd5Zw: flawMap.get("0-3")?.at(4) ? "√" : "",
-      syzTd5Zn: flawMap.get("0-4")?.at(-7) ? "√" : "",
+      syzTd5Zn: flawMap.get("0-4")?.at(4) ? "√" : "",
       syzTd5Za1: flawMap.get("0-2")?.at(4) ? "√" : "",
       syzTd5Yw: flawMap.get("1-3")?.at(4) ? "√" : "",
-      syzTd5Yn: flawMap.get("1-4")?.at(-7) ? "√" : "",
+      syzTd5Yn: flawMap.get("1-4")?.at(4) ? "√" : "",
       syzTd5Ya1: flawMap.get("1-2")?.at(4) ? "√" : "",
 
       syzTd6Zw: flawMap.get("0-3")?.at(5) ? "√" : "",
-      syzTd6Zn: flawMap.get("0-4")?.at(-6) ? "√" : "",
+      syzTd6Zn: flawMap.get("0-4")?.at(5) ? "√" : "",
       syzTd6Za1: flawMap.get("0-2")?.at(5) ? "√" : "",
       syzTd6Yw: flawMap.get("1-3")?.at(5) ? "√" : "",
-      syzTd6Yn: flawMap.get("1-4")?.at(-6) ? "√" : "",
+      syzTd6Yn: flawMap.get("1-4")?.at(5) ? "√" : "",
       syzTd6Ya1: flawMap.get("1-2")?.at(5) ? "√" : "",
 
       syzTd7Zw: flawMap.get("0-3")?.at(6) ? "√" : "",
-      syzTd7Zn: flawMap.get("0-4")?.at(-5) ? "√" : "",
+      syzTd7Zn: flawMap.get("0-4")?.at(6) ? "√" : "",
       syzTd7Za1: flawMap.get("0-2")?.at(6) ? "√" : "",
       syzTd7Yw: flawMap.get("1-3")?.at(6) ? "√" : "",
-      syzTd7Yn: flawMap.get("1-4")?.at(-5) ? "√" : "",
+      syzTd7Yn: flawMap.get("1-4")?.at(6) ? "√" : "",
       syzTd7Ya1: flawMap.get("1-2")?.at(6) ? "√" : "",
 
       syzTd8Zw: flawMap.get("0-3")?.at(7) ? "√" : "",
-      syzTd8Zn: flawMap.get("0-4")?.at(-4) ? "√" : "",
+      syzTd8Zn: flawMap.get("0-4")?.at(7) ? "√" : "",
       syzTd8Za1: flawMap.get("0-2")?.at(7) ? "√" : "",
       syzTd8Yw: flawMap.get("1-3")?.at(7) ? "√" : "",
-      syzTd8Yn: flawMap.get("1-4")?.at(-4) ? "√" : "",
+      syzTd8Yn: flawMap.get("1-4")?.at(7) ? "√" : "",
       syzTd8Ya1: flawMap.get("1-2")?.at(7) ? "√" : "",
 
       syzTd9Zw: flawMap.get("0-3")?.at(8) ? "√" : "",
-      syzTd9Zn: flawMap.get("0-4")?.at(-3) ? "√" : "",
+      syzTd9Zn: flawMap.get("0-4")?.at(8) ? "√" : "",
       syzTd9Za1: flawMap.get("0-2")?.at(8) ? "√" : "",
       syzTd9Yw: flawMap.get("1-3")?.at(8) ? "√" : "",
-      syzTd9Yn: flawMap.get("1-4")?.at(-3) ? "√" : "",
+      syzTd9Yn: flawMap.get("1-4")?.at(8) ? "√" : "",
       syzTd9Ya1: flawMap.get("1-2")?.at(8) ? "√" : "",
 
       syzTd10Zw: flawMap.get("0-3")?.at(9) ? "√" : "",
-      syzTd10Zn: flawMap.get("0-4")?.at(-2) ? "√" : "",
+      syzTd10Zn: flawMap.get("0-4")?.at(9) ? "√" : "",
       syzTd10Za1: flawMap.get("0-2")?.at(9) ? "√" : "",
       syzTd10Yw: flawMap.get("1-3")?.at(9) ? "√" : "",
-      syzTd10Yn: flawMap.get("1-4")?.at(-2) ? "√" : "",
+      syzTd10Yn: flawMap.get("1-4")?.at(9) ? "√" : "",
       syzTd10Ya1: flawMap.get("1-2")?.at(9) ? "√" : "",
 
       syzTd11Zw: flawMap.get("0-3")?.at(10) ? "√" : "",
-      syzTd11Zn: flawMap.get("0-4")?.at(-1) ? "√" : "",
+      syzTd11Zn: flawMap.get("0-4")?.at(10) ? "√" : "",
       syzTd11Za1: flawMap.get("0-2")?.at(10) ? "√" : "",
       syzTd11Yw: flawMap.get("1-3")?.at(10) ? "√" : "",
-      syzTd11Yn: flawMap.get("1-4")?.at(-1) ? "√" : "",
+      syzTd11Yn: flawMap.get("1-4")?.at(10) ? "√" : "",
       syzTd11Ya1: flawMap.get("1-2")?.at(10) ? "√" : "",
 
-      syzTd12Zw: flawMap.get("0-3")?.at(11) ? "√" : "",
-      syzTd12Zn: "",
-      syzTd12Za1: flawMap.get("0-2")?.at(11) ? "√" : "",
-      syzTd12Yw: flawMap.get("1-3")?.at(11) ? "√" : "",
-      syzTd12Yn: "",
-      syzTd12Ya1: flawMap.get("1-2")?.at(11) ? "√" : "",
+      syzTd12Zw: flawGroup.get("0-3")?.at(11) ? "√" : "",
+      syzTd12Zn: flawMap.get("0-4")?.at(11) ? "√" : "",
+      syzTd12Za1: flawGroup.get("0-2")?.at(11) ? "√" : "",
+      syzTd12Yw: flawGroup.get("1-3")?.at(11) ? "√" : "",
+      syzTd12Yn: flawMap.get("1-4")?.at(11) ? "√" : "",
+      syzTd12Ya1: flawGroup.get("1-2")?.at(11) ? "√" : "",
 
-      syzTd13Zw: flawMap.get("0-3")?.at(12) ? "√" : "",
-      syzTd13Zn: "",
-      syzTd13Za1: flawMap.get("0-2")?.at(12) ? "√" : "",
-      syzTd13Yw: flawMap.get("1-3")?.at(12) ? "√" : "",
-      syzTd13Yn: "",
-      syzTd13Ya1: flawMap.get("1-2")?.at(12) ? "√" : "",
+      syzTd13Zw: flawGroup.get("0-3")?.at(12) ? "√" : "",
+      syzTd13Zn: flawMap.get("0-4")?.at(12) ? "√" : "",
+      syzTd13Za1: flawGroup.get("0-2")?.at(12) ? "√" : "",
+      syzTd13Yw: flawGroup.get("1-3")?.at(12) ? "√" : "",
+      syzTd13Yn: flawMap.get("1-4")?.at(12) ? "√" : "",
+      syzTd13Ya1: flawGroup.get("1-2")?.at(12) ? "√" : "",
 
-      zjCtZsjZ: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjCtLmdJyZ: divideBy10(flawMap.get("0-0")?.at(0)?.nAtten || 0),
-      zjCtLmdBcZ: divideBy10(detectorMap.get("0-0")?.at(0)?.nDBSub || 0),
-      zjCtLmdTsZ: divideBy10(
-        (detectorMap.get("0-0")?.at(0)?.nDBSub || 0) +
-          (flawMap.get("0-0")?.at(0)?.nAtten || 0),
-      ),
-      zjCtLmdQx1Z: flawMap.get("0-0")?.at(0)?.fltValueX
-        ? mathFormat(flawMap.get("0-0")?.at(0)?.fltValueX, {
-            notation: "fixed",
-            precision: 0,
-          })
-        : "",
-      zjCtLmdQx2Z: flawMap.get("0-0")?.at(1)?.fltValueX
-        ? mathFormat(flawMap.get("0-0")?.at(1)?.fltValueX, {
-            notation: "fixed",
-            precision: 0,
-          })
-        : "",
-      zjCtLmdQx3Z: flawMap.get("0-0")?.at(2)?.fltValueX
-        ? mathFormat(flawMap.get("0-0")?.at(2)?.fltValueX, {
-            notation: "fixed",
-            precision: 0,
-          })
-        : "",
+      zjCtZsjZ: detectorMap.get("0-0")?.zsj || "",
+      zjCtLmdJyZ: detectorMap.get("0-0")?.jy || "",
+      zjCtLmdBcZ: detectorMap.get("0-0")?.bc || "",
+      zjCtLmdTsZ: detectorMap.get("0-0")?.ts || "",
+      zjCtLmdQx1Z: flawMap.get("0-0")?.at(0) || "",
+      zjCtLmdQx2Z: flawMap.get("0-0")?.at(1) || "",
+      zjCtLmdQx3Z: flawMap.get("0-0")?.at(2) || "",
 
-      zjCtZsjY: divideBy10(detectorMap.get("1-0")?.at(0)?.nWAngle || 0),
-      zjCtLmdJyY: divideBy10(flawMap.get("1-0")?.at(0)?.nAtten || 0),
-      zjCtLmdBcY: divideBy10(detectorMap.get("1-0")?.at(0)?.nDBSub || 0),
-      zjCtLmdTsY: divideBy10(
-        (detectorMap.get("1-0")?.at(0)?.nDBSub || 0) +
-          (flawMap.get("1-0")?.at(0)?.nAtten || 0),
-      ),
-      zjCtLmdQx1Y: divideBy10(detectorMap.get("1-0")?.at(0)?.nWAngle || 0),
-      zjCtLmdQx2Y: divideBy10(detectorMap.get("1-0")?.at(0)?.nWAngle || 0),
-      zjCtLmdQx3Y: divideBy10(detectorMap.get("1-0")?.at(0)?.nWAngle || 0),
+      zjCtZsjY: detectorMap.get("1-0")?.zsj || "",
+      zjCtLmdJyY: detectorMap.get("1-0")?.jy || "",
+      zjCtLmdBcY: detectorMap.get("1-0")?.bc || "",
+      zjCtLmdTsY: detectorMap.get("1-0")?.ts || "",
+      zjCtLmdQx1Y: flawMap.get("1-0")?.at(0) || "",
+      zjCtLmdQx2Y: flawMap.get("1-0")?.at(1) || "",
+      zjCtLmdQx3Y: flawMap.get("1-0")?.at(2) || "",
 
-      zjA1ZsjZ: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdJyZ: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdBcZ: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdTsZ: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdQx1Z: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdQx2Z: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdQx3Z: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
+      zjA1ZsjZ:
+        record.szWHModel === "RD2" ? detectorMap.get("0-1")?.zsj || "" : "",
+      zjA1LmdJyZ:
+        record.szWHModel === "RD2" ? detectorMap.get("0-1")?.jy || "" : "",
+      zjA1LmdBcZ:
+        record.szWHModel === "RD2" ? detectorMap.get("0-1")?.bc || "" : "",
+      zjA1LmdTsZ:
+        record.szWHModel === "RD2" ? detectorMap.get("0-1")?.ts || "" : "",
+      zjA1LmdQx1Z:
+        record.szWHModel === "RD2" ? flawMap.get("0-1")?.at(0) || "" : "",
+      zjA1LmdQx2Z:
+        record.szWHModel === "RD2" ? flawMap.get("0-1")?.at(1) || "" : "",
+      zjA1LmdQx3Z:
+        record.szWHModel === "RD2" ? flawMap.get("0-1")?.at(2) || "" : "",
 
-      zjA1ZsjY: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdJyY: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdBcY: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdTsY: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdQx1Y: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdQx2Y: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA1LmdQx3Y: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
+      zjA1ZsjY:
+        record.szWHModel === "RD2" ? detectorMap.get("1-1")?.zsj || "" : "",
+      zjA1LmdJyY:
+        record.szWHModel === "RD2" ? detectorMap.get("1-1")?.jy || "" : "",
+      zjA1LmdBcY:
+        record.szWHModel === "RD2" ? detectorMap.get("1-1")?.bc || "" : "",
+      zjA1LmdTsY:
+        record.szWHModel === "RD2" ? detectorMap.get("1-1")?.ts || "" : "",
+      zjA1LmdQx1Y:
+        record.szWHModel === "RD2" ? flawMap.get("1-1")?.at(0) || "" : "",
+      zjA1LmdQx2Y:
+        record.szWHModel === "RD2" ? flawMap.get("1-1")?.at(1) || "" : "",
+      zjA1LmdQx3Y:
+        record.szWHModel === "RD2" ? flawMap.get("1-1")?.at(2) || "" : "",
 
-      zjA2ZsjZ: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdJyZ: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdBcZ: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdTsZ: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdQx1Z: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdQx2Z: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdQx3Z: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
+      zjA2ZsjZ:
+        record.szWHModel === "RE2B" ? detectorMap.get("0-1")?.zsj || "" : "",
+      zjA2LmdJyZ:
+        record.szWHModel === "RE2B" ? detectorMap.get("0-1")?.jy || "" : "",
+      zjA2LmdBcZ:
+        record.szWHModel === "RE2B" ? detectorMap.get("0-1")?.bc || "" : "",
+      zjA2LmdTsZ:
+        record.szWHModel === "RE2B" ? detectorMap.get("0-1")?.ts || "" : "",
+      zjA2LmdQx1Z:
+        record.szWHModel === "RE2B" ? flawMap.get("0-1")?.at(0) || "" : "",
+      zjA2LmdQx2Z:
+        record.szWHModel === "RE2B" ? flawMap.get("0-1")?.at(1) || "" : "",
+      zjA2LmdQx3Z:
+        record.szWHModel === "RE2B" ? flawMap.get("0-1")?.at(2) || "" : "",
 
-      zjA2ZsjY: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdJyY: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdBcY: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdTsY: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdQx1Y: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdQx2Y: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
-      zjA2LmdQx3Y: divideBy10(detectorMap.get("0-0")?.at(0)?.nWAngle || 0),
+      zjA2ZsjY:
+        record.szWHModel === "RE2B" ? detectorMap.get("1-1")?.zsj || "" : "",
+      zjA2LmdJyY:
+        record.szWHModel === "RE2B" ? detectorMap.get("1-1")?.jy || "" : "",
+      zjA2LmdBcY:
+        record.szWHModel === "RE2B" ? detectorMap.get("1-1")?.bc || "" : "",
+      zjA2LmdTsY:
+        record.szWHModel === "RE2B" ? detectorMap.get("1-1")?.ts || "" : "",
+      zjA2LmdQx1Y:
+        record.szWHModel === "RE2B" ? flawMap.get("1-1")?.at(0) || "" : "",
+      zjA2LmdQx2Y:
+        record.szWHModel === "RE2B" ? flawMap.get("1-1")?.at(1) || "" : "",
+      zjA2LmdQx3Y:
+        record.szWHModel === "RE2B" ? flawMap.get("1-1")?.at(2) || "" : "",
 
       Tsg: record.szUsername || "",
       Tsgz: "",
