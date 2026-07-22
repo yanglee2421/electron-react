@@ -19,27 +19,6 @@ static Napi::Value JsSafeCall(const Napi::Env& env, Fn&& func) {
 }
 
 // Stub implementations for Linux
-Napi::Value Add(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
-
-  return JsSafeCall(env, [&]() -> Napi::Value {
-    if (info.Length() < 2) {
-      Napi::TypeError::New(env, "Wrong number of arguments")
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    if (!info[0].IsNumber() || !info[1].IsNumber()) {
-      Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    double value1 = info[0].As<Napi::Number>().DoubleValue();
-    double value2 = info[1].As<Napi::Number>().DoubleValue();
-
-    return Napi::Number::New(env, value1 + value2);
-  });
-}
 
 Napi::Value ShowAlert(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
@@ -84,9 +63,6 @@ Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-  exports.Set(Napi::String::New(env, "add"), Napi::Function::New(env, Add));
-  exports.Set(
-      Napi::String::New(env, "showAlert"), Napi::Function::New(env, ShowAlert));
   exports.Set(
       Napi::String::New(env, "isRunAsAdmin"),
       Napi::Function::New(env, IsRunAsAdminWrapped));

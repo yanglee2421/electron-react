@@ -7,8 +7,6 @@ const __dirname = path.dirname(__filename);
 const require = module.createRequire(import.meta.url);
 
 interface NativeAddon {
-  add(a: number, b: number): number;
-  showAlert(message: string, title: string): Promise<number>;
   isRunAsAdmin(): boolean;
   autoInputToVC(
     zx: string,

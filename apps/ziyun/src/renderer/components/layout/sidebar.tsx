@@ -8,6 +8,7 @@ import {
   MemoryRounded,
   PrecisionManufacturing,
   QrCodeScannerRounded,
+  Science,
   Settings,
   TodayRounded,
   Train,
@@ -543,6 +544,18 @@ export const Sidebar = (props: SidebarProps) => {
                 <MemoryRounded />
               </ListItemIcon>
               <ListItemText primary={"PLC"} />
+            </ListItemButton>
+          )}
+          {import.meta.env.DEV && (
+            <ListItemButton
+              component={Link}
+              to={{ pathname: "/lab" }}
+              selected={Object.is(normalizePathname(location.pathname), "/plc")}
+            >
+              <ListItemIcon>
+                <Science />
+              </ListItemIcon>
+              <ListItemText primary={"实验室"} />
             </ListItemButton>
           )}
         </List>

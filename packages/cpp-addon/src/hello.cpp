@@ -115,88 +115,6 @@ bool AutoInputToVC(
   return true;
 }
 
-Napi::Value Add(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
-
-  return JsSafeCall(env, [&]() -> Napi::Value {
-    if (info.Length() < 2) {
-      Napi::TypeError::New(env, "Wrong number of arguments")
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    if (!info[0].IsNumber() || !info[1].IsNumber()) {
-      Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    double value1 = info[0].As<Napi::Number>().DoubleValue();
-    double value2 = info[1].As<Napi::Number>().DoubleValue();
-
-    return Napi::Number::New(env, value1 + value2);
-  });
-}
-
-Napi::Value ShowAlert(const Napi::CallbackInfo& info) {
-  class AlertWorker : public Napi::AsyncWorker {
-   public:
-    AlertWorker(
-        Napi::Function& callback,
-        const std::wstring& message,
-        const std::wstring& title,
-        Napi::Promise::Deferred deferred)
-        : Napi::AsyncWorker(callback),
-          message_(message),
-          title_(title),
-          deferred_(deferred),
-          result_(0) {}
-
-    void Execute() override {
-      SafeExecute(
-          [&]() {
-            result_ = MessageBoxW(
-                NULL,
-                (LPCWSTR)message_.c_str(),
-                (LPCWSTR)title_.c_str(),
-                MB_OKCANCEL | MB_ICONINFORMATION);
-          },
-          [&](const std::string& err) { SetError(err); });
-    }
-    void OnOK() override {
-      deferred_.Resolve(Napi::Number::New(Env(), result_));
-    }
-    void OnError(const Napi::Error& e) override {
-      deferred_.Reject(e.Value());
-    }
-
-   private:
-    std::wstring message_, title_;
-    Napi::Promise::Deferred deferred_;
-    int result_;
-  };
-
-  Napi::Env env = info.Env();
-
-  return JsSafeCall(env, [&]() -> Napi::Value {
-    if (info.Length() < 2 || !info[0].IsString() || !info[1].IsString()) {
-      Napi::TypeError::New(env, "String expected for both arguments")
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    std::u16string message = info[0].As<Napi::String>().Utf16Value();
-    std::u16string title = info[1].As<Napi::String>().Utf16Value();
-    Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
-    Napi::Function cb =
-        Napi::Function::New(env, [](const Napi::CallbackInfo&) {});
-    AlertWorker* worker = new AlertWorker(
-        cb, (LPCWSTR)message.c_str(), (LPCWSTR)title.c_str(), deferred);
-    worker->Queue();
-
-    return deferred.Promise();
-  });
-}
-
 Napi::Value IsRunAsAdminWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
 
@@ -482,9 +400,6 @@ Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-  exports.Set(Napi::String::New(env, "add"), Napi::Function::New(env, Add));
-  exports.Set(
-      Napi::String::New(env, "showAlert"), Napi::Function::New(env, ShowAlert));
   exports.Set(
       Napi::String::New(env, "isRunAsAdmin"),
       Napi::Function::New(env, IsRunAsAdminWrapped));
