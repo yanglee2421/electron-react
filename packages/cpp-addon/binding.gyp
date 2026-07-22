@@ -40,10 +40,7 @@
                   "user32.lib"
                 ]
               }
-            },
-            "libraries": [
-              "-luser32.lib"
-            ]
+            }
           }
         ]
       ]
