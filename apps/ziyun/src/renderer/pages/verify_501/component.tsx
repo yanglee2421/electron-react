@@ -431,7 +431,7 @@ export const Component = () => {
     return (
       <PDFViewer
         showToolbar
-        style={{ width: "100%", height: "100%", border: 0 }}
+        style={{ width: "100%", height: "100%", border: 0, flex: 1 }}
       >
         <ReportDoc
           asideTip={asideTip + "\n试\n样\n轴\n轮\n座\n人\n工\n缺\n陷\n编\n号"}

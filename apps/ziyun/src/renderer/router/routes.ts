@@ -283,6 +283,25 @@ export const routes: RouteObject[] = [
                   },
                 ],
               },
+              {
+                path: "verify",
+                children: [
+                  {
+                    path: ":id",
+                    children: [
+                      {
+                        index: true,
+                        lazy: () =>
+                          import("#renderer/pages/qt-anniversary-show/component"),
+                      },
+                      {
+                        path: "501",
+                        lazy: () => import("#renderer/pages/qt-503/component"),
+                      },
+                    ],
+                  },
+                ],
+              },
             ],
           },
         ],
