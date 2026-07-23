@@ -1,64 +1,49 @@
 #include <string>
 #define NAPI_CPP_EXCEPTIONS
 #include <napi.h>
-
-template <typename Fn>
-static Napi::Value JsSafeCall(const Napi::Env& env, Fn&& func) {
-  try {
-    return func();
-  } catch (Napi::Error& e) {
-    e.ThrowAsJavaScriptException();
-  } catch (const std::exception& ex) {
-    Napi::Error::New(env, ex.what()).ThrowAsJavaScriptException();
-  } catch (...) {
-    Napi::Error::New(env, "An unknown error occurred")
-        .ThrowAsJavaScriptException();
-  }
-
-  return env.Null();
-}
+#include "js_util.h"
 
 // Stub implementations for Linux
 
 Napi::Value ShowAlert(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  return JsSafeCall(
+  return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Number::New(env, 0); });
 }
 
 Napi::Value IsRunAsAdminWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  return JsSafeCall(
+  return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Boolean::New(env, false); });
 }
 
 Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  return JsSafeCall(
+  return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Boolean::New(env, false); });
 }
 
 Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  return JsSafeCall(
+  return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Number::New(env, 0); });
 }
 
 Napi::Value SetForegroundWindowWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  return JsSafeCall(
+  return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Boolean::New(env, false); });
 }
 
 Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  return JsSafeCall(
+  return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Boolean::New(env, false); });
 }
 
 Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  return JsSafeCall(
+  return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Number::New(env, 0); });
 }
 

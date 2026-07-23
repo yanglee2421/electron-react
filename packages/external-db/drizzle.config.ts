@@ -9,6 +9,7 @@ export default defineConfig({
   out: "./drizzle/migrations",
   dialect: "sqlite",
   dbCredentials: {
-    url: `file:${path.join(__dirname, "./local.db")}`,
+    // url: `file:${path.join(__dirname, "./local.db")}`,
+    url: "D:\\QT-database\\local.db",
   },
 });

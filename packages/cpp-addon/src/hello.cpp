@@ -2,33 +2,7 @@
 #include <string>
 #define NAPI_CPP_EXCEPTIONS
 #include <napi.h>
-
-template <typename Fn>
-static Napi::Value JsSafeCall(const Napi::Env& env, Fn&& func) {
-  try {
-    return func();
-  } catch (Napi::Error& e) {
-    e.ThrowAsJavaScriptException();
-  } catch (const std::exception& ex) {
-    Napi::Error::New(env, ex.what()).ThrowAsJavaScriptException();
-  } catch (...) {
-    Napi::Error::New(env, "An unknown error occurred")
-        .ThrowAsJavaScriptException();
-  }
-
-  return env.Null();
-}
-
-template <typename Fn, typename ErrorCallback>
-static void SafeExecute(Fn&& func, ErrorCallback&& onError) {
-  try {
-    func();
-  } catch (const std::exception& ex) {
-    onError(ex.what());
-  } catch (...) {
-    onError("An unknown error occurred");
-  }
-}
+#include "js_util.h"
 
 struct AutoInputParams {
   std::u16string zx, zh, czzzdw, sczzdw, mczzdw, czzzrq, sczzrq, mczzrq;
@@ -118,7 +92,7 @@ bool AutoInputToVC(
 Napi::Value IsRunAsAdminWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
 
-  return JsSafeCall(env, [&]() -> Napi::Value {
+  return JS::Try(env, [&]() -> Napi::Value {
     bool isAdmin = IsRunAsAdmin();
     return Napi::Boolean::New(env, isAdmin);
   });
@@ -154,7 +128,7 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
           deferred_(deferred) {}
 
     void Execute() override {
-      SafeExecute(
+      JS::SafeExecute(
           [&]() {
             if (!IsRunAsAdmin()) {
               SetError("自动填充需要管理员权限，请以管理员身份运行程序!");
@@ -196,28 +170,7 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
 
   Napi::Env env = info.Env();
 
-  return JsSafeCall(env, [&]() -> Napi::Value {
-    if (info.Length() < 10) {
-      Napi::TypeError::New(env, "expected 10 arguments")
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    for (int i = 0; i < 8; i++) {
-      if (!info[i].IsString()) {
-        std::string errorMessage =
-            "Argument " + std::to_string(i) + " must be a string";
-        Napi::TypeError::New(env, errorMessage).ThrowAsJavaScriptException();
-        return env.Null();
-      }
-    }
-
-    if (!info[8].IsNumber() || !info[9].IsNumber()) {
-      Napi::TypeError::New(env, "Arguments 8-9 must be numbers")
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
+  return JS::Try(env, [&]() -> Napi::Value {
     std::u16string zx = info[0].As<Napi::String>().Utf16Value();
     std::u16string zh = info[1].As<Napi::String>().Utf16Value();
     std::u16string czzzdw = info[2].As<Napi::String>().Utf16Value();
@@ -253,7 +206,7 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
 Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
 
-  return JsSafeCall(env, [&]() -> Napi::Value {
+  return JS::Try(env, [&]() -> Napi::Value {
     if (info.Length() < 2) {
       Napi::TypeError::New(env, "expected 2 arguments: className, windowName")
           .ThrowAsJavaScriptException();
@@ -283,7 +236,7 @@ Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
 Napi::Value SetForegroundWindowWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
 
-  return JsSafeCall(env, [&]() -> Napi::Value {
+  return JS::Try(env, [&]() -> Napi::Value {
     if (info.Length() < 1 || !info[0].IsNumber()) {
       Napi::TypeError::New(env, "expected 1 argument: hwnd (number)")
           .ThrowAsJavaScriptException();
@@ -326,7 +279,7 @@ static BOOL CALLBACK EnumChildWindowsCallbackProc(HWND hwnd, LPARAM lParam) {
 Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
 
-  return JsSafeCall(env, [&]() -> Napi::Value {
+  return JS::Try(env, [&]() -> Napi::Value {
     if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsFunction()) {
       Napi::TypeError::New(
           env, "expected 2 arguments: parentHwnd (number), callback (function)")
@@ -352,7 +305,7 @@ Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {
 Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
 
-  return JsSafeCall(env, [&]() -> Napi::Value {
+  return JS::Try(env, [&]() -> Napi::Value {
     if (info.Length() < 4 || !info[0].IsNumber() || !info[1].IsNumber() ||
         !info[2].IsNumber()) {
       Napi::TypeError::New(
