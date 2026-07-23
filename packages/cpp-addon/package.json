@@ -22,7 +22,7 @@
   "homepage": "https://github.com/yanglee2421/electron-react/blob/main/README.md",
   "private": false,
   "files": [
-    "build/Release/hello_addon.node",
+    "build/Release/cpp_addon.node",
     "dist",
     "binding.gyp"
   ],

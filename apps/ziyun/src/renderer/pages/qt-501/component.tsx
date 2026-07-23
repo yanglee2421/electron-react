@@ -465,60 +465,36 @@ export const Component = () => {
       const channel = item.nChannel;
       switch (channel) {
         case 0:
-          flawMap.set(key, [
-            ...new Set(
-              list
-                .toSorted((a, b) => {
-                  const aValue = a.fltValueX || 0;
-                  const bValue = b.fltValueX || 0;
-
-                  return aValue - bValue;
-                })
-                .map((i) =>
-                  mathFormat(i.fltValueX, { precision: 0, notation: "fixed" }),
-                ),
-            ),
-          ]);
+          flawMap.set(
+            key,
+            resolveFlaws(
+              list.map((i) => i.fltValueX).filter((i) => typeof i === "number"),
+            ).map((i) => i.toString(10)),
+          );
           break;
         case 1:
           flawMap.set(
             key,
-            list
-              .map((i) => i.fltValueX || 0)
-              .toSorted((a, b) => a - b)
-              .map((i) => mathFormat(i, { precision: 0, notation: "fixed" })),
+            resolveXHCFlaws(
+              list.map((i) => i.fltValueX).filter((i) => typeof i === "number"),
+            ).map((i) => i.toString(10)),
           );
           break;
         case 2:
         case 3:
-          flawMap.set(key, [
-            ...new Set(
-              list
-                .toSorted((a, b) => {
-                  const aValue = a.fltValueX || 0;
-                  const bValue = b.fltValueX || 0;
-
-                  return aValue - bValue;
-                })
-                .map((i) =>
-                  mathFormat(i.fltValueX, { precision: 0, notation: "fixed" }),
-                ),
-            ),
-          ]);
+          flawMap.set(
+            key,
+            resolveFlaws(
+              list.map((i) => i.fltValueX).filter((i) => typeof i === "number"),
+            ).map((i) => i.toString(10)),
+          );
           break;
         case 4:
           flawMap.set(
             key,
-            list
-              .toSorted((a, b) => {
-                const aValue = a.fltValueX || 0;
-                const bValue = b.fltValueX || 0;
-
-                return aValue - bValue;
-              })
-              .map((i) =>
-                mathFormat(i.fltValueX, { precision: 0, notation: "fixed" }),
-              ),
+            resolve44Flaws(
+              list.map((i) => i.fltValueX).filter((i) => typeof i === "number"),
+            ).map((i) => i.toString(10)),
           );
           break;
         default:
@@ -579,25 +555,25 @@ export const Component = () => {
                   ts4={metaMap.get(`${board}-4`)?.ts}
                   zsj4={metaMap.get(`${board}-4`)?.zsj}
                 />
-                {of13.map((_, flawNo) => {
+                {of13.map((_, index) => {
                   return (
-                    <Row key={flawNo}>
+                    <Row key={index}>
                       <Col width={SECOND_WIDTH}>
                         <Cell>{_}</Cell>
                       </Col>
                       <Col>
                         <Cell text={true}>
-                          {flawMap.get(`${board}-3`)?.at(_)}
+                          {flawMap.get(`${board}-3`)?.at(index)}
                         </Cell>
                       </Col>
                       <Col>
                         <Cell text={true}>
-                          {flawMap.get(`${board}-4`)?.at(_)}
+                          {flawMap.get(`${board}-4`)?.at(index)}
                         </Cell>
                       </Col>
                       <Col>
                         <Cell text={true}>
-                          {flawMap.get(`${board}-2`)?.at(_)}
+                          {flawMap.get(`${board}-2`)?.at(index)}
                         </Cell>
                       </Col>
                     </Row>
@@ -609,15 +585,15 @@ export const Component = () => {
                   ctJy={metaMap.get(`${board}-0`)?.jy}
                   ctTs={metaMap.get(`${board}-0`)?.ts}
                   ctZsj={metaMap.get(`${board}-0`)?.zsj}
-                  ctValue={""}
+                  ctValue={flawMap.get(`${board}-0`)?.at(0)}
                   xhBc={metaMap.get(`${board}-1`)?.bc}
                   xhJy={metaMap.get(`${board}-1`)?.jy}
                   xhTs={metaMap.get(`${board}-1`)?.ts}
                   xhZsj={metaMap.get(`${board}-1`)?.zsj}
                   xhChannelName={record.szWhModel === "RD2" ? "A1" : "A2"}
-                  xhValue1={""}
-                  xhValue2={""}
-                  xhValue3={""}
+                  xhValue1={flawMap.get(`${board}-1`)?.at(0)}
+                  xhValue2={flawMap.get(`${board}-1`)?.at(1)}
+                  xhValue3={flawMap.get(`${board}-1`)?.at(2)}
                 />
               </View>
             );
@@ -630,52 +606,54 @@ export const Component = () => {
   return renderQuery();
 };
 
-const calcTextList = (list: number[]) => {
-  return [
-    ...new Set(
-      list.map((i) => mathFormat(i, { precision: 0, notation: "fixed" })),
-    ),
-  ];
+const formatNumbers = (numbers: number[]) => {
+  return numbers.map((i) => mathFormat(i, { precision: 0, notation: "fixed" }));
 };
-const findFlawsByFirst = (list: number[], value1: number) => {
-  let result = [value1];
-  const excepted2 = value1 + 10;
-  const value2 = list
-    .filter((i) => !result.includes(i))
+const deduplicate = (texts: string[]) => {
+  return [...new Set(texts)];
+};
+const sortInAsc = (numbers: number[]) => {
+  return numbers.toSorted((a, b) => a - b);
+};
+const texts2Ints = (texts: string[]) => {
+  return texts.map((text) => Number.parseInt(text));
+};
+const findFlawsByFirst = (originalFlaws: number[], flaw1: number) => {
+  const flaws1 = [flaw1];
+  const excepted2 = flaw1 + 10;
+  const flaw2 = originalFlaws
+    .filter((i) => !flaws1.includes(i))
     .toSorted((a, b) => Math.abs(a - excepted2) - Math.abs(b - excepted2))
     .at(0);
 
-  if (!value2) {
-    return result;
+  if (!flaw2) {
+    return flaws1;
   }
 
-  result = [value1, value2];
-  const excepted3 = value2 + 5;
-  const value3 = list
-    .filter((i) => !result.includes(i))
+  const flaws2 = [flaw1, flaw2];
+  const excepted3 = flaw2 + 5;
+  const flaw3 = originalFlaws
+    .filter((i) => !flaws2.includes(i))
     .toSorted((a, b) => Math.abs(a - excepted3) - Math.abs(b - excepted3))
     .at(0);
 
-  if (!value3) {
-    return result;
+  if (!flaw3) {
+    return flaws2;
   }
 
-  result = [value1, value2, value3];
-
-  return result;
+  return [flaw1, flaw2, flaw3];
 };
-const calcXHCFlaws = (list: number[]) => {
-  const uniquedList = [...new Set(list)];
-  const filtered = uniquedList.toSorted((a, b) => a - b);
+const resolveXHCFlaws = (list: number[]) => {
+  const flaws = resolveFlaws(list);
 
-  if (filtered.length < 4) {
-    return filtered;
+  if (flaws.length < 4) {
+    return flaws;
   }
 
   let result: number[] = [];
 
-  for (const item of filtered) {
-    const flaws = findFlawsByFirst(list, item);
+  for (const flaw of flaws) {
+    const flaws = findFlawsByFirst(list, flaw);
 
     if (flaws.length === 3) {
       return flaws;
@@ -687,4 +665,19 @@ const calcXHCFlaws = (list: number[]) => {
   }
 
   return result;
+};
+
+const resolveFlaws = (numbers: number[]) => {
+  const formated = formatNumbers(numbers);
+  const deduplicated = deduplicate(formated);
+  const ints = texts2Ints(deduplicated);
+  const sorted = sortInAsc(ints);
+
+  return sorted;
+};
+
+const resolve44Flaws = (numbers: number[]) => {
+  const flaws = resolveFlaws(numbers);
+
+  return [...of(11 - flaws.length).map(() => ""), ...flaws];
 };
