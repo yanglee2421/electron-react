@@ -39,7 +39,7 @@ interface NativeAddon {
 }
 
 const addon: NativeAddon = require(
-  path.resolve(__dirname, "../build/Release/hello_addon.node"),
+  path.resolve(__dirname, "../build/Release/cpp_addon.node"),
 );
 export default addon;
 

@@ -1,7 +1,7 @@
 {
   "targets": [
     {
-      "target_name": "hello_addon",
+      "target_name": "cpp_addon",
       "sources": [
         "<!@(node get-source-file.cjs)"
       ],
