@@ -128,7 +128,7 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
           deferred_(deferred) {}
 
     void Execute() override {
-      JS::SafeExecute(
+      JS::TryExecute(
           [&]() {
             if (!IsRunAsAdmin()) {
               SetError("自动填充需要管理员权限，请以管理员身份运行程序!");

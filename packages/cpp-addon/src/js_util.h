@@ -1,9 +1,9 @@
 #pragma once
 #define NAPI_CPP_EXCEPTIONS
 #include <napi.h>
-#include <string>
 
 namespace JS {
+
 template <typename Fn>
 static Napi::Value Try(const Napi::Env& env, Fn&& func) {
   try {
@@ -19,8 +19,8 @@ static Napi::Value Try(const Napi::Env& env, Fn&& func) {
   return env.Null();
 }
 
-template <typename Fn, typename ErrorCallback>
-static void SafeExecute(Fn&& func, ErrorCallback&& onError) {
+template <typename Fn, typename OnError>
+static void TryExecute(Fn&& func, OnError&& onError) {
   try {
     func();
   } catch (const std::exception& ex) {
