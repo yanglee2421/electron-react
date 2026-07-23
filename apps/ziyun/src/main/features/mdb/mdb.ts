@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { Piscina } from "piscina";
+import workerPath from "../../workers/mdb?modulePath";
 import type { Profile } from "../profile";
 import { QueryPromise } from "../query-promise/query-promise";
 import type { AppCradle } from "../types";
@@ -24,7 +25,6 @@ import type {
   Verify,
   VerifyData,
 } from "./types";
-import workerPath from "./worker?modulePath";
 
 class AppPathInfo {
   private databaseType: DatabaseType = "app";
@@ -58,7 +58,7 @@ class AppPathInfo {
 
   async rootFolder() {
     const { appPath, encoding } = this.profile.state;
-    const iniPath = path.resolve(appPath, "usprofile.ini");
+    const iniPath = path.resolve(appPath, "../../usprofile.ini");
     const iniBuffer = await fs.promises.readFile(iniPath);
     const iniText = iconv.decode(iniBuffer, encoding);
     const userProfile = ini.parse(iniText);
@@ -87,7 +87,7 @@ class AppPathInfo {
 
   appDb() {
     const { appPath } = this.profile.state;
-    return path.resolve(appPath, "Data", "local.mdb");
+    return path.resolve(appPath, "../../", "Data", "local.mdb");
   }
 }
 

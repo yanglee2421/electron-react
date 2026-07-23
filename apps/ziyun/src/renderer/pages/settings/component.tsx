@@ -58,30 +58,28 @@ const { useAppForm } = createFormHook({
 const useProfileForm = () => {
   const appPath = useProfileStore((state) => state.appPath);
   const encoding = useProfileStore((state) => state.encoding);
-  const externalDBPath = useProfileStore((state) => state.externalDBPath);
-  const enableExternalDB = useProfileStore((state) => state.enableExternalDB);
-  const enableHMISProxy = useProfileStore((state) => state.enableHMISProxy);
-  const hmisProxyPort = useProfileStore((state) => state.hmisProxyPort);
+  const qtAppPath = useProfileStore((state) => state.qtAppPath);
+  const qtHMISEnabled = useProfileStore((state) => state.qtHMISEnabled);
+  const qtHMISPort = useProfileStore((state) => state.qtHMISPort);
 
   const form = useAppForm({
     defaultValues: {
       ...useProfileStore.getState(),
       appPath,
       encoding,
-      enableExternalDB,
-      externalDBPath,
-      enableHMISProxy,
-      hmisProxyPort,
+      qtAppPath,
+      qtHMISEnabled,
+      qtHMISPort,
     },
     onSubmit: async ({ value }) => {
       useProfileStore.setState({
         appPath: value.appPath,
         encoding: value.encoding,
-        enableExternalDB: value.enableExternalDB,
-        externalDBPath: value.externalDBPath,
-        enableHMISProxy: value.enableHMISProxy,
-        hmisProxyPort: value.hmisProxyPort,
-        enableTray: value.enableTray,
+        trayEnabled: value.trayEnabled,
+
+        qtAppPath: value.qtAppPath,
+        qtHMISEnabled: value.qtHMISEnabled,
+        qtHMISPort: value.qtHMISPort,
       });
       toast.success("保存成功");
     },
@@ -106,7 +104,7 @@ export const Component = () => {
   const version = useQuery(fetchVersion());
   const exportDB = useExportDB();
   const selectFile = useSelectFile();
-  const enableTray = useProfileStore((state) => state.enableTray);
+  const enableTray = useProfileStore((state) => state.trayEnabled);
   const showHxzyHmisMenu = useProfileStore((s) => s.showHxzyHmisMenu);
   const showJtvHmisMenu = useProfileStore((s) => s.showJtvHmisMenu);
   const showGuangzhoubeiHmisMenu = useProfileStore(
@@ -117,17 +115,6 @@ export const Component = () => {
   );
   const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
   const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
-
-  const handleDirectoryChange = () => {
-    selectDirectory.mutate(void 0, {
-      onSuccess(paths) {
-        const path = paths?.[0];
-        if (!path) return;
-        profileForm.setFieldValue("appPath", path);
-        void profileForm.validateField("appPath", "change");
-      },
-    });
-  };
 
   const handleOpenDevTools = () => {
     openDevTools.mutate();
@@ -152,7 +139,7 @@ export const Component = () => {
               <Grid size={12}>
                 <FormLabel>12通道相关</FormLabel>
               </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12 }}>
                 <profileForm.AppField name="appPath">
                   {(field) => (
                     <TextField
@@ -166,7 +153,36 @@ export const Component = () => {
                           endAdornment: (
                             <InputAdornment position="end">
                               <IconButton
-                                onClick={handleDirectoryChange}
+                                onClick={() => {
+                                  selectFile.mutate(
+                                    [
+                                      {
+                                        extensions: ["exe"],
+                                        name: "可执行文件",
+                                      },
+                                      {
+                                        extensions: ["*"],
+                                        name: "所有文件",
+                                      },
+                                    ],
+                                    {
+                                      onSuccess: (paths) => {
+                                        const path = paths?.at(0);
+
+                                        if (!path) return;
+
+                                        profileForm.setFieldValue(
+                                          "appPath",
+                                          path,
+                                        );
+                                        void profileForm.validateField(
+                                          "appPath",
+                                          "change",
+                                        );
+                                      },
+                                    },
+                                  );
+                                }}
                                 disabled={selectDirectory.isPending}
                               >
                                 <PendingIcon
@@ -179,7 +195,7 @@ export const Component = () => {
                           ),
                         },
                       }}
-                      label="应用路径"
+                      label="软件路径"
                       helperText={
                         field.getMeta().errors.length
                           ? field.getMeta().errors.at(0)?.message
@@ -190,7 +206,7 @@ export const Component = () => {
                   )}
                 </profileForm.AppField>
               </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12 }}>
                 <profileForm.AppField name="encoding">
                   {(field) => (
                     <TextField
@@ -214,29 +230,10 @@ export const Component = () => {
                 </profileForm.AppField>
               </Grid>
               <Grid size={12}>
-                <FormLabel>统信相关</FormLabel>
+                <FormLabel>QT软件相关</FormLabel>
               </Grid>
-              <Grid size={12}>
-                <profileForm.Field name="enableExternalDB">
-                  {(field) => {
-                    return (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.state.value}
-                            onChange={(_, checked) => {
-                              field.handleChange(checked);
-                            }}
-                          />
-                        }
-                        label="启用外部数据库"
-                      />
-                    );
-                  }}
-                </profileForm.Field>
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <profileForm.Field name="externalDBPath">
+              <Grid size={{ xs: 12 }}>
+                <profileForm.Field name="qtAppPath">
                   {(field) => {
                     return (
                       <TextField
@@ -249,9 +246,9 @@ export const Component = () => {
                         helperText={
                           field.getMeta().errors.length
                             ? field.getMeta().errors.at(0)?.message
-                            : "外部数据库的所在路径"
+                            : "探伤软件的所在路径"
                         }
-                        label="外部数据库路径"
+                        label="软件路径"
                         slotProps={{
                           input: {
                             endAdornment: (
@@ -261,8 +258,12 @@ export const Component = () => {
                                     selectFile.mutate(
                                       [
                                         {
-                                          extensions: ["db"],
-                                          name: "数据库文件",
+                                          extensions: ["exe"],
+                                          name: "可执行文件",
+                                        },
+                                        {
+                                          extensions: ["*"],
+                                          name: "所有文件",
                                         },
                                       ],
                                       {
@@ -272,11 +273,11 @@ export const Component = () => {
                                           if (!path) return;
 
                                           profileForm.setFieldValue(
-                                            "externalDBPath",
+                                            "qtAppPath",
                                             path,
                                           );
                                           void profileForm.validateField(
-                                            "externalDBPath",
+                                            "qtAppPath",
                                             "change",
                                           );
                                         },
@@ -299,7 +300,7 @@ export const Component = () => {
                 </profileForm.Field>
               </Grid>
               <Grid size={12}>
-                <profileForm.Field name="enableHMISProxy">
+                <profileForm.Field name="qtHMISEnabled">
                   {(field) => {
                     return (
                       <FormControlLabel
@@ -318,7 +319,7 @@ export const Component = () => {
                 </profileForm.Field>
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <profileForm.Field name="hmisProxyPort">
+                <profileForm.Field name="qtHMISPort">
                   {(field) => {
                     return (
                       <NumberField
@@ -383,7 +384,14 @@ export const Component = () => {
   return (
     <Stack spacing={3}>
       <Card>
-        <CardHeader title="基础设置" />
+        <CardHeader
+          title="基础设置"
+          action={
+            <IconButton onClick={handleOpenDevTools}>
+              <BugReportOutlined />
+            </IconButton>
+          }
+        />
         <List>
           <React.Activity
             mode={
@@ -415,7 +423,7 @@ export const Component = () => {
                 checked={enableTray}
                 onChange={(_, checked) => {
                   useProfileStore.setState((d) => {
-                    d.enableTray = checked;
+                    d.trayEnabled = checked;
                   });
                 }}
               />
@@ -510,14 +518,7 @@ export const Component = () => {
         </List>
       </Card>
       <Card>
-        <CardHeader
-          title="探伤软件设置"
-          action={
-            <IconButton onClick={handleOpenDevTools}>
-              <BugReportOutlined />
-            </IconButton>
-          }
-        />
+        <CardHeader title="探伤软件设置" />
         {renderForm()}
       </Card>
       <Card>

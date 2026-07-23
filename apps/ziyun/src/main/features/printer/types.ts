@@ -8,15 +8,6 @@ export interface CHR53AInput {
   ids: string[];
 }
 
-export interface ChannelImage {
-  lct: string;
-  rct: string;
-  llz: string;
-  rlz: string;
-  lxh: string;
-  rxh: string;
-}
-
 export interface IPCContract {
   "printer/chr501": {
     args: [string];

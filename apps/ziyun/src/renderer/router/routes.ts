@@ -290,13 +290,8 @@ export const routes: RouteObject[] = [
                     path: ":id",
                     children: [
                       {
-                        index: true,
-                        lazy: () =>
-                          import("#renderer/pages/qt-anniversary-show/component"),
-                      },
-                      {
                         path: "501",
-                        lazy: () => import("#renderer/pages/qt-503/component"),
+                        lazy: () => import("#renderer/pages/qt-501/component"),
                       },
                     ],
                   },

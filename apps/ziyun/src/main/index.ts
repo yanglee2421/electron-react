@@ -245,7 +245,7 @@ browserWindowCreated$
 windowAllClosed$
   .pipe(
     filter(() => !platform.isMacOS),
-    filter(() => !container.cradle.profile.state.enableTray),
+    filter(() => !container.cradle.profile.state.trayEnabled),
     tap(() => app.quit()),
   )
   .subscribe();

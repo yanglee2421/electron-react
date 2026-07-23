@@ -1,13 +1,13 @@
-import dayjs from "dayjs";
-import type { Value } from "mdb-reader";
-import MDBReader from "mdb-reader";
-import fs from "node:fs";
 import type {
   FilterDateValue,
   FilterInValues,
   FilterValue,
   TableQueryResult,
-} from "./types";
+} from "#main/features/mdb/types";
+import dayjs from "dayjs";
+import type { Value } from "mdb-reader";
+import MDBReader from "mdb-reader";
+import fs from "node:fs";
 
 const fixMDBDate = (value: Date) => {
   return dayjs(value).add(value.getTimezoneOffset(), "minute").toDate();

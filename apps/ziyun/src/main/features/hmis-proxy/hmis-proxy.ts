@@ -22,7 +22,7 @@ export class HmisProxy {
         distinctUntilChanged((previous, current) => {
           return (
             previous.enableHMISProxy === current.enableHMISProxy &&
-            previous.hmisProxyPort === current.hmisProxyPort
+            previous.qtHMISPort === current.qtHMISPort
           );
         }),
         switchMap((state) => {
@@ -32,7 +32,7 @@ export class HmisProxy {
 
           return using(
             () => {
-              const server = createServer(state.hmisProxyPort);
+              const server = createServer(state.qtHMISPort);
 
               return {
                 unsubscribe: () => {

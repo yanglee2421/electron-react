@@ -15,9 +15,9 @@ export const profile = z.object({
   encoding: z.string().default("gbk"),
   alwaysOnTop: z.boolean().default(false),
   mode: themeMode,
-  enableTray: z.boolean().default(false),
-  silentStartUp: z.boolean().default(false),
-  // For navigation
+  trayEnabled: z.boolean().default(false),
+
+  // For sidebar
   showHxzyHmisMenu: z.boolean().default(false),
   showJtvHmisMenu: z.boolean().default(false),
   showGuangzhoubeiHmisMenu: z.boolean().default(false),
@@ -25,11 +25,10 @@ export const profile = z.object({
   showKhHmisMenu: z.boolean().default(false),
   showPLCMenu: z.boolean().default(false),
 
-  // For Linux platform
-  enableExternalDB: z.boolean().default(false),
-  externalDBPath: z.string().default(""),
-  enableHMISProxy: z.boolean().default(false),
-  hmisProxyPort: portSchema.default(5003),
+  // For QT App
+  qtAppPath: z.string().default(""),
+  qtHMISEnabled: z.boolean().default(false),
+  qtHMISPort: portSchema.default(5003),
 });
 
 export type Profile = z.infer<typeof profile>;

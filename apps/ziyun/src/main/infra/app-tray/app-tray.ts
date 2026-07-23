@@ -25,10 +25,10 @@ export class AppTray {
     this.subscription = profile.state$
       .pipe(
         distinctUntilChanged(
-          (previous, current) => previous.enableTray === current.enableTray,
+          (previous, current) => previous.trayEnabled === current.trayEnabled,
         ),
         switchMap((state) => {
-          if (!state.enableTray) {
+          if (!state.trayEnabled) {
             return EMPTY;
           }
 

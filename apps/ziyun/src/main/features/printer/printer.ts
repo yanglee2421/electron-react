@@ -1,3 +1,5 @@
+import type { ChannelImage } from "#main/workers/bmp";
+import workerPath from "#main/workers/bmp?modulePath";
 import { atFirstOrThrow } from "@yotulee/run";
 import { app, BrowserWindow } from "electron";
 import fs from "node:fs";
@@ -6,8 +8,6 @@ import path from "node:path";
 import Piscina from "piscina";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
-import type { ChannelImage } from "./types";
-import workerPath from "./worker?modulePath";
 
 export class Printer {
   private piscina: Piscina;
@@ -105,7 +105,7 @@ export class Printer {
       .at(0);
 
     if (!firstRecord) {
-      throw new Error(`未找到ID为${ids.join(",")}的检测数据`);
+      throw new Error(`未找到ID在${ids.join(",")}中的检测数据`);
     }
 
     const firstDay = firstRecord.tmnow?.getTime() || Number.NEGATIVE_INFINITY;

@@ -1,10 +1,6 @@
 import type { ExternalDB } from "./external-db";
 
 export interface IPCContract {
-  "external-db/test": {
-    args: [];
-    return: ReturnType<ExternalDB["test"]>;
-  };
   "external-db/anniversary": {
     args: [];
     return: ReturnType<ExternalDB["anniversary"]>;
@@ -16,5 +12,9 @@ export interface IPCContract {
   "external-db/503": {
     args: [string];
     return: ReturnType<ExternalDB["fetch503Data"]>;
+  };
+  "external-db/501": {
+    args: [string];
+    return: ReturnType<ExternalDB["fetch501Data"]>;
   };
 }

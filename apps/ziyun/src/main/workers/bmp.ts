@@ -1,7 +1,15 @@
 import { Jimp, JimpMime } from "jimp";
 import fs from "node:fs";
 import path from "node:path";
-import type { ChannelImage } from "./types";
+
+export interface ChannelImage {
+  lct: string;
+  rct: string;
+  llz: string;
+  rlz: string;
+  lxh: string;
+  rxh: string;
+}
 
 const bmpToJpeg = async (bmpPath: string, jpegPath: string) => {
   const image = await Jimp.read(bmpPath);
