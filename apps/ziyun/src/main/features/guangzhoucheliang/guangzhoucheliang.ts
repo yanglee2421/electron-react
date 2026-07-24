@@ -73,7 +73,7 @@ export class Guangzhoucheliang {
             previous.autoUploadEnabled === current.autoUploadEnabled &&
             previous.autoUploadInterval === current.autoUploadInterval,
         ),
-        switchMap(() => {
+        switchMap((state) => {
           if (!state.autoUploadEnabled) {
             return EMPTY;
           }
@@ -81,6 +81,8 @@ export class Guangzhoucheliang {
           return interval(state.autoUploadInterval * 1000);
         }),
         tap(() => {
+          console.log(new Date().toTimeString());
+
           this.handleAutoUpload();
         }),
       )

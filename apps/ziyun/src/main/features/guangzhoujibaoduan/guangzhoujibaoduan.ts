@@ -156,7 +156,7 @@ export class JTV_HMIS_Guangzhoujibaoduan {
             previous.autoUpload === current.autoUpload &&
             previous.autoUploadInterval === current.autoUploadInterval,
         ),
-        switchMap(() => {
+        switchMap((state) => {
           if (!state.autoUpload) {
             return EMPTY;
           }
