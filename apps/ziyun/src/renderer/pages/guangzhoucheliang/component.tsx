@@ -462,12 +462,12 @@ export const Component = () => {
         },
       });
 
-      setSelectOptions(data);
+      setSelectOptions(data.data);
 
-      const isSingleElement = Object.is(data.length, 1);
+      const isSingleElement = Object.is(data.data.length, 1);
       if (!isSingleElement) return;
 
-      const record = data.at(0)!;
+      const record = data.data.at(0)!;
       if (!record) return;
 
       await handleRowSelect(record);

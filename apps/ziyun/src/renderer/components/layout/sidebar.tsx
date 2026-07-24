@@ -2,6 +2,7 @@ import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import {
   CalendarMonthRounded,
   CalendarTodayRounded,
+  Commit,
   ExpandMore,
   Info,
   KeyboardCommandKey,
@@ -559,6 +560,32 @@ export const Sidebar = (props: SidebarProps) => {
             <ListItemText primary={"年度校验"} />
           </ListItemButton>
         </List>
+
+        {/* QT */}
+        <List
+          subheader={
+            <ListSubheader
+              disableSticky
+              sx={{ backgroundColor: "transparent" }}
+            >
+              QT软件相关
+            </ListSubheader>
+          }
+          sx={{ display: "none" }}
+        >
+          <ListItemButton
+            component={Link}
+            to={{ pathname: "/qt" }}
+            selected={Object.is(normalizePathname(location.pathname), "/qt")}
+          >
+            <ListItemIcon>
+              <Commit />
+            </ListItemIcon>
+            <ListItemText primary={"QT"} />
+          </ListItemButton>
+        </List>
+
+        {/* Else */}
         <List
           subheader={
             <ListSubheader

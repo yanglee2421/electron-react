@@ -275,47 +275,64 @@ export const routes: RouteObject[] = [
             path: "qt",
             children: [
               {
-                path: "anniversary",
                 children: [
                   {
                     index: true,
-                    lazy: () =>
-                      import("#renderer/pages/qt-anniversary/component"),
+                    lazy: () => import("#renderer/pages/qt/component"),
                   },
+                ],
+                Component: DashLayout,
+              },
+
+              // Blank Layout
+              {
+                children: [
                   {
-                    path: ":id",
+                    path: "anniversary",
                     children: [
                       {
                         index: true,
                         lazy: () =>
-                          import("#renderer/pages/qt-anniversary-show/component"),
+                          import("#renderer/pages/qt-anniversary/component"),
                       },
                       {
-                        path: "503",
-                        lazy: () => import("#renderer/pages/qt-503/component"),
+                        path: ":id",
+                        children: [
+                          {
+                            index: true,
+                            lazy: () =>
+                              import("#renderer/pages/qt-anniversary-show/component"),
+                          },
+                          {
+                            path: "503",
+                            lazy: () =>
+                              import("#renderer/pages/qt-503/component"),
+                          },
+                        ],
                       },
                     ],
                   },
-                ],
-              },
-              {
-                path: "verify",
-                children: [
                   {
-                    path: ":id",
+                    path: "verify",
                     children: [
                       {
-                        path: "501",
-                        lazy: () => import("#renderer/pages/qt-501/component"),
+                        path: ":id",
+                        children: [
+                          {
+                            path: "501",
+                            lazy: () =>
+                              import("#renderer/pages/qt-501/component"),
+                          },
+                        ],
                       },
                     ],
                   },
                 ],
+                Component: BlankLayout,
               },
             ],
           },
         ],
-        Component: BlankLayout,
       },
     ],
     Component: RootRoute,

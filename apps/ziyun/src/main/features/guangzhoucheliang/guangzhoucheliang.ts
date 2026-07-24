@@ -30,6 +30,12 @@ import type { AlexData, UploadInput } from "./types";
 
 const emit = createEmit("api_set");
 
+interface FetchResult {
+  code: string;
+  msg: string;
+  data: AlexData[];
+}
+
 export class Guangzhoucheliang {
   readonly state$: BehaviorSubject<GuangzhoucheliangType>;
   private db: DBClient;
@@ -106,7 +112,7 @@ export class Guangzhoucheliang {
     this.logger.log({ title: `请求单号数据:`, message: url.href });
 
     const res = await net.fetch(url.href, { method: "GET" });
-    const data: AlexData[] = await res.json();
+    const data: FetchResult = await res.json();
     this.logger.log({ title: `返回单号数据:`, json: JSON.stringify(data) });
 
     return data;
