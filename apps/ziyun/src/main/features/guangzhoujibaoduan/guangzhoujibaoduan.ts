@@ -2,17 +2,14 @@
 import * as schema from "#main/features/db/schema";
 import type { Logger } from "#main/features/logger";
 import type { MDB } from "#main/features/mdb";
-import type { Detection, DetectionData } from "#main/features/mdb/types";
 import { createEmit, getIP } from "#main/lib";
-import {
-  detectionDataToTPlace,
-  tmnowToTSSJ,
-} from "#shared/functions/flawDetection";
+import { calcFlawType, calcPlace } from "#shared/functions/chr52a";
+import { tmnowToTSSJ } from "#shared/functions/flawDetection";
 import { GUANGZHOU_JIBAODUAN_STORAGE_KEY } from "#shared/instances/constants";
 import type { Guangzhoujibaoduan } from "#shared/instances/schema";
 import { guangzhoujibaoduan } from "#shared/instances/schema";
 import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
-import { atFirstOrThrow } from "@yotulee/run";
+import { chunk } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
@@ -24,6 +21,7 @@ import {
   EMPTY,
   filter,
   interval,
+  map,
   switchMap,
   tap,
 } from "rxjs";
@@ -127,27 +125,24 @@ export class JTV_HMIS_Guangzhoujibaoduan {
     const stateJSON = kv.getItem(GUANGZHOU_JIBAODUAN_STORAGE_KEY);
     const data = stateJSON ? JSON.parse(stateJSON).state : {};
     const state = guangzhoujibaoduan.parse(data);
-
     this.state$ = new BehaviorSubject(state);
+
     const sub1 = kv.events$
       .pipe(
         filter((e) => e.key === GUANGZHOU_JIBAODUAN_STORAGE_KEY),
-        tap((e) => {
+        map((e) => {
           switch (e.action) {
             case "set":
-              const stateJSON = e.value;
-              const data = stateJSON ? JSON.parse(stateJSON).state : {};
-              const state = guangzhoujibaoduan.parse(data);
-              this.state$.next(state);
-              break;
+              return guangzhoujibaoduan.parse(
+                e.value ? JSON.parse(e.value).state : {},
+              );
             case "remove":
             case "clear":
-              this.state$.next(guangzhoujibaoduan.parse({}));
-              break;
+              return guangzhoujibaoduan.parse({});
           }
         }),
       )
-      .subscribe();
+      .subscribe(this.state$);
 
     const sub2 = this.state$
       .pipe(
@@ -240,100 +235,100 @@ export class JTV_HMIS_Guangzhoujibaoduan {
     return data;
   }
 
-  createPostItem(
-    eq_ip: string,
-    eq_bh: string,
-    record: schema.JTVGuangzhoubeiBarcode,
-    detection: Detection,
-    detectionData?: DetectionData,
-  ) {
-    const store = this.state;
-    const user = detection.szUsername || "";
-    const signature_prefix = store.signature_prefix;
-    const signature = signature_prefix + user;
-
-    return {
-      eq_ip,
-      eq_bh,
-      dh: record.barCode || "",
-      zh: record.zh || "",
-      zx: detection.szWHModel || "",
-      TSFF: "超声波",
-      TSSJ: tmnowToTSSJ(detection.tmnow || ""),
-      TFLAW_PLACE: detectionData ? detectionDataToTPlace(detectionData) : "",
-      TFLAW_TYPE: detectionData ? "裂纹" : "",
-      TVIEW: detectionData ? "人工复探" : "",
-      CZCTZ: signature,
-      CZCTY: signature,
-      LZXRBZ: signature,
-      LZXRBY: signature,
-      XHCZ: detection.bWheelLS ? signature : "",
-      XHCY: detection.bWheelRS ? signature : "",
-      TSZ: signature,
-      TSZY: signature,
-      CT_RESULT: detection.szResult || "",
-    };
-  }
-
   async createPostBody(record: schema.JTVGuangzhoubeiBarcode) {
     const id = record.id;
 
-    if (!record) {
-      throw new Error(`记录#${id}不存在`);
-    }
-
     if (!record.zh) {
-      throw new Error(`记录#${id}轴号不存在`);
+      throw new Error(`#${id}未记录轴号`);
     }
 
     if (!record.barCode) {
-      throw new Error(`记录#${id}条形码不存在`);
+      throw new Error(`#${id}未记录条形码`);
     }
 
     const corporation = await this.mdb.app().corporation();
-    const eq_bh = corporation.DeviceNO || "";
-    const eq_ip = getIP();
     const startDate = dayjs(record.date).toISOString();
     const endDate = dayjs(record.date).endOf("day").toISOString();
-
-    const detections = await this.mdb
+    const {
+      rows: [detection],
+    } = await this.mdb
       .root()
       .detections()
       .equal("szIDsWheel", record.zh)
       .date("tmnow", new Date(startDate), new Date(endDate))
       .orderBy("tmnow", "desc");
 
-    const detection = atFirstOrThrow(
-      detections.rows,
-      () => new Error(`记录#${id}对应的检测数据不存在`),
-    );
-    let detectionDatas: DetectionData[] = [];
-
-    switch (detection.szResult) {
-      case "故障":
-      case "有故障":
-      case "疑似故障":
-        detectionDatas = await this.mdb
-          .root()
-          .detections_data()
-          .equal("opid", detection.szIDs)
-          .then((r) => r.rows);
-        break;
-      default:
+    if (!detection) {
+      throw new Error(`记录#${id}对应的检测数据不存在`);
     }
 
-    if (detectionDatas.length === 0) {
-      return [this.createPostItem(eq_ip, eq_bh, record, detection)];
+    const ip = getIP();
+    const szMemo = detection.szMemo || "";
+    const tssj = detection.tmnow ? tmnowToTSSJ(detection.tmnow) : "";
+    const signature = [
+      this.state.signature_prefix,
+      detection.szUsername || "",
+    ].join("");
+    const memoMetas = chunk(szMemo.split(""), 8).map((i) => {
+      const board = Number(i.at(0)) ? 1 : 0;
+      const channel = Number(i.at(1));
+      const flawType = Number(i.at(-1));
+
+      return {
+        board,
+        channel,
+        flawType,
+      };
+    });
+
+    if (!memoMetas.length) {
+      return [
+        {
+          eq_bh: corporation.DeviceNO || "",
+          eq_ip: ip,
+          dh: record.barCode,
+          zh: record.zh || "",
+          zx: detection.szWHModel || "",
+          TSFF: "超声波",
+          TSSJ: tssj,
+          TFLAW_PLACE: "",
+          TFLAW_TYPE: "",
+          TVIEW: "",
+          CZCTZ: signature,
+          CZCTY: signature,
+          LZXRBZ: signature,
+          LZXRBY: signature,
+          XHCZ: detection.bWheelLS ? signature : "",
+          XHCY: detection.bWheelRS ? signature : "",
+          TSZ: detection.szUsername || "",
+          TSZY: detection.szUsername || "",
+          CT_RESULT: detection.szResult || "",
+        },
+      ];
     }
 
-    return detectionDatas.map((detectionData) => {
-      return this.createPostItem(
-        eq_ip,
-        eq_bh,
-        record,
-        detection,
-        detectionData,
-      );
+    return memoMetas.map((meta) => {
+      return {
+        eq_bh: corporation.DeviceNO || "",
+        eq_ip: ip,
+        dh: record.barCode || "",
+        zh: record.zh || "",
+        zx: detection.szWHModel || "",
+        TSFF: "超声波",
+        TSSJ: tssj,
+        TFLAW_PLACE: calcPlace(meta.board, meta.channel),
+        TFLAW_TYPE: calcFlawType(meta.flawType),
+        TVIEW: "人工复探",
+        CZCTZ: signature,
+        CZCTY: signature,
+        LZXRBZ: signature,
+        LZXRBY: signature,
+        XHCZ: detection.bWheelLS ? signature : "",
+        XHCY: detection.bWheelRS ? signature : "",
+        TSZ: detection.szUsername || "",
+        TSZY: detection.szUsername || "",
+        CT_RESULT: detection.szResult || "",
+      };
     });
   }
 

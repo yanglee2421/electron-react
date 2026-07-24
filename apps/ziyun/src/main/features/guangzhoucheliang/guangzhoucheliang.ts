@@ -18,6 +18,7 @@ import {
   EMPTY,
   filter,
   interval,
+  map,
   switchMap,
   tap,
 } from "rxjs";
@@ -44,27 +45,24 @@ export class Guangzhoucheliang {
     const stateJSON = kv.getItem(GUANGZHOU_CHELIANG_STORAGE_KEY);
     const data = stateJSON ? JSON.parse(stateJSON).state : {};
     const state = guangzhoucheliang.parse(data);
-
     this.state$ = new BehaviorSubject(state);
+
     const sub1 = kv.events$
       .pipe(
         filter((e) => e.key === GUANGZHOU_CHELIANG_STORAGE_KEY),
-        tap((e) => {
+        map((e) => {
           switch (e.action) {
             case "set":
-              const stateJSON = e.value;
-              const data = stateJSON ? JSON.parse(stateJSON).state : {};
-              const state = guangzhoucheliang.parse(data);
-              this.state$.next(state);
-              break;
+              return guangzhoucheliang.parse(
+                e.value ? JSON.parse(e.value).state : {},
+              );
             case "remove":
             case "clear":
-              this.state$.next(guangzhoucheliang.parse({}));
-              break;
+              return guangzhoucheliang.parse({});
           }
         }),
       )
-      .subscribe();
+      .subscribe(this.state$);
 
     const sub2 = this.state$
       .pipe(
@@ -81,8 +79,6 @@ export class Guangzhoucheliang {
           return interval(state.autoUploadInterval * 1000);
         }),
         tap(() => {
-          console.log(new Date().toTimeString());
-
           this.handleAutoUpload();
         }),
       )

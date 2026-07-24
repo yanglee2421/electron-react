@@ -29,19 +29,19 @@ import type { AppCradle } from "../types";
 
 export class ExternalDB {
   readonly client$ = new BehaviorSubject<DBClient | null>(null);
-  private subscription: Subscription;
+  private subscriptions: Subscription[];
   private profile: Profile;
   private piscina: Piscina;
 
   constructor({ profile }: AppCradle) {
+    this.profile = profile;
     this.piscina = new Piscina({
       filename: workerPath,
       minThreads: 1,
       maxThreads: os.cpus().length,
     });
 
-    this.profile = profile;
-    this.subscription = profile.state$
+    const sub1 = profile.state$
       .pipe(
         distinctUntilChanged((previous, current) => {
           return previous.qtAppPath === current.qtAppPath;
@@ -79,11 +79,13 @@ export class ExternalDB {
         shareReplay({ bufferSize: 1, refCount: true }),
       )
       .subscribe(this.client$);
+
+    this.subscriptions = [sub1];
   }
 
   dispose() {
-    this.subscription.unsubscribe();
-
+    this.piscina.destroy();
+    this.subscriptions.forEach((s) => s.unsubscribe());
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     // Cleanup temporary files created by worker threads

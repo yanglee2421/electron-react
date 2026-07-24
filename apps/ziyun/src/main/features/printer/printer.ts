@@ -24,6 +24,7 @@ export class Printer {
   }
 
   dispose() {
+    this.piscina.destroy();
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     // Cleanup temporary files created by worker threads

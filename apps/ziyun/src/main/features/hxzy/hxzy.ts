@@ -1,19 +1,19 @@
 // 成都北 华兴致远
 import * as schema from "#main/features/db/schema";
 import type { Logger } from "#main/features/logger";
-import type {
-  Detecotor,
-  DetectionData,
-  VerifyData,
-} from "#main/features/mdb/types";
+import type { Detecotor, VerifyData } from "#main/features/mdb/types";
 import { createEmit, getIP } from "#main/lib";
-import { calculateXHCFlaws } from "#shared/functions/flawDetection";
+import { calcFlawType, calcPlace } from "#shared/functions/chr52a";
+import {
+  calculateXHCFlaws,
+  tmnowToTSSJ,
+} from "#shared/functions/flawDetection";
 import { divideBy10, mathFormat } from "#shared/functions/math";
 import { HXZY_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { HXZY_HMIS } from "#shared/instances/schema";
 import { hxzy_hmis } from "#shared/instances/schema";
 import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
-import { atFirstOrThrow, mapGroupBy } from "@yotulee/run";
+import { chunk, mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
@@ -25,6 +25,7 @@ import {
   EMPTY,
   filter,
   interval,
+  map,
   switchMap,
   tap,
 } from "rxjs";
@@ -153,22 +154,17 @@ export class Hxzy {
     const sub1 = kv.events$
       .pipe(
         filter((e) => e.key === HXZY_HMIS_STORAGE_KEY),
-        tap((e) => {
+        map((e) => {
           switch (e.action) {
             case "set":
-              const stateJSON = e.value;
-              const data = stateJSON ? JSON.parse(stateJSON).state : {};
-              const state = hxzy_hmis.parse(data);
-              this.state$.next(state);
-              break;
+              return hxzy_hmis.parse(e.value ? JSON.parse(e.value).state : {});
             case "remove":
             case "clear":
-              this.state$.next(hxzy_hmis.parse({}));
-              break;
+              return hxzy_hmis.parse({});
           }
         }),
       )
-      .subscribe();
+      .subscribe(this.state$);
 
     const sub2 = this.state$
       .pipe(
@@ -224,12 +220,10 @@ export class Hxzy {
   }
 
   async sendPostRequest(request: PostRequestItem[]) {
-    const state = this.state;
-    const host = state.ip + ":" + state.port;
     const body = JSON.stringify(request);
-
     const url = new URL(
-      `http://${host}/lzjx/dx/csbts/device_api/csbts/api/saveData`,
+      `/lzjx/dx/csbts/device_api/csbts/api/saveData`,
+      `http://${this.state.ip}:${this.state.port}`,
     );
 
     url.searchParams.set("type", "csbts");
@@ -250,8 +244,8 @@ export class Hxzy {
     if (!res.ok) {
       throw `接口异常[${res.status}]:${res.statusText}`;
     }
-    const data: PostResponse = await res.json();
 
+    const data: PostResponse = await res.json();
     this.logger.log({
       title: `返回数据:`,
       json: JSON.stringify(data),
@@ -261,100 +255,102 @@ export class Hxzy {
     if (data.code !== "200") {
       throw `接口异常[${data.code}]:${data.msg}`;
     }
+
     return data;
   }
   async recordToPostBody(record: schema.HxzyBarcode) {
     const id = record.id;
 
     if (!record.zh) {
-      throw new Error(`记录#${id}轴号不存在`);
+      throw new Error(`#${id}未记录轴号`);
     }
 
     if (!record.barCode) {
-      throw new Error(`记录#${id}条形码不存在`);
+      throw new Error(`#${id}未记录条形码`);
     }
 
-    const store = this.state;
     const corporation = await this.mdb.app().corporation();
-    const EQ_IP = corporation.DeviceNO || "";
-    const EQ_BH = getIP();
-    const GD = store.gd;
     const startDate = dayjs(record.date).toISOString();
     const endDate = dayjs(record.date).endOf("day").toISOString();
-
-    const detections = await this.mdb
+    const {
+      rows: [detection],
+    } = await this.mdb
       .root()
       .detections()
       .equal("szIDsMake", record.zh)
       .date("tmnow", new Date(startDate), new Date(endDate));
 
-    const detection = atFirstOrThrow(
-      detections.rows,
-      () => new Error(`记录#${id}对应的检测数据不存在`),
-    );
-    const user = detection.szUsername || "";
-    let detectionDatas: DetectionData[] = [];
-    let TFLAW_PLACE = "";
-    let TFLAW_TYPE = "";
-    let TVIEW = "";
-
-    switch (detection.szResult) {
-      case "故障":
-      case "有故障":
-      case "疑似故障":
-        TFLAW_PLACE = "车轴";
-        TFLAW_TYPE = "裂纹";
-        TVIEW = "人工复探";
-        detectionDatas = await this.mdb
-          .root()
-          .detections_data()
-          .equal("opid", detection.szIDs)
-          .then((r) => r.rows);
-        break;
+    if (!detection) {
+      throw new Error(`记录#${id}对应的检测数据不存在`);
     }
 
-    detectionDatas.forEach((detectionData) => {
-      switch (detectionData.nChannel) {
-        case 0:
-          TFLAW_PLACE = "穿透";
-          break;
-        case 1:
-        case 2:
-          TFLAW_PLACE = "卸荷槽";
-          break;
-        case 3:
-        case 4:
-        case 5:
-        case 6:
-        case 7:
-        case 8:
-          TFLAW_PLACE = "轮座";
-          break;
-      }
+    const ip = getIP();
+    const szMemo = detection.szMemo || "";
+    const tssj = detection.tmnow ? tmnowToTSSJ(detection.tmnow) : "";
+    const signature = detection.szUsername || "";
+    const memoMetas = chunk(szMemo.split(""), 8).map((i) => {
+      const board = Number(i.at(0)) ? 1 : 0;
+      const channel = Number(i.at(1));
+      const flawType = Number(i.at(-1));
+
+      return {
+        board,
+        channel,
+        flawType,
+      };
     });
 
-    return {
-      EQ_IP,
-      EQ_BH,
-      GD,
-      dh: record.barCode,
-      zx: detection.szWHModel || "",
-      zh: record.zh,
-      TSFF: "超声波",
-      TSSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-      TFLAW_PLACE,
-      TFLAW_TYPE,
-      TVIEW,
-      CZCTZ: user,
-      CZCTY: user,
-      LZXRBZ: user,
-      LZXRBY: user,
-      XHCZ: user,
-      XHCY: user,
-      TSZ: user,
-      TSZY: user,
-      CT_RESULT: detection.szResult || "",
-    };
+    if (!memoMetas.length) {
+      return [
+        {
+          EQ_BH: corporation.DeviceNO || "",
+          EQ_IP: ip,
+          GD: this.state.gd,
+          dh: record.barCode,
+          zh: record.zh || "",
+          zx: detection.szWHModel || "",
+          TSFF: "超声波",
+          TSSJ: tssj,
+          TFLAW_PLACE: "",
+          TFLAW_TYPE: "",
+          TVIEW: "",
+          CZCTZ: signature,
+          CZCTY: signature,
+          LZXRBZ: signature,
+          LZXRBY: signature,
+          XHCZ: detection.bWheelLS ? signature : "",
+          XHCY: detection.bWheelRS ? signature : "",
+          TSZ: detection.szUsername || "",
+          TSZY: detection.szUsername || "",
+          CT_RESULT: detection.szResult || "",
+        },
+      ];
+    }
+
+    return memoMetas.map((meta) => {
+      return {
+        EQ_BH: corporation.DeviceNO || "",
+        EQ_IP: ip,
+        GD: this.state.gd,
+        dh: record.barCode || "",
+        zh: record.zh || "",
+        zx: detection.szWHModel || "",
+        TSFF: "超声波",
+        TSSJ: tssj,
+        TFLAW_PLACE: calcPlace(meta.board, meta.channel),
+        TFLAW_TYPE: calcFlawType(meta.flawType),
+        TVIEW: "人工复探",
+        CZCTZ: signature,
+        CZCTY: signature,
+        LZXRBZ: signature,
+        LZXRBY: signature,
+        XHCZ: detection.bWheelLS ? signature : "",
+        XHCY: detection.bWheelRS ? signature : "",
+        TSZ: detection.szUsername || "",
+        TSZY: detection.szUsername || "",
+        CT_RESULT: detection.szResult || "",
+      };
+    });
   }
 
   async handleRecordRead(_: SQLiteGetParams) {
@@ -396,11 +392,9 @@ export class Hxzy {
       .returning();
   }
   async handleFetch(dh: string) {
-    const state = this.state;
-    const host = state.ip + ":" + state.port;
-
     const url = new URL(
-      `http://${host}/lzjx/dx/csbts/device_api/csbts/api/getDate`,
+      "/lzjx/dx/csbts/device_api/csbts/api/getDate",
+      `http://${this.state.ip}:${this.state.port}`,
     );
 
     url.searchParams.set("type", "csbts");
@@ -434,7 +428,7 @@ export class Hxzy {
 
     const postParams = await this.recordToPostBody(record);
 
-    await this.sendPostRequest([postParams]);
+    await this.sendPostRequest(postParams);
     const [result] = await this.db
       .update(schema.hxzyBarcodeTable)
       .set({ isUploaded: true })

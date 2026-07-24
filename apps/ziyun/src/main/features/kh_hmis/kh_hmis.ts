@@ -8,6 +8,7 @@ import { resolveCHR503 } from "#shared/functions/chr503";
 import {
   calcFlawType,
   calcNote,
+  calcPlace,
   resolveMemoInfo,
 } from "#shared/functions/chr52a";
 import { calculateXHCFlaws } from "#shared/functions/flawDetection";
@@ -17,7 +18,7 @@ import type { KH_HMIS } from "#shared/instances/schema";
 import { kh_hmis } from "#shared/instances/schema";
 import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
 import { is } from "@electron-toolkit/utils";
-import { atFirstOrThrow, mapGroupBy } from "@yotulee/run";
+import { chunk, mapGroupBy } from "@yotulee/run";
 import { Client } from "basic-ftp";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
@@ -31,6 +32,7 @@ import {
   EMPTY,
   filter,
   interval,
+  map,
   switchMap,
   tap,
 } from "rxjs";
@@ -70,22 +72,17 @@ export class KH {
     const subscription1 = kv.events$
       .pipe(
         filter((e) => e.key === KH_HMIS_STORAGE_KEY),
-        tap((e) => {
+        map((e) => {
           switch (e.action) {
             case "set":
-              const stateJSON = e.value;
-              const data = stateJSON ? JSON.parse(stateJSON).state : {};
-              const state = kh_hmis.parse(data);
-              this.state$.next(state);
-              break;
+              return kh_hmis.parse(e.value ? JSON.parse(e.value).state : {});
             case "remove":
             case "clear":
-              this.state$.next(kh_hmis.parse({}));
-              break;
+              return kh_hmis.parse({});
           }
         }),
       )
-      .subscribe();
+      .subscribe(this.state$);
 
     const subscription2 = this.state$
       .pipe(
@@ -141,10 +138,11 @@ export class KH {
   }
 
   async sendQxToServer(params: QXDataParams) {
-    const store = this.state;
-    const host = store.ip + ":" + store.port;
-    const url = new URL(`http://${host}/api/lzdx_csbtsj_whzy_tsjgqx/save`);
     const body = JSON.stringify(params);
+    const url = new URL(
+      "/api/lzdx_csbtsj_whzy_tsjgqx/save",
+      `http://${this.state.ip}:${this.state.port}`,
+    );
 
     this.logger.log({
       title: `请求数据[${url.href}]:`,
@@ -176,77 +174,12 @@ export class KH {
     return data;
   }
 
-  async recordToPostBody(record: schema.KhBarcode) {
-    const id = record.id;
-
-    if (!record) {
-      throw new Error(`记录#${id}不存在`);
-    }
-
-    if (!record.zh) {
-      throw new Error(`记录#${id}轴号不存在`);
-    }
-
-    if (!record.barCode) {
-      throw new Error(`记录#${id}条形码不存在`);
-    }
-
-    const store = this.state;
-    const startDate = dayjs(record.date).toISOString();
-    const endDate = dayjs(record.date).endOf("day").toISOString();
-    const corporation = await this.mdb.app().corporation();
-    const detections = await this.mdb
-      .root()
-      .detections()
-      .equal("szIDsMake", record.zh)
-      .date("tmnow", new Date(startDate), new Date(endDate));
-    const detection = atFirstOrThrow(
-      detections.rows,
-      () => new Error(`未找到记录#${id}对应的检测数据`),
-    );
-    const JCJG = detection.szResult === "合格" ? "1" : "0";
-
-    const basicBody: PostRequestItem = {
-      mesureId: record.barCode,
-      ZH: record.zh,
-      // 1 探伤 0 不探伤
-      ZCTJG: "1",
-      YCTJG: "1",
-      ZLZJG: "1",
-      YLZJG: "1",
-      ZZJJG: detection.bWheelLS ? "1" : "0",
-      YZJJG: detection.bWheelRS ? "1" : "0",
-      JCJG,
-      BZ: "",
-      TSRY: detection.szUsername || "",
-      JCSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-      sbbh: corporation.DeviceNO || "",
-    };
-
-    return {
-      basicBody,
-      qxBody: {
-        mesureid: record.barCode,
-        zh: record.zh,
-        testdatetime: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-        testtype: "超声波",
-        btcw: "车轴",
-        tsr: detection.szUsername,
-        tsgz: store.tsgz,
-        tszjy: store.tszjy,
-        tsysy: store.tsysy,
-        gzmc: "裂纹",
-        clff: "人工复探",
-        bz: "",
-      } as QXDataParams,
-      isQualified: JCJG === "1",
-    };
-  }
   async sendDataToServer(params: PostRequestItem) {
-    const store = this.state;
-    const host = store.ip + ":" + store.port;
-    const url = new URL(`http://${host}/api/lzdx_csbtsj_tsjg/save`);
     const body = JSON.stringify(params);
+    const url = new URL(
+      "/api/lzdx_csbtsj_tsjg/save",
+      `http://${this.state.ip}:${this.state.port}`,
+    );
 
     this.logger.log({
       title: `请求数据:`,
@@ -280,10 +213,11 @@ export class KH {
     return data;
   }
   async sendCHR501ToServer(params: I501Record) {
-    const store = this.state;
-    const host = store.ip + ":" + store.port;
-    const url = new URL(`http://${host}/api/csbts_501/save`);
     const body = JSON.stringify(params);
+    const url = new URL(
+      `/api/csbts_501/save`,
+      `http://${this.state.ip}:${this.state.port}`,
+    );
 
     this.logger.log({
       title: `请求数据:`,
@@ -317,10 +251,11 @@ export class KH {
     return data;
   }
   async sendCHR502ToServer(params: I502Record) {
-    const store = this.state;
-    const host = store.ip + ":" + store.port;
-    const url = new URL(`http://${host}/api/csbts_502/save`);
     const body = JSON.stringify(params);
+    const url = new URL(
+      `/api/csbts_502/save`,
+      `http://${this.state.ip}:${this.state.port}`,
+    );
 
     this.logger.log({
       title: `请求数据:`,
@@ -354,10 +289,11 @@ export class KH {
     return data;
   }
   async sendCHR503ToServer(params: I503) {
-    const store = this.state;
-    const host = store.ip + ":" + store.port;
-    const url = new URL(`http://${host}/api/csbts_503/save`);
     const body = JSON.stringify(params);
+    const url = new URL(
+      `/api/csbts_503/save`,
+      `http://${this.state.ip}:${this.state.port}`,
+    );
 
     this.logger.log({
       title: `请求数据:`,
@@ -391,10 +327,11 @@ export class KH {
     return data;
   }
   async sendCHR52AToServer(params: I52a) {
-    const store = this.state;
-    const host = store.ip + ":" + store.port;
-    const url = new URL(`http://${host}/api/ct52a1_3/save`);
     const body = JSON.stringify(params);
+    const url = new URL(
+      "/api/ct52a1_3/save",
+      `http://${this.state.ip}:${this.state.port}`,
+    );
 
     this.logger.log({
       title: `请求数据:`,
@@ -429,10 +366,11 @@ export class KH {
   }
 
   async handleFetch(dh: string) {
-    const store = this.state;
-    const host = store.ip + ":" + store.port;
-    const url = new URL(`http://${host}/api/lzdx_csbtsj_get/get`);
     const body = JSON.stringify({ mesureId: dh });
+    const url = new URL(
+      `/api/lzdx_csbtsj_get/get`,
+      `http://${this.state.ip}:${this.state.port}`,
+    );
 
     this.logger.log({
       title: `请求数据:`,
@@ -469,18 +407,92 @@ export class KH {
     const [record] = await this.db
       .select()
       .from(schema.khBarcodeTable)
-      .where(sql.eq(schema.khBarcodeTable.id, id));
+      .where(sql.eq(schema.khBarcodeTable.id, id))
+      .limit(1);
 
     if (!record) {
-      throw new Error(`记录#${id}不存在`);
+      throw new Error(`#${id}不存在`);
     }
 
-    const data = await this.recordToPostBody(record);
-    await this.sendDataToServer(data.basicBody);
+    const zh = record.zh;
+    const barCode = record.barCode;
 
-    if (!data.isQualified) {
-      await this.sendQxToServer(data.qxBody);
+    if (!zh) {
+      throw new Error(`#${id}未记录轴号`);
     }
+
+    if (!barCode) {
+      throw new Error(`#${id}未记录条形码`);
+    }
+
+    const startDate = dayjs(record.date).toISOString();
+    const endDate = dayjs(record.date).endOf("day").toISOString();
+    const corporation = await this.mdb.app().corporation();
+    const {
+      rows: [detection],
+    } = await this.mdb
+      .root()
+      .detections()
+      .equal("szIDsMake", record.zh)
+      .date("tmnow", new Date(startDate), new Date(endDate));
+
+    if (!detection) {
+      throw new Error(`未找到记录#${id}对应的检测数据`);
+    }
+
+    const JCJG = detection.szResult === "合格" ? "1" : "0";
+    const basicBody: PostRequestItem = {
+      mesureId: barCode,
+      ZH: zh,
+      // 1 探伤 0 不探伤
+      ZCTJG: "1",
+      YCTJG: "1",
+      ZLZJG: "1",
+      YLZJG: "1",
+      ZZJJG: detection.bWheelLS ? "1" : "0",
+      YZJJG: detection.bWheelRS ? "1" : "0",
+      JCJG,
+      BZ: "",
+      TSRY: detection.szUsername || "",
+      JCSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
+      sbbh: corporation.DeviceNO || "",
+    };
+
+    await this.sendDataToServer(basicBody);
+
+    const szMemo = detection.szMemo || "";
+    const memoMetas = chunk(szMemo.split(""), 8).map((i) => {
+      const board = Number(i.at(0)) ? 1 : 0;
+      const channel = Number(i.at(1));
+      const flawType = Number(i.at(-1));
+
+      return {
+        board,
+        channel,
+        flawType,
+      };
+    });
+
+    await Promise.allSettled(
+      memoMetas.map((meta) => {
+        const uploadFlawInput: QXDataParams = {
+          mesureid: barCode,
+          zh: zh,
+          testdatetime: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
+          testtype: "超声波",
+          btcw: calcPlace(meta.board, meta.channel),
+          tsr: detection.szUsername || "",
+          tsgz: this.state.tsgz,
+          tszjy: this.state.tszjy,
+          tsysy: this.state.tsysy,
+          gzmc: calcFlawType(meta.flawType),
+          clff: "人工复探",
+          bz: "",
+        };
+
+        return this.sendQxToServer(uploadFlawInput);
+      }),
+    );
 
     const result = await this.db
       .update(schema.khBarcodeTable)

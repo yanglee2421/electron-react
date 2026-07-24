@@ -1,16 +1,13 @@
 // 京天威 广州北
 import * as schema from "#main/features/db/schema";
-import type { Detection, DetectionData } from "#main/features/mdb/types";
 import { createEmit, getIP } from "#main/lib";
-import {
-  detectionDataToTPlace,
-  tmnowToTSSJ,
-} from "#shared/functions/flawDetection";
+import { calcFlawType, calcPlace } from "#shared/functions/chr52a";
+import { tmnowToTSSJ } from "#shared/functions/flawDetection";
 import { JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY } from "#shared/instances/constants";
 import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
 import { guangzhoubei } from "#shared/instances/schema";
 import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
-import { atFirstOrThrow } from "@yotulee/run";
+import { chunk } from "@yotulee/run";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
@@ -22,6 +19,7 @@ import {
   EMPTY,
   filter,
   interval,
+  map,
   switchMap,
   tap,
 } from "rxjs";
@@ -182,22 +180,19 @@ export class Guangzhoubei {
     const sub1 = kv.events$
       .pipe(
         filter((e) => e.key === JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY),
-        tap((event) => {
-          switch (event.action) {
+        map((e) => {
+          switch (e.action) {
             case "set":
-              const newState = guangzhoubei.parse(
-                event.value ? JSON.parse(event.value).state : {},
+              return guangzhoubei.parse(
+                e.value ? JSON.parse(e.value).state : {},
               );
-              this.state$.next(newState);
-              break;
             case "remove":
             case "clear":
-              this.state$.next(guangzhoubei.parse({}));
-              break;
+              return guangzhoubei.parse({});
           }
         }),
       )
-      .subscribe();
+      .subscribe(this.state$);
 
     const sub2 = this.state$
       .pipe(
@@ -287,7 +282,6 @@ export class Guangzhoubei {
 
   async fetchAxleInfoByDH(dh: string) {
     const url = this.makeDataRequestURL(dh);
-
     url.searchParams.set("type", "csbts");
     this.logger.error({ title: `请求单号数据:`, message: url.href });
 
@@ -338,104 +332,110 @@ export class Guangzhoubei {
     return data;
   }
 
-  makePostItem(
-    eq_ip: string,
-    eq_bh: string,
-    record: schema.JTVGuangzhoubeiBarcode,
-    detection: Detection,
-    detectionData?: DetectionData,
-  ) {
-    const store = this.state;
-    const user = detection.szUsername || "";
-    const signature_prefix = store.signature_prefix;
-    const signature = signature_prefix + user;
-
-    return {
-      eq_ip,
-      eq_bh,
-      dh: record.barCode || "",
-      zh: record.zh || "",
-      zx: detection.szWHModel || "",
-      TSFF: "超声波",
-      TSSJ: tmnowToTSSJ(detection.tmnow || ""),
-      TFLAW_PLACE: detectionData ? detectionDataToTPlace(detectionData) : "",
-      TFLAW_TYPE: detectionData ? "裂纹" : "",
-      TVIEW: detectionData ? "人工复探" : "",
-      CZCTZ: signature,
-      CZCTY: signature,
-      LZXRBZ: signature,
-      LZXRBY: signature,
-      XHCZ: detection.bWheelLS ? signature : "",
-      XHCY: detection.bWheelRS ? signature : "",
-      TSZ: signature,
-      TSZY: signature,
-      CT_RESULT: detection.szResult || "",
-    };
-  }
-
   async makeRequestBody(record: schema.JTVGuangzhoubeiBarcode) {
     const id = record.id;
 
     if (!record.zh) {
-      throw new Error(`记录#${id}轴号不存在`);
+      throw new Error(`#${id}未记录轴号`);
     }
 
     if (!record.barCode) {
-      throw new Error(`记录#${id}条形码不存在`);
+      throw new Error(`#${id}未记录条形码`);
     }
 
     const corporation = await this.mdb.app().corporation();
-    const eq_bh = corporation.DeviceNO || "";
-    const eq_ip = getIP();
     const startDate = dayjs(record.date).toISOString();
     const endDate = dayjs(record.date).endOf("day").toISOString();
-
-    const detections = await this.mdb
+    const {
+      rows: [detection],
+    } = await this.mdb
       .root()
       .detections()
       .equal("szIDsWheel", record.zh)
       .date("tmnow", new Date(startDate), new Date(endDate))
       .orderBy("tmnow", "desc");
 
-    const detection = atFirstOrThrow(
-      detections.rows,
-      () => new Error(`记录#${id}对应的检测数据不存在`),
-    );
-    let detectionDatas: DetectionData[] = [];
-
-    switch (detection.szResult) {
-      case "故障":
-      case "有故障":
-      case "疑似故障":
-        detectionDatas = await this.mdb
-          .root()
-          .detections_data()
-          .equal("opid", detection.szIDs)
-          .then((r) => r.rows);
-        break;
-      default:
+    if (!detection) {
+      throw new Error(`记录#${id}对应的检测数据不存在`);
     }
 
-    if (detectionDatas.length === 0) {
-      return [this.makePostItem(eq_ip, eq_bh, record, detection)];
+    const ip = getIP();
+    const szMemo = detection.szMemo || "";
+    const tssj = detection.tmnow ? tmnowToTSSJ(detection.tmnow) : "";
+    const signature = [
+      this.state.signature_prefix,
+      detection.szUsername || "",
+    ].join("");
+    const memoMetas = chunk(szMemo.split(""), 8).map((i) => {
+      const board = Number(i.at(0)) ? 1 : 0;
+      const channel = Number(i.at(1));
+      const flawType = Number(i.at(-1));
+
+      return {
+        board,
+        channel,
+        flawType,
+      };
+    });
+
+    if (!memoMetas.length) {
+      return [
+        {
+          eq_bh: corporation.DeviceNO || "",
+          eq_ip: ip,
+          dh: record.barCode,
+          zh: record.zh || "",
+          zx: detection.szWHModel || "",
+          TSFF: "超声波",
+          TSSJ: tssj,
+          TFLAW_PLACE: "",
+          TFLAW_TYPE: "",
+          TVIEW: "",
+          CZCTZ: signature,
+          CZCTY: signature,
+          LZXRBZ: signature,
+          LZXRBY: signature,
+          XHCZ: detection.bWheelLS ? signature : "",
+          XHCY: detection.bWheelRS ? signature : "",
+          TSZ: detection.szUsername || "",
+          TSZY: detection.szUsername || "",
+          CT_RESULT: detection.szResult || "",
+        },
+      ];
     }
 
-    return detectionDatas.map((detectionData) => {
-      return this.makePostItem(eq_ip, eq_bh, record, detection, detectionData);
+    return memoMetas.map((meta) => {
+      return {
+        eq_bh: corporation.DeviceNO || "",
+        eq_ip: ip,
+        dh: record.barCode || "",
+        zh: record.zh || "",
+        zx: detection.szWHModel || "",
+        TSFF: "超声波",
+        TSSJ: tssj,
+        TFLAW_PLACE: calcPlace(meta.board, meta.channel),
+        TFLAW_TYPE: calcFlawType(meta.flawType),
+        TVIEW: "人工复探",
+        CZCTZ: signature,
+        CZCTY: signature,
+        LZXRBZ: signature,
+        LZXRBY: signature,
+        XHCZ: detection.bWheelLS ? signature : "",
+        XHCY: detection.bWheelRS ? signature : "",
+        TSZ: detection.szUsername || "",
+        TSZY: detection.szUsername || "",
+        CT_RESULT: detection.szResult || "",
+      };
     });
   }
 
   async handleFetch(dh: string, isZhMode?: boolean) {
     if (isZhMode) {
       const data = await this.fetchAxleInfoByZH(dh);
-      const result = normalizeZHResponse(data);
-
-      return result;
+      return normalizeZHResponse(data);
     } else {
       const data = await this.fetchAxleInfoByDH(dh);
-      const result = normalizeDHResponse(data);
-
-      return result;
+      return normalizeDHResponse(data);
     }
   }
   async handleUpload(id: number) {
