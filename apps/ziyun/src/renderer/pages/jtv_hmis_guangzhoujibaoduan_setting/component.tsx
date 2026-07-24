@@ -29,11 +29,15 @@ export const Component = () => {
   const get_port = useGuangzhoujibaoduan((s) => s.get_port);
   const post_ip = useGuangzhoujibaoduan((s) => s.post_ip);
   const post_port = useGuangzhoujibaoduan((s) => s.post_port);
+
   const unitCode = useGuangzhoujibaoduan((s) => s.unitCode);
   const signature_prefix = useGuangzhoujibaoduan((s) => s.signature_prefix);
+
   const autoInput = useGuangzhoujibaoduan((s) => s.autoInput);
   const autoUpload = useGuangzhoujibaoduan((s) => s.autoUpload);
   const autoUploadInterval = useGuangzhoujibaoduan((s) => s.autoUploadInterval);
+  const autoSubmitEnabled = useGuangzhoujibaoduan((s) => s.enableAutoSubmit);
+  const autoSubmitDelay = useGuangzhoujibaoduan((s) => s.autoSubmitDelay);
 
   const form = useForm({
     defaultValues: {
@@ -42,11 +46,15 @@ export const Component = () => {
       get_port,
       post_ip,
       post_port,
+
       unitCode,
       signature_prefix,
+
       autoInput,
       autoUpload,
       autoUploadInterval,
+      enableAutoSubmit: autoSubmitEnabled,
+      autoSubmitDelay,
     } as Guangzhoujibaoduan,
     validators: {
       onChange: guangzhoujibaoduan.required(),
@@ -57,11 +65,15 @@ export const Component = () => {
         draft.get_port = value.get_port;
         draft.post_ip = value.post_ip;
         draft.post_port = value.post_port;
+
         draft.unitCode = value.unitCode;
         draft.signature_prefix = value.signature_prefix;
+
         draft.autoInput = value.autoInput;
         draft.autoUpload = value.autoUpload;
         draft.autoUploadInterval = value.autoUploadInterval;
+        draft.enableAutoSubmit = value.enableAutoSubmit;
+        draft.autoSubmitDelay = value.autoSubmitDelay;
       });
       toast.success("保存成功");
     },
@@ -214,6 +226,19 @@ export const Component = () => {
                     />
                   )}
                 />
+                <form.Field name="enableAutoSubmit">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
+                        />
+                      }
+                      label="自动提交"
+                    />
+                  )}
+                </form.Field>
               </FormGroup>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>

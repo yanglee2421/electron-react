@@ -23,18 +23,18 @@ import { toast } from "react-toastify";
 export const Component = () => {
   const formId = React.useId();
 
-  const get_ip = useGuangzhoubei((store) => store.get_ip);
-  const get_port = useGuangzhoubei((store) => store.get_port);
-  const post_ip = useGuangzhoubei((store) => store.post_ip);
-  const post_port = useGuangzhoubei((store) => store.post_port);
-  const autoInput = useGuangzhoubei((store) => store.autoInput);
-  const autoUpload = useGuangzhoubei((store) => store.autoUpload);
-  const autoUploadInterval = useGuangzhoubei(
-    (store) => store.autoUploadInterval,
-  );
-  const unitCode = useGuangzhoubei((store) => store.unitCode);
-  const signature_prefix = useGuangzhoubei((store) => store.signature_prefix);
-  const isZhMode = useGuangzhoubei((store) => store.isZhMode);
+  const get_ip = useGuangzhoubei((s) => s.get_ip);
+  const get_port = useGuangzhoubei((s) => s.get_port);
+  const post_ip = useGuangzhoubei((s) => s.post_ip);
+  const post_port = useGuangzhoubei((s) => s.post_port);
+  const autoInput = useGuangzhoubei((s) => s.autoInput);
+  const autoUpload = useGuangzhoubei((s) => s.autoUpload);
+  const autoUploadInterval = useGuangzhoubei((s) => s.autoUploadInterval);
+  const autoSubmitEnabled = useGuangzhoubei((s) => s.enableAutoSubmit);
+  const autoSubmitDelay = useGuangzhoubei((s) => s.autoSubmitDelay);
+  const unitCode = useGuangzhoubei((s) => s.unitCode);
+  const signature_prefix = useGuangzhoubei((s) => s.signature_prefix);
+  const isZhMode = useGuangzhoubei((s) => s.isZhMode);
 
   const form = useForm({
     defaultValues: {
@@ -43,9 +43,13 @@ export const Component = () => {
       get_port,
       post_ip,
       post_port,
+
       autoInput,
       autoUpload,
       autoUploadInterval,
+      enableAutoSubmit: autoSubmitEnabled,
+      autoSubmitDelay,
+
       unitCode,
       signature_prefix,
       isZhMode,
@@ -59,9 +63,13 @@ export const Component = () => {
         draft.get_port = value.get_port;
         draft.post_ip = value.post_ip;
         draft.post_port = value.post_port;
+
         draft.autoInput = value.autoInput;
         draft.autoUpload = value.autoUpload;
         draft.autoUploadInterval = value.autoUploadInterval;
+        draft.enableAutoSubmit = value.enableAutoSubmit;
+        draft.autoSubmitDelay = value.autoSubmitDelay;
+
         draft.unitCode = value.unitCode;
         draft.signature_prefix = value.signature_prefix;
       });
@@ -203,6 +211,19 @@ export const Component = () => {
                         />
                       }
                       label="自动上传"
+                    />
+                  )}
+                </form.Field>
+                <form.Field name="enableAutoSubmit">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
+                        />
+                      }
+                      label="自动提交"
                     />
                   )}
                 </form.Field>

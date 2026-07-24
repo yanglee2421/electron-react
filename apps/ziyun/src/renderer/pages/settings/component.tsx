@@ -186,11 +186,9 @@ export const Component = () => {
                                     },
                                   );
                                 }}
-                                disabled={selectDirectory.isPending}
+                                disabled={selectFile.isPending}
                               >
-                                <PendingIcon
-                                  isPending={selectDirectory.isPending}
-                                >
+                                <PendingIcon isPending={selectFile.isPending}>
                                   <FindInPageOutlined />
                                 </PendingIcon>
                               </IconButton>
