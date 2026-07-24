@@ -8,7 +8,7 @@ import {
 } from "#shared/functions/flawDetection";
 import { JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY } from "#shared/instances/constants";
 import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
-import { jtv_hmis_guangzhoubei } from "#shared/instances/schema";
+import { guangzhoubei } from "#shared/instances/schema";
 import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
 import { atFirstOrThrow } from "@yotulee/run";
 import dayjs from "dayjs";
@@ -174,7 +174,7 @@ export class Guangzhoubei {
     this.logger = logger;
 
     const stateJson = kv.getItem(JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY);
-    const state = jtv_hmis_guangzhoubei.parse(
+    const state = guangzhoubei.parse(
       stateJson ? JSON.parse(stateJson).state : {},
     );
     this.state$ = new BehaviorSubject<JTV_HMIS_Guangzhoubei>(state);
@@ -185,14 +185,14 @@ export class Guangzhoubei {
         tap((event) => {
           switch (event.action) {
             case "set":
-              const newState = jtv_hmis_guangzhoubei.parse(
+              const newState = guangzhoubei.parse(
                 event.value ? JSON.parse(event.value).state : {},
               );
               this.state$.next(newState);
               break;
             case "remove":
             case "clear":
-              this.state$.next(jtv_hmis_guangzhoubei.parse({}));
+              this.state$.next(guangzhoubei.parse({}));
               break;
           }
         }),
@@ -235,12 +235,12 @@ export class Guangzhoubei {
     const limit = pLimit(1);
     const barcodes = await this.db
       .select()
-      .from(schema.jtvGuangzhoubeiBarcodeTable)
+      .from(schema.guangzhoubeiBarcodeTable)
       .where(
         sql.and(
-          sql.eq(schema.jtvGuangzhoubeiBarcodeTable.isUploaded, false),
+          sql.eq(schema.guangzhoubeiBarcodeTable.isUploaded, false),
           sql.between(
-            schema.jtvGuangzhoubeiBarcodeTable.date,
+            schema.guangzhoubeiBarcodeTable.date,
             dayjs().startOf("day").toDate(),
             dayjs().endOf("day").toDate(),
           ),
@@ -441,8 +441,8 @@ export class Guangzhoubei {
   async handleUpload(id: number) {
     const [record] = await this.db
       .select()
-      .from(schema.jtvGuangzhoubeiBarcodeTable)
-      .where(sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id))
+      .from(schema.guangzhoubeiBarcodeTable)
+      .where(sql.eq(schema.guangzhoubeiBarcodeTable.id, id))
       .limit(1);
 
     if (!record) {
@@ -453,9 +453,9 @@ export class Guangzhoubei {
     await this.sendDataToServer(body);
 
     const result = await this.db
-      .update(schema.jtvGuangzhoubeiBarcodeTable)
+      .update(schema.guangzhoubeiBarcodeTable)
       .set({ isUploaded: true })
-      .where(sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, record.id))
+      .where(sql.eq(schema.guangzhoubeiBarcodeTable.id, record.id))
       .returning();
 
     emit();
@@ -465,10 +465,10 @@ export class Guangzhoubei {
   async handleReadRecord(params: SQLiteGetParams) {
     const [{ count }] = await this.db
       .select({ count: sql.count() })
-      .from(schema.jtvGuangzhoubeiBarcodeTable)
+      .from(schema.guangzhoubeiBarcodeTable)
       .where(
         sql.between(
-          schema.jtvGuangzhoubeiBarcodeTable.date,
+          schema.guangzhoubeiBarcodeTable.date,
           new Date(params.startDate),
           new Date(params.endDate),
         ),
@@ -477,29 +477,29 @@ export class Guangzhoubei {
 
     const rows = await this.db
       .select()
-      .from(schema.jtvGuangzhoubeiBarcodeTable)
+      .from(schema.guangzhoubeiBarcodeTable)
       .where(
         sql.between(
-          schema.jtvGuangzhoubeiBarcodeTable.date,
+          schema.guangzhoubeiBarcodeTable.date,
           new Date(params.startDate),
           new Date(params.endDate),
         ),
       )
       .offset(params.pageIndex * params.pageSize)
       .limit(params.pageSize)
-      .orderBy(sql.desc(schema.jtvGuangzhoubeiBarcodeTable.date));
+      .orderBy(sql.desc(schema.guangzhoubeiBarcodeTable.date));
 
     return { rows, count };
   }
   handleDeleteRecord(id: number) {
     return this.db
-      .delete(schema.jtvGuangzhoubeiBarcodeTable)
-      .where(sql.eq(schema.jtvGuangzhoubeiBarcodeTable.id, id))
+      .delete(schema.guangzhoubeiBarcodeTable)
+      .where(sql.eq(schema.guangzhoubeiBarcodeTable.id, id))
       .returning();
   }
   handleInsertRecord(params: InsertRecordParams) {
     return this.db
-      .insert(schema.jtvGuangzhoubeiBarcodeTable)
+      .insert(schema.guangzhoubeiBarcodeTable)
       .values({
         barCode: params.DH,
         zh: params.ZH,

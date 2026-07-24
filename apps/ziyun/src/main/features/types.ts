@@ -3,6 +3,7 @@ import type { AppProtocol, AppTheme, AppTray, AppWindow } from "#main/infra";
 import type { Cmd } from "./cmd";
 import type { ExternalDB } from "./external-db";
 import type { Guangzhoubei } from "./guangzhoubei";
+import type { Guangzhoucheliang } from "./guangzhoucheliang";
 import type { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
 import type { HmisProxy } from "./hmis-proxy";
 import type { Hxzy } from "./hxzy";
@@ -23,6 +24,7 @@ export interface AppCradle {
   db: DB;
   externalDB: ExternalDB;
   guangzhoubei: Guangzhoubei;
+  guangzhoucheliang: Guangzhoucheliang;
   guangzhoujibaoduan: JTV_HMIS_Guangzhoujibaoduan;
   hmisProxy: HmisProxy;
   hxzy: Hxzy;

@@ -2,6 +2,7 @@ import type * as cmd from "#main/features/cmd/types";
 import type * as db from "#main/features/db/types";
 import type * as externalDB from "#main/features/external-db/types";
 import type * as guangzhoubei from "#main/features/guangzhoubei/types";
+import type * as guangzhoucheliang from "#main/features/guangzhoucheliang/types";
 import type * as guangzhoujibaoduan from "#main/features/guangzhoujibaoduan/types";
 import type * as hxzy from "#main/features/hxzy/types";
 import type * as image from "#main/features/image/types";
@@ -22,6 +23,7 @@ export interface IPCContract
     db.IPCContract,
     externalDB.IPCContract,
     guangzhoubei.IPCContract,
+    guangzhoucheliang.IPC,
     guangzhoujibaoduan.IPCContract,
     hxzy.IPCContract,
     image.IPCContract,

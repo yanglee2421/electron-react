@@ -15,7 +15,7 @@ const QUERY_KEY = "jtv_hmis_guangzhoubei";
 
 export const fetchGuangzhoubeiRecord = (payload: SQLiteGetParams) => {
   return queryOptions({
-    queryKey: [QUERY_KEY, payload],
+    queryKey: [QUERY_KEY, "HMIS/jtv_hmis_guangzhoubei_sqlite_get", payload],
     queryFn: () => {
       return ipc.invoke("HMIS/jtv_hmis_guangzhoubei_sqlite_get", payload);
     },

@@ -185,12 +185,12 @@ export class JTV_HMIS_Guangzhoujibaoduan {
     const limit = pLimit(1);
     const barcodes = await this.db
       .select()
-      .from(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .from(schema.guangzhoujibaoduanBarcodeTable)
       .where(
         sql.and(
-          sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.isUploaded, false),
+          sql.eq(schema.guangzhoujibaoduanBarcodeTable.isUploaded, false),
           sql.between(
-            schema.jtvGuangzhoujibaoduanBarcodeTable.date,
+            schema.guangzhoujibaoduanBarcodeTable.date,
             dayjs().startOf("day").toDate(),
             dayjs().endOf("day").toDate(),
           ),
@@ -376,8 +376,8 @@ export class JTV_HMIS_Guangzhoujibaoduan {
   async handleUpload(id: number) {
     const [record] = await this.db
       .select()
-      .from(schema.jtvGuangzhoujibaoduanBarcodeTable)
-      .where(sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.id, id));
+      .from(schema.guangzhoujibaoduanBarcodeTable)
+      .where(sql.eq(schema.guangzhoujibaoduanBarcodeTable.id, id));
 
     if (!record) {
       throw new Error(`记录#${id}不存在`);
@@ -387,9 +387,9 @@ export class JTV_HMIS_Guangzhoujibaoduan {
     await this.sendDataToServer(body);
 
     const result = await this.db
-      .update(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .update(schema.guangzhoujibaoduanBarcodeTable)
       .set({ isUploaded: true })
-      .where(sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.id, record.id))
+      .where(sql.eq(schema.guangzhoujibaoduanBarcodeTable.id, record.id))
       .returning();
 
     emit();
@@ -399,10 +399,10 @@ export class JTV_HMIS_Guangzhoujibaoduan {
   async handleRecordRead(params: SQLiteGetParams) {
     const rows = await this.db
       .select()
-      .from(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .from(schema.guangzhoujibaoduanBarcodeTable)
       .where(
         sql.between(
-          schema.jtvGuangzhoujibaoduanBarcodeTable.date,
+          schema.guangzhoujibaoduanBarcodeTable.date,
           new Date(params.startDate),
           new Date(params.endDate),
         ),
@@ -413,10 +413,10 @@ export class JTV_HMIS_Guangzhoujibaoduan {
 
     const [{ count }] = await this.db
       .select({ count: sql.count() })
-      .from(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .from(schema.guangzhoujibaoduanBarcodeTable)
       .where(
         sql.between(
-          schema.jtvGuangzhoujibaoduanBarcodeTable.date,
+          schema.guangzhoujibaoduanBarcodeTable.date,
           new Date(params.startDate),
           new Date(params.endDate),
         ),
@@ -427,15 +427,15 @@ export class JTV_HMIS_Guangzhoujibaoduan {
   }
   async handleRecordDelete(id: number) {
     const result = await this.db
-      .delete(schema.jtvGuangzhoujibaoduanBarcodeTable)
-      .where(sql.eq(schema.jtvGuangzhoujibaoduanBarcodeTable.id, id))
+      .delete(schema.guangzhoujibaoduanBarcodeTable)
+      .where(sql.eq(schema.guangzhoujibaoduanBarcodeTable.id, id))
       .returning();
 
     return result;
   }
   async handleRecordInsert(params: InsertRecordParams) {
     const result = await this.db
-      .insert(schema.jtvGuangzhoujibaoduanBarcodeTable)
+      .insert(schema.guangzhoujibaoduanBarcodeTable)
       .values({
         barCode: params.DH,
         zh: params.ZH,

@@ -52,6 +52,8 @@ export const Sidebar = (props: SidebarProps) => {
   const [guangzhoubeiOpen, setGuangzhoubeiOpen] = React.useState(true);
   const [guangzhoujibaoduanOpen, setGuangzhoujibaoduanOpen] =
     React.useState(true);
+  const [guangzhoucheliangOpen, setGuangzhoucheliangOpen] =
+    React.useState(true);
   const [khOpen, setKhOpen] = React.useState(true);
 
   const theme = useTheme();
@@ -64,6 +66,9 @@ export const Sidebar = (props: SidebarProps) => {
   const showGuangzhoujibaoduanHmisMenu = useProfileStore(
     (s) => s.showGuangzhoujibaoduanHmisMenu,
   );
+  const showGuangzhoucheliangMenu = useProfileStore(
+    (s) => s.showGuangzhoucheliangMenu,
+  );
   const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
   const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
   const showHmis =
@@ -71,6 +76,7 @@ export const Sidebar = (props: SidebarProps) => {
     showJtvHmisMenu ||
     showGuangzhoubeiHmisMenu ||
     showGuangzhoujibaoduanHmisMenu ||
+    showGuangzhoucheliangMenu ||
     showKhHmisMenu;
 
   return (
@@ -316,6 +322,58 @@ export const Sidebar = (props: SidebarProps) => {
                       selected={Object.is(
                         normalizePathname(location.pathname),
                         "/jtv_guangzhoujibaoduan/setting",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <TuneRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"设置"} />
+                    </ListItemButton>
+                  </List>
+                </Collapse>
+              </>
+            )}
+            {showGuangzhoucheliangMenu && (
+              <>
+                <ListItemButton
+                  onClick={() => {
+                    setGuangzhoucheliangOpen((p) => !p);
+                  }}
+                >
+                  <ListItemIcon>
+                    <PrecisionManufacturing />
+                  </ListItemIcon>
+                  <ListItemText primary={"广州车辆厂"} />
+                  <ExpandMore
+                    sx={{
+                      rotate: guangzhoucheliangOpen ? 0 : "-90deg",
+                      transition: theme.transitions.create("rotate"),
+                    }}
+                  />
+                </ListItemButton>
+                <Collapse in={guangzhoucheliangOpen} unmountOnExit>
+                  <List disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/guangzhoucheliang" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/guangzhoucheliang",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <QrCodeScannerRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"HMIS"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/guangzhoucheliang/setting" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/guangzhoucheliang/setting",
                       )}
                       sx={{ paddingInlineStart: 4 }}
                     >

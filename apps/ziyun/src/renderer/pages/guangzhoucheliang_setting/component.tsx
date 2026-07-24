@@ -1,7 +1,7 @@
 import { NumberField } from "#renderer/components/number";
-import { useGuangzhoubei } from "#renderer/hooks/stores/useGuangzhoubei";
-import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
-import { guangzhoubei } from "#shared/instances/schema";
+import { useGuangzhoucheliang } from "#renderer/hooks/stores/useGuangzhoucheliang";
+import type { GuangzhoucheliangType } from "#shared/instances/schema";
+import { guangzhoucheliang } from "#shared/instances/schema";
 import { SaveOutlined } from "@mui/icons-material";
 import {
   Button,
@@ -13,6 +13,7 @@ import {
   CircularProgress,
   FormControlLabel,
   FormGroup,
+  FormLabel,
   Grid,
   TextField,
 } from "@mui/material";
@@ -23,54 +24,57 @@ import { toast } from "react-toastify";
 export const Component = () => {
   const formId = React.useId();
 
-  const get_ip = useGuangzhoubei((store) => store.get_ip);
-  const get_port = useGuangzhoubei((store) => store.get_port);
-  const post_ip = useGuangzhoubei((store) => store.post_ip);
-  const post_port = useGuangzhoubei((store) => store.post_port);
-  const autoInput = useGuangzhoubei((store) => store.autoInput);
-  const autoUpload = useGuangzhoubei((store) => store.autoUpload);
-  const autoUploadInterval = useGuangzhoubei(
-    (store) => store.autoUploadInterval,
-  );
-  const unitCode = useGuangzhoubei((store) => store.unitCode);
-  const signature_prefix = useGuangzhoubei((store) => store.signature_prefix);
-  const isZhMode = useGuangzhoubei((store) => store.isZhMode);
+  const scanner_ip = useGuangzhoucheliang((s) => s.scanner_ip);
+  const scanner_port = useGuangzhoucheliang((s) => s.scanner_port);
+  const upload_ip = useGuangzhoucheliang((s) => s.upload_ip);
+  const upload_port = useGuangzhoucheliang((s) => s.upload_port);
+  const autoInputEnabled = useGuangzhoucheliang((s) => s.autoInputEnabled);
+  const autoUploadEnabled = useGuangzhoucheliang((s) => s.autoUploadEnabled);
+  const autoUploadInterval = useGuangzhoucheliang((s) => s.autoUploadInterval);
+  const autoSubmitEnabled = useGuangzhoucheliang((s) => s.autoSubmitEnabled);
+  const autoSubmitDelay = useGuangzhoucheliang((s) => s.autoSubmitDelay);
+  const signature_prefix = useGuangzhoucheliang((s) => s.signature_prefix);
+  const gd = useGuangzhoucheliang((s) => s.gd);
 
   const form = useForm({
     defaultValues: {
-      get_ip,
-      get_port,
-      post_ip,
-      post_port,
-      autoInput,
-      autoUpload,
+      ...useGuangzhoucheliang.getState(),
+      scanner_ip,
+      scanner_port,
+      upload_ip,
+      upload_port,
+      autoInputEnabled,
+      autoUploadEnabled,
       autoUploadInterval,
-      unitCode,
+      autoSubmitEnabled,
+      autoSubmitDelay,
       signature_prefix,
-      isZhMode,
-    } as JTV_HMIS_Guangzhoubei,
+      gd,
+    } as GuangzhoucheliangType,
     validators: {
-      onChange: guangzhoubei.required(),
+      onChange: guangzhoucheliang.required(),
     },
     onSubmit: ({ value }) => {
-      useGuangzhoubei.setState((draft) => {
-        draft.get_ip = value.get_ip;
-        draft.get_port = value.get_port;
-        draft.post_ip = value.post_ip;
-        draft.post_port = value.post_port;
-        draft.autoInput = value.autoInput;
-        draft.autoUpload = value.autoUpload;
+      useGuangzhoucheliang.setState((draft) => {
+        draft.scanner_ip = value.scanner_ip;
+        draft.scanner_port = value.scanner_port;
+        draft.upload_ip = value.upload_ip;
+        draft.upload_port = value.upload_port;
+        draft.autoInputEnabled = value.autoInputEnabled;
+        draft.autoUploadEnabled = value.autoUploadEnabled;
         draft.autoUploadInterval = value.autoUploadInterval;
-        draft.unitCode = value.unitCode;
+        draft.autoSubmitEnabled = value.autoSubmitEnabled;
+        draft.autoSubmitDelay = value.autoSubmitDelay;
         draft.signature_prefix = value.signature_prefix;
+        draft.gd = value.gd;
       });
-      toast.success("保存成功");
+      toast.success("设置已保存");
     },
   });
 
   return (
     <Card>
-      <CardHeader title="京天威HMIS设置" subheader="广州北" />
+      <CardHeader title="京天威HMIS设置" subheader="统型" />
       <CardContent>
         <form
           id={formId}
@@ -78,12 +82,15 @@ export const Component = () => {
           autoComplete="off"
           onSubmit={(e) => {
             e.preventDefault();
-            void form.handleSubmit();
+            form.handleSubmit();
           }}
         >
           <Grid container spacing={1.5}>
+            <Grid size={12}>
+              <FormLabel>网络</FormLabel>
+            </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="get_ip">
+              <form.Field name="scanner_ip">
                 {(field) => (
                   <TextField
                     value={field.state.value}
@@ -91,31 +98,31 @@ export const Component = () => {
                     onBlur={field.handleBlur}
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors[0]?.message}
-                    label="GET IP地址"
+                    label="扫码IP"
                     fullWidth
                   />
                 )}
               </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="get_port">
+              <form.Field name="scanner_port">
                 {(field) => (
                   <NumberField
                     field={{
                       value: field.state.value,
                       onChange: (value) => field.handleChange(value),
-                      onBlur: field.handleBlur,
+                      onBlur: () => field.handleBlur(),
                     }}
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors[0]?.message}
-                    label="GET 端口号"
+                    label="扫码端口"
                     fullWidth
                   />
                 )}
               </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="post_ip">
+              <form.Field name="upload_ip">
                 {(field) => (
                   <TextField
                     value={field.state.value}
@@ -123,43 +130,31 @@ export const Component = () => {
                     onBlur={field.handleBlur}
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors[0]?.message}
-                    label="POST IP地址"
+                    label="上传IP"
                     fullWidth
                   />
                 )}
               </form.Field>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="post_port">
+              <form.Field name="upload_port">
                 {(field) => (
                   <NumberField
                     field={{
                       value: field.state.value,
                       onChange: (value) => field.handleChange(value),
-                      onBlur: field.handleBlur,
+                      onBlur: () => field.handleBlur(),
                     }}
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors[0]?.message}
-                    label="POST 端口号"
+                    label="上传端口"
                     fullWidth
                   />
                 )}
               </form.Field>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="unitCode">
-                {(field) => (
-                  <TextField
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    label="单位代码"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
+            <Grid size={12}>
+              <FormLabel>上传</FormLabel>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <form.Field name="signature_prefix">
@@ -170,16 +165,33 @@ export const Component = () => {
                     onBlur={field.handleBlur}
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors[0]?.message}
-                    name={field.name}
                     label="签章前缀"
                     fullWidth
                   />
                 )}
               </form.Field>
             </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="gd">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors[0]?.message}
+                    label="股道"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={12}>
+              <FormLabel>其它</FormLabel>
+            </Grid>
             <Grid size={{ xs: 12 }}>
               <FormGroup row>
-                <form.Field name="autoInput">
+                <form.Field name="autoInputEnabled">
                   {(field) => (
                     <FormControlLabel
                       control={
@@ -192,16 +204,31 @@ export const Component = () => {
                     />
                   )}
                 </form.Field>
-                <form.Field name="autoUpload">
+                <form.Field name="autoUploadEnabled">
                   {(field) => (
                     <FormControlLabel
                       control={
                         <Checkbox
                           checked={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.checked)}
+                          onChange={(_, checked) => field.handleChange(checked)}
                         />
                       }
                       label="自动上传"
+                    />
+                  )}
+                </form.Field>
+                <form.Field name="autoSubmitEnabled">
+                  {(field) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={field.state.value}
+                          onChange={(_, checked) => {
+                            field.handleChange(checked);
+                          }}
+                        />
+                      }
+                      label="启用自动提交"
                     />
                   )}
                 </form.Field>
@@ -214,11 +241,31 @@ export const Component = () => {
                     field={{
                       value: field.state.value,
                       onChange: (value) => field.handleChange(value),
-                      onBlur: field.handleBlur,
+                      onBlur: () => field.handleBlur(),
                     }}
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors[0]?.message}
-                    label="自动上传间隔"
+                    label="自动上传间隔 ( 秒 )"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="autoSubmitDelay">
+                {(field) => (
+                  <NumberField
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: () => field.handleBlur(),
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={
+                      field.state.meta.errors[0]?.message ||
+                      "条形输入一段时间后自动提交查询, 适用于扫码枪不支持自动回车的情况"
+                    }
+                    label="自动提交延迟 ( 毫秒 )"
                     fullWidth
                   />
                 )}
@@ -231,24 +278,22 @@ export const Component = () => {
         <form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}
         >
-          {([canSubmit, isSubmitting]) => {
-            return (
-              <Button
-                form={formId}
-                type="submit"
-                disabled={!canSubmit}
-                startIcon={
-                  isSubmitting ? (
-                    <CircularProgress size={16} color="inherit" />
-                  ) : (
-                    <SaveOutlined />
-                  )
-                }
-              >
-                保存
-              </Button>
-            );
-          }}
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              form={formId}
+              type="submit"
+              disabled={!canSubmit}
+              startIcon={
+                isSubmitting ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <SaveOutlined />
+                )
+              }
+            >
+              保存
+            </Button>
+          )}
         </form.Subscribe>
       </CardActions>
     </Card>

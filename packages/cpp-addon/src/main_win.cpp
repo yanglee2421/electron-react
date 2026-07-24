@@ -60,6 +60,9 @@ static BOOL CALLBACK EnumChildProc(HWND hwnd, LPARAM lParam) {
     case 1401:
       SendMessageW(hwnd, BM_SETCHECK, (WPARAM)p->ytx, 0);
       break;
+    case 7360:
+      SendMessageW(hwnd, BM_SETCHECK, 1, 0);
+      break;
   }
   return TRUE;
 }

@@ -25,14 +25,14 @@ export const resolveMemoInfo = (params: string | null): MemoInfo => {
 
 export const calcFlawType = (type?: number) => {
   switch (type) {
+    case 1:
+      return "裂纹";
     case 2:
       return "透声不良";
     case 4:
       return "晶粗";
     case 8:
       return "压装不良";
-    case 1:
-      return "裂纹";
     default:
       return "";
   }

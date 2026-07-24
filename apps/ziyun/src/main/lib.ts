@@ -12,8 +12,12 @@ export const getIP = () => {
         return false;
       }
 
-      if (i.address === "192.168.1.100") {
-        return false;
+      switch (i.address) {
+        // 友联
+        case "192.168.1.100":
+        // 信泰
+        case "192.168.0.100":
+          return false;
       }
 
       return !i.internal;

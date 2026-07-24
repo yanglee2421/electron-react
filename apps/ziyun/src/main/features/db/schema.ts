@@ -3,11 +3,10 @@ import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 export type KhBarcode = typeof khBarcodeTable.$inferSelect;
 export type HxzyBarcode = typeof hxzyBarcodeTable.$inferSelect;
 export type JTVBarcode = typeof jtvBarcodeTable.$inferSelect;
-export type JtvXuzhoubeiBarcode = typeof jtvXuzhoubeiBarcodeTable.$inferSelect;
 export type JTVGuangzhoubeiBarcode =
-  typeof jtvGuangzhoubeiBarcodeTable.$inferSelect;
+  typeof guangzhoubeiBarcodeTable.$inferSelect;
 export type JTVGuangzhoujibaoduanBarcode =
-  typeof jtvGuangzhoujibaoduanBarcodeTable.$inferSelect;
+  typeof guangzhoujibaoduanBarcodeTable.$inferSelect;
 export type Log = typeof logTable.$inferSelect;
 
 export const jtvBarcodeTable = sqliteTable("jtv_barcode", {
@@ -28,20 +27,6 @@ export const hxzyBarcodeTable = sqliteTable("hxzy_barcode", {
   isUploaded: int("isUploaded", { mode: "boolean" }),
 });
 
-export const jtvXuzhoubeiBarcodeTable = sqliteTable("jtv_xuzhoubei_barcode", {
-  id: int("id").primaryKey({ autoIncrement: true }),
-  barCode: text("barCode"),
-  zh: text("zh"),
-  date: int("date", { mode: "timestamp" }),
-  isUploaded: int("isUploaded", { mode: "boolean" }),
-  PJ_ZZRQ: text("PJ_ZZRQ"),
-  PJ_ZZDW: text("PJ_ZZDW"),
-  PJ_SCZZRQ: text("PJ_SCZZRQ"),
-  PJ_SCZZDW: text("PJ_SCZZDW"),
-  PJ_MCZZRQ: text("PJ_MCZZRQ"),
-  PJ_MCZZDW: text("PJ_MCZZDW"),
-});
-
 export const khBarcodeTable = sqliteTable("kh_barcode", {
   id: int("id").primaryKey({ autoIncrement: true }),
   barCode: text("barCode"),
@@ -50,7 +35,7 @@ export const khBarcodeTable = sqliteTable("kh_barcode", {
   isUploaded: int("isUploaded", { mode: "boolean" }),
 });
 
-export const jtvGuangzhoubeiBarcodeTable = sqliteTable(
+export const guangzhoubeiBarcodeTable = sqliteTable(
   "jtv_guangzhoubei_barcode",
   {
     id: int("id").primaryKey({ autoIncrement: true }),
@@ -63,7 +48,20 @@ export const jtvGuangzhoubeiBarcodeTable = sqliteTable(
   },
 );
 
-export const jtvGuangzhoujibaoduanBarcodeTable = sqliteTable(
+export const guangzhoucheliangBarcodeTable = sqliteTable(
+  "jtv_guangzhoucheliang_barcode",
+  {
+    id: int("id").primaryKey({ autoIncrement: true }),
+    barCode: text("barCode"),
+    zh: text("zh"),
+    date: int("date", { mode: "timestamp" }),
+    isUploaded: int("isUploaded", { mode: "boolean" }),
+    CZZZDW: text("CZZZDW"),
+    CZZZRQ: text("CZZZRQ"),
+  },
+);
+
+export const guangzhoujibaoduanBarcodeTable = sqliteTable(
   "jtv_guangzhoujibaoduan_barcode",
   {
     id: int("id").primaryKey({ autoIncrement: true }),

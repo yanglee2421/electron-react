@@ -13,3 +13,6 @@ export interface IPCContract {
     return: void;
   };
 }
+
+export type GuangzhoucheliangBarcode =
+  typeof schema.guangzhoucheliangBarcodeTable.$inferSelect;

@@ -216,6 +216,21 @@ export const routes: RouteObject[] = [
                 ],
               },
               {
+                path: "guangzhoucheliang",
+                children: [
+                  {
+                    index: true,
+                    lazy: () =>
+                      import("#renderer/pages/guangzhoucheliang/component"),
+                  },
+                  {
+                    path: "setting",
+                    lazy: () =>
+                      import("#renderer/pages/guangzhoucheliang_setting/component"),
+                  },
+                ],
+              },
+              {
                 path: "kh",
                 children: [
                   {

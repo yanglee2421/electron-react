@@ -4,6 +4,7 @@ import { Cmd } from "./cmd";
 import { DB } from "./db";
 import { ExternalDB } from "./external-db";
 import { Guangzhoubei } from "./guangzhoubei";
+import { Guangzhoucheliang } from "./guangzhoucheliang";
 import { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
 import { HmisProxy } from "./hmis-proxy";
 import { Hxzy } from "./hxzy/hxzy";
@@ -29,6 +30,9 @@ container.register({
     .singleton()
     .disposer((i) => i.dispose()),
   guangzhoubei: asClass(Guangzhoubei)
+    .singleton()
+    .disposer((i) => i.dispose()),
+  guangzhoucheliang: asClass(Guangzhoucheliang)
     .singleton()
     .disposer((i) => i.dispose()),
   guangzhoujibaoduan: asClass(JTV_HMIS_Guangzhoujibaoduan)

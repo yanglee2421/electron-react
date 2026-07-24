@@ -1,0 +1,657 @@
+import type { JTVBarcode } from "#main/features/db/schema";
+import type { JTVNormalizeResponse } from "#main/features/jtv/types";
+import { useAutoInputToVC } from "#renderer/api/fetch_preload";
+import {
+  fetchBarcode,
+  useBarcodeDelete,
+  useBarcodeInsert,
+  useScanner,
+  useUpload,
+} from "#renderer/api/guangzhoucheliang";
+import { ScrollToTopButton } from "#renderer/components/scroll";
+import { useAutoSubmitRef } from "#renderer/hooks/dom/use-auto-submit-ref";
+import { useGuangzhoucheliang } from "#renderer/hooks/stores/useGuangzhoucheliang";
+import { useAutoFocusInputRef } from "#renderer/hooks/useAutoFocusInputRef";
+import { useSubscribe } from "#renderer/hooks/useSubscribe";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
+import {
+  CheckOutlined,
+  ClearOutlined,
+  CloudUploadOutlined,
+  DeleteOutlined,
+  KeyboardReturnOutlined,
+  RefreshOutlined,
+} from "@mui/icons-material";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CircularProgress,
+  Divider,
+  Grid,
+  IconButton,
+  InputAdornment,
+  LinearProgress,
+  Link,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableFooter,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
+} from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
+import { useField, useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { useDialogs } from "@toolpad/core";
+import dayjs from "dayjs";
+import React from "react";
+import { toast } from "react-toastify";
+import { z } from "zod";
+
+const schema = z.object({
+  barCode: z.string().min(1),
+});
+
+const columnHelper = createColumnHelper<JTVBarcode>();
+const rowSelectColumnHelper = createColumnHelper<JTVNormalizeResponse>();
+
+const columns = [
+  columnHelper.accessor("id", {
+    header: "ID",
+    footer: "ID",
+    cell: ({ getValue }) => <Link underline="none">#{getValue()}</Link>,
+  }),
+  columnHelper.accessor("barCode", {
+    header: "单号",
+    footer: "单号",
+  }),
+  columnHelper.accessor("zh", {
+    header: "轴号",
+    footer: "轴号",
+  }),
+  columnHelper.accessor("CZZZRQ", {
+    header: "车轴制造",
+    footer: "车轴制造",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  columnHelper.accessor("CZZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  columnHelper.accessor("date", {
+    header: "时间",
+    footer: "时间",
+    cell: ({ getValue }) => getValue()?.toLocaleString(),
+  }),
+  columnHelper.accessor("isUploaded", {
+    header: "已上传",
+    footer: "已上传",
+    cell: ({ getValue }) =>
+      getValue() ? <CheckOutlined color="success" /> : <ClearOutlined />,
+  }),
+  columnHelper.display({
+    id: "action",
+    header: "操作",
+    cell: ({ row }) => <ActionCell id={row.getValue("id")} />,
+  }),
+];
+
+const rowSelectColumns = [
+  rowSelectColumnHelper.accessor("ZH", {
+    header: "轴号",
+    footer: "轴号",
+  }),
+  rowSelectColumnHelper.accessor("ZX", {
+    header: "轴型",
+    footer: "轴型",
+  }),
+  rowSelectColumnHelper.accessor("CZZZRQ", {
+    header: "车轴制造",
+    footer: "车轴制造",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  rowSelectColumnHelper.accessor("CZZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  rowSelectColumnHelper.accessor("SCZZRQ", {
+    header: "首次组装日期",
+    footer: "首次组装日期",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  rowSelectColumnHelper.accessor("SCZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  rowSelectColumnHelper.accessor("MCZZRQ", {
+    header: "末次组装日期",
+    footer: "末次组装日期",
+    cell: ({ getValue }) => dayjs(getValue()).format("YYYY-MM-DD"),
+  }),
+  rowSelectColumnHelper.accessor("MCZZDW", {
+    header: "单位",
+    footer: "单位",
+  }),
+  rowSelectColumnHelper.accessor("DH", {
+    header: "单号",
+    footer: "单号",
+  }),
+];
+
+type ActionCellProps = {
+  id: number;
+};
+
+const ActionCell = (props: ActionCellProps) => {
+  const dialog = useDialogs();
+  const saveData = useUpload();
+  const deleteBarcode = useBarcodeDelete();
+
+  const handleUpload = () => {
+    saveData.mutate(props.id, {
+      onError: (error) => {
+        toast.error(error.message);
+      },
+      onSuccess: () => {
+        toast.success("上传成功");
+      },
+    });
+  };
+
+  return (
+    <>
+      <IconButton onClick={handleUpload} disabled={saveData.isPending}>
+        <CloudUploadOutlined />
+      </IconButton>
+      <IconButton
+        onClick={async () => {
+          const confirmed = await dialog.confirm("确定要删除这条记录吗？", {
+            okText: "删除",
+            cancelText: "取消",
+            title: "警告",
+          });
+          if (confirmed) {
+            deleteBarcode.mutate(props.id, {
+              onError: (error) => {
+                toast.error(error.message);
+              },
+            });
+          }
+        }}
+        disabled={saveData.isPending}
+      >
+        <DeleteOutlined color="error" />
+      </IconButton>
+    </>
+  );
+};
+
+type DataGridProps = {
+  rows?: JTVBarcode[];
+  count?: number;
+  pageIndex: number;
+  pageSize: number;
+  setPageIndex: (page: number) => void;
+  setPageSize: (size: number) => void;
+};
+
+const DataGrid = (props: DataGridProps) => {
+  "use no memo";
+
+  const { pageIndex, pageSize, count = 0, setPageIndex, setPageSize } = props;
+
+  const data = React.useMemo(() => props.rows || [], [props.rows]);
+
+  const table = useReactTable({
+    data,
+    columns,
+    getRowId: (row) => row.id.toString(),
+    getCoreRowModel: getCoreRowModel(),
+
+    manualPagination: true,
+    rowCount: count,
+  });
+
+  const renderRow = () => {
+    if (!table.getRowCount()) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
+            暂无数据
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return table.getRowModel().rows.map((row) => (
+      <TableRow key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    ));
+  };
+
+  return (
+    <>
+      <TableContainer>
+        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
+          <TableHead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableHead>
+          <TableBody>{renderRow()}</TableBody>
+          <TableFooter>
+            {table.getFooterGroups().map((footerGroup) => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.footer,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableFooter>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        component={"div"}
+        page={pageIndex}
+        count={table.getRowCount()}
+        rowsPerPage={pageSize}
+        rowsPerPageOptions={rowsPerPageOptions}
+        onPageChange={(e, page) => {
+          void e;
+          setPageIndex(page);
+        }}
+        onRowsPerPageChange={(e) => {
+          setPageSize(Number.parseInt(e.target.value, 10));
+        }}
+        labelRowsPerPage="每页行数"
+      />
+    </>
+  );
+};
+
+type RowSelectGridProps = {
+  data?: JTVNormalizeResponse[];
+  onRowSelect?: (record: JTVNormalizeResponse) => void;
+};
+
+const RowSelectGrid = (props: RowSelectGridProps) => {
+  "use no memo";
+
+  const rows = React.useMemo(() => props.data || [], [props.data]);
+
+  const table = useReactTable({
+    getCoreRowModel: getCoreRowModel(),
+    columns: rowSelectColumns,
+    data: rows,
+    getRowId(row) {
+      return row.DH;
+    },
+
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  const renderRow = () => {
+    if (!table.getRowCount()) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
+            暂无数据
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return table.getRowModel().rows.map((row) => (
+      <TableRow
+        key={row.id}
+        hover
+        onClick={async () => {
+          props.onRowSelect?.(row.original);
+        }}
+        sx={{ cursor: "pointer" }}
+      >
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    ));
+  };
+
+  return (
+    <>
+      <TableContainer>
+        <Table sx={{ minWidth: (theme) => theme.breakpoints.values.md }}>
+          <TableHead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableHead>
+          <TableBody>{renderRow()}</TableBody>
+          <TableFooter>
+            {table.getFooterGroups().map((footerGroup) => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.footer,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableFooter>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        component={"div"}
+        page={table.getState().pagination.pageIndex}
+        onPageChange={(_, page) => {
+          table.setPageIndex(page);
+        }}
+        rowsPerPage={table.getState().pagination.pageSize}
+        onRowsPerPageChange={(e) => {
+          table.setPageSize(Number.parseInt(e.target.value));
+        }}
+        rowsPerPageOptions={[10, 20]}
+        count={table.getRowCount()}
+        labelRowsPerPage="每页行数"
+      />
+    </>
+  );
+};
+
+export const Component = () => {
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(100);
+  const [dateIso, setDate] = React.useState(() => new Date().toISOString());
+  const [selectOptions, setSelectOptions] = React.useState<
+    JTVNormalizeResponse[]
+  >([]);
+
+  const formId = React.useId();
+
+  const getData = useScanner();
+  const isAutoInput = useGuangzhoucheliang((s) => s.autoInputEnabled);
+  const enableAutoSubmit = useGuangzhoucheliang((s) => s.autoSubmitEnabled);
+  const autoSubmitDelay = useGuangzhoucheliang((s) => s.autoSubmitDelay);
+  const autoInput = useAutoInputToVC();
+  const inputRef = useAutoFocusInputRef();
+  const insertBarcode = useBarcodeInsert();
+
+  const date = dayjs(dateIso);
+
+  const params = {
+    pageIndex,
+    pageSize,
+    startDate: date.startOf("day").toISOString(),
+    endDate: date.endOf("day").toISOString(),
+  };
+
+  const barcode = useQuery(fetchBarcode(params));
+
+  const form = useForm({
+    defaultValues: {
+      barCode: "",
+    },
+    validators: {
+      onChange: schema,
+    },
+    onSubmit: async ({ value, formApi }) => {
+      const data = await getData.mutateAsync(value.barCode, {
+        onError: (error) => {
+          toast.error(error.message);
+        },
+        onSuccess: () => {
+          formApi.reset();
+        },
+      });
+
+      setSelectOptions(data);
+
+      const isSingleElement = Object.is(data.length, 1);
+      if (!isSingleElement) return;
+
+      const record = data.at(0)!;
+      if (!record) return;
+
+      await handleRowSelect(record);
+    },
+  });
+
+  const barcodeField = useField({ form, name: "barCode" });
+  const formRef = useAutoSubmitRef(
+    enableAutoSubmit,
+    barcodeField.state.value,
+    autoSubmitDelay,
+  );
+
+  useSubscribe("api_set", () => {
+    barcode.refetch();
+  });
+
+  const sendDataItemToWindow = async (dataItem: JTVNormalizeResponse) => {
+    if (!isAutoInput) return;
+
+    await autoInput.mutateAsync(
+      {
+        zx: dataItem.ZX,
+        zh: dataItem.ZH,
+        czzzdw: dataItem.CZZZDW,
+        sczzdw: dataItem.SCZZDW,
+        mczzdw: dataItem.MCZZDW,
+        czzzrq: dataItem.CZZZRQ,
+        sczzrq: dataItem.SCZZRQ,
+        mczzrq: dataItem.MCZZRQ,
+        ztx: dataItem.ZTX ? "0" : "1",
+        ytx: dataItem.YTX ? "0" : "1",
+      },
+      {
+        onError: (error) => {
+          toast.error(error.message);
+        },
+      },
+    );
+  };
+
+  const inserDataItemToDB = async (dataItem: JTVNormalizeResponse) => {
+    await insertBarcode.mutateAsync(dataItem, {
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    });
+  };
+
+  const handleRowSelect = async (dataItem: JTVNormalizeResponse) => {
+    await inserDataItemToDB(dataItem);
+    await sendDataItemToWindow(dataItem);
+  };
+
+  const renderFilter = () => {
+    return (
+      <>
+        <Divider />
+        <CardContent>
+          <Grid container spacing={6}>
+            <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }}>
+              <DatePicker
+                label="日期"
+                value={date}
+                onChange={(e) => {
+                  if (!e) return;
+                  setDate(e.toISOString());
+                }}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </>
+    );
+  };
+
+  return (
+    <>
+      <ScrollToTopButton />
+      <Stack spacing={3}>
+        <Card>
+          <CardHeader title="广州车辆厂" subheader="京天威" />
+          <CardContent>
+            <Grid container spacing={6}>
+              <Grid size={{ xs: 12, sm: 10, md: 8, lg: 6, xl: 4 }}>
+                <form
+                  ref={formRef}
+                  id={formId}
+                  noValidate
+                  autoComplete="off"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    form.handleSubmit();
+                  }}
+                  onReset={() => form.reset()}
+                >
+                  <form.Field name="barCode">
+                    {(field) => (
+                      <TextField
+                        value={field.state.value}
+                        onChange={(e) => {
+                          field.handleChange(e.target.value);
+                        }}
+                        onBlur={field.handleBlur}
+                        inputRef={inputRef}
+                        error={!!field.state.meta.errors.length}
+                        helperText={field.state.meta.errors[0]?.message}
+                        fullWidth
+                        slotProps={{
+                          input: {
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <form.Subscribe
+                                  selector={(state) => [
+                                    state.canSubmit,
+                                    state.isSubmitting,
+                                  ]}
+                                >
+                                  {([canSubmit, isSubmitting]) => (
+                                    <Button
+                                      form={formId}
+                                      type="submit"
+                                      endIcon={
+                                        isSubmitting ? (
+                                          <CircularProgress
+                                            size={16}
+                                            color="inherit"
+                                          />
+                                        ) : (
+                                          <KeyboardReturnOutlined />
+                                        )
+                                      }
+                                      variant="contained"
+                                      disabled={!canSubmit}
+                                    >
+                                      录入
+                                    </Button>
+                                  )}
+                                </form.Subscribe>
+                              </InputAdornment>
+                            ),
+                            autoFocus: true,
+                          },
+                        }}
+                        label="条形码/二维码"
+                        placeholder="请扫描条形码或二维码"
+                      />
+                    )}
+                  </form.Field>
+                </form>
+              </Grid>
+            </Grid>
+          </CardContent>
+          <RowSelectGrid data={selectOptions} onRowSelect={handleRowSelect} />
+        </Card>
+        <Card>
+          <CardHeader
+            title="上传记录"
+            subheader="轮轴信息的上传情况"
+            action={
+              <IconButton>
+                <RefreshOutlined />
+              </IconButton>
+            }
+          />
+          {renderFilter()}
+          <Divider />
+          {barcode.isFetching && <LinearProgress />}
+          <DataGrid
+            rows={barcode.data?.rows}
+            count={barcode.data?.count}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            setPageIndex={setPageIndex}
+            setPageSize={setPageSize}
+          />
+        </Card>
+      </Stack>
+    </>
+  );
+};

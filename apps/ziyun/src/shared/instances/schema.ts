@@ -22,6 +22,7 @@ export const profile = z.object({
   showJtvHmisMenu: z.boolean().default(false),
   showGuangzhoubeiHmisMenu: z.boolean().default(false),
   showGuangzhoujibaoduanHmisMenu: z.boolean().default(false),
+  showGuangzhoucheliangMenu: z.boolean().default(false),
   showKhHmisMenu: z.boolean().default(false),
   showPLCMenu: z.boolean().default(false),
 
@@ -88,7 +89,7 @@ export const jtv_hmis = z.object({
 
 export type JTV_HMIS = z.infer<typeof jtv_hmis>;
 
-export const jtv_hmis_guangzhoubei = z.object({
+export const guangzhoubei = z.object({
   get_ip: ipv4Schema,
   get_port: portSchema,
   post_ip: ipv4Schema,
@@ -104,7 +105,7 @@ export const jtv_hmis_guangzhoubei = z.object({
   isZhMode: z.boolean().default(true),
 });
 
-export type JTV_HMIS_Guangzhoubei = z.infer<typeof jtv_hmis_guangzhoubei>;
+export type JTV_HMIS_Guangzhoubei = z.infer<typeof guangzhoubei>;
 
 export const guangzhoujibaoduan = z.object({
   get_ip: ipv4Schema,
@@ -123,7 +124,25 @@ export const guangzhoujibaoduan = z.object({
 
 export type Guangzhoujibaoduan = z.infer<typeof guangzhoujibaoduan>;
 
-const btsSchema = z
+export const guangzhoucheliang = z.object({
+  scanner_ip: ipv4Schema,
+  scanner_port: portSchema,
+  upload_ip: ipv4Schema,
+  upload_port: portSchema,
+
+  autoInputEnabled: z.boolean().default(false),
+  autoUploadEnabled: z.boolean().default(false),
+  autoUploadInterval: z.number().default(30),
+  autoSubmitEnabled: z.boolean().default(false),
+  autoSubmitDelay: z.number().default(1000 * 2),
+
+  signature_prefix: z.string().default("W"),
+  gd: z.string().default(""),
+});
+
+export type GuangzhoucheliangType = z.infer<typeof guangzhoucheliang>;
+
+const bitsSchema = z
   .array(z.object({ address: z.number().int(), description: z.string() }))
   .default([])
   .superRefine((val, ctx) => {
@@ -144,10 +163,10 @@ const btsSchema = z
   });
 
 export const plcSchema = z.object({
-  x: btsSchema,
-  y: btsSchema,
-  m: btsSchema,
-  d: btsSchema,
+  x: bitsSchema,
+  y: bitsSchema,
+  m: bitsSchema,
+  d: bitsSchema,
 });
 
 export type PLCSchema = z.infer<typeof plcSchema>;

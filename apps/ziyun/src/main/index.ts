@@ -37,6 +37,7 @@ import * as cmdIPC from "./features/cmd/ipc";
 import * as dbIPC from "./features/db/ipc";
 import * as externalDBIPC from "./features/external-db/ipc";
 import * as guangzhoubeiIPC from "./features/guangzhoubei/ipc";
+import * as guangzhoucheliangIPC from "./features/guangzhoucheliang/ipc";
 import * as guangzhoujibaoduanIPC from "./features/guangzhoujibaoduan/ipc";
 import * as hxzyIPC from "./features/hxzy/ipc";
 import * as imageIPC from "./features/image/ipc";
@@ -91,6 +92,7 @@ const resource$ = using(
       cmd,
       externalDB,
       guangzhoubei,
+      guangzhoucheliang,
       guangzhoujibaoduan,
       hmisProxy,
       hxzy,
@@ -114,6 +116,7 @@ const resource$ = using(
     const externalDBUnIPC = externalDBIPC.registerIPCHandlers(externalDB);
     const dbUnIPC = dbIPC.registerIPCHandlers(db);
     const guangzhoubeiUnIPC = guangzhoubeiIPC.registerIPCHandlers(guangzhoubei);
+    const guangzhoucheliangUnIPC = guangzhoucheliangIPC.ipc(guangzhoucheliang);
     const guangzhoujibaoduanUnIPC =
       guangzhoujibaoduanIPC.registerIPCHandlers(guangzhoujibaoduan);
     void hmisProxy;
@@ -143,6 +146,7 @@ const resource$ = using(
         dbUnIPC();
         externalDBUnIPC();
         guangzhoubeiUnIPC();
+        guangzhoucheliangUnIPC();
         guangzhoujibaoduanUnIPC();
         hxzyUnIPC();
         imageUnIPC();

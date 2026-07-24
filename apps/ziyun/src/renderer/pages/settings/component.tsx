@@ -113,6 +113,9 @@ export const Component = () => {
   const showGuangzhoujibaoduanHmisMenu = useProfileStore(
     (s) => s.showGuangzhoujibaoduanHmisMenu,
   );
+  const showGuangzhoucheliang = useProfileStore(
+    (s) => s.showGuangzhoucheliangMenu,
+  );
   const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
   const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
 
@@ -486,6 +489,20 @@ export const Component = () => {
             }
           >
             <ListItemText primary={"显示广州机保段HMIS菜单"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showGuangzhoucheliang}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showGuangzhoucheliangMenu = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示广州车辆厂HMIS菜单"} />
           </ListItem>
           <ListItem
             secondaryAction={
