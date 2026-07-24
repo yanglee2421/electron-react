@@ -38,6 +38,7 @@ export const Component = () => {
 
   const form = useForm({
     defaultValues: {
+      ...useGuangzhoubei.getState(),
       get_ip,
       get_port,
       post_ip,
@@ -219,6 +220,26 @@ export const Component = () => {
                     error={!!field.state.meta.errors.length}
                     helperText={field.state.meta.errors[0]?.message}
                     label="自动上传间隔"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="autoSubmitDelay">
+                {(field) => (
+                  <NumberField
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: () => field.handleBlur(),
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={
+                      field.state.meta.errors[0]?.message ||
+                      "条形输入一段时间后自动提交查询, 适用于扫码枪不支持自动回车的情况"
+                    }
+                    label="自动提交延迟 ( 毫秒 )"
                     fullWidth
                   />
                 )}

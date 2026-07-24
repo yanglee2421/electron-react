@@ -25,22 +25,19 @@ import { toast } from "react-toastify";
 export const Component = () => {
   const formId = React.useId();
 
-  const get_ip = useGuangzhoujibaoduan((store) => store.get_ip);
-  const get_port = useGuangzhoujibaoduan((store) => store.get_port);
-  const post_ip = useGuangzhoujibaoduan((store) => store.post_ip);
-  const post_port = useGuangzhoujibaoduan((store) => store.post_port);
-  const unitCode = useGuangzhoujibaoduan((store) => store.unitCode);
-  const signature_prefix = useGuangzhoujibaoduan(
-    (store) => store.signature_prefix,
-  );
-  const autoInput = useGuangzhoujibaoduan((store) => store.autoInput);
-  const autoUpload = useGuangzhoujibaoduan((store) => store.autoUpload);
-  const autoUploadInterval = useGuangzhoujibaoduan(
-    (store) => store.autoUploadInterval,
-  );
+  const get_ip = useGuangzhoujibaoduan((s) => s.get_ip);
+  const get_port = useGuangzhoujibaoduan((s) => s.get_port);
+  const post_ip = useGuangzhoujibaoduan((s) => s.post_ip);
+  const post_port = useGuangzhoujibaoduan((s) => s.post_port);
+  const unitCode = useGuangzhoujibaoduan((s) => s.unitCode);
+  const signature_prefix = useGuangzhoujibaoduan((s) => s.signature_prefix);
+  const autoInput = useGuangzhoujibaoduan((s) => s.autoInput);
+  const autoUpload = useGuangzhoujibaoduan((s) => s.autoUpload);
+  const autoUploadInterval = useGuangzhoujibaoduan((s) => s.autoUploadInterval);
 
   const form = useForm({
     defaultValues: {
+      ...useGuangzhoujibaoduan.getState(),
       get_ip,
       get_port,
       post_ip,
@@ -236,6 +233,26 @@ export const Component = () => {
                   />
                 )}
               />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="autoSubmitDelay">
+                {(field) => (
+                  <NumberField
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: () => field.handleBlur(),
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={
+                      field.state.meta.errors[0]?.message ||
+                      "条形输入一段时间后自动提交查询, 适用于扫码枪不支持自动回车的情况"
+                    }
+                    label="自动提交延迟 ( 毫秒 )"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
             </Grid>
           </Grid>
         </form>

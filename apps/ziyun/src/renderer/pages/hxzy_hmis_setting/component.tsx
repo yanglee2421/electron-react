@@ -33,6 +33,7 @@ export const Component = () => {
 
   const form = useForm({
     defaultValues: {
+      ...useHxzyHmisStore.getState(),
       ip,
       port,
       autoInput,
