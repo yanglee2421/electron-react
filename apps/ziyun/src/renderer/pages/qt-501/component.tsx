@@ -2,6 +2,7 @@ import { fetchExternalDB501 } from "#renderer/api/external-db";
 import { Loading } from "#renderer/components/Loading";
 import {
   Cell,
+  CheckOK,
   Col,
   PageFooter,
   PageHeader,
@@ -562,18 +563,24 @@ export const Component = () => {
                         <Cell>{_}</Cell>
                       </Col>
                       <Col>
-                        <Cell text={true}>
-                          {flawMap.get(`${board}-3`)?.at(index)}
+                        <Cell text={false}>
+                          {flawMap.get(`${board}-3`)?.at(index) ? (
+                            <CheckOK />
+                          ) : null}
                         </Cell>
                       </Col>
                       <Col>
-                        <Cell text={true}>
-                          {flawMap.get(`${board}-4`)?.at(index)}
+                        <Cell text={false}>
+                          {flawMap.get(`${board}-4`)?.at(index) ? (
+                            <CheckOK />
+                          ) : null}
                         </Cell>
                       </Col>
                       <Col>
-                        <Cell text={true}>
-                          {flawMap.get(`${board}-2`)?.at(index)}
+                        <Cell text={false}>
+                          {flawMap.get(`${board}-2`)?.at(index) ? (
+                            <CheckOK />
+                          ) : null}
                         </Cell>
                       </Col>
                     </Row>

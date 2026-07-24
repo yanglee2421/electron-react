@@ -238,16 +238,6 @@ export class ExternalDB {
       rxh,
     });
 
-    console.log({
-      tmpPath,
-      lct,
-      rct,
-      llz,
-      rlz,
-      lxh,
-      rxh,
-    });
-
     return {
       record,
       flaws,
