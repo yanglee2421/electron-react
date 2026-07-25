@@ -21,7 +21,7 @@ ARG ELECTRON_BUILDER_BINARIES_MIRROR
 ARG npm_package_config_node_gyp_dist_url
 WORKDIR /app
 COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/electron-app/package.json ./packages/electron-app/
+COPY apps/ziyun/package.json ./apps/ziyun/
 COPY packages/cpp-addon/package.json ./packages/cpp-addon/
 RUN pnpm i --frozen-lockfile
 
@@ -39,5 +39,5 @@ RUN pnpm build
 # --- Stage 3: export
 FROM ubuntu:20.04 AS export
 WORKDIR /app
-COPY --from=build /app/packages/electron-app/release .
+COPY --from=build /app/apps/ziyun/release .
 CMD ["sh", "-c", "cp -r /app/. /output_dist"]

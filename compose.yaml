@@ -18,4 +18,4 @@ services:
     image: builder:linux
     container_name: build_linux
     volumes:
-      - ./packages/electron-app/release:/output_dist
+      - ./apps/ziyun/release:/output_dist
