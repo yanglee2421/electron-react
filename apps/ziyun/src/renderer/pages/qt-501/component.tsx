@@ -13,13 +13,13 @@ import {
 import { of } from "#shared/functions/array";
 import { divideBy10, mathFormat } from "#shared/functions/math";
 import { CellHeightContext, styles } from "#shared/instances/styles";
-import { Alert, AlertTitle } from "@mui/material";
+import { Alert, AlertTitle, Button } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
 import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import React from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 
 const ASIDE_COL_WIDTH = 24;
 const SECOND_WIDTH = 80;
@@ -420,6 +420,16 @@ export const Component = () => {
         <Alert severity="error">
           <AlertTitle>数据加载失败</AlertTitle>
           {query.error.message}
+          <div></div>
+          <Button
+            component={Link}
+            to={{ pathname: "/" }}
+            variant="contained"
+            color="error"
+            sx={{ mt: 1 }}
+          >
+            回到首页
+          </Button>
         </Alert>
       );
     }

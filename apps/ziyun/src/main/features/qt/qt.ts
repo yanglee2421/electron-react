@@ -4,7 +4,7 @@ import { relations, schema } from "@yanglee2421/external-db";
 import { createServer } from "@yanglee2421/hmis-proxy";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-sqlite";
-import { app } from "electron";
+import { app, shell } from "electron";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -28,7 +28,7 @@ import {
 import workerPath from "../../workers/bmp?modulePath";
 import type { Profile } from "../profile";
 import type { AppCradle } from "../types";
-import type { SetupAppInput } from "./types";
+import type { SetupAppInput, SetYiqiConfigLibInput } from "./types";
 
 export class QT {
   readonly client$ = new BehaviorSubject<DBClient | null>(null);
@@ -37,14 +37,20 @@ export class QT {
   private piscina: Piscina;
 
   constructor({ profile }: AppCradle) {
+    this.profile = profile;
+    this.piscina = new Piscina({
+      filename: workerPath,
+      minThreads: 1,
+      maxThreads: os.cpus().length,
+    });
+
     const sub1 = profile.state$
       .pipe(
-        distinctUntilChanged((previous, current) => {
-          return (
-            previous.qtHMISEnabled === current.qtHMISEnabled &&
-            previous.qtHMISPort === current.qtHMISPort
-          );
-        }),
+        distinctUntilChanged(
+          (p, c) =>
+            p.qtHMISEnabled === c.qtHMISEnabled &&
+            p.qtHMISPort === c.qtHMISPort,
+        ),
         switchMap((state) => {
           if (!state.qtHMISEnabled) {
             return EMPTY;
@@ -71,28 +77,20 @@ export class QT {
       )
       .subscribe();
 
-    this.profile = profile;
-    this.piscina = new Piscina({
-      filename: workerPath,
-      minThreads: 1,
-      maxThreads: os.cpus().length,
-    });
-
     const sub2 = profile.state$
       .pipe(
-        distinctUntilChanged((previous, current) => {
-          return previous.qtAppPath === current.qtAppPath;
-        }),
-        switchMap((state) => {
-          if (!state.qtAppPath) {
+        distinctUntilChanged((p, c) => p.qtAppPath === c.qtAppPath),
+        switchMap((s) => {
+          if (!s.qtAppPath) {
             return EMPTY;
           }
 
+          const flagFile = path.resolve(s.qtAppPath, "../FlagFile");
+          const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
+          const dbPath = path.resolve(dataDirectory, "./local.db");
+
           return using(
             () => {
-              const flagFile = path.resolve(state.qtAppPath, "../FlagFile");
-              const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
-              const dbPath = path.resolve(dataDirectory, "./local.db");
               const client = new DatabaseSync(dbPath);
               const db = drizzle({ client, schema, relations });
 
@@ -122,6 +120,7 @@ export class QT {
   }
 
   async dispose() {
+    this.client$.complete();
     this.piscina.destroy();
     this.subscriptions.forEach((sub) => sub.unsubscribe());
 
@@ -302,15 +301,59 @@ export class QT {
       mode: 0o666,
     });
 
-    const localDbPath = path.resolve(qtAppPath, "..", "local.db");
     const flagFilePath = path.resolve(qtAppPath, "..", "FlagFile");
+    const sourceDBPath = path.resolve(qtAppPath, "..", "local.db");
     const targetDBPath = path.resolve(qtDataDirectory, "./local.db");
 
-    await fs.promises.cp(localDbPath, targetDBPath);
-    await fs.promises.writeFile(flagFilePath, targetDBPath, {
+    await fs.promises.cp(sourceDBPath, targetDBPath);
+    await fs.promises.writeFile(flagFilePath, qtDataDirectory, {
       encoding: "utf8",
       flag: "w+",
       mode: 0o666,
     });
+  }
+
+  async getCurrentLocalDB() {
+    const qtAppPath = this.profile.state.qtAppPath;
+    const flagFilePath = path.resolve(qtAppPath, "..", "FlagFile");
+    const localDBPath = (
+      await fs.promises.readFile(flagFilePath, "utf8")
+    ).trim();
+
+    return localDBPath;
+  }
+
+  async deviceConfigList() {
+    const rows = await this.client.select().from(schema.yqConfig);
+
+    return { rows };
+  }
+
+  setDeviceConfigFlag(id: number) {
+    return this.client.transaction((tx) => {
+      tx.update(schema.yqConfig).set({ usedFlag: 0 }).run();
+      return tx
+        .update(schema.yqConfig)
+        .set({ usedFlag: 1 })
+        .where(eq(schema.yqConfig.recId, id))
+        .returning()
+        .get();
+    });
+  }
+
+  async setDeviceConfigLib({ lib, id }: SetYiqiConfigLibInput) {
+    const result = await this.client
+      .update(schema.yqConfig)
+      .set({ dllPath: lib })
+      .where(eq(schema.yqConfig.recId, id))
+      .returning();
+
+    return result;
+  }
+
+  async startApp() {
+    const result = await shell.openPath(this.profile.state.qtAppPath);
+
+    return result;
   }
 }

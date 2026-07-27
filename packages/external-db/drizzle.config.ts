@@ -10,6 +10,6 @@ export default defineConfig({
   dialect: "sqlite",
   dbCredentials: {
     // url: `file:${path.join(__dirname, "./local.db")}`,
-    url: "D:\\QT-database\\local.db",
+    url: "D:\\qt-data\\local.db",
   },
 });

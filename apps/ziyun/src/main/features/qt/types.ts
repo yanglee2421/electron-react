@@ -5,6 +5,11 @@ export interface SetupAppInput {
   qtDataDirectory: string;
 }
 
+export interface SetYiqiConfigLibInput {
+  id: number;
+  lib: string;
+}
+
 export interface IPC {
   "qt/anniversary": {
     args: [];
@@ -25,5 +30,25 @@ export interface IPC {
   "qt/setup-app": {
     args: [SetupAppInput];
     return: ReturnType<QT["setupApp"]>;
+  };
+  "qt/current-db-path": {
+    args: [];
+    return: ReturnType<QT["getCurrentLocalDB"]>;
+  };
+  "qt/yiqiConfig/list": {
+    args: [];
+    return: ReturnType<QT["deviceConfigList"]>;
+  };
+  "qt/yiqiConfig/lib": {
+    args: [SetYiqiConfigLibInput];
+    return: ReturnType<QT["setDeviceConfigLib"]>;
+  };
+  "qt/yiqiConfig/flag": {
+    args: [number];
+    return: ReturnType<QT["setDeviceConfigFlag"]>;
+  };
+  "qt/start-app": {
+    args: [];
+    return: ReturnType<QT["startApp"]>;
   };
 }

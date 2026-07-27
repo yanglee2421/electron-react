@@ -92,6 +92,7 @@ export class AppTray {
   }
 
   dispose() {
+    this.tray$.complete();
     this.subscription.unsubscribe();
   }
 
