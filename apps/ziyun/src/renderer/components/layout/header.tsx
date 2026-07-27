@@ -4,10 +4,11 @@ import {
   Link,
   Toolbar,
   Typography,
+  useScrollTrigger,
   useTheme,
 } from "@mui/material";
 import { normalizePathname } from "@yotulee/run";
-import type React from "react";
+import React from "react";
 import { Link as RouterLink, useLocation } from "react-router";
 import { AlwaysOnTop } from "../always-on-top";
 import { MobileModeButton } from "../mobile";
@@ -17,7 +18,6 @@ const createSegmentAlias = () => {
   const segmentAlias = new Map([
     ["hxzy", "华兴致远"],
     ["jtv", "京天威统型"],
-    ["jtv_xuzhoubei", "徐州北"],
     ["jtv_guangzhoubei", "广州北"],
     ["jtv_guangzhoujibaoduan", "广州机保段"],
     ["guangzhoucheliang", "广州车辆厂"],
@@ -73,6 +73,7 @@ const calculateBreadcrumbs = (
 export const Header = (props: React.PropsWithChildren) => {
   const theme = useTheme();
   const location = useLocation();
+  const trigger = useScrollTrigger({ threshold: 0 });
   const segmentAlias = createSegmentAlias();
   const breadcrumbs = calculateBreadcrumbs(location.pathname, segmentAlias);
 
@@ -87,6 +88,9 @@ export const Header = (props: React.PropsWithChildren) => {
         gap: 1,
 
         backgroundColor: theme.palette.background.default,
+
+        boxShadow: trigger ? theme.shadows[1] : theme.shadows[0],
+        transition: theme.transitions.create("box-shadow"),
       }}
     >
       {props.children}
