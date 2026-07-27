@@ -23,13 +23,17 @@ export class Printer {
     });
   }
 
-  dispose() {
+  async dispose() {
     this.piscina.destroy();
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     // Cleanup temporary files created by worker threads
-    if (fs.existsSync(tmpPath)) {
-      fs.rmSync(tmpPath, { recursive: true, force: true });
+    try {
+      await fs.promises.rm(tmpPath, { recursive: true, force: true });
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error(error);
+      }
     }
   }
 

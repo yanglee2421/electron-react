@@ -571,7 +571,6 @@ export const Sidebar = (props: SidebarProps) => {
               QT软件相关
             </ListSubheader>
           }
-          sx={{ display: "none" }}
         >
           <ListItemButton
             component={Link}

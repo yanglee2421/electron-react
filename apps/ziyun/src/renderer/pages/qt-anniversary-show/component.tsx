@@ -1,4 +1,4 @@
-import { fetchExternalDBAnniversaryDetail } from "#renderer/api/external-db";
+import { fetchExternalDBAnniversaryDetail } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";

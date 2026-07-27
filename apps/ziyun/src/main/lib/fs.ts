@@ -1,6 +1,9 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import pLimit from "p-limit";
+
+const limit = pLimit(os.cpus().length);
 
 export const ls = async (basePath: string): Promise<string[]> => {
   const stats = await fs.promises.stat(basePath);
@@ -14,10 +17,8 @@ export const ls = async (basePath: string): Promise<string[]> => {
   }
 
   const basenames = await fs.promises.readdir(basePath);
-  const limit = pLimit(1000);
-
-  const tasks = basenames.map((basename) => {
-    const subPath = path.resolve(basePath, basename);
+  const tasks = basenames.map((base) => {
+    const subPath = path.resolve(basePath, base);
 
     return limit(() => ls(subPath));
   });

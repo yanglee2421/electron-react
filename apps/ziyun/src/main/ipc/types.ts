@@ -1,6 +1,5 @@
 import type * as cmd from "#main/features/cmd/types";
 import type * as db from "#main/features/db/types";
-import type * as externalDB from "#main/features/external-db/types";
 import type * as guangzhoubei from "#main/features/guangzhoubei/types";
 import type * as guangzhoucheliang from "#main/features/guangzhoucheliang/types";
 import type * as guangzhoujibaoduan from "#main/features/guangzhoujibaoduan/types";
@@ -13,6 +12,7 @@ import type * as logger from "#main/features/logger/types";
 import type * as mdb from "#main/features/mdb/types";
 import type * as plc from "#main/features/plc/types";
 import type * as printer from "#main/features/printer/types";
+import type * as qt from "#main/features/qt/types";
 import type * as xml from "#main/features/xml/types";
 import type * as infra from "#main/infra/types";
 
@@ -21,7 +21,6 @@ export interface IPCContract
     infra.IPCContract,
     cmd.IPCContract,
     db.IPCContract,
-    externalDB.IPCContract,
     guangzhoubei.IPCContract,
     guangzhoucheliang.IPC,
     guangzhoujibaoduan.IPCContract,
@@ -34,4 +33,5 @@ export interface IPCContract
     mdb.IPCContract,
     plc.IPCContract,
     printer.IPCContract,
+    qt.IPC,
     xml.IPCContract {}

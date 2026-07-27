@@ -1,6 +1,7 @@
 import type { ChannelImage } from "#main/workers/bmp";
 import type { DBClient } from "@yanglee2421/external-db";
 import { relations, schema } from "@yanglee2421/external-db";
+import { createServer } from "@yanglee2421/hmis-proxy";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { app } from "electron";
@@ -8,10 +9,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import Piscina from "piscina";
-import type { Subscription } from "rxjs";
+import { Piscina } from "piscina";
 import {
   BehaviorSubject,
+  catchError,
   defaultIfEmpty,
   distinctUntilChanged,
   EMPTY,
@@ -22,18 +23,54 @@ import {
   switchMap,
   takeUntil,
   using,
+  type Subscription,
 } from "rxjs";
 import workerPath from "../../workers/bmp?modulePath";
 import type { Profile } from "../profile";
 import type { AppCradle } from "../types";
+import type { SetupAppInput } from "./types";
 
-export class ExternalDB {
+export class QT {
   readonly client$ = new BehaviorSubject<DBClient | null>(null);
   private subscriptions: Subscription[];
   private profile: Profile;
   private piscina: Piscina;
 
   constructor({ profile }: AppCradle) {
+    const sub1 = profile.state$
+      .pipe(
+        distinctUntilChanged((previous, current) => {
+          return (
+            previous.qtHMISEnabled === current.qtHMISEnabled &&
+            previous.qtHMISPort === current.qtHMISPort
+          );
+        }),
+        switchMap((state) => {
+          if (!state.qtHMISEnabled) {
+            return EMPTY;
+          }
+
+          return using(
+            () => {
+              const server = createServer(state.qtHMISPort);
+
+              return {
+                unsubscribe: () => {
+                  server.close();
+                },
+              };
+            },
+            () =>
+              NEVER.pipe(
+                startWith(null),
+                takeUntil(profile.state$.pipe(last(), defaultIfEmpty(null))),
+              ),
+          );
+        }),
+        shareReplay({ refCount: true, bufferSize: 1 }),
+      )
+      .subscribe();
+
     this.profile = profile;
     this.piscina = new Piscina({
       filename: workerPath,
@@ -41,7 +78,7 @@ export class ExternalDB {
       maxThreads: os.cpus().length,
     });
 
-    const sub1 = profile.state$
+    const sub2 = profile.state$
       .pipe(
         distinctUntilChanged((previous, current) => {
           return previous.qtAppPath === current.qtAppPath;
@@ -76,21 +113,27 @@ export class ExternalDB {
             },
           );
         }),
+        catchError(() => EMPTY),
         shareReplay({ bufferSize: 1, refCount: true }),
       )
       .subscribe(this.client$);
 
-    this.subscriptions = [sub1];
+    this.subscriptions = [sub1, sub2];
   }
 
-  dispose() {
+  async dispose() {
     this.piscina.destroy();
-    this.subscriptions.forEach((s) => s.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
+
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     // Cleanup temporary files created by worker threads
-    if (fs.existsSync(tmpPath)) {
-      fs.rmSync(tmpPath, { recursive: true, force: true });
+    try {
+      await fs.promises.rm(tmpPath, { recursive: true, force: true });
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error(error);
+      }
     }
   }
 
@@ -98,7 +141,7 @@ export class ExternalDB {
     const db = this.client$.value;
 
     if (db === null) {
-      throw new Error("External DB is not ready yet");
+      throw new Error("QT App database is not ready yet");
     }
 
     return db;
@@ -249,5 +292,25 @@ export class ExternalDB {
       FACTORY_SYRQ: FACTORY_SYRQ?.value,
       jpegs,
     };
+  }
+
+  async setupApp(params: SetupAppInput) {
+    const { qtAppPath, qtDataDirectory } = params;
+
+    await fs.promises.mkdir(qtDataDirectory, {
+      recursive: true,
+      mode: 0o666,
+    });
+
+    const localDbPath = path.resolve(qtAppPath, "..", "local.db");
+    const flagFilePath = path.resolve(qtAppPath, "..", "FlagFile");
+    const targetDBPath = path.resolve(qtDataDirectory, "./local.db");
+
+    await fs.promises.cp(localDbPath, targetDBPath);
+    await fs.promises.writeFile(flagFilePath, targetDBPath, {
+      encoding: "utf8",
+      flag: "w+",
+      mode: 0o666,
+    });
   }
 }

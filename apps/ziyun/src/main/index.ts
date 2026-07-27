@@ -35,7 +35,6 @@ import {
 import { container } from "./features";
 import * as cmdIPC from "./features/cmd/ipc";
 import * as dbIPC from "./features/db/ipc";
-import * as externalDBIPC from "./features/external-db/ipc";
 import * as guangzhoubeiIPC from "./features/guangzhoubei/ipc";
 import * as guangzhoucheliangIPC from "./features/guangzhoucheliang/ipc";
 import * as guangzhoujibaoduanIPC from "./features/guangzhoujibaoduan/ipc";
@@ -48,6 +47,7 @@ import * as logIPC from "./features/logger/ipc";
 import * as mdbIPC from "./features/mdb/ipc";
 import * as plcIPC from "./features/plc/ipc";
 import * as printerIPC from "./features/printer/ipc";
+import * as qtIPC from "./features/qt/ipc";
 import * as xmlIPC from "./features/xml/ipc";
 import * as infraIPC from "./infra/ipc";
 
@@ -90,11 +90,11 @@ const resource$ = using(
 
     const {
       cmd,
-      externalDB,
+      qt,
       guangzhoubei,
       guangzhoucheliang,
       guangzhoujibaoduan,
-      hmisProxy,
+
       hxzy,
       image,
       jtv,
@@ -113,13 +113,11 @@ const resource$ = using(
     const infraUnIPC = infraIPC.registerIPCHandlers();
 
     const cmdUnIPC = cmdIPC.registerIPCHandlers(cmd);
-    const externalDBUnIPC = externalDBIPC.registerIPCHandlers(externalDB);
     const dbUnIPC = dbIPC.registerIPCHandlers(db);
     const guangzhoubeiUnIPC = guangzhoubeiIPC.registerIPCHandlers(guangzhoubei);
     const guangzhoucheliangUnIPC = guangzhoucheliangIPC.ipc(guangzhoucheliang);
     const guangzhoujibaoduanUnIPC =
       guangzhoujibaoduanIPC.registerIPCHandlers(guangzhoujibaoduan);
-    void hmisProxy;
     const hxzyUnIPC = hxzyIPC.registerIPCHandlers(hxzy);
     const imageUnIPC = imageIPC.registerIPCHandlers(image);
     const jtvUnIPC = jtvIPC.registerIPCHandlers(jtv);
@@ -129,6 +127,7 @@ const resource$ = using(
     const mdbUnIPC = mdbIPC.registerIPCHandlers(mdb);
     const plcUnIPC = plcIPC.registerIPCHandlers(plc);
     const printerUnIPC = printerIPC.registerIPCHandlers(printer);
+    const qtUnIPC = qtIPC.registerIPCHandlers(qt);
     const xmlUnIPC = xmlIPC.registerIPCHandlers();
 
     appProtocol.handle();
@@ -144,7 +143,7 @@ const resource$ = using(
 
         cmdUnIPC();
         dbUnIPC();
-        externalDBUnIPC();
+        qtUnIPC();
         guangzhoubeiUnIPC();
         guangzhoucheliangUnIPC();
         guangzhoujibaoduanUnIPC();
@@ -203,14 +202,14 @@ defer(() => {
     catchError((error) => {
       console.error(error);
 
-      container.dispose().then(() => {
+      container.dispose().then(async () => {
         const BACKUP_DB_PATH = path.resolve(
           app.getPath("desktop"),
           `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
         );
 
-        fs.cpSync(APP_DB_PATH, BACKUP_DB_PATH, { recursive: true });
-        fs.rmSync(APP_DB_PATH, { recursive: true, force: true });
+        await fs.promises.cp(APP_DB_PATH, BACKUP_DB_PATH, { recursive: true });
+        await fs.promises.rm(APP_DB_PATH, { recursive: true, force: true });
       });
 
       return EMPTY;

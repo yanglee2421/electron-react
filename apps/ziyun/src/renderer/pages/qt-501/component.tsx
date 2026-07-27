@@ -1,4 +1,4 @@
-import { fetchExternalDB501 } from "#renderer/api/external-db";
+import { fetchExternalDB501 } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import {
   Cell,

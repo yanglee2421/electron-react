@@ -2,11 +2,9 @@ import { AppProtocol, AppTheme, AppTray, AppWindow } from "#main/infra";
 import { asClass, createContainer } from "awilix";
 import { Cmd } from "./cmd";
 import { DB } from "./db";
-import { ExternalDB } from "./external-db";
 import { Guangzhoubei } from "./guangzhoubei";
 import { Guangzhoucheliang } from "./guangzhoucheliang";
 import { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
-import { HmisProxy } from "./hmis-proxy";
 import { Hxzy } from "./hxzy/hxzy";
 import { ImageModule } from "./image";
 import { JTV } from "./jtv";
@@ -17,6 +15,7 @@ import { MDB } from "./mdb";
 import { PLC } from "./plc";
 import { Printer } from "./printer";
 import { Profile } from "./profile";
+import { QT } from "./qt";
 import type { AppCradle } from "./types";
 
 export const container = createContainer<AppCradle>();
@@ -26,9 +25,6 @@ container.register({
   db: asClass(DB)
     .singleton()
     .disposer((i) => i.dispose()),
-  externalDB: asClass(ExternalDB)
-    .singleton()
-    .disposer((i) => i.dispose()),
   guangzhoubei: asClass(Guangzhoubei)
     .singleton()
     .disposer((i) => i.dispose()),
@@ -36,9 +32,6 @@ container.register({
     .singleton()
     .disposer((i) => i.dispose()),
   guangzhoujibaoduan: asClass(JTV_HMIS_Guangzhoujibaoduan)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  hmisProxy: asClass(HmisProxy)
     .singleton()
     .disposer((i) => i.dispose()),
   hxzy: asClass(Hxzy)
@@ -69,6 +62,9 @@ container.register({
     .singleton()
     .disposer((i) => i.dispose()),
   profile: asClass(Profile)
+    .singleton()
+    .disposer((i) => i.dispose()),
+  qt: asClass(QT)
     .singleton()
     .disposer((i) => i.dispose()),
 
