@@ -9,7 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-const QUERY_KEY = "qt";
+export const QUERY_KEY = "qt";
 
 export const fetchExternalDBAnniversary = () => {
   return queryOptions({
@@ -48,16 +48,9 @@ export const fetchExternalDB501 = (id: string) => {
 };
 
 export const useSetupApp = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (p: SetupAppInput) => {
       return ipc.invoke("qt/setup-app", p);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [QUERY_KEY],
-      });
     },
   });
 };

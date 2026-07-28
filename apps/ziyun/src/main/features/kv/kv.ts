@@ -7,6 +7,7 @@ import type { KVEvent } from "./types";
 
 export class KV {
   readonly events$ = new Subject<KVEvent>();
+
   private db: DBClient;
 
   constructor({ db }: AppCradle) {

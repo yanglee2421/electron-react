@@ -6,10 +6,10 @@ import {
   BehaviorSubject,
   defaultIfEmpty,
   distinctUntilChanged,
-  EMPTY,
   fromEventPattern,
   last,
   NEVER,
+  of,
   shareReplay,
   startWith,
   switchMap,
@@ -29,7 +29,7 @@ export class AppTray {
         ),
         switchMap((state) => {
           if (!state.trayEnabled) {
-            return EMPTY;
+            return of(null);
           }
 
           return using(

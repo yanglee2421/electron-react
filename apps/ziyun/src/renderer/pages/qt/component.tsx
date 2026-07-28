@@ -2,6 +2,7 @@ import { useSelectDirectory, useSelectFile } from "#renderer/api/fetch_preload";
 import {
   fetchCurrentLocalDB,
   fetchYiqiConfig,
+  QUERY_KEY,
   useSetupApp,
   useSetYiqiFlag,
   useSetYiqiLib,
@@ -25,10 +26,11 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Stack,
   TextField,
 } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { toast } from "react-toastify";
 
@@ -40,6 +42,7 @@ export const Component = () => {
   const yiqiLib = useSetYiqiLib();
   const yiqiFlag = useSetYiqiFlag();
   const selectFile = useSelectFile();
+  const queryClient = useQueryClient();
   const selectDirectory = useSelectDirectory();
   const yiqiConfig = useQuery(fetchYiqiConfig());
   const currentLocal = useQuery(fetchCurrentLocalDB());
@@ -65,6 +68,8 @@ export const Component = () => {
       useProfileStore.setState((d) => {
         d.qtAppPath = value.qtAppPath;
       });
+
+      await queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
   });
 
@@ -115,7 +120,10 @@ export const Component = () => {
                 disableRipple
               />
             </ListItemIcon>
-            <ListItemText primary={row.yqName} secondary={row.dllPath} />
+            <ListItemText
+              primary={[row.factoryName || "", row.yqName || ""].join(" - ")}
+              secondary={row.dllPath}
+            />
           </ListItemButton>
         </ListItem>
       );
@@ -123,7 +131,7 @@ export const Component = () => {
   };
 
   return (
-    <>
+    <Stack spacing={3}>
       <Card>
         <CardHeader title="配置QT软件" />
         <CardContent>
@@ -283,6 +291,6 @@ export const Component = () => {
         </CardContent>
         <CardActions></CardActions>
       </Card>
-    </>
+    </Stack>
   );
 };

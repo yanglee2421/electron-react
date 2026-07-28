@@ -10,6 +10,7 @@ import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { Piscina } from "piscina";
+import type { Observable, Subscription } from "rxjs";
 import {
   BehaviorSubject,
   catchError,
@@ -18,12 +19,12 @@ import {
   EMPTY,
   last,
   NEVER,
+  of,
   shareReplay,
   startWith,
   switchMap,
   takeUntil,
   using,
-  type Subscription,
 } from "rxjs";
 import workerPath from "../../workers/bmp?modulePath";
 import type { Profile } from "../profile";
@@ -32,7 +33,11 @@ import type { SetupAppInput, SetYiqiConfigLibInput } from "./types";
 
 export class QT {
   readonly client$ = new BehaviorSubject<DBClient | null>(null);
-  private subscriptions: Subscription[];
+  private db$: Observable<DBClient | null>;
+  private hmis$: Observable<null>;
+  private dbSubscription: Subscription;
+  private hmisSubscription: Subscription;
+
   private profile: Profile;
   private piscina: Piscina;
 
@@ -44,85 +49,81 @@ export class QT {
       maxThreads: os.cpus().length,
     });
 
-    const sub1 = profile.state$
-      .pipe(
-        distinctUntilChanged(
-          (p, c) =>
-            p.qtHMISEnabled === c.qtHMISEnabled &&
-            p.qtHMISPort === c.qtHMISPort,
-        ),
-        switchMap((state) => {
-          if (!state.qtHMISEnabled) {
-            return EMPTY;
-          }
+    this.db$ = this.profile.state$.pipe(
+      distinctUntilChanged((p, c) => p.qtAppPath === c.qtAppPath),
+      switchMap((s) => {
+        if (!s.qtAppPath) {
+          return of(null);
+        }
 
-          return using(
-            () => {
-              const server = createServer(state.qtHMISPort);
+        return using(
+          () => {
+            const flagFile = path.resolve(s.qtAppPath, "../FlagFile");
+            const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
+            const dbPath = path.resolve(dataDirectory, "./local.db");
+            const client = new DatabaseSync(dbPath);
+            const db = drizzle({ client, schema, relations });
 
-              return {
-                unsubscribe: () => {
-                  server.close();
-                },
-              };
-            },
-            () =>
-              NEVER.pipe(
-                startWith(null),
-                takeUntil(profile.state$.pipe(last(), defaultIfEmpty(null))),
-              ),
-          );
-        }),
-        shareReplay({ refCount: true, bufferSize: 1 }),
-      )
-      .subscribe();
+            return {
+              unsubscribe: () => {
+                db.$client.close();
+              },
+              db,
+            };
+          },
+          (c) => {
+            const db: DBClient = Reflect.get(Object(c), "db");
 
-    const sub2 = profile.state$
-      .pipe(
-        distinctUntilChanged((p, c) => p.qtAppPath === c.qtAppPath),
-        switchMap((s) => {
-          if (!s.qtAppPath) {
-            return EMPTY;
-          }
+            return NEVER.pipe(
+              startWith(db),
+              takeUntil(this.profile.state$.pipe(last(), defaultIfEmpty(null))),
+            );
+          },
+        );
+      }),
+      catchError(() => EMPTY),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
 
-          const flagFile = path.resolve(s.qtAppPath, "../FlagFile");
-          const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
-          const dbPath = path.resolve(dataDirectory, "./local.db");
+    this.hmis$ = this.profile.state$.pipe(
+      distinctUntilChanged(
+        (p, c) =>
+          p.qtHMISEnabled === c.qtHMISEnabled && p.qtHMISPort === c.qtHMISPort,
+      ),
+      switchMap((state) => {
+        if (!state.qtHMISEnabled) {
+          return of(null);
+        }
 
-          return using(
-            () => {
-              const client = new DatabaseSync(dbPath);
-              const db = drizzle({ client, schema, relations });
+        return using(
+          () => {
+            const server = createServer(state.qtHMISPort);
 
-              return {
-                unsubscribe: () => {
-                  db.$client.close();
-                },
-                db,
-              };
-            },
-            (c) => {
-              const db: DBClient = Reflect.get(Object(c), "db");
+            return {
+              unsubscribe: () => {
+                server.close();
+              },
+            };
+          },
+          () =>
+            NEVER.pipe(
+              startWith(null),
+              takeUntil(this.profile.state$.pipe(last(), defaultIfEmpty(null))),
+            ),
+        );
+      }),
+      shareReplay({ refCount: true, bufferSize: 1 }),
+    );
 
-              return NEVER.pipe(
-                startWith(db),
-                takeUntil(profile.state$.pipe(last(), defaultIfEmpty(null))),
-              );
-            },
-          );
-        }),
-        catchError(() => EMPTY),
-        shareReplay({ bufferSize: 1, refCount: true }),
-      )
-      .subscribe(this.client$);
-
-    this.subscriptions = [sub1, sub2];
+    this.dbSubscription = this.db$.subscribe(this.client$);
+    this.hmisSubscription = this.hmis$.subscribe();
   }
 
   async dispose() {
     this.client$.complete();
     this.piscina.destroy();
-    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.dbSubscription.unsubscribe();
+    this.hmisSubscription.unsubscribe();
 
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
@@ -296,6 +297,8 @@ export class QT {
   async setupApp(params: SetupAppInput) {
     const { qtAppPath, qtDataDirectory } = params;
 
+    this.dbSubscription.unsubscribe();
+
     await fs.promises.mkdir(qtDataDirectory, {
       recursive: true,
       mode: 0o666,
@@ -311,14 +314,15 @@ export class QT {
       flag: "w+",
       mode: 0o666,
     });
+
+    this.dbSubscription = this.db$.subscribe(this.client$);
   }
 
   async getCurrentLocalDB() {
     const qtAppPath = this.profile.state.qtAppPath;
     const flagFilePath = path.resolve(qtAppPath, "..", "FlagFile");
-    const localDBPath = (
-      await fs.promises.readFile(flagFilePath, "utf8")
-    ).trim();
+    const flagFileContent = await fs.promises.readFile(flagFilePath, "utf8");
+    const localDBPath = flagFileContent.trim();
 
     return localDBPath;
   }

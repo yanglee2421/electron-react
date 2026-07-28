@@ -159,10 +159,11 @@ const emit = createEmit("api_set");
 
 export class JTV {
   readonly state$: BehaviorSubject<JTV_HMIS>;
-  private db: DBClient;
-  private mdb: MDB;
-  private logger: Logger;
   private subscriptions: Subscription[];
+
+  private db: DBClient;
+  private logger: Logger;
+  private mdb: MDB;
 
   constructor({ db, mdb, logger, kv }: AppCradle) {
     this.db = db.client;

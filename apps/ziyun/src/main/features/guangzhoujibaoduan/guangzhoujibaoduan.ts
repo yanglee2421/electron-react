@@ -112,10 +112,11 @@ const emit = createEmit("api_set");
 
 export class JTV_HMIS_Guangzhoujibaoduan {
   readonly state$: BehaviorSubject<Guangzhoujibaoduan>;
-  private db: DBClient;
-  private mdb: MDB;
-  private logger: Logger;
   private subscriptions: Subscription[];
+
+  private db: DBClient;
+  private logger: Logger;
+  private mdb: MDB;
 
   constructor({ db, mdb, logger, kv }: AppCradle) {
     this.db = db.client;

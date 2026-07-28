@@ -16,8 +16,9 @@ interface LoggerOptions {
 
 export class Logger {
   readonly event$ = new Subject<void>();
-  private db: DBClient;
   private subscription: Subscription;
+
+  private db: DBClient;
 
   constructor({ db }: AppCradle) {
     this.db = db.client;

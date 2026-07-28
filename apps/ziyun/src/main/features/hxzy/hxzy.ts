@@ -136,10 +136,11 @@ const calcDetectorMap = (
 
 export class Hxzy {
   readonly state$: BehaviorSubject<HXZY_HMIS>;
-  private db: DBClient;
-  private mdb: MDB;
-  private logger: Logger;
   private subscriptions: Subscription[];
+
+  private db: DBClient;
+  private logger: Logger;
+  private mdb: MDB;
 
   constructor({ db, mdb, logger, kv }: AppCradle) {
     this.db = db.client;

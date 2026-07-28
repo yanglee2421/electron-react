@@ -4,9 +4,9 @@ import {
   BehaviorSubject,
   defaultIfEmpty,
   distinctUntilChanged,
-  EMPTY,
   last,
   NEVER,
+  of,
   shareReplay,
   startWith,
   switchMap,
@@ -50,6 +50,7 @@ export class PLC {
   private path$: BehaviorSubject<string>;
   private plc$: Observable<FXPLCClient | null>;
   private subscription: Subscription;
+
   private plc: FXPLCClient | null;
 
   constructor() {
@@ -58,7 +59,7 @@ export class PLC {
       distinctUntilChanged(),
       switchMap((path) => {
         if (!path) {
-          return EMPTY;
+          return of(null);
         }
 
         return using(
@@ -100,8 +101,8 @@ export class PLC {
   }
 
   dispose() {
-    this.subscription.unsubscribe();
     this.path$.complete();
+    this.subscription.unsubscribe();
   }
 
   getPLC(path: string) {

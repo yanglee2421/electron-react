@@ -1,8 +1,18 @@
 import { PROFILE_STORAGE_KEY } from "#shared/instances/constants";
 import type { Profile as AppProfile } from "#shared/instances/schema";
 import { profile } from "#shared/instances/schema";
+import { BrowserWindow } from "electron";
 import type { Subscription } from "rxjs";
-import { BehaviorSubject, filter, map } from "rxjs";
+import {
+  BehaviorSubject,
+  distinctUntilChanged,
+  EMPTY,
+  filter,
+  interval,
+  map,
+  switchMap,
+  tap,
+} from "rxjs";
 import type { AppCradle } from "../types";
 
 export class Profile {
@@ -30,7 +40,25 @@ export class Profile {
       )
       .subscribe(this.state$);
 
-    this.subscriptions = [sub];
+    const sub2 = this.state$
+      .pipe(
+        distinctUntilChanged((p, c) => p.alwaysOnTop === c.alwaysOnTop),
+        switchMap((s) => {
+          if (!s.alwaysOnTop) {
+            return EMPTY;
+          }
+
+          return interval(1000 * 5);
+        }),
+        tap(() => {
+          BrowserWindow.getAllWindows().forEach((win) => {
+            win.focus();
+          });
+        }),
+      )
+      .subscribe();
+
+    this.subscriptions = [sub, sub2];
   }
 
   dispose() {
