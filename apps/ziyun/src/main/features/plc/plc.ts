@@ -2,7 +2,6 @@ import { FXPLCClient, TransportSerial } from "node-fxplc";
 import type { Observable, Subscription } from "rxjs";
 import {
   BehaviorSubject,
-  defaultIfEmpty,
   distinctUntilChanged,
   last,
   NEVER,
@@ -78,7 +77,7 @@ export class PLC {
 
             return NEVER.pipe(
               startWith(plc),
-              takeUntil(this.path$.pipe(last(), defaultIfEmpty(null))),
+              takeUntil(this.path$.pipe(last())),
             );
           },
         );

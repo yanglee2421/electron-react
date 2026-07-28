@@ -158,7 +158,9 @@ const app$ = defer(() => {
   return concat(whenReady$.pipe(ignoreElements()), resource$).pipe(
     tap(() => createWindow()),
     catchError((error) => {
-      console.error(error);
+      if (import.meta.env.DEV) {
+        console.error(error);
+      }
 
       return EMPTY;
     }),

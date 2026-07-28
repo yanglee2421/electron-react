@@ -4,7 +4,6 @@ import { app, Menu, nativeImage, Tray } from "electron";
 import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
-  defaultIfEmpty,
   distinctUntilChanged,
   fromEventPattern,
   last,
@@ -81,12 +80,12 @@ export class AppTray {
 
               return NEVER.pipe(
                 startWith(tray),
-                takeUntil(profile.state$.pipe(last(), defaultIfEmpty(null))),
+                takeUntil(profile.state$.pipe(last())),
               );
             },
           );
         }),
-        shareReplay({ refCount: true, bufferSize: 1 }),
+        shareReplay({ bufferSize: 1, refCount: true }),
       )
       .subscribe(this.tray$);
   }

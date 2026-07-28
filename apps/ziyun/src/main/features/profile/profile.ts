@@ -5,13 +5,13 @@ import { BrowserWindow, globalShortcut } from "electron";
 import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
-  defaultIfEmpty,
   distinctUntilChanged,
   EMPTY,
   filter,
   last,
   map,
   NEVER,
+  shareReplay,
   startWith,
   switchMap,
   takeUntil,
@@ -44,7 +44,7 @@ export class Profile {
       )
       .subscribe(this.state$);
 
-    const sub3 = this.state$
+    const sub2 = this.state$
       .pipe(
         distinctUntilChanged((p, c) => p.alwaysOnTop === c.alwaysOnTop),
         switchMap((s) => {
@@ -77,15 +77,16 @@ export class Profile {
             () => {
               return NEVER.pipe(
                 startWith(null),
-                takeUntil(this.state$.pipe(last(), defaultIfEmpty(null))),
+                takeUntil(this.state$.pipe(last())),
               );
             },
           );
         }),
+        shareReplay({ bufferSize: 1, refCount: true }),
       )
       .subscribe();
 
-    this.subscriptions = [sub, sub3];
+    this.subscriptions = [sub, sub2];
   }
 
   dispose() {

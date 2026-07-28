@@ -200,7 +200,9 @@ defer(() => {
       appWindow.show(openURL);
     }),
     catchError((error) => {
-      console.error(error);
+      if (import.meta.env.DEV) {
+        console.error(error);
+      }
 
       container.dispose().then(async () => {
         const BACKUP_DB_PATH = path.resolve(

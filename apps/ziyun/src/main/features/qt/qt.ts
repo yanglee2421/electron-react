@@ -14,7 +14,6 @@ import type { Observable, Subscription } from "rxjs";
 import {
   BehaviorSubject,
   catchError,
-  defaultIfEmpty,
   distinctUntilChanged,
   EMPTY,
   last,
@@ -76,13 +75,19 @@ export class QT {
 
             return NEVER.pipe(
               startWith(db),
-              takeUntil(this.profile.state$.pipe(last(), defaultIfEmpty(null))),
+              takeUntil(this.profile.state$.pipe(last())),
             );
           },
         );
       }),
-      catchError(() => EMPTY),
       shareReplay({ bufferSize: 1, refCount: true }),
+      catchError((error) => {
+        if (import.meta.env.DEV) {
+          console.error(error);
+        }
+
+        return EMPTY;
+      }),
     );
 
     this.hmis$ = this.profile.state$.pipe(
@@ -108,7 +113,7 @@ export class QT {
           () =>
             NEVER.pipe(
               startWith(null),
-              takeUntil(this.profile.state$.pipe(last(), defaultIfEmpty(null))),
+              takeUntil(this.profile.state$.pipe(last())),
             ),
         );
       }),
