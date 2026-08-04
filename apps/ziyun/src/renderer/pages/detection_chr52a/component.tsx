@@ -177,7 +177,7 @@ export const Component = () => {
                       {"故障位置及性质".split("").join("\n")}
                     </Cell>
                   </Col>
-                  <Col>
+                  <Col width={96}>
                     <Cell>探头编号</Cell>
                     <Cell center={false} pl>
                       左穿透: {renderFlawCount(0, 0)}
@@ -259,41 +259,21 @@ export const Component = () => {
                       </Col>
                     </MemoInfoContext>
                   </FlawGroupContext>
-                  <Col>
+                  <Col width={64}>
                     <Cell>缺陷类型</Cell>
-                    <Cell center={false} pl>
-                      {calcFlawType(memoInfo.get("0-0"))}
-                    </Cell>
-                    <Cell center={false} pl>
-                      {calcFlawType(memoInfo.get("0-1"))}
-                    </Cell>
-                    <Cell center={false} pl>
-                      {calcFlawType(memoInfo.get("0-2"))}
-                    </Cell>
-                    <Cell center={false} pl>
-                      {calcFlawType(memoInfo.get("0-3"))}
-                    </Cell>
-                    <Cell center={false} pl>
-                      {calcFlawType(memoInfo.get("0-4"))}
-                    </Cell>
+                    <Cell>{calcFlawType(memoInfo.get("0-0"))}</Cell>
+                    <Cell>{calcFlawType(memoInfo.get("0-1"))}</Cell>
+                    <Cell>{calcFlawType(memoInfo.get("0-2"))}</Cell>
+                    <Cell>{calcFlawType(memoInfo.get("0-3"))}</Cell>
+                    <Cell>{calcFlawType(memoInfo.get("0-4"))}</Cell>
                     {of(4).map((_) => {
                       return <Cell key={_}></Cell>;
                     })}
-                    <Cell center={false} pl>
-                      {calcFlawType(memoInfo.get("1-0"))}
-                    </Cell>
-                    <Cell center={false} pl>
-                      {calcFlawType(memoInfo.get("1-1"))}
-                    </Cell>
-                    <Cell center={false} pl>
-                      {calcFlawType(memoInfo.get("1-2"))}
-                    </Cell>
-                    <Cell center={false} pl>
-                      {calcFlawType(memoInfo.get("1-3"))}
-                    </Cell>
-                    <Cell center={false} pl>
-                      {calcFlawType(memoInfo.get("1-4"))}
-                    </Cell>
+                    <Cell>{calcFlawType(memoInfo.get("1-0"))}</Cell>
+                    <Cell>{calcFlawType(memoInfo.get("1-1"))}</Cell>
+                    <Cell>{calcFlawType(memoInfo.get("1-2"))}</Cell>
+                    <Cell>{calcFlawType(memoInfo.get("1-3"))}</Cell>
+                    <Cell>{calcFlawType(memoInfo.get("1-4"))}</Cell>
                     {of(4).map((_) => {
                       return <Cell key={_}></Cell>;
                     })}
@@ -305,7 +285,7 @@ export const Component = () => {
                     <Cell height={40}>探伤工</Cell>
                   </Col>
                   <Col>
-                    <Cell height={100} center={false} pl>
+                    <Cell height={100} center={false} pl pr>
                       <NoteCell record={record} datas={datas} />
                     </Cell>
                     <CellHeightContext value={40}>
@@ -348,7 +328,9 @@ export const Component = () => {
               <View style={[styles.paddingB4]}>
                 <Row>
                   <Col>
-                    <Text style={[styles.font12]}>单位名称: 襄阳车辆段</Text>
+                    <Text style={[styles.font12]}>
+                      单位名称: {corporation.Factory}
+                    </Text>
                   </Col>
                   <Col>
                     <Text style={[styles.font12]}>

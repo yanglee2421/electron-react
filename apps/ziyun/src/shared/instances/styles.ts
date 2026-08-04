@@ -142,6 +142,18 @@ export const styles = StyleSheet.create({
   paddingL8: {
     paddingLeft: 8,
   },
+  paddingR6: {
+    paddingRight: 8,
+  },
+  paddingR2: {
+    paddingRight: 2,
+  },
+  paddingR4: {
+    paddingRight: 4,
+  },
+  paddingR8: {
+    paddingRight: 8,
+  },
 
   border: {
     borderWidth: 1,

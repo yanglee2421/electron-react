@@ -39,6 +39,7 @@ interface CellProps {
   text?: boolean;
   center?: boolean;
   pl?: boolean;
+  pr?: boolean;
 }
 
 export const Cell = (props: CellProps) => {
@@ -54,6 +55,7 @@ export const Cell = (props: CellProps) => {
     text = true,
     center = true,
     pl,
+    pr,
   } = props;
 
   const cellHeight = React.use(CellHeightContext);
@@ -64,6 +66,7 @@ export const Cell = (props: CellProps) => {
       style={cn(
         styles.justifyCenter,
         pl && styles.paddingL6,
+        pr && styles.paddingR8,
         center ? styles.itemsCenter : styles.itemsStart,
         tr && styles.borderTR,
         bl && styles.borderBL,

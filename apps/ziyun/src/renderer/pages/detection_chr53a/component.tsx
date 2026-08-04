@@ -102,7 +102,7 @@ export const Component = () => {
                       <Row>
                         <Col width={144}>
                           <Text style={[styles.textLeft]}>
-                            单位名称:{corporation.Factory}
+                            单位:{corporation.Factory}
                           </Text>
                         </Col>
                         <Col>

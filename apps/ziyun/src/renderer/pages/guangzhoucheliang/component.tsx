@@ -498,8 +498,8 @@ export const Component = () => {
         czzzrq: dataItem.CZZZRQ,
         sczzrq: dataItem.SCZZRQ,
         mczzrq: dataItem.MCZZRQ,
-        ztx: dataItem.ZTX ? "0" : "1",
-        ytx: dataItem.YTX ? "0" : "1",
+        ztx: "0",
+        ytx: "0",
       },
       {
         onError: (error) => {
