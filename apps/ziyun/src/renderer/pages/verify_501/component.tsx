@@ -10,6 +10,7 @@ import {
   ReportTitle,
   Row,
 } from "#renderer/components/pdf";
+import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import { of } from "#shared/functions/array";
 import { resolveCHR501 } from "#shared/functions/chr501";
 import { CellHeightContext, styles } from "#shared/instances/styles";
@@ -258,6 +259,8 @@ const SignatureTable = (props: SignatureTableProps) => {
   const { tsg } = props;
   const BASIC_ROW_HEIGHT = React.use(CellHeightContext);
 
+  const showUserInCHR501 = useProfileStore((state) => state.showUserInCHR501);
+
   return (
     <>
       <Row>
@@ -274,7 +277,7 @@ const SignatureTable = (props: SignatureTableProps) => {
               <Cell font12>质检员</Cell>
             </Col>
             <Col>
-              <Cell font12>{tsg}</Cell>
+              <Cell font12>{showUserInCHR501 ? tsg : null}</Cell>
               <Cell font12></Cell>
             </Col>
             <Col>

@@ -11,13 +11,17 @@ export const themeMode = z.enum(["system", "light", "dark"]).default("system");
 export type ThemeMode = z.infer<typeof themeMode>;
 
 export const profile = z.object({
-  appPath: z.string().default(""),
-  encoding: z.string().default("gbk"),
+  // Basic settings
   alwaysOnTop: z.boolean().default(false),
   mode: themeMode,
   trayEnabled: z.boolean().default(false),
 
-  // For sidebar
+  // For 12 channel apps
+  appPath: z.string().default(""),
+  encoding: z.string().default("gbk"),
+  showUserInCHR501: z.boolean().default(false),
+
+  // For navigation sidebar
   showHxzyHmisMenu: z.boolean().default(false),
   showJtvHmisMenu: z.boolean().default(false),
   showGuangzhoubeiHmisMenu: z.boolean().default(false),
@@ -30,6 +34,7 @@ export const profile = z.object({
   qtAppPath: z.string().default(""),
   qtHMISEnabled: z.boolean().default(false),
   qtHMISPort: portSchema.default(5003),
+  showUserInQtCHR501: z.boolean().default(false),
 });
 
 export type Profile = z.infer<typeof profile>;

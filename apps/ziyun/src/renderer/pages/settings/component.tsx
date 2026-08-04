@@ -61,6 +61,10 @@ const useProfileForm = () => {
   const qtAppPath = useProfileStore((state) => state.qtAppPath);
   const qtHMISEnabled = useProfileStore((state) => state.qtHMISEnabled);
   const qtHMISPort = useProfileStore((state) => state.qtHMISPort);
+  const showUserInCHR501 = useProfileStore((state) => state.showUserInCHR501);
+  const showUserInQtCHR501 = useProfileStore(
+    (state) => state.showUserInQtCHR501,
+  );
 
   const form = useAppForm({
     defaultValues: {
@@ -70,16 +74,19 @@ const useProfileForm = () => {
       qtAppPath,
       qtHMISEnabled,
       qtHMISPort,
+      showUserInCHR501,
+      showUserInQtCHR501,
     },
     onSubmit: async ({ value }) => {
-      useProfileStore.setState({
-        appPath: value.appPath,
-        encoding: value.encoding,
-        trayEnabled: value.trayEnabled,
-
-        qtAppPath: value.qtAppPath,
-        qtHMISEnabled: value.qtHMISEnabled,
-        qtHMISPort: value.qtHMISPort,
+      useProfileStore.setState((d) => {
+        d.appPath = value.appPath;
+        d.encoding = value.encoding;
+        d.trayEnabled = value.trayEnabled;
+        d.qtAppPath = value.qtAppPath;
+        d.qtHMISEnabled = value.qtHMISEnabled;
+        d.qtHMISPort = value.qtHMISPort;
+        d.showUserInCHR501 = value.showUserInCHR501;
+        d.showUserInQtCHR501 = value.showUserInQtCHR501;
       });
       toast.success("保存成功");
     },
@@ -231,6 +238,25 @@ export const Component = () => {
                 </profileForm.AppField>
               </Grid>
               <Grid size={12}>
+                <profileForm.Field name="showUserInCHR501">
+                  {(field) => {
+                    return (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.state.value}
+                            onChange={(e) =>
+                              field.handleChange(e.target.checked)
+                            }
+                          />
+                        }
+                        label="是否在CHR501中打印操作者"
+                      />
+                    );
+                  }}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={12}>
                 <FormLabel>QT软件相关</FormLabel>
               </Grid>
               <Grid size={{ xs: 12 }}>
@@ -319,7 +345,7 @@ export const Component = () => {
                   }}
                 </profileForm.Field>
               </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={12}>
                 <profileForm.Field name="qtHMISPort">
                   {(field) => {
                     return (
@@ -337,6 +363,25 @@ export const Component = () => {
                             : "HMIS代理使用的端口号"
                         }
                         label="HMIS代理服务端口"
+                      />
+                    );
+                  }}
+                </profileForm.Field>
+              </Grid>
+              <Grid size={12}>
+                <profileForm.Field name="showUserInQtCHR501">
+                  {(field) => {
+                    return (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.state.value}
+                            onChange={(e) =>
+                              field.handleChange(e.target.checked)
+                            }
+                          />
+                        }
+                        label="是否在CHR501中打印操作者"
                       />
                     );
                   }}
