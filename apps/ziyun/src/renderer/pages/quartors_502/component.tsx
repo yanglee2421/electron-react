@@ -1,12 +1,12 @@
 import { fetchCHR502Data } from "#renderer/api/printer";
 import { Loading } from "#renderer/components/Loading";
 import {
-  Cell,
-  Col,
-  PageFooter,
-  PageHeader,
-  ReportTitle,
-  Row,
+    Cell,
+    Col,
+    PageFooter,
+    PageHeader,
+    ReportTitle,
+    Row,
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
 import { resolveCHR502 } from "#shared/functions/chr502";
@@ -176,7 +176,7 @@ const ReportDoc = (props: ReportDocProps) => {
                     <Col width={FIRST_COL_WIDTH}>
                       <Cell height={CELL_HEIGHT * 2}>{"轴颈\n根部"}</Cell>
                       <Cell height={CELL_HEIGHT * 12}>
-                        {"轮座镶入部轮座镶入部".split("").join("\n")}
+                        {"轮座镶入部".split("").join("\n")}
                       </Cell>
                       <Cell>全轴穿透</Cell>
                     </Col>
