@@ -479,16 +479,19 @@ export class JTV {
       )
       .limit(1);
 
-    const rows = await this.db._query.jtvBarcodeTable.findMany({
-      where: sql.between(
-        schema.jtvBarcodeTable.date,
-        new Date(params.startDate),
-        new Date(params.endDate),
-      ),
-      offset: params.pageIndex * params.pageSize,
-      limit: params.pageSize,
-      orderBy: sql.desc(schema.jtvBarcodeTable.date),
-    });
+    const rows = await this.db
+      .select()
+      .from(schema.jtvBarcodeTable)
+      .where(
+        sql.between(
+          schema.jtvBarcodeTable.date,
+          new Date(params.startDate),
+          new Date(params.endDate),
+        ),
+      )
+      .orderBy(sql.desc(schema.jtvBarcodeTable.date))
+      .offset(params.pageIndex * params.pageSize)
+      .limit(params.pageSize);
 
     return { rows, count };
   }

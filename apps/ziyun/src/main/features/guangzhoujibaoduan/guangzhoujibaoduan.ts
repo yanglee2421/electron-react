@@ -403,9 +403,9 @@ export class JTV_HMIS_Guangzhoujibaoduan {
           new Date(params.endDate),
         ),
       )
+      .orderBy(sql.desc(schema.guangzhoujibaoduanBarcodeTable.date))
       .offset(params.pageIndex * params.pageSize)
-      .limit(params.pageSize)
-      .orderBy();
+      .limit(params.pageSize);
 
     const [{ count }] = await this.db
       .select({ count: sql.count() })

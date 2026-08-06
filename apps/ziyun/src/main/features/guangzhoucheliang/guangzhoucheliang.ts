@@ -316,9 +316,9 @@ export class Guangzhoucheliang {
           new Date(params.endDate),
         ),
       )
+      .orderBy(sql.desc(schema.guangzhoucheliangBarcodeTable.date))
       .offset(params.pageIndex * params.pageSize)
-      .limit(params.pageSize)
-      .orderBy();
+      .limit(params.pageSize);
 
     const [{ count }] = await this.db
       .select({ count: sql.count() })

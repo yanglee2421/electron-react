@@ -486,9 +486,9 @@ export class Guangzhoubei {
           new Date(params.endDate),
         ),
       )
+      .orderBy(sql.desc(schema.guangzhoubeiBarcodeTable.date))
       .offset(params.pageIndex * params.pageSize)
-      .limit(params.pageSize)
-      .orderBy(sql.desc(schema.guangzhoubeiBarcodeTable.date));
+      .limit(params.pageSize);
 
     return { rows, count };
   }
