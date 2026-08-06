@@ -1,13 +1,13 @@
 import { fetchCHR53AData } from "#renderer/api/printer";
 import { Loading } from "#renderer/components/Loading";
 import {
-    Cell,
-    CheckOK,
-    Col,
-    PageFooter,
-    PageHeader,
-    ReportTitle,
-    Row,
+  Cell,
+  CheckOK,
+  Col,
+  PageFooter,
+  PageHeader,
+  ReportTitle,
+  Row,
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
 import { CellHeightContext, styles } from "#shared/instances/styles";
@@ -125,8 +125,14 @@ export const Component = () => {
                       <Row>
                         <Col width={24}>
                           <Cell height={CELL_HEIGHT * 3}>{"序\n号"}</Cell>
-                          {rows.map((row, ) => {
-                            return <Cell key={row.szIDs}>{records.indexOf(row) + 1}</Cell>;
+                          {rows.map((row) => {
+                            return (
+                              <Cell key={row.szIDs}>
+                                {records.findIndex((r) =>
+                                  Object.is(r.szIDs, row.szIDs),
+                                ) + 1}
+                              </Cell>
+                            );
                           })}
                           {ofRest.map((_) => (
                             <Cell key={_}></Cell>

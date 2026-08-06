@@ -142,11 +142,13 @@ const LZInfoTable = (props: LZInfoTableProps) => {
           <Cell>{props.ts4}</Cell>
         </Col>
         <Col>
-          <Cell>{direction}A3</Cell>
-          <Cell>{props.zsj2}</Cell>
-          <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy2}</Cell>
-          <Cell>{props.bc2}</Cell>
-          <Cell>{props.ts2}</Cell>
+          <Cell>{props.jy2 ? direction + "A3" : null}</Cell>
+          <Cell>{props.jy2 ? props.zsj2 : null}</Cell>
+          <Cell height={BASIC_ROW_HEIGHT * 1.5}>
+            {props.jy2 ? props.jy2 : null}
+          </Cell>
+          <Cell>{props.jy2 ? props.bc2 : null}</Cell>
+          <Cell>{props.jy2 ? props.ts2 : null}</Cell>
         </Col>
       </Row>
     </>

@@ -141,11 +141,13 @@ const LZInfoTable = (props: LZInfoTableProps) => {
           <Cell>{props.ts4}</Cell>
         </Col>
         <Col>
-          <Cell>{direction}A3</Cell>
-          <Cell>{props.zsj2}</Cell>
-          <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy2}</Cell>
-          <Cell>{props.bc2}</Cell>
-          <Cell>{props.ts2}</Cell>
+          <Cell>{props.jy2 ? direction + "A3" : null}</Cell>
+          <Cell>{props.jy2 ? props.zsj2 : null}</Cell>
+          <Cell height={BASIC_ROW_HEIGHT * 1.5}>
+            {props.jy2 ? props.jy2 : null}
+          </Cell>
+          <Cell>{props.jy2 ? props.bc2 : null}</Cell>
+          <Cell>{props.jy2 ? props.ts2 : null}</Cell>
         </Col>
       </Row>
     </>
@@ -471,11 +473,7 @@ export const Component = () => {
                 <LZInfoTable
                   board={board}
                   jy2={detectorInfo.get(`${board}-2`)?.jy}
-                  bc2={
-                    detectorInfo.get(`${board}-2`)?.jy
-                      ? detectorInfo.get(`${board}-2`)?.bc
-                      : ""
-                  }
+                  bc2={detectorInfo.get(`${board}-2`)?.bc}
                   ts2={detectorInfo.get(`${board}-2`)?.ts}
                   zsj2={detectorInfo.get(`${board}-2`)?.zsj}
                   jy3={detectorInfo.get(`${board}-3`)?.jy}
