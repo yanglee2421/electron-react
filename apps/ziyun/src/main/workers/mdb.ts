@@ -96,26 +96,6 @@ const resolveQueryBuilder = async (
         }),
       );
     })
-    .toSorted((a, b) => {
-      const orderBy = options.orderBy;
-
-      if (!orderBy) {
-        return 0;
-      }
-
-      const orderByDirection = options.orderByDirection || "asc";
-      const aValue = Reflect.get(a, orderBy);
-      const bValue = Reflect.get(b, orderBy);
-
-      switch (orderByDirection) {
-        case "asc":
-          return valueToNumber(aValue) - valueToNumber(bValue);
-        case "desc":
-          return valueToNumber(bValue) - valueToNumber(aValue);
-        default:
-          return 0;
-      }
-    })
     .filter((row) => {
       const isLikeMatch = likes.every((filter) => {
         const fieldValue = Reflect.get(row, String(filter.key));
@@ -162,7 +142,28 @@ const resolveQueryBuilder = async (
         isLtMatch &&
         isGtMatch
       );
+    })
+    .toSorted((a, b) => {
+      const orderBy = options.orderBy;
+
+      if (!orderBy) {
+        return 0;
+      }
+
+      const orderByDirection = options.orderByDirection || "asc";
+      const aValue = Reflect.get(a, orderBy);
+      const bValue = Reflect.get(b, orderBy);
+
+      switch (orderByDirection) {
+        case "asc":
+          return valueToNumber(aValue) - valueToNumber(bValue);
+        case "desc":
+          return valueToNumber(bValue) - valueToNumber(aValue);
+        default:
+          return 0;
+      }
     });
+
   const filteredCount = filteredRows.length;
   const pagedData = filteredRows.slice(offset, offset + limit);
 
