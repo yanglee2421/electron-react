@@ -24,19 +24,6 @@ export const userManager = sqliteTable("UserManager", {
   regTime: text("RegTime"),
 });
 
-export const sysConfig = sqliteTable(
-  "SysConfig",
-  {
-    recId: integer("RecID").primaryKey({ autoIncrement: true }),
-    typeName: text("TypeName"),
-    configKey: text("ConfigKey"),
-    configValue: text("ConfigValue"),
-    defaultValue: text("DefaultValue"),
-    remark: text("Remark"),
-  },
-  (table) => [unique("SysConfig_ConfigKey_unique").on(table.configKey)],
-);
-
 export const yqConfig = sqliteTable("YQConfig", {
   recId: integer("RecID").primaryKey({ autoIncrement: true }),
   factoryName: text("FactoryName"),
@@ -244,38 +231,6 @@ export const alxInfo = sqliteTable("AlxInfo", {
   isdefault: customType({ dataType: () => "BOOL" })("ISDEFAULT"),
 });
 
-export const detectors = sqliteTable(
-  "detectors",
-  {
-    recId: integer("RecID").primaryKey({ autoIncrement: true }),
-    szIds: text(),
-    szWhModel: text(),
-    szUsername: text(),
-    szDh: text(),
-    szZh: text(),
-    szSrdw: text(),
-    szSryy: text(),
-    szTmMake: text(),
-    szIdsMake: text(),
-    szTmFirst: text(),
-    szIdsFirst: text(),
-    szTmLast: text(),
-    szIdsLast: text(),
-    ftRadiu: real(),
-    bFlaws: customType({ dataType: () => "BOOL" })(),
-    bWheelLs: customType({ dataType: () => "BOOL" })(),
-    bWheelRs: customType({ dataType: () => "BOOL" })(),
-    bSickLd: customType({ dataType: () => "BOOL" })(),
-    bSickRd: customType({ dataType: () => "BOOL" })(),
-    tmNow: numeric(),
-    szResult: text(),
-    szMemo: text(),
-    startTime: numeric(),
-    endTime: numeric(),
-  },
-  (table) => [unique("detectors_szIDs_unique").on(table.szIds)],
-);
-
 export const verifies = sqliteTable(
   "verifies",
   {
@@ -330,6 +285,38 @@ export const verifiesData = sqliteTable("verifies_data", {
   szRemark: text(),
   bDeleted: customType({ dataType: () => "BOOL" })(),
 });
+
+export const detectors = sqliteTable(
+  "detectors",
+  {
+    recId: integer("RecID").primaryKey({ autoIncrement: true }),
+    szIds: text(),
+    szWhModel: text(),
+    szUsername: text(),
+    szDh: text(),
+    szZh: text(),
+    szSrdw: text(),
+    szSryy: text(),
+    szTmMake: text(),
+    szIdsMake: text(),
+    szTmFirst: text(),
+    szIdsFirst: text(),
+    szTmLast: text(),
+    szIdsLast: text(),
+    ftRadiu: real(),
+    bFlaws: customType({ dataType: () => "BOOL" })(),
+    bWheelLs: customType({ dataType: () => "BOOL" })(),
+    bWheelRs: customType({ dataType: () => "BOOL" })(),
+    bSickLd: customType({ dataType: () => "BOOL" })(),
+    bSickRd: customType({ dataType: () => "BOOL" })(),
+    tmNow: numeric(),
+    szResult: text(),
+    szMemo: text(),
+    startTime: numeric(),
+    endTime: numeric(),
+  },
+  (table) => [unique("detectors_szIDs_unique").on(table.szIds)],
+);
 
 export const detectionsData = sqliteTable("detections_data", {
   recId: integer("RecID").primaryKey({ autoIncrement: true }),
@@ -408,3 +395,17 @@ export const quartorsData = sqliteTable("quartors_data", {
   szRemark: text(),
   bDeleted: customType({ dataType: () => "BOOL" })(),
 });
+
+export const sysConfig = sqliteTable(
+  "SysConfig",
+  {
+    recId: integer("RecID").primaryKey({ autoIncrement: true }),
+    typeName: text("TypeName"),
+    configKey: text("ConfigKey"),
+    configValue: text("ConfigValue"),
+    defaultValue: text("DefaultValue"),
+    remark: text("Remark"),
+    isReadOnly: customType({ dataType: () => "BOOL" })("IsReadOnly"),
+  },
+  (table) => [unique("SysConfig_ConfigKey_unique").on(table.configKey)],
+);

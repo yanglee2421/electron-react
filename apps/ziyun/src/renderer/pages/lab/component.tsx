@@ -7,10 +7,6 @@ import {
 } from "#renderer/api/fetch_preload";
 import { NumberField } from "#renderer/components/number";
 import { ScrollToTopButton } from "#renderer/components/scroll";
-import {
-  useLocaleDate,
-  useLocaleTime,
-} from "#renderer/hooks/dom/useLocaleDate";
 import type { CallbackFn } from "#renderer/lib/utils";
 import {
   CheckBoxOutlineBlankOutlined,
@@ -217,26 +213,10 @@ const BooleanCell = ({ value }: BooleanCellProps) => {
   return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
 };
 
-const Clock = () => {
-  const date = useLocaleDate();
-  const time = useLocaleTime();
-
-  return (
-    <>
-      <Typography variant="h2" component={"time"} dateTime={date}>
-        {date}
-      </Typography>
-      <Typography variant="h3" component={"time"} dateTime={time}>
-        {time}
-      </Typography>
-    </>
-  );
-};
-
-type ItemNameCellProps = {
+interface ItemNameCellProps {
   id: string;
   value: string;
-};
+}
 
 const ItemNameCell = (props: ItemNameCellProps) => {
   const [editable, setEditable] = React.useState(false);
@@ -273,14 +253,14 @@ const ItemNameCell = (props: ItemNameCellProps) => {
   );
 };
 
-type CalendarProps = {
+interface CalendarProps {
   rangeStart: dayjs.Dayjs | null;
   rangeEnd: dayjs.Dayjs | null;
   setRangeStart: React.Dispatch<React.SetStateAction<dayjs.Dayjs | null>>;
   setRangeEnd: React.Dispatch<React.SetStateAction<dayjs.Dayjs | null>>;
   subsidyPerDay: string;
   onSubsidyPerDayChange: (value: string) => void;
-};
+}
 
 const Calendar = (props: CalendarProps) => {
   const { rangeStart, rangeEnd, setRangeStart, setRangeEnd } = props;
@@ -417,10 +397,10 @@ const Calendar = (props: CalendarProps) => {
   );
 };
 
-type OpenPathLinkProps = {
+interface OpenPathLinkProps {
   children?: React.ReactNode;
   filePath: string;
-};
+}
 
 const OpenPathLink = (props: OpenPathLinkProps) => {
   const openPath = useOpenPath();
@@ -616,9 +596,6 @@ export const Component = () => {
     <>
       <ScrollToTopButton />
       <Stack spacing={3}>
-        <div>
-          <Clock />
-        </div>
         <Card>
           <CardHeader
             title="文件"

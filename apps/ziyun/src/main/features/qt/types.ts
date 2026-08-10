@@ -19,13 +19,17 @@ export interface IPC {
     args: [string];
     return: ReturnType<QT["anniversaryDetail"]>;
   };
-  "qt/503": {
-    args: [string];
-    return: ReturnType<QT["fetch503Data"]>;
-  };
   "qt/501": {
     args: [string];
     return: ReturnType<QT["fetch501Data"]>;
+  };
+  "qt/502": {
+    args: [string[]];
+    return: ReturnType<QT["fetch502Data"]>;
+  };
+  "qt/503": {
+    args: [string];
+    return: ReturnType<QT["fetch503Data"]>;
   };
   "qt/setup-app": {
     args: [SetupAppInput];

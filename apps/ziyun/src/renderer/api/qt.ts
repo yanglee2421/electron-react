@@ -47,6 +47,15 @@ export const fetchExternalDB501 = (id: string) => {
   });
 };
 
+export const fetchExternalDB502 = (ids: string[]) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/502", ids],
+    queryFn: () => {
+      return ipc.invoke("qt/502", ids);
+    },
+  });
+};
+
 export const useSetupApp = () => {
   return useMutation({
     mutationFn: (p: SetupAppInput) => {

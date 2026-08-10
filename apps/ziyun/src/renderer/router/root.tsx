@@ -101,18 +101,23 @@ export const RootHydrateFallback = () => {
 
 const useOpenURL = () => {
   const navigate = useNavigate();
-  const handleSingleInstance = React.useEffectEvent((path: string) => {
-    navigate(path);
-  });
+  const handleSingleInstance = React.useEffectEvent(
+    (path: string, search: string) => {
+      navigate({
+        pathname: path,
+        search: search,
+      });
+    },
+  );
 
   React.useEffect(() => {
     const unsubscribe = ipc.on("open-url", (_, payload) => {
-      const url = payload.url;
+      if (URL.canParse(payload.url)) {
+        const url = new URL(payload.url);
+        const path = url.pathname;
+        const search = url.search;
 
-      if (URL.canParse(url)) {
-        const path = new URL(url).pathname;
-
-        handleSingleInstance(path);
+        handleSingleInstance(path, search);
       }
     });
 

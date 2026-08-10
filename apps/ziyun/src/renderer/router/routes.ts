@@ -327,6 +327,15 @@ export const routes: RouteObject[] = [
                       },
                     ],
                   },
+                  {
+                    path: "quartors",
+                    children: [
+                      {
+                        path: "502",
+                        lazy: () => import("#renderer/pages/qt-502/component"),
+                      },
+                    ],
+                  },
                 ],
                 Component: BlankLayout,
               },

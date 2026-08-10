@@ -38,7 +38,7 @@ const getItemName = (
 
   const regex = /\*(?<content>.+?)\*/;
 
-  return originItemName?.match(regex)?.groups?.content || "运输服务";
+  return originItemName?.match(regex)?.groups?.content || "交通运输服务";
 };
 
 const xmlPathToInvoice = async (xmlPath: string) => {
@@ -95,7 +95,7 @@ const pdfPathToInvoices = async (pdfPath: string) => {
           totalTaxIncludedAmount,
           requestTime,
           filePath: pdfPath,
-          itemName: "运输服务",
+          itemName: "交通运输服务",
           additionalInformation: "尚不支持从PDF中提取备注",
           pdf: true,
           xml: false,
