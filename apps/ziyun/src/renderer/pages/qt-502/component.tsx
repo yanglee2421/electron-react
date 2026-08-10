@@ -13,9 +13,49 @@ import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Alert, AlertTitle } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
+import type { schema } from "@yanglee2421/external-db";
+import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import React from "react";
 import { useSearchParams } from "react-router";
+
+type Flaw = typeof schema.quartorsData.$inferSelect;
+
+interface MetaInfo {
+  lct: "";
+  lxh: "";
+  l01: "";
+  l02: "";
+  la3: "";
+  rct: "";
+  rxh: "";
+  r01: "";
+  r02: "";
+  ra3: "";
+}
+
+const calcMetaMap = (group: Map<string, Flaw[]>): Map<string, MetaInfo> => {
+  return Array.from(group).reduce((acc, [key, flaws]) => {
+    const flaw = flaws.at(0);
+
+    if (flaw) {
+      acc.set(key, {
+        lct: "",
+        lxh: "",
+        l01: "",
+        l02: "",
+        la3: "",
+        rct: "",
+        rxh: "",
+        r01: "",
+        r02: "",
+        ra3: "",
+      });
+    }
+
+    return acc;
+  }, new Map<string, MetaInfo>());
+};
 
 const FIRST_COL_WIDTH = 50;
 const LAST_COL_WIDTH = 50;
@@ -232,12 +272,22 @@ export const Component = () => {
 
     const of10 = of(10);
 
-    const { FACTORY_CLD, FACTORY_SBBH, FACTORY_SBXH, FACTORY_SYRQ } =
-      query.data;
+    const { FACTORY_CLD, FACTORY_SBBH, FACTORY_SYRQ, rows, datas } = query.data;
 
-    console.log(query.data);
+    const firstRow = rows.at(0);
 
-    return null;
+    const metas = rows.map((row) => {
+      const flaws = datas.filter((data) => Object.is(data.szIds, row.szIds));
+      const group = mapGroupBy(
+        flaws,
+        (flaw) => `${flaw.nBoard}-${flaw.nChannel}`,
+      );
+      const meta = calcMetaMap(group);
+
+      return { row, meta };
+    });
+
+    const metaMap = mapGroupBy(metas, (meta) => meta.row.szIds);
 
     return (
       <PDFViewer
@@ -246,47 +296,45 @@ export const Component = () => {
       >
         <ReportDoc
           tableHeader={{
-            factoryName: corporation.Factory || "",
-            zx: records.at(0)?.szWHModel || "",
-            date: dayjs(records.at(-1)?.tmnow).format("YYYY-MM-DD HH:mm:ss"),
+            factoryName: FACTORY_CLD || "",
+            zx: firstRow?.szWhModel || "",
+            date: dayjs(firstRow?.tmNow).format("YYYY-MM-DD HH:mm:ss"),
           }}
           equipmentTable={{
-            deviceNo: corporation.DeviceNO || "",
-            createDate: dayjs(corporation.prodate).format("YYYY-MM-DD") || "",
-            previousCheckDate: dayjs(previousRecord?.tmnow).format(
-              "YYYY-MM-DD",
-            ),
+            deviceNo: FACTORY_SBBH || "",
+            createDate: dayjs(FACTORY_SYRQ).format("YYYY-MM-DD") || "",
+            previousCheckDate: "",
           }}
         >
           <Col>
             <Cell>反射波高(dB)</Cell>
             <Row>
-              {opids.map((opid, index) => {
+              {rows.map((row, index) => {
                 return (
-                  <Col key={opid}>
+                  <Col key={row.szIds}>
                     <Cell>第{index + 1}次</Cell>
                     <Row>
                       <Col>
                         <Cell>左</Cell>
-                        <Cell>{attenMap.get(opid)?.lxh}</Cell>
-                        <Cell>{attenMap.get(opid)?.la3}</Cell>
-                        <Cell>{attenMap.get(opid)?.l01}</Cell>
-                        <Cell>{attenMap.get(opid)?.l02}</Cell>
+                        <Cell>{metaMap.get(row.szIds)?.lxh}</Cell>
+                        <Cell>{metaMap.get(row.szIds)?.la3}</Cell>
+                        <Cell>{metaMap.get(row.szIds)?.l01}</Cell>
+                        <Cell>{metaMap.get(row.szIds)?.l02}</Cell>
                         {of10.map((_) => (
                           <Cell key={_}></Cell>
                         ))}
-                        <Cell>{attenMap.get(opid)?.lct}</Cell>
+                        <Cell>{metaMap.get(row.szIds)?.lct}</Cell>
                       </Col>
                       <Col>
                         <Cell>右</Cell>
-                        <Cell>{attenMap.get(opid)?.rxh}</Cell>
-                        <Cell>{attenMap.get(opid)?.ra3}</Cell>
-                        <Cell>{attenMap.get(opid)?.r01}</Cell>
-                        <Cell>{attenMap.get(opid)?.r02}</Cell>
+                        <Cell>{metaMap.get(row.szIds)?.rxh}</Cell>
+                        <Cell>{metaMap.get(row.szIds)?.ra3}</Cell>
+                        <Cell>{metaMap.get(row.szIds)?.r01}</Cell>
+                        <Cell>{metaMap.get(row.szIds)?.r02}</Cell>
                         {of10.map((_) => (
                           <Cell key={_}></Cell>
                         ))}
-                        <Cell>{attenMap.get(opid)?.rct}</Cell>
+                        <Cell>{metaMap.get(row.szIds)?.rct}</Cell>
                       </Col>
                     </Row>
                   </Col>
