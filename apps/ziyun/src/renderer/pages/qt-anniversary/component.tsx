@@ -38,7 +38,7 @@ export const Component = () => {
           <ListItemButton
             key={item.recId}
             component={Link}
-            to={{ pathname: `/qt/anniversary/${item.recId}` }}
+            to={{ pathname: `/qt/anniversary/${item.recId}/503` }}
           >
             <ListItemIcon>
               <Grid3x3 />

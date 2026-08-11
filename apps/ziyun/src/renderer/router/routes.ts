@@ -336,6 +336,7 @@ export const routes: RouteObject[] = [
                       },
                       {
                         path: "53a",
+                        lazy: () => import("#renderer/pages/qt-53a/component"),
                       },
                     ],
                   },

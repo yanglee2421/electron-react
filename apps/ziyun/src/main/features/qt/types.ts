@@ -22,6 +22,16 @@ export interface Fetch502DateInput {
   date: string;
 }
 
+export interface FetchDetectionsInput {
+  date: string;
+}
+
+export interface QTCHR53AInput {
+  user: string;
+  date: string;
+  ids: string[];
+}
+
 export interface IPC {
   "qt/anniversary": {
     args: [AnniversaryInput];
@@ -42,6 +52,10 @@ export interface IPC {
   "qt/503": {
     args: [string];
     return: ReturnType<QT["fetch503Data"]>;
+  };
+  "qt/53a": {
+    args: [QTCHR53AInput];
+    return: ReturnType<QT["fetch53AData"]>;
   };
   "qt/setup-app": {
     args: [SetupAppInput];
@@ -70,5 +84,9 @@ export interface IPC {
   "qt/quartors": {
     args: [];
     return: ReturnType<QT["fetchQuartors"]>;
+  };
+  "qt/detections": {
+    args: [FetchDetectionsInput];
+    return: ReturnType<QT["fetchDetections"]>;
   };
 }

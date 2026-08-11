@@ -1,4 +1,4 @@
-import { fetchCHR53AData } from "#renderer/api/printer";
+import { fetchQTCHR53A } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import {
   Cell,
@@ -16,7 +16,7 @@ import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
 import { chunk } from "@yotulee/run";
 import dayjs from "dayjs";
-import { useLocation } from "react-router";
+import { useLocation, useSearchParams } from "react-router";
 
 interface CheckCellProps {
   place: number;
@@ -43,11 +43,16 @@ const CheckCell = (props: CheckCellProps) => {
   }
 };
 
+const MAX_ROWS_PER_PAGE = 28;
+
 export const Component = () => {
   const location = useLocation();
-  const ids = location.state.ids;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const date = searchParams.get("date") || "";
+  const user = searchParams.get("user") || "";
+  const ids = location.state?.ids;
   const CELL_HEIGHT = 18;
-  const query = useQuery(fetchCHR53AData({ ids }));
+  const query = useQuery(fetchQTCHR53A({ ids, date, user }));
 
   const renderQuery = () => {
     if (query.isPending) {
@@ -63,8 +68,10 @@ export const Component = () => {
       );
     }
 
+    return null;
+
     const { records, corporation } = query.data;
-    const MAX_ROWS_PER_PAGE = 28;
+
     const pages = chunk(records, MAX_ROWS_PER_PAGE);
     const firstRow = records.at(0);
 

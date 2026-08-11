@@ -1,6 +1,8 @@
 import type {
   AnniversaryInput,
   Fetch502DateInput,
+  FetchDetectionsInput,
+  QTCHR53AInput,
   SetupAppInput,
   SetYiqiConfigLibInput,
 } from "#main/features/qt/types";
@@ -31,15 +33,6 @@ export const fetchExternalDBAnniversaryDetail = (id: string) => {
   });
 };
 
-export const fetchExternalDB503 = (id: string) => {
-  return queryOptions({
-    queryKey: [QUERY_KEY, "qt/503", id],
-    queryFn: () => {
-      return ipc.invoke("qt/503", id);
-    },
-  });
-};
-
 export const fetchExternalDB501 = (id: string) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/501", id],
@@ -54,6 +47,24 @@ export const fetchExternalDB502 = (p: Fetch502DateInput) => {
     queryKey: [QUERY_KEY, "qt/502", p],
     queryFn: () => {
       return ipc.invoke("qt/502", p);
+    },
+  });
+};
+
+export const fetchExternalDB503 = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/503", id],
+    queryFn: () => {
+      return ipc.invoke("qt/503", id);
+    },
+  });
+};
+
+export const fetchQTCHR53A = (input: QTCHR53AInput) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/53a", input],
+    queryFn: async () => {
+      return ipc.invoke("qt/53a", input);
     },
   });
 };
@@ -127,6 +138,15 @@ export const fetchQtQuartors = () => {
     queryKey: [QUERY_KEY, "qt/quartors"],
     queryFn: async () => {
       return ipc.invoke("qt/quartors");
+    },
+  });
+};
+
+export const fetchQtDetections = (input: FetchDetectionsInput) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/detections", input],
+    queryFn: async () => {
+      return ipc.invoke("qt/detections", input);
     },
   });
 };

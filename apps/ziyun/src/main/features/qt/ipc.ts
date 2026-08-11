@@ -14,6 +14,7 @@ export const registerIPCHandlers = (qt: QT) => {
   ipcHandle("qt/yiqiConfig/flag", (_, p) => qt.setDeviceConfigFlag(p));
   ipcHandle("qt/start-app", () => qt.startApp());
   ipcHandle("qt/quartors", (_) => qt.fetchQuartors());
+  ipcHandle("qt/detections", (_, p) => qt.fetchDetections(p));
 
   return () => {
     ipcRemoveHandle("qt/anniversary");
@@ -28,5 +29,6 @@ export const registerIPCHandlers = (qt: QT) => {
     ipcRemoveHandle("qt/yiqiConfig/flag");
     ipcRemoveHandle("qt/start-app");
     ipcRemoveHandle("qt/quartors");
+    ipcRemoveHandle("qt/detections");
   };
 };

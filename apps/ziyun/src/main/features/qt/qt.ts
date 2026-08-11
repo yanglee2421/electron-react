@@ -39,6 +39,8 @@ import type { AppCradle } from "../types";
 import type {
   AnniversaryInput,
   Fetch502DateInput,
+  FetchDetectionsInput,
+  QTCHR53AInput,
   SetupAppInput,
   SetYiqiConfigLibInput,
 } from "./types";
@@ -163,42 +165,6 @@ export class QT {
     }
 
     return db;
-  }
-
-  async anniversary(input: AnniversaryInput) {
-    const { pageIndex, pageSize } = input;
-
-    const [{ count }] = await this.client.select({ count: sqlCount() }).from(
-      this.client
-        .select({
-          recId: schema.quartorRecordInfo.szIds,
-          date: schema.quartorRecordInfo.tmNow,
-        })
-        .from(schema.quartorRecordInfo)
-        .groupBy(schema.quartorRecordInfo.szIds)
-        .as("groups"),
-    );
-
-    const rows = await this.client
-      .select({
-        recId: schema.quartorRecordInfo.szIds,
-        date: schema.quartorRecordInfo.tmNow,
-      })
-      .from(schema.quartorRecordInfo)
-      .groupBy(schema.quartorRecordInfo.szIds)
-      .offset(pageIndex)
-      .limit(pageSize);
-
-    return { rows, count };
-  }
-
-  async anniversaryDetail(szIds: string) {
-    const rows = await this.client
-      .select()
-      .from(schema.quartorRecordInfo)
-      .where(eq(schema.quartorRecordInfo.szIds, szIds));
-
-    return { rows };
   }
 
   async fetch501Data(id: string) {
@@ -414,7 +380,23 @@ export class QT {
       datas,
     };
   }
-  async fetch53AData() {}
+  async fetch53AData(input: QTCHR53AInput) {
+    const rows = await this.client
+      .select()
+      .from(schema.detectors)
+      .where(
+        and(
+          like(schema.detectors.szUsername, input.user),
+          between(
+            schema.detectors.tmNow,
+            dayjs(input.date).startOf("day").toISOString(),
+            dayjs(input.date).endOf("day").toISOString(),
+          ),
+        ),
+      );
+
+    return { rows };
+  }
 
   async setupApp(params: SetupAppInput) {
     const { qtAppPath, qtDataDirectory } = params;
@@ -483,6 +465,30 @@ export class QT {
     return result;
   }
 
+  async fetchDetections(input: FetchDetectionsInput) {
+    const [{ count }] = await this.client
+      .select({ count: sqlCount() })
+      .from(schema.detectors)
+      .where(
+        between(
+          schema.detectors.tmNow,
+          dayjs(input.date).startOf("day").toISOString(),
+          dayjs(input.date).endOf("day").toISOString(),
+        ),
+      );
+    const rows = await this.client
+      .select()
+      .from(schema.detectors)
+      .where(
+        between(
+          schema.detectors.tmNow,
+          dayjs(input.date).startOf("day").toISOString(),
+          dayjs(input.date).endOf("day").toISOString(),
+        ),
+      );
+
+    return { count, rows };
+  }
   async fetchVerifies() {
     const [{ count }] = await this.client
       .select({ count: sqlCount() })
@@ -514,5 +520,40 @@ export class QT {
       );
 
     return { count, rows };
+  }
+  async anniversary(input: AnniversaryInput) {
+    const { pageIndex, pageSize } = input;
+
+    const [{ count }] = await this.client.select({ count: sqlCount() }).from(
+      this.client
+        .select({
+          recId: schema.quartorRecordInfo.szIds,
+          date: schema.quartorRecordInfo.tmNow,
+        })
+        .from(schema.quartorRecordInfo)
+        .groupBy(schema.quartorRecordInfo.szIds)
+        .as("groups"),
+    );
+
+    const rows = await this.client
+      .select({
+        recId: schema.quartorRecordInfo.szIds,
+        date: schema.quartorRecordInfo.tmNow,
+      })
+      .from(schema.quartorRecordInfo)
+      .groupBy(schema.quartorRecordInfo.szIds)
+      .offset(pageIndex)
+      .limit(pageSize);
+
+    return { rows, count };
+  }
+
+  async anniversaryDetail(szIds: string) {
+    const rows = await this.client
+      .select()
+      .from(schema.quartorRecordInfo)
+      .where(eq(schema.quartorRecordInfo.szIds, szIds));
+
+    return { rows };
   }
 }
