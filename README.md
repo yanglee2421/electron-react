@@ -6,13 +6,13 @@
 
 ```bash
 # Install chocolatey cli
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+powershell -c "irm https://community.chocolatey.org/install.ps1|iex"
 
 # Install dependencies for node-gyp
 choco install python visualstudio2022-workload-vctools -y
 
 # Install nodejs & pnpm
-choco install nodejs --version='24.15.0'
+choco install nodejs --version='24.19.0'
 corepack prepare pnpm --activate
 ```
 
@@ -122,3 +122,63 @@ Else
 
 - HMIS:从`usprofile.ini`文件读取`InputSkip`，确保自动填充不会引起闪退
 - password: `Joney`
+
+## URL规则
+
+```js
+// 协议 + 域名 + 端口 + path + search
+
+/**
+ * 日常表 501
+ *
+ * 路径参数
+ * RECORD_SZIDS: 对应记录的szIds
+ *
+ * 搜索参数
+ * sidebar: 不存在或为1表示显示边栏；存在且不为1表示不显示边栏
+ */
+"app-ziyun://localhost/qt/verifies/RECORD_SZIDS/501?sidebar=0";
+
+/**
+ * 季度表 502
+ *
+ * 搜索参数
+ * sidebar: 不存在或为1表示显示边栏；存在且不为1表示不显示边栏
+ * user: 按操作工过滤
+ * zx: 按轴型过滤
+ * date: 按时间日期过滤
+ */
+"app-ziyun://localhost/qt/quartors/502?user=UserName1&zx=re2b&date=2026-08-11";
+
+/**
+ * 年度表503
+ *
+ * 路径参数
+ * RECORD_SZIDS: 对应记录的szIds
+ *
+ * 搜索参数
+ * sidebar: 不存在或为1表示显示边栏；存在且不为1表示不显示边栏
+ */
+"app-ziyun://localhost/qt/anniversary/RECORD_SZIDS/503?sidebar=0";
+
+/**
+ * 缺陷表 52A
+ *
+ * 路径参数
+ * RECORD_SZIDS: 对应记录的szIds
+ *
+ * 搜索参数
+ * sidebar: 不存在或为1表示显示边栏；存在且不为1表示不显示边栏
+ */
+"app-ziyun://localhost/qt/detections/RECORD_SZIDS/52a?sidebar=0";
+
+/**
+ * 现车作业记录表 53A
+ *
+ * 搜索参数
+ * sidebar: 不存在或为1表示显示边栏；存在且不为1表示不显示边栏
+ * user: 按操作工过滤
+ * date: 按时间日期过滤
+ */
+"app-ziyun://localhost/qt/detections/53a?sidebar=0&user=UserName&date=2026-08-11";
+```

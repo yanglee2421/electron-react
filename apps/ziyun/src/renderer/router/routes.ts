@@ -289,7 +289,7 @@ export const routes: RouteObject[] = [
                     ],
                   },
                   {
-                    path: "verify",
+                    path: "verifies",
                     children: [
                       {
                         path: ":id",

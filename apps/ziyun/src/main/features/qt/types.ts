@@ -10,9 +10,21 @@ export interface SetYiqiConfigLibInput {
   lib: string;
 }
 
+export interface AnniversaryInput {
+  pageIndex: number;
+  pageSize: number;
+}
+
+export interface Fetch502DateInput {
+  in: string[];
+  user: string;
+  zx: string;
+  date: string;
+}
+
 export interface IPC {
   "qt/anniversary": {
-    args: [];
+    args: [AnniversaryInput];
     return: ReturnType<QT["anniversary"]>;
   };
   "qt/anniversary-detail": {
@@ -24,7 +36,7 @@ export interface IPC {
     return: ReturnType<QT["fetch501Data"]>;
   };
   "qt/502": {
-    args: [string[]];
+    args: [Fetch502DateInput];
     return: ReturnType<QT["fetch502Data"]>;
   };
   "qt/503": {
@@ -54,5 +66,9 @@ export interface IPC {
   "qt/start-app": {
     args: [];
     return: ReturnType<QT["startApp"]>;
+  };
+  "qt/quartors": {
+    args: [];
+    return: ReturnType<QT["fetchQuartors"]>;
   };
 }

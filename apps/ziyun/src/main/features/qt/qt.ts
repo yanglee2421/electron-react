@@ -2,7 +2,15 @@ import type { ChannelImage } from "#main/workers/bmp";
 import type { DBClient } from "@yanglee2421/external-db";
 import { relations, schema } from "@yanglee2421/external-db";
 import { createServer } from "@yanglee2421/hmis-proxy";
-import { eq, inArray } from "drizzle-orm";
+import dayjs from "dayjs";
+import {
+  and,
+  between,
+  eq,
+  inArray,
+  like,
+  count as sqlCount,
+} from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { app, shell } from "electron";
 import fs from "node:fs";
@@ -28,7 +36,12 @@ import {
 import workerPath from "../../workers/bmp?modulePath";
 import type { Profile } from "../profile";
 import type { AppCradle } from "../types";
-import type { SetupAppInput, SetYiqiConfigLibInput } from "./types";
+import type {
+  AnniversaryInput,
+  Fetch502DateInput,
+  SetupAppInput,
+  SetYiqiConfigLibInput,
+} from "./types";
 
 export class QT {
   readonly client$ = new BehaviorSubject<DBClient | null>(null);
@@ -152,12 +165,31 @@ export class QT {
     return db;
   }
 
-  async anniversary() {
-    const rows = await this.client
-      .selectDistinct({ recId: schema.quartorRecordInfo.szIds })
-      .from(schema.quartorRecordInfo);
+  async anniversary(input: AnniversaryInput) {
+    const { pageIndex, pageSize } = input;
 
-    return { rows };
+    const [{ count }] = await this.client.select({ count: sqlCount() }).from(
+      this.client
+        .select({
+          recId: schema.quartorRecordInfo.szIds,
+          date: schema.quartorRecordInfo.tmNow,
+        })
+        .from(schema.quartorRecordInfo)
+        .groupBy(schema.quartorRecordInfo.szIds)
+        .as("groups"),
+    );
+
+    const rows = await this.client
+      .select({
+        recId: schema.quartorRecordInfo.szIds,
+        date: schema.quartorRecordInfo.tmNow,
+      })
+      .from(schema.quartorRecordInfo)
+      .groupBy(schema.quartorRecordInfo.szIds)
+      .offset(pageIndex)
+      .limit(pageSize);
+
+    return { rows, count };
   }
 
   async anniversaryDetail(szIds: string) {
@@ -260,7 +292,30 @@ export class QT {
       jpegs,
     };
   }
-  async fetch502Data(ids: string[]) {
+  async fetch502Data(input: Fetch502DateInput) {
+    let ids: string[] = [];
+
+    if (input.in.length > 0) {
+      ids = input.in;
+    } else {
+      const rows = await this.client
+        .select({ id: schema.quartors.szIds })
+        .from(schema.quartors)
+        .where(
+          and(
+            like(schema.quartors.szUsername, input.user),
+            like(schema.quartors.szWhModel, input.zx),
+            between(
+              schema.quartors.tmNow,
+              dayjs(input.date).startOf("day").toISOString(),
+              dayjs(input.date).endOf("day").toISOString(),
+            ),
+          ),
+        );
+
+      ids = rows.map((r) => r.id).filter((r) => typeof r === "string");
+    }
+
     const rows = await this.client
       .select()
       .from(schema.quartors)
@@ -426,5 +481,38 @@ export class QT {
     const result = await shell.openPath(this.profile.state.qtAppPath);
 
     return result;
+  }
+
+  async fetchVerifies() {
+    const [{ count }] = await this.client
+      .select({ count: sqlCount() })
+      .from(schema.verifies);
+    const rows = await this.client.select().from(schema.verifies);
+
+    return { count, rows };
+  }
+  async fetchQuartors() {
+    const [{ count }] = await this.client
+      .select({ count: sqlCount() })
+      .from(schema.quartors)
+      .where(
+        between(
+          schema.quartors.tmNow,
+          dayjs("2026-08-10").startOf("day").toISOString(),
+          dayjs("2026-08-10").endOf("day").toISOString(),
+        ),
+      );
+    const rows = await this.client
+      .select()
+      .from(schema.quartors)
+      .where(
+        between(
+          schema.quartors.tmNow,
+          dayjs("2026-08-10").startOf("day").toISOString(),
+          dayjs("2026-08-10").endOf("day").toISOString(),
+        ),
+      );
+
+    return { count, rows };
   }
 }

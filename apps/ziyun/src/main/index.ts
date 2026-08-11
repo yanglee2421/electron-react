@@ -224,6 +224,8 @@ secondInstance$
   .pipe(
     tap(([, argv]) => {
       const url = argv.find((arg) => arg.startsWith("app-ziyun://"));
+      console.log(url);
+
       const { appWindow } = container.cradle;
 
       appWindow.show(url);

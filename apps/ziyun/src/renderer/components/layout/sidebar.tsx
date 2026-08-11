@@ -584,10 +584,10 @@ export const Sidebar = (props: SidebarProps) => {
           </ListItemButton>
           <ListItemButton
             component={Link}
-            to={{ pathname: "/qt/detection" }}
+            to={{ pathname: "/qt/detections" }}
             selected={Object.is(
               normalizePathname(location.pathname),
-              "/qt/detection",
+              "/qt/detections",
             )}
           >
             <ListItemIcon>
@@ -597,10 +597,10 @@ export const Sidebar = (props: SidebarProps) => {
           </ListItemButton>
           <ListItemButton
             component={Link}
-            to={{ pathname: "/qt/verify" }}
+            to={{ pathname: "/qt/verifies" }}
             selected={Object.is(
               normalizePathname(location.pathname),
-              "/qt/verify",
+              "/qt/verifies",
             )}
           >
             <ListItemIcon>

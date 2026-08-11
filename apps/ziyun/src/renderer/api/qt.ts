@@ -1,4 +1,6 @@
 import type {
+  AnniversaryInput,
+  Fetch502DateInput,
   SetupAppInput,
   SetYiqiConfigLibInput,
 } from "#main/features/qt/types";
@@ -11,11 +13,11 @@ import {
 
 export const QUERY_KEY = "qt";
 
-export const fetchExternalDBAnniversary = () => {
+export const fetchExternalDBAnniversary = (input: AnniversaryInput) => {
   return queryOptions({
-    queryKey: [QUERY_KEY, "qt/anniversary"],
+    queryKey: [QUERY_KEY, "qt/anniversary", input],
     queryFn: async () => {
-      return ipc.invoke("qt/anniversary");
+      return ipc.invoke("qt/anniversary", input);
     },
   });
 };
@@ -47,11 +49,11 @@ export const fetchExternalDB501 = (id: string) => {
   });
 };
 
-export const fetchExternalDB502 = (ids: string[]) => {
+export const fetchExternalDB502 = (p: Fetch502DateInput) => {
   return queryOptions({
-    queryKey: [QUERY_KEY, "qt/502", ids],
+    queryKey: [QUERY_KEY, "qt/502", p],
     queryFn: () => {
-      return ipc.invoke("qt/502", ids);
+      return ipc.invoke("qt/502", p);
     },
   });
 };
@@ -116,6 +118,15 @@ export const useStartApp = () => {
   return useMutation({
     mutationFn: async () => {
       return ipc.invoke("qt/start-app");
+    },
+  });
+};
+
+export const fetchQtQuartors = () => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/quartors"],
+    queryFn: async () => {
+      return ipc.invoke("qt/quartors");
     },
   });
 };

@@ -305,8 +305,17 @@ const ReportDoc = (props: ReportDocProps) => {
 
 export const Component = () => {
   const [search] = useSearchParams();
-  const ids = search.getAll("row");
-  const query = useQuery(fetchExternalDB502(ids));
+  const user = search.get("user");
+  const zx = search.get("zx");
+  const date = search.get("date");
+  const query = useQuery(
+    fetchExternalDB502({
+      in: [],
+      user: user || "",
+      zx: zx || "",
+      date: date || "",
+    }),
+  );
 
   const renderQuery = () => {
     if (query.isPending) {

@@ -29,7 +29,7 @@ export const Component = () => {
 
   const renderRow = () => {
     if (query.isPending) {
-      return <Loading slotProps={{ box: { padding: 0 } }} />;
+      return <Loading slotProps={{ box: { sx: { padding: 0 } } }} />;
     }
 
     if (query.isError) {
