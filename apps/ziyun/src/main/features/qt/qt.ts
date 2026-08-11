@@ -169,44 +169,6 @@ export class QT {
     return { rows };
   }
 
-  async fetch503Data(szIds: string) {
-    const rows = await this.client
-      .select()
-      .from(schema.quartorRecordInfo)
-      .where(eq(schema.quartorRecordInfo.szIds, szIds));
-
-    const [FACTORY_CLD] = await this.client
-      .select({ value: schema.sysConfig.configValue })
-      .from(schema.sysConfig)
-      .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
-      .limit(1);
-
-    const [FACTORY_SBXH] = await this.client
-      .select({ value: schema.sysConfig.configValue })
-      .from(schema.sysConfig)
-      .where(eq(schema.sysConfig.configKey, "FACTORY_SBXH"))
-      .limit(1);
-
-    const [FACTORY_SBBH] = await this.client
-      .select({ value: schema.sysConfig.configValue })
-      .from(schema.sysConfig)
-      .where(eq(schema.sysConfig.configKey, "FACTORY_SBBH"))
-      .limit(1);
-
-    const [FACTORY_SYRQ] = await this.client
-      .select({ value: schema.sysConfig.configValue })
-      .from(schema.sysConfig)
-      .where(eq(schema.sysConfig.configKey, "FACTORY_SYRQ"))
-      .limit(1);
-
-    return {
-      rows,
-      FACTORY_CLD: FACTORY_CLD?.value,
-      FACTORY_SBXH: FACTORY_SBXH?.value,
-      FACTORY_SBBH: FACTORY_SBBH?.value,
-      FACTORY_SYRQ: FACTORY_SYRQ?.value,
-    };
-  }
   async fetch501Data(id: string) {
     const [record] = await this.client
       .select()
@@ -298,7 +260,6 @@ export class QT {
       jpegs,
     };
   }
-
   async fetch502Data(ids: string[]) {
     const rows = await this.client
       .select()
@@ -343,6 +304,62 @@ export class QT {
       FACTORY_SYRQ: FACTORY_SYRQ?.value,
     };
   }
+  async fetch503Data(szIds: string) {
+    const rows = await this.client
+      .select()
+      .from(schema.quartorRecordInfo)
+      .where(eq(schema.quartorRecordInfo.szIds, szIds));
+
+    const [FACTORY_CLD] = await this.client
+      .select({ value: schema.sysConfig.configValue })
+      .from(schema.sysConfig)
+      .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
+      .limit(1);
+
+    const [FACTORY_SBXH] = await this.client
+      .select({ value: schema.sysConfig.configValue })
+      .from(schema.sysConfig)
+      .where(eq(schema.sysConfig.configKey, "FACTORY_SBXH"))
+      .limit(1);
+
+    const [FACTORY_SBBH] = await this.client
+      .select({ value: schema.sysConfig.configValue })
+      .from(schema.sysConfig)
+      .where(eq(schema.sysConfig.configKey, "FACTORY_SBBH"))
+      .limit(1);
+
+    const [FACTORY_SYRQ] = await this.client
+      .select({ value: schema.sysConfig.configValue })
+      .from(schema.sysConfig)
+      .where(eq(schema.sysConfig.configKey, "FACTORY_SYRQ"))
+      .limit(1);
+
+    return {
+      rows,
+      FACTORY_CLD: FACTORY_CLD?.value,
+      FACTORY_SBXH: FACTORY_SBXH?.value,
+      FACTORY_SBBH: FACTORY_SBBH?.value,
+      FACTORY_SYRQ: FACTORY_SYRQ?.value,
+    };
+  }
+  async fetch52AData(szIds: string) {
+    const [FACTORY_CLD] = await this.client
+      .select({ value: schema.sysConfig.configValue })
+      .from(schema.sysConfig)
+      .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
+      .limit(1);
+
+    const datas = await this.client
+      .select()
+      .from(schema.detectionsData)
+      .where(eq(schema.detectionsData.szIds, szIds));
+
+    return {
+      FACTORY_CLD: FACTORY_CLD?.value,
+      datas,
+    };
+  }
+  async fetch53AData() {}
 
   async setupApp(params: SetupAppInput) {
     const { qtAppPath, qtDataDirectory } = params;

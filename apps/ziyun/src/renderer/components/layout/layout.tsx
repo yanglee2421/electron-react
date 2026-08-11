@@ -8,15 +8,20 @@ import {
   useTheme,
 } from "@mui/material";
 import React from "react";
-import { useLocation } from "react-router";
+import { useLocation, useSearchParams } from "react-router";
 import { Footer } from "./footer";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 
+const SIDEBAR_SEARCH_KEY = "sidebar";
+
 export const Layout = (props: React.PropsWithChildren) => {
   const [showSidebarInPath, setShowSidebarInPath] = React.useState("");
-  const [showSidebarUpSmall, setShowSidebarUpSmall] = React.useState(true);
+  const [searchParams, setSearchParams] = useSearchParams({
+    [SIDEBAR_SEARCH_KEY]: "1",
+  });
 
+  const showSidebarUpSmall = searchParams.get(SIDEBAR_SEARCH_KEY) === "1";
   const theme = useTheme();
   const location = useLocation();
   const isDownSmall = useMediaQuery(theme.breakpoints.down("sm"));
@@ -137,7 +142,14 @@ export const Layout = (props: React.PropsWithChildren) => {
                   showSidebarDownSmall ? "" : location.pathname,
                 );
               } else {
-                setShowSidebarUpSmall((p) => !p);
+                setSearchParams((searchParams) => {
+                  const previous = searchParams.get(SIDEBAR_SEARCH_KEY);
+                  const search = new URLSearchParams(searchParams);
+
+                  search.set(SIDEBAR_SEARCH_KEY, previous === "1" ? "0" : "1");
+
+                  return search;
+                });
               }
             }}
           >

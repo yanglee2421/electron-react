@@ -1,6 +1,6 @@
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import type { RouteObject } from "react-router";
-import { BlankLayout, DashLayout } from "./layout";
+import { DashLayout } from "./layout";
 import { RootErrorBoundary, RootHydrateFallback, RootRoute } from "./root";
 
 export const routes: RouteObject[] = [
@@ -48,229 +48,212 @@ export const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/qrcode/component"),
           },
           {
+            path: "detection",
             children: [
               {
-                path: "detection",
+                index: true,
+                lazy: () => import("#renderer/pages/detection"),
+              },
+              {
+                path: ":id",
                 children: [
                   {
                     index: true,
-                    lazy: () => import("#renderer/pages/detection"),
+                    lazy: () => import("#renderer/pages/detection_show"),
                   },
                   {
-                    path: ":id",
-                    children: [
-                      {
-                        index: true,
-                        lazy: () => import("#renderer/pages/detection_show"),
-                      },
-                      {
-                        path: "chr52a",
-                        lazy: () =>
-                          import("#renderer/pages/detection_chr52a/component"),
-                      },
-                    ],
-                  },
-                  {
-                    path: "chr53a",
+                    path: "chr52a",
                     lazy: () =>
-                      import("#renderer/pages/detection_chr53a/component"),
+                      import("#renderer/pages/detection_chr52a/component"),
                   },
                 ],
               },
               {
-                path: "verify",
-                children: [
-                  {
-                    index: true,
-                    lazy: () => import("#renderer/pages/verify"),
-                  },
-                  {
-                    path: ":id",
-                    children: [
-                      {
-                        index: true,
-                        lazy: () => import("#renderer/pages/verify_show"),
-                      },
-                      {
-                        path: "chr501",
-                        lazy: () =>
-                          import("#renderer/pages/verify_501/component"),
-                      },
-                    ],
-                  },
-                ],
+                path: "chr53a",
+                lazy: () =>
+                  import("#renderer/pages/detection_chr53a/component"),
+              },
+            ],
+          },
+          {
+            path: "verify",
+            children: [
+              {
+                index: true,
+                lazy: () => import("#renderer/pages/verify"),
               },
               {
-                path: "quartors",
+                path: ":id",
                 children: [
                   {
                     index: true,
-                    lazy: () => import("#renderer/pages/quartors"),
+                    lazy: () => import("#renderer/pages/verify_show"),
                   },
                   {
-                    path: ":id",
-                    children: [
-                      {
-                        index: true,
-                        lazy: () => import("#renderer/pages/quartors_show"),
-                      },
-                      {
-                        path: "chr501",
-                        lazy: () =>
-                          import("#renderer/pages/quartors_501/component"),
-                      },
-                    ],
-                  },
-                  {
-                    path: "chr502",
-                    lazy: () =>
-                      import("#renderer/pages/quartors_502/component"),
-                  },
-                ],
-              },
-              {
-                path: "anniversary",
-                children: [
-                  {
-                    index: true,
-                    lazy: () => import("#renderer/pages/anniversary/component"),
-                  },
-                  {
-                    path: ":id",
-                    children: [
-                      {
-                        index: true,
-                        lazy: () =>
-                          import("#renderer/pages/anniversary_show/component"),
-                      },
-                      {
-                        path: "chr503",
-                        lazy: () =>
-                          import("#renderer/pages/anniversary_503/component"),
-                      },
-                    ],
-                  },
-                ],
-              },
-              {
-                path: "hxzy",
-                children: [
-                  {
-                    index: true,
-                    lazy: () => import("#renderer/pages/hxzy_hmis/component"),
-                  },
-                  {
-                    path: "setting",
-                    lazy: () =>
-                      import("#renderer/pages/hxzy_hmis_setting/component"),
-                  },
-                  {
-                    path: "verifies",
-                    lazy: () =>
-                      import("#renderer/pages/hxzy_verifies/component"),
-                  },
-                ],
-              },
-              {
-                path: "jtv",
-                children: [
-                  {
-                    index: true,
-                    lazy: () => import("#renderer/pages/jtv_hmis/component"),
-                  },
-                  {
-                    path: "setting",
-                    lazy: () =>
-                      import("#renderer/pages/jtv_hmis_setting/component"),
-                  },
-                ],
-              },
-              {
-                path: "jtv_guangzhoubei",
-                children: [
-                  {
-                    index: true,
-                    lazy: () =>
-                      import("#renderer/pages/jtv_hmis_guangzhoubei/component"),
-                  },
-                  {
-                    path: "setting",
-                    lazy: () =>
-                      import("#renderer/pages/jtv_hmis_guangzhoubei_setting/component"),
-                  },
-                ],
-              },
-              {
-                path: "jtv_guangzhoujibaoduan",
-                children: [
-                  {
-                    index: true,
-                    lazy: () =>
-                      import("#renderer/pages/jtv_hmis_guangzhoujibaoduan/component"),
-                  },
-                  {
-                    path: "setting",
-                    lazy: () =>
-                      import("#renderer/pages/jtv_hmis_guangzhoujibaoduan_setting/component"),
-                  },
-                ],
-              },
-              {
-                path: "guangzhoucheliang",
-                children: [
-                  {
-                    index: true,
-                    lazy: () =>
-                      import("#renderer/pages/guangzhoucheliang/component"),
-                  },
-                  {
-                    path: "setting",
-                    lazy: () =>
-                      import("#renderer/pages/guangzhoucheliang_setting/component"),
-                  },
-                ],
-              },
-              {
-                path: "kh",
-                children: [
-                  {
-                    index: true,
-                    lazy: () => import("#renderer/pages/kh_hmis/component"),
-                  },
-                  {
-                    path: "detections",
-                    lazy: () =>
-                      import("#renderer/pages/kh_detections/component"),
-                  },
-                  {
-                    path: "verify",
-                    lazy: () =>
-                      import("#renderer/pages/kh_hmis_verify/component"),
-                  },
-                  {
-                    path: "quartor",
-                    lazy: () =>
-                      import("#renderer/pages/kh_hmis_quartor/component"),
-                  },
-                  {
-                    path: "annual",
-                    lazy: () =>
-                      import("#renderer/pages/kh_hmis_annual/component"),
-                  },
-                  {
-                    path: "setting",
-                    lazy: () =>
-                      import("#renderer/pages/kh_hmis_setting/component"),
+                    path: "chr501",
+                    lazy: () => import("#renderer/pages/verify_501/component"),
                   },
                 ],
               },
             ],
           },
-        ],
-        Component: DashLayout,
-      },
-      {
-        children: [
+          {
+            path: "quartors",
+            children: [
+              {
+                index: true,
+                lazy: () => import("#renderer/pages/quartors"),
+              },
+              {
+                path: ":id",
+                children: [
+                  {
+                    index: true,
+                    lazy: () => import("#renderer/pages/quartors_show"),
+                  },
+                  {
+                    path: "chr501",
+                    lazy: () =>
+                      import("#renderer/pages/quartors_501/component"),
+                  },
+                ],
+              },
+              {
+                path: "chr502",
+                lazy: () => import("#renderer/pages/quartors_502/component"),
+              },
+            ],
+          },
+          {
+            path: "anniversary",
+            children: [
+              {
+                index: true,
+                lazy: () => import("#renderer/pages/anniversary/component"),
+              },
+              {
+                path: ":id",
+                children: [
+                  {
+                    index: true,
+                    lazy: () =>
+                      import("#renderer/pages/anniversary_show/component"),
+                  },
+                  {
+                    path: "chr503",
+                    lazy: () =>
+                      import("#renderer/pages/anniversary_503/component"),
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            path: "hxzy",
+            children: [
+              {
+                index: true,
+                lazy: () => import("#renderer/pages/hxzy_hmis/component"),
+              },
+              {
+                path: "setting",
+                lazy: () =>
+                  import("#renderer/pages/hxzy_hmis_setting/component"),
+              },
+              {
+                path: "verifies",
+                lazy: () => import("#renderer/pages/hxzy_verifies/component"),
+              },
+            ],
+          },
+          {
+            path: "jtv",
+            children: [
+              {
+                index: true,
+                lazy: () => import("#renderer/pages/jtv_hmis/component"),
+              },
+              {
+                path: "setting",
+                lazy: () =>
+                  import("#renderer/pages/jtv_hmis_setting/component"),
+              },
+            ],
+          },
+          {
+            path: "jtv_guangzhoubei",
+            children: [
+              {
+                index: true,
+                lazy: () =>
+                  import("#renderer/pages/jtv_hmis_guangzhoubei/component"),
+              },
+              {
+                path: "setting",
+                lazy: () =>
+                  import("#renderer/pages/jtv_hmis_guangzhoubei_setting/component"),
+              },
+            ],
+          },
+          {
+            path: "jtv_guangzhoujibaoduan",
+            children: [
+              {
+                index: true,
+                lazy: () =>
+                  import("#renderer/pages/jtv_hmis_guangzhoujibaoduan/component"),
+              },
+              {
+                path: "setting",
+                lazy: () =>
+                  import("#renderer/pages/jtv_hmis_guangzhoujibaoduan_setting/component"),
+              },
+            ],
+          },
+          {
+            path: "guangzhoucheliang",
+            children: [
+              {
+                index: true,
+                lazy: () =>
+                  import("#renderer/pages/guangzhoucheliang/component"),
+              },
+              {
+                path: "setting",
+                lazy: () =>
+                  import("#renderer/pages/guangzhoucheliang_setting/component"),
+              },
+            ],
+          },
+          {
+            path: "kh",
+            children: [
+              {
+                index: true,
+                lazy: () => import("#renderer/pages/kh_hmis/component"),
+              },
+              {
+                path: "detections",
+                lazy: () => import("#renderer/pages/kh_detections/component"),
+              },
+              {
+                path: "verify",
+                lazy: () => import("#renderer/pages/kh_hmis_verify/component"),
+              },
+              {
+                path: "quartor",
+                lazy: () => import("#renderer/pages/kh_hmis_quartor/component"),
+              },
+              {
+                path: "annual",
+                lazy: () => import("#renderer/pages/kh_hmis_annual/component"),
+              },
+              {
+                path: "setting",
+                lazy: () => import("#renderer/pages/kh_hmis_setting/component"),
+              },
+            ],
+          },
           {
             path: "qt",
             children: [
@@ -280,13 +263,6 @@ export const routes: RouteObject[] = [
                     index: true,
                     lazy: () => import("#renderer/pages/qt/component"),
                   },
-                ],
-                Component: DashLayout,
-              },
-
-              // Blank Layout
-              {
-                children: [
                   {
                     path: "anniversary",
                     children: [
@@ -316,14 +292,26 @@ export const routes: RouteObject[] = [
                     path: "verify",
                     children: [
                       {
-                        path: "501",
-                        lazy: () => import("#renderer/pages/qt-501/component"),
+                        path: ":id",
+                        children: [
+                          {
+                            path: "501",
+                            lazy: () =>
+                              import("#renderer/pages/qt-501/component"),
+                          },
+                        ],
                       },
                     ],
                   },
                   {
                     path: "quartors",
                     children: [
+                      {
+                        index: true,
+                        lazy: () =>
+                          import("#renderer/pages/qt-quartors/component"),
+                      },
+                      {},
                       {
                         path: "502",
                         lazy: () => import("#renderer/pages/qt-502/component"),
@@ -334,7 +322,17 @@ export const routes: RouteObject[] = [
                     path: "detections",
                     children: [
                       {
-                        path: "52a",
+                        index: true,
+                        lazy: () =>
+                          import("#renderer/pages/qt-detections/component"),
+                      },
+                      {
+                        path: ":id",
+                        children: [
+                          {
+                            path: "52a",
+                          },
+                        ],
                       },
                       {
                         path: "53a",
@@ -342,11 +340,11 @@ export const routes: RouteObject[] = [
                     ],
                   },
                 ],
-                Component: BlankLayout,
               },
             ],
           },
         ],
+        Component: DashLayout,
       },
     ],
     Component: RootRoute,

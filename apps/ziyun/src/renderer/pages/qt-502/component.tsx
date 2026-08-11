@@ -83,14 +83,18 @@ const calcMaxDiff = (strings: string[]) => {
 
 const calcResult = (left: number | string, right: number | string) => {
   if (typeof left === "string") {
-    return "不合格";
+    return typeof right === "string" ? "" : "不合格";
   }
 
   if (typeof right === "string") {
     return "不合格";
   }
 
-  if (left > 6 || right > 6) {
+  if (left > 6) {
+    return "不合格";
+  }
+
+  if (right > 6) {
     return "不合格";
   }
 
@@ -303,7 +307,6 @@ export const Component = () => {
   const [search] = useSearchParams();
   const ids = search.getAll("row");
   const query = useQuery(fetchExternalDB502(ids));
-  console.log(ids);
 
   const renderQuery = () => {
     if (query.isPending) {

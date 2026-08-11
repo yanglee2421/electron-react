@@ -582,6 +582,58 @@ export const Sidebar = (props: SidebarProps) => {
             </ListItemIcon>
             <ListItemText primary={"QT"} />
           </ListItemButton>
+          <ListItemButton
+            component={Link}
+            to={{ pathname: "/qt/detection" }}
+            selected={Object.is(
+              normalizePathname(location.pathname),
+              "/qt/detection",
+            )}
+          >
+            <ListItemIcon>
+              <Train />
+            </ListItemIcon>
+            <ListItemText primary={"现车作业"} />
+          </ListItemButton>
+          <ListItemButton
+            component={Link}
+            to={{ pathname: "/qt/verify" }}
+            selected={Object.is(
+              normalizePathname(location.pathname),
+              "/qt/verify",
+            )}
+          >
+            <ListItemIcon>
+              <TodayRounded />
+            </ListItemIcon>
+            <ListItemText primary={"日常校验"} />
+          </ListItemButton>
+          <ListItemButton
+            component={Link}
+            to={{ pathname: "/qt/quartors" }}
+            selected={Object.is(
+              normalizePathname(location.pathname),
+              "/qt/quartors",
+            )}
+          >
+            <ListItemIcon>
+              <CalendarMonthRounded />
+            </ListItemIcon>
+            <ListItemText primary={"季度校验"} />
+          </ListItemButton>
+          <ListItemButton
+            component={Link}
+            to={{ pathname: "/qt/anniversary" }}
+            selected={Object.is(
+              normalizePathname(location.pathname),
+              "/qt/anniversary",
+            )}
+          >
+            <ListItemIcon>
+              <CalendarTodayRounded />
+            </ListItemIcon>
+            <ListItemText primary={"年度校验"} />
+          </ListItemButton>
         </List>
 
         {/* Else */}
