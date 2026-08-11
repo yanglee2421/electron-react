@@ -9,6 +9,7 @@ import {
   Row,
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
+import { divideBy10 } from "#shared/functions/math";
 import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Alert, AlertTitle } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
@@ -22,40 +23,88 @@ import { useSearchParams } from "react-router";
 type Flaw = typeof schema.quartorsData.$inferSelect;
 
 interface MetaInfo {
-  lct: "";
-  lxh: "";
-  l01: "";
-  l02: "";
-  la3: "";
-  rct: "";
-  rxh: "";
-  r01: "";
-  r02: "";
-  ra3: "";
+  lct: string;
+  lxh: string;
+  l01: string;
+  l02: string;
+  la3: string;
+  rct: string;
+  rxh: string;
+  r01: string;
+  r02: string;
+  ra3: string;
 }
 
-const calcMetaMap = (group: Map<string, Flaw[]>): Map<string, MetaInfo> => {
-  return Array.from(group).reduce((acc, [key, flaws]) => {
-    const flaw = flaws.at(0);
+const calcFlawAtten = (flaws?: Flaw[]) => {
+  if (!Array.isArray(flaws)) {
+    return "";
+  }
 
-    if (flaw) {
-      acc.set(key, {
-        lct: "",
-        lxh: "",
-        l01: "",
-        l02: "",
-        la3: "",
-        rct: "",
-        rxh: "",
-        r01: "",
-        r02: "",
-        ra3: "",
-      });
-    }
+  const firstFlaw = flaws.at(0);
 
-    return acc;
-  }, new Map<string, MetaInfo>());
+  if (!firstFlaw) {
+    return "";
+  }
+
+  return typeof firstFlaw.nAtten === "number"
+    ? divideBy10(firstFlaw.nAtten)
+    : "";
 };
+
+const calcRowAtten = (flaws: Flaw[]) => {
+  const group = mapGroupBy(flaws, (flaw) => `${flaw.nBoard}-${flaw.nChannel}`);
+
+  const meta: MetaInfo = {
+    lct: calcFlawAtten(group.get("0-0")),
+    lxh: calcFlawAtten(group.get("0-1")),
+    la3: calcFlawAtten(group.get("0-2")),
+    l01: calcFlawAtten(group.get("0-3")),
+    l02: calcFlawAtten(group.get("0-4")),
+    rct: calcFlawAtten(group.get("1-0")),
+    rxh: calcFlawAtten(group.get("1-1")),
+    ra3: calcFlawAtten(group.get("1-2")),
+    r01: calcFlawAtten(group.get("1-3")),
+    r02: calcFlawAtten(group.get("1-4")),
+  };
+
+  return meta;
+};
+
+const calcMaxDiff = (strings: string[]) => {
+  const numbers = strings.map((str) => Number.parseFloat(str));
+  const hasNan = numbers.some((num) => Number.isNaN(num));
+
+  if (hasNan) {
+    return "";
+  }
+
+  return Math.max(...numbers) - Math.min(...numbers);
+};
+
+const calcResult = (left: number | string, right: number | string) => {
+  if (typeof left === "string") {
+    return "不合格";
+  }
+
+  if (typeof right === "string") {
+    return "不合格";
+  }
+
+  if (left > 6 || right > 6) {
+    return "不合格";
+  }
+
+  return "合格";
+};
+
+// 日常
+// app-ziyun://localhost/qt/verify/501?szIds=123456
+// 季度
+// app-ziyun://localhost/qt/quartors/502?zx=re2b&date=2024-01-01
+// CH52A
+// app-ziyun://localhost/qt/detections/52a?szIds=123456
+// CH53A
+// app-ziyun://localhost/qt/detections/53a?user=xxx&date=2024-01-01
 
 const FIRST_COL_WIDTH = 50;
 const LAST_COL_WIDTH = 50;
@@ -278,16 +327,10 @@ export const Component = () => {
 
     const metas = rows.map((row) => {
       const flaws = datas.filter((data) => Object.is(data.szIds, row.szIds));
-      const group = mapGroupBy(
-        flaws,
-        (flaw) => `${flaw.nBoard}-${flaw.nChannel}`,
-      );
-      const meta = calcMetaMap(group);
+      const meta = calcRowAtten(flaws);
 
       return { row, meta };
     });
-
-    const metaMap = mapGroupBy(metas, (meta) => meta.row.szIds);
 
     return (
       <PDFViewer
@@ -309,32 +352,32 @@ export const Component = () => {
           <Col>
             <Cell>反射波高(dB)</Cell>
             <Row>
-              {rows.map((row, index) => {
+              {metas.map(({ row, meta }, index) => {
                 return (
                   <Col key={row.szIds}>
                     <Cell>第{index + 1}次</Cell>
                     <Row>
                       <Col>
                         <Cell>左</Cell>
-                        <Cell>{metaMap.get(row.szIds)?.lxh}</Cell>
-                        <Cell>{metaMap.get(row.szIds)?.la3}</Cell>
-                        <Cell>{metaMap.get(row.szIds)?.l01}</Cell>
-                        <Cell>{metaMap.get(row.szIds)?.l02}</Cell>
+                        <Cell>{meta.lxh}</Cell>
+                        <Cell>{meta.la3}</Cell>
+                        <Cell>{meta.l01}</Cell>
+                        <Cell>{meta.l02}</Cell>
                         {of10.map((_) => (
                           <Cell key={_}></Cell>
                         ))}
-                        <Cell>{metaMap.get(row.szIds)?.lct}</Cell>
+                        <Cell>{meta.lct}</Cell>
                       </Col>
                       <Col>
                         <Cell>右</Cell>
-                        <Cell>{metaMap.get(row.szIds)?.rxh}</Cell>
-                        <Cell>{metaMap.get(row.szIds)?.ra3}</Cell>
-                        <Cell>{metaMap.get(row.szIds)?.r01}</Cell>
-                        <Cell>{metaMap.get(row.szIds)?.r02}</Cell>
+                        <Cell>{meta.rxh}</Cell>
+                        <Cell>{meta.ra3}</Cell>
+                        <Cell>{meta.r01}</Cell>
+                        <Cell>{meta.r02}</Cell>
                         {of10.map((_) => (
                           <Cell key={_}></Cell>
                         ))}
-                        <Cell>{metaMap.get(row.szIds)?.rct}</Cell>
+                        <Cell>{meta.rct}</Cell>
                       </Col>
                     </Row>
                   </Col>
@@ -345,25 +388,45 @@ export const Component = () => {
                 <Row>
                   <Col>
                     <Cell>左</Cell>
-                    <Cell>{maxDiffInfo.lxh}</Cell>
-                    <Cell>{maxDiffInfo.la3}</Cell>
-                    <Cell>{maxDiffInfo.l01}</Cell>
-                    <Cell>{maxDiffInfo.l02}</Cell>
+                    <Cell>
+                      {calcMaxDiff(metas.map(({ meta }) => meta.lxh))}
+                    </Cell>
+                    <Cell>
+                      {calcMaxDiff(metas.map(({ meta }) => meta.la3))}
+                    </Cell>
+                    <Cell>
+                      {calcMaxDiff(metas.map(({ meta }) => meta.l01))}
+                    </Cell>
+                    <Cell>
+                      {calcMaxDiff(metas.map(({ meta }) => meta.l02))}
+                    </Cell>
                     {of10.map((_) => (
                       <Cell key={_}></Cell>
                     ))}
-                    <Cell>{maxDiffInfo.lct}</Cell>
+                    <Cell>
+                      {calcMaxDiff(metas.map(({ meta }) => meta.lct))}
+                    </Cell>
                   </Col>
                   <Col>
                     <Cell>右</Cell>
-                    <Cell>{maxDiffInfo.rxh}</Cell>
-                    <Cell>{maxDiffInfo.ra3}</Cell>
-                    <Cell>{maxDiffInfo.r01}</Cell>
-                    <Cell>{maxDiffInfo.r02}</Cell>
+                    <Cell>
+                      {calcMaxDiff(metas.map(({ meta }) => meta.rxh))}
+                    </Cell>
+                    <Cell>
+                      {calcMaxDiff(metas.map(({ meta }) => meta.ra3))}
+                    </Cell>
+                    <Cell>
+                      {calcMaxDiff(metas.map(({ meta }) => meta.r01))}
+                    </Cell>
+                    <Cell>
+                      {calcMaxDiff(metas.map(({ meta }) => meta.r02))}
+                    </Cell>
                     {of10.map((_) => (
                       <Cell key={_}></Cell>
                     ))}
-                    <Cell>{maxDiffInfo.rct}</Cell>
+                    <Cell>
+                      {calcMaxDiff(metas.map(({ meta }) => meta.rct))}
+                    </Cell>
                   </Col>
                 </Row>
               </Col>
@@ -373,14 +436,39 @@ export const Component = () => {
             <Cell></Cell>
             <Cell>结果评定</Cell>
             <Cell></Cell>
-            <Cell>{resultInfo.xhc}</Cell>
-            <Cell>{resultInfo.a3}</Cell>
-            <Cell>{resultInfo.ch01}</Cell>
-            <Cell>{resultInfo.ch02}</Cell>
+            <Cell>
+              {calcResult(
+                calcMaxDiff(metas.map(({ meta }) => meta.lxh)),
+                calcMaxDiff(metas.map(({ meta }) => meta.rxh)),
+              )}
+            </Cell>
+            <Cell>
+              {calcResult(
+                calcMaxDiff(metas.map(({ meta }) => meta.la3)),
+                calcMaxDiff(metas.map(({ meta }) => meta.ra3)),
+              )}
+            </Cell>
+            <Cell>
+              {calcResult(
+                calcMaxDiff(metas.map(({ meta }) => meta.l01)),
+                calcMaxDiff(metas.map(({ meta }) => meta.r01)),
+              )}
+            </Cell>
+            <Cell>
+              {calcResult(
+                calcMaxDiff(metas.map(({ meta }) => meta.l02)),
+                calcMaxDiff(metas.map(({ meta }) => meta.r02)),
+              )}
+            </Cell>
             {of10.map((count) => {
               return <Cell key={count}></Cell>;
             })}
-            <Cell>{resultInfo.ct}</Cell>
+            <Cell>
+              {calcResult(
+                calcMaxDiff(metas.map(({ meta }) => meta.lct)),
+                calcMaxDiff(metas.map(({ meta }) => meta.rct)),
+              )}
+            </Cell>
           </Col>
         </ReportDoc>
       </PDFViewer>
