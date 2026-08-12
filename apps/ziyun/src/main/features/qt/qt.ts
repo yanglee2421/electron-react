@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import {
   and,
   between,
+  desc,
   eq,
   inArray,
   like,
@@ -585,7 +586,8 @@ export class QT {
           zh ? like(schema.detectors.szZh, `%${zh}%`) : void 0,
           result ? like(schema.detectors.szResult, `%${result}%`) : void 0,
         ),
-      );
+      )
+      .orderBy(desc(schema.detectors.tmNow));
 
     const [{ count }] = await this.client
       .select({ count: sqlCount() })
@@ -615,7 +617,8 @@ export class QT {
           user ? like(schema.verifies.szUsername, `%${user}%`) : void 0,
           zx ? like(schema.verifies.szWhModel, `%${zx}%`) : void 0,
         ),
-      );
+      )
+      .orderBy(desc(schema.verifies.tmNow));
 
     const [{ count }] = await this.client
       .select({ count: sqlCount() })
@@ -645,7 +648,8 @@ export class QT {
           user ? like(schema.quartors.szUsername, `%${user}%`) : void 0,
           zx ? like(schema.quartors.szWhModel, `%${zx}%`) : void 0,
         ),
-      );
+      )
+      .orderBy(desc(schema.quartors.tmNow));
 
     const [{ count }] = await this.client
       .select({ count: sqlCount() })
@@ -664,7 +668,8 @@ export class QT {
         date: schema.quartorRecordInfo.tmNow,
       })
       .from(schema.quartorRecordInfo)
-      .groupBy(schema.quartorRecordInfo.szIds);
+      .groupBy(schema.quartorRecordInfo.szIds)
+      .orderBy(desc(schema.quartorRecordInfo.tmNow));
 
     const [{ count }] = await this.client
       .select({ count: sqlCount() })

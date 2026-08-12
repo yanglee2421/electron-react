@@ -10,7 +10,6 @@ import {
   Row,
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
-import type { MemoInfo } from "#shared/functions/chr52a";
 import { divideBy10, mathFormat } from "#shared/functions/math";
 import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Alert, AlertTitle } from "@mui/material";
@@ -22,19 +21,21 @@ import dayjs from "dayjs";
 import React from "react";
 import { useParams } from "react-router";
 
+type MemoInfo = Map<string, number>;
 type Detection = typeof schema.detectors.$inferSelect;
 type DetectionData = typeof schema.detectionsData.$inferSelect;
 type FlawGroup = Map<string, DetectionData[]>;
 
 const resolveMemoInfo = (params: string | null): MemoInfo => {
-  const result = new Map<string, number>();
+  const result: MemoInfo = new Map();
 
   if (!params) {
     return result;
   }
 
-  return chunk(params.split(""), 8).reduce((map, item) => {
-    const board = Number(item.at(0)) ? 1 : 0;
+  return chunk(params.split(""), 3).reduce((map, item) => {
+    const originBoard = item.at(0) || "0";
+    const board = Number.parseInt(originBoard) > 8 ? 1 : 0;
     const channel = item.at(1);
     const flawType = Number(item.at(-1));
 
@@ -44,21 +45,32 @@ const resolveMemoInfo = (params: string | null): MemoInfo => {
   }, result);
 };
 
+// 011 031 041 911 931 941
+// 0-8 左 9-F左
+//
+// 011 021 041 051 921 941 951
+
+// 111 1*16 + 1=17 1=裂纹|2=透声不良|3=晶粗|4=压装不良
 const calcFlawType = (type?: number) => {
   switch (type) {
     case 1:
       return "裂纹";
     case 2:
       return "透声不良";
-    case 4:
+    case 3:
       return "晶粗";
-    case 8:
+    case 4:
       return "压装不良";
     default:
       return "";
   }
 };
 
+// 0穿透
+// 1卸荷槽
+// 2 a3
+// 3 51
+// 4 44
 const calcPlace = (board: number, channel: number) => {
   const direction = board ? "右" : "左";
 
@@ -92,13 +104,19 @@ const calcNote = (datas: DetectionData[], szMemo: string | null) => {
     return "";
   }
 
-  const chunks = chunk(szMemo?.split("") || [], 8);
-  const flawMap = mapGroupBy(datas, (el) =>
-    el.nBoard && el.nChannel ? calcPlace(el.nBoard, el.nChannel) : "",
-  );
+  const chunks = chunk(szMemo.split("") || [], 3);
+  const flawMap = mapGroupBy(datas, (el) => {
+    console.log(el.nChannel);
+
+    return el.nBoard !== null && el.nChannel !== null
+      ? calcPlace(el.nBoard, el.nChannel)
+      : "";
+  });
+
   const flawsNote = chunks
     .map((item) => {
-      const board = Number(item.at(0)) ? 1 : 0;
+      const originBoard = item.at(0) || "0";
+      const board = Number.parseInt(originBoard) > 8 ? 1 : 0;
       const channel = Number(item.at(1));
       const type = calcFlawType(Number(item.at(-1)));
       const place = calcPlace(board, channel);
