@@ -8,8 +8,8 @@ export const registerIPCHandlers = (qt: QT) => {
   ipcHandle("qt/52a", (_, p) => qt.fetch52AData(p));
   ipcHandle("qt/53a", (_, p) => qt.fetch53AData(p));
   ipcHandle("qt/detections", (_, p) => qt.fetchDetections(p));
-  ipcHandle("qt/verifies", (_) => qt.fetchVerifies());
-  ipcHandle("qt/quartors", (_) => qt.fetchQuartors());
+  ipcHandle("qt/verifies", (_, p) => qt.fetchVerifies(p));
+  ipcHandle("qt/quartors", (_, p) => qt.fetchQuartors(p));
   ipcHandle("qt/anniversary", (_, p) => qt.anniversary(p));
   ipcHandle("qt/anniversary-detail", (_, id) => qt.anniversaryDetail(id));
 

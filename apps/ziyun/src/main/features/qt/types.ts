@@ -25,6 +25,28 @@ export interface QTCHR53AInput {
 
 export interface FetchDetectionsInput {
   date: string;
+  user: string;
+  zx: string;
+  zh: string;
+  result: string;
+  pageIndex: number;
+  pageSize: number;
+}
+
+export interface FetchQTVerifiesInput {
+  date: string;
+  user: string;
+  zx: string;
+  pageIndex: number;
+  pageSize: number;
+}
+
+export interface FetchQuartorsInput {
+  date: string;
+  user: string;
+  zx: string;
+  pageIndex: number;
+  pageSize: number;
 }
 
 export interface AnniversaryInput {
@@ -38,11 +60,11 @@ export interface IPC {
     return: ReturnType<QT["fetchDetections"]>;
   };
   "qt/verifies": {
-    args: [];
+    args: [FetchQTVerifiesInput];
     return: ReturnType<QT["fetchVerifies"]>;
   };
   "qt/quartors": {
-    args: [];
+    args: [FetchQuartorsInput];
     return: ReturnType<QT["fetchQuartors"]>;
   };
   "qt/anniversary": {

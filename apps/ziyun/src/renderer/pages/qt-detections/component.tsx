@@ -1,7 +1,8 @@
 import { fetchQTDetections } from "#renderer/api/qt";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
-import { cellPaddingMap } from "#renderer/lib/constants";
+import { useDayjs } from "#renderer/hooks/use-dayjs";
+import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { Print, Refresh } from "@mui/icons-material";
 import {
   Alert,
@@ -22,6 +23,7 @@ import {
   TableContainer,
   TableFooter,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
 } from "@mui/material";
@@ -35,7 +37,7 @@ import {
 } from "@tanstack/react-table";
 import type { schema } from "@yanglee2421/external-db";
 import React from "react";
-import { Link as RouterLink, useSearchParams } from "react-router";
+import { Link as RouterLink } from "react-router";
 
 type Row = typeof schema.detectors.$inferSelect;
 
@@ -65,6 +67,7 @@ const columns = [
     ),
   }),
   columnHelper.accessor("szIds", {
+    header: "ID",
     cell: ({ getValue }) => {
       const value = getValue();
 
@@ -73,24 +76,67 @@ const columns = [
           component={RouterLink}
           to={{ pathname: `/qt/detections/${value}/52a` }}
         >
-          {value}
+          #{value?.slice(-6)}
         </Link>
       );
     },
+  }),
+  columnHelper.accessor("szZh", {
+    header: "轴号",
+  }),
+  columnHelper.accessor("szWhModel", {
+    header: "轴型",
+  }),
+  columnHelper.accessor("szIdsMake", {
+    header: "制造单位",
+  }),
+  columnHelper.accessor("szTmMake", {
+    header: "制造时间",
+  }),
+  columnHelper.accessor("szIdsFirst", {
+    header: "首装单位",
+  }),
+  columnHelper.accessor("szTmFirst", {
+    header: "首装时间",
+  }),
+  columnHelper.accessor("szUsername", {
+    header: "检测员",
+  }),
+  columnHelper.accessor("bWheelLs", {
+    header: "左轴承",
+  }),
+  columnHelper.accessor("bWheelRs", {
+    header: "右轴承",
+  }),
+  columnHelper.accessor("tmNow", {
+    header: "时间",
+  }),
+  columnHelper.accessor("szResult", {
+    header: "结果",
   }),
 ];
 
 export const Component = () => {
   "use no memo";
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(20);
+  const [user, setUser] = React.useState("");
+  const [day, setDay] = useDayjs();
+  const [zx, setZx] = React.useState("");
+  const [zh, setZh] = React.useState("");
+  const [result, setResult] = React.useState("");
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const date = searchParams.get("date") || "";
-  const query = useQuery(fetchQTDetections({ date }));
+  const date = day?.toISOString() || "";
+  const query = useQuery(
+    fetchQTDetections({ pageIndex, pageSize, date, user, zx, zh, result }),
+  );
   const data = React.useMemo(() => query.data?.rows || [], [query.data]);
   const table = useReactTable({
     getCoreRowModel: getCoreRowModel(),
     columns,
     data,
+    getRowId: (r) => r.recId.toString(10),
+    manualPagination: true,
   });
 
   const renderRow = () => {
@@ -149,9 +195,9 @@ export const Component = () => {
               onClick={() => {
                 query.refetch();
               }}
-              disabled={query.isPending}
+              disabled={query.isRefetching}
             >
-              <PendingIcon isPending={query.isPending}>
+              <PendingIcon isPending={query.isRefetching}>
                 <Refresh />
               </PendingIcon>
             </IconButton>
@@ -160,13 +206,55 @@ export const Component = () => {
         <CardContent>
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <DatePicker slotProps={{ textField: { fullWidth: true } }} />
+              <DatePicker
+                value={day}
+                onChange={(e) => setDay(e)}
+                slotProps={{
+                  textField: { fullWidth: true },
+                  field: { clearable: true },
+                }}
+                label="日期"
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField fullWidth />
+              <TextField
+                value={user}
+                onChange={(e) => {
+                  setUser(e.target.value);
+                }}
+                label="检测员"
+                fullWidth
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField fullWidth />
+              <TextField
+                value={zx}
+                onChange={(e) => {
+                  setZx(e.target.value);
+                }}
+                label="轴型"
+                fullWidth
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                value={zh}
+                onChange={(e) => {
+                  setZh(e.target.value);
+                }}
+                label="轴号"
+                fullWidth
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                value={result}
+                onChange={(e) => {
+                  setResult(e.target.value);
+                }}
+                label="结果"
+                fullWidth
+              />
             </Grid>
           </Grid>
         </CardContent>
@@ -178,7 +266,7 @@ export const Component = () => {
         </CardContent>
         {query.isFetching && <LinearProgress />}
         <TableContainer>
-          <Table sx={{ minWidth: (theme) => theme.breakpoints.values.lg }}>
+          <Table sx={{ minWidth: (t) => t.breakpoints.values.lg }}>
             <TableHead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
@@ -216,6 +304,20 @@ export const Component = () => {
             </TableFooter>
           </Table>
         </TableContainer>
+        <TablePagination
+          component={"div"}
+          page={pageIndex}
+          count={query.data?.count || 0}
+          rowsPerPage={pageSize}
+          rowsPerPageOptions={rowsPerPageOptions}
+          onPageChange={(_, page) => {
+            setPageIndex(page);
+          }}
+          onRowsPerPageChange={(e) => {
+            setPageSize(Number.parseInt(e.target.value, 10));
+          }}
+          labelRowsPerPage="每页行数"
+        />
       </Card>
     </>
   );

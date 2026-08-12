@@ -2,6 +2,8 @@ import type {
   AnniversaryInput,
   Fetch502DateInput,
   FetchDetectionsInput,
+  FetchQTVerifiesInput,
+  FetchQuartorsInput,
   QTCHR53AInput,
   SetupAppInput,
   SetYiqiConfigLibInput,
@@ -88,20 +90,20 @@ export const fetchQTDetections = (input: FetchDetectionsInput) => {
   });
 };
 
-export const fetchQTVerifies = () => {
+export const fetchQTVerifies = (input: FetchQTVerifiesInput) => {
   return queryOptions({
-    queryKey: [QUERY_KEY, "qt/verifies"],
+    queryKey: [QUERY_KEY, "qt/verifies", input],
     queryFn: async () => {
-      return ipc.invoke("qt/verifies");
+      return ipc.invoke("qt/verifies", input);
     },
   });
 };
 
-export const fetchQTQuartors = () => {
+export const fetchQTQuartors = (input: FetchQuartorsInput) => {
   return queryOptions({
-    queryKey: [QUERY_KEY, "qt/quartors"],
+    queryKey: [QUERY_KEY, "qt/quartors", input],
     queryFn: async () => {
-      return ipc.invoke("qt/quartors");
+      return ipc.invoke("qt/quartors", input);
     },
   });
 };
@@ -153,7 +155,7 @@ export const fetchQT503 = (id: string) => {
 
 export const fetchQT52A = (id: string) => {
   return queryOptions({
-    queryKey: [QUERY_KEY, "qt/52a"],
+    queryKey: [QUERY_KEY, "qt/52a", id],
     queryFn: async () => {
       return ipc.invoke("qt/52a", id);
     },

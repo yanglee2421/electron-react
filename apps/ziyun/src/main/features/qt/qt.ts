@@ -40,6 +40,8 @@ import type {
   AnniversaryInput,
   Fetch502DateInput,
   FetchDetectionsInput,
+  FetchQTVerifiesInput,
+  FetchQuartorsInput,
   QTCHR53AInput,
   SetupAppInput,
   SetYiqiConfigLibInput,
@@ -282,6 +284,10 @@ export class QT {
       ids = rows.map((r) => r.id).filter((r) => typeof r === "string");
     }
 
+    if (ids.length !== 5) {
+      throw new Error(`需要5条数据, 当前${ids.length}条`);
+    }
+
     const rows = await this.client
       .select()
       .from(schema.quartors)
@@ -516,88 +522,110 @@ export class QT {
   }
 
   async fetchDetections(input: FetchDetectionsInput) {
-    const [{ count }] = await this.client
-      .select({ count: sqlCount() })
-      .from(schema.detectors)
-      .where(
-        input.date
-          ? between(
-              schema.detectors.tmNow,
-              dayjs(input.date).startOf("day").toISOString(),
-              dayjs(input.date).endOf("day").toISOString(),
-            )
-          : void 0,
-      );
-    const rows = await this.client
+    const { date, user, zx, zh, result, pageIndex, pageSize } = input;
+
+    const day = date ? dayjs(date) : null;
+    const sqlCommand = this.client
       .select()
       .from(schema.detectors)
       .where(
-        input.date
-          ? between(
-              schema.detectors.tmNow,
-              dayjs(input.date).startOf("day").toISOString(),
-              dayjs(input.date).endOf("day").toISOString(),
-            )
-          : void 0,
-      );
-
-    return { count, rows };
-  }
-  async fetchVerifies() {
-    const [{ count }] = await this.client
-      .select({ count: sqlCount() })
-      .from(schema.verifies);
-    const rows = await this.client.select().from(schema.verifies);
-
-    return { count, rows };
-  }
-  async fetchQuartors() {
-    const [{ count }] = await this.client
-      .select({ count: sqlCount() })
-      .from(schema.quartors)
-      .where(
-        between(
-          schema.quartors.tmNow,
-          dayjs("2026-08-10").startOf("day").toISOString(),
-          dayjs("2026-08-10").endOf("day").toISOString(),
+        and(
+          day
+            ? between(
+                schema.detectors.tmNow,
+                day.startOf("day").toISOString(),
+                day.endOf("day").toISOString(),
+              )
+            : void 0,
+          user ? like(schema.detectors.szUsername, user) : void 0,
+          zx ? like(schema.detectors.szWhModel, zx) : void 0,
+          zh ? like(schema.detectors.szZh, zh) : void 0,
+          result ? like(schema.detectors.szResult, result) : void 0,
         ),
       );
-    const rows = await this.client
+
+    const [{ count }] = await this.client
+      .select({ count: sqlCount() })
+      .from(sqlCommand.as("rows"));
+
+    const rows = await sqlCommand.offset(pageIndex * pageSize).limit(pageSize);
+
+    return { count, rows };
+  }
+  async fetchVerifies(input: FetchQTVerifiesInput) {
+    const { pageIndex, pageSize, user, zx, date } = input;
+
+    const day = date ? dayjs(date) : null;
+    const sqlCommand = this.client
+      .select()
+      .from(schema.verifies)
+      .where(
+        and(
+          day
+            ? between(
+                schema.verifies.tmNow,
+                day.startOf("day").toISOString(),
+                day.endOf("day").toISOString(),
+              )
+            : void 0,
+          user ? like(schema.verifies.szUsername, user) : void 0,
+          zx ? like(schema.verifies.szWhModel, zx) : void 0,
+        ),
+      );
+
+    const [{ count }] = await this.client
+      .select({ count: sqlCount() })
+      .from(sqlCommand.as("rows"));
+
+    const rows = await sqlCommand.offset(pageIndex * pageSize).limit(pageSize);
+
+    return { count, rows };
+  }
+  async fetchQuartors(input: FetchQuartorsInput) {
+    const { user, date, zx, pageIndex = 0, pageSize = 20 } = input;
+
+    const day = date ? dayjs(date) : null;
+    const sqlCommand = this.client
       .select()
       .from(schema.quartors)
       .where(
-        between(
-          schema.quartors.tmNow,
-          dayjs("2026-08-10").startOf("day").toISOString(),
-          dayjs("2026-08-10").endOf("day").toISOString(),
+        and(
+          day
+            ? between(
+                schema.quartors.tmNow,
+                day.startOf("day").toISOString(),
+                day.endOf("day").toISOString(),
+              )
+            : void 0,
+          user ? like(schema.quartors.szUsername, user) : void 0,
+          zx ? like(schema.quartors.szWhModel, zx) : void 0,
         ),
       );
+
+    const [{ count }] = await this.client
+      .select({ count: sqlCount() })
+      .from(sqlCommand.as("rows"));
+
+    const rows = await sqlCommand.offset(pageIndex * pageSize).limit(pageSize);
 
     return { count, rows };
   }
   async anniversary(input: AnniversaryInput) {
     const { pageIndex, pageSize } = input;
 
-    const [{ count }] = await this.client.select({ count: sqlCount() }).from(
-      this.client
-        .select({
-          recId: schema.quartorRecordInfo.szIds,
-          date: schema.quartorRecordInfo.tmNow,
-        })
-        .from(schema.quartorRecordInfo)
-        .groupBy(schema.quartorRecordInfo.szIds)
-        .as("groups"),
-    );
-
-    const rows = await this.client
+    const sqlCommand = this.client
       .select({
         recId: schema.quartorRecordInfo.szIds,
         date: schema.quartorRecordInfo.tmNow,
       })
       .from(schema.quartorRecordInfo)
-      .groupBy(schema.quartorRecordInfo.szIds)
-      .offset(pageIndex)
-      .limit(pageSize);
+      .groupBy(schema.quartorRecordInfo.szIds);
+
+    const [{ count }] = await this.client
+      .select({ count: sqlCount() })
+      .from(sqlCommand.as("groups"));
+
+    const rows = await sqlCommand.offset(pageIndex * pageSize).limit(pageSize);
 
     return { rows, count };
   }

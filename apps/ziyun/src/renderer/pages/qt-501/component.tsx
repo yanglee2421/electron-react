@@ -14,6 +14,7 @@ import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import { of } from "#shared/functions/array";
 import { divideBy10, mathFormat } from "#shared/functions/math";
 import { CellHeightContext, styles } from "#shared/instances/styles";
+import { Home } from "@mui/icons-material";
 import { Alert, AlertTitle, Button } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
@@ -434,6 +435,7 @@ export const Component = () => {
             variant="contained"
             color="error"
             sx={{ mt: 1 }}
+            startIcon={<Home />}
           >
             回到首页
           </Button>

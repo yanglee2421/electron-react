@@ -102,7 +102,7 @@ export const routes: RouteObject[] = [
             children: [
               {
                 index: true,
-                lazy: () => import("#renderer/pages/quartors"),
+                lazy: () => import("#renderer/pages/quartors/component"),
               },
               {
                 path: ":id",

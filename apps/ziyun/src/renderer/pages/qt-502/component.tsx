@@ -11,14 +11,15 @@ import {
 import { of } from "#shared/functions/array";
 import { divideBy10 } from "#shared/functions/math";
 import { CellHeightContext, styles } from "#shared/instances/styles";
-import { Alert, AlertTitle } from "@mui/material";
+import { Home } from "@mui/icons-material";
+import { Alert, AlertTitle, Button } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
 import type { schema } from "@yanglee2421/external-db";
 import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import React from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
 type Flaw = typeof schema.quartorsData.$inferSelect;
 
@@ -327,6 +328,17 @@ export const Component = () => {
         <Alert severity="error">
           <AlertTitle>数据加载失败</AlertTitle>
           {query.error.message}
+          <div></div>
+          <Button
+            component={Link}
+            to={{ pathname: "/" }}
+            variant="contained"
+            color="error"
+            sx={{ mt: 1 }}
+            startIcon={<Home />}
+          >
+            回到首页
+          </Button>
         </Alert>
       );
     }
