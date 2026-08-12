@@ -9,6 +9,7 @@ import {
   eq,
   inArray,
   like,
+  ne,
   count as sqlCount,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-sqlite";
@@ -286,8 +287,6 @@ export class QT {
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SYRQ"))
       .limit(1);
-
-    console.log(ids);
 
     if (ids.length > 0) {
       const idList = ids.map((i) => Number.parseInt(i));
@@ -573,6 +572,7 @@ export class QT {
       .from(schema.detectors)
       .where(
         and(
+          ne(schema.detectors.bIsEnable, 0),
           day
             ? between(
                 schema.detectors.tmNow,
@@ -604,6 +604,7 @@ export class QT {
       .from(schema.verifies)
       .where(
         and(
+          ne(schema.verifies.bIsEnable, 0),
           day
             ? between(
                 schema.verifies.tmNow,
@@ -633,6 +634,7 @@ export class QT {
       .from(schema.quartors)
       .where(
         and(
+          ne(schema.quartors.bIsEnable, 0),
           day
             ? between(
                 schema.quartors.tmNow,

@@ -4,7 +4,8 @@
     "dev": "tsdown",
     "build": "tsdown",
     "studio": "drizzle-kit studio",
-    "pull": "drizzle-kit pull"
+    "pull": "drizzle-kit pull",
+    "generate": "drizzle-kit generate"
   },
   "files": [
     "dist"
