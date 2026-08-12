@@ -35,6 +35,7 @@ import {
 } from "@tanstack/react-table";
 import type { schema } from "@yanglee2421/external-db";
 import React from "react";
+import { Link as RouterLink } from "react-router";
 
 type Row = typeof schema.verifies.$inferSelect;
 
@@ -45,7 +46,14 @@ const columns = [
     cell: ({ getValue }) => {
       const value = getValue();
 
-      return <Link>#{value?.slice(-6)}</Link>;
+      return (
+        <Link
+          component={RouterLink}
+          to={{ pathname: `/qt/verifies/${value}/501` }}
+        >
+          #{value?.slice(-6)}
+        </Link>
+      );
     },
   }),
   columnHelper.accessor("szWhModel", {
@@ -62,7 +70,7 @@ const columns = [
 export const Component = () => {
   "use no memo";
   const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(20);
+  const [pageSize, setPageSize] = React.useState(100);
   const [user, setUser] = React.useState("");
   const [zx, setZx] = React.useState("");
   const [day, setDay] = useDayjs();

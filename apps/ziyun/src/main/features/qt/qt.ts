@@ -261,42 +261,7 @@ export class QT {
     };
   }
   async fetch502Data(input: Fetch502DateInput) {
-    let ids: string[] = [];
-
-    if (input.in.length > 0) {
-      ids = input.in;
-    } else {
-      const rows = await this.client
-        .select({ id: schema.quartors.szIds })
-        .from(schema.quartors)
-        .where(
-          and(
-            like(schema.quartors.szUsername, input.user),
-            like(schema.quartors.szWhModel, input.zx),
-            between(
-              schema.quartors.tmNow,
-              dayjs(input.date).startOf("day").toISOString(),
-              dayjs(input.date).endOf("day").toISOString(),
-            ),
-          ),
-        );
-
-      ids = rows.map((r) => r.id).filter((r) => typeof r === "string");
-    }
-
-    if (ids.length !== 5) {
-      throw new Error(`需要5条数据, 当前${ids.length}条`);
-    }
-
-    const rows = await this.client
-      .select()
-      .from(schema.quartors)
-      .where(inArray(schema.quartors.szIds, ids));
-
-    const datas = await this.client
-      .select()
-      .from(schema.quartorsData)
-      .where(inArray(schema.quartorsData.szIds, ids));
+    const { date, user, zx, ids } = input;
 
     const [FACTORY_CLD] = await this.client
       .select({ value: schema.sysConfig.configValue })
@@ -321,6 +286,60 @@ export class QT {
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SYRQ"))
       .limit(1);
+
+    console.log(ids);
+
+    if (ids.length > 0) {
+      const idList = ids.map((i) => Number.parseInt(i));
+
+      const rows = await this.client
+        .select()
+        .from(schema.quartors)
+        .where(inArray(schema.quartors.recId, idList));
+
+      if (rows.length !== 5) {
+        throw new Error(`CHR502需要5条数据; 当前${rows.length}条`);
+      }
+
+      const datas = await this.client
+        .select()
+        .from(schema.quartorsData)
+        .where(inArray(schema.quartorsData.precId, idList));
+
+      return {
+        rows,
+        datas,
+        FACTORY_CLD: FACTORY_CLD?.value,
+        FACTORY_SBXH: FACTORY_SBXH?.value,
+        FACTORY_SBBH: FACTORY_SBBH?.value,
+        FACTORY_SYRQ: FACTORY_SYRQ?.value,
+      };
+    }
+
+    const day = dayjs(date);
+    const rows = await this.client
+      .select()
+      .from(schema.quartors)
+      .where(
+        and(
+          between(
+            schema.quartors.tmNow,
+            day.startOf("day").toISOString(),
+            day.endOf("day").toISOString(),
+          ),
+          like(schema.quartors.szUsername, `%${user}%`),
+          like(schema.quartors.szWhModel, `%${zx}%`),
+        ),
+      );
+
+    if (rows.length !== 5) {
+      throw new Error(`CHR502需要5条数据; 当前${rows.length}条`);
+    }
+
+    const datas = await this.client
+      .select()
+      .from(schema.quartorsData)
+      .where(inArray(schema.quartorsData.szIds, ids));
 
     return {
       rows,
@@ -435,23 +454,47 @@ export class QT {
     };
   }
   async fetch53AData(input: QTCHR53AInput) {
+    const { date, user, ids } = input;
+
+    const [FACTORY_CLD] = await this.client
+      .select({ value: schema.sysConfig.configValue })
+      .from(schema.sysConfig)
+      .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
+      .limit(1);
+
+    if (ids.length) {
+      const idList = ids.map((i) => Number.parseInt(i));
+
+      const rows = await this.client
+        .select()
+        .from(schema.detectors)
+        .where(inArray(schema.detectors.recId, idList));
+
+      return {
+        rows,
+        FACTORY_CLD: FACTORY_CLD?.value,
+      };
+    }
+
+    const day = dayjs(date);
     const rows = await this.client
       .select()
       .from(schema.detectors)
       .where(
         and(
-          input.user ? like(schema.detectors.szUsername, input.user) : void 0,
-          input.date
-            ? between(
-                schema.detectors.tmNow,
-                dayjs(input.date).startOf("day").toISOString(),
-                dayjs(input.date).endOf("day").toISOString(),
-              )
-            : void 0,
+          between(
+            schema.detectors.tmNow,
+            day.startOf("day").toISOString(),
+            day.endOf("day").toISOString(),
+          ),
+          like(schema.detectors.szUsername, `%${user}%`),
         ),
       );
 
-    return { rows };
+    return {
+      rows,
+      FACTORY_CLD: FACTORY_CLD?.value,
+    };
   }
 
   async setupApp(params: SetupAppInput) {
@@ -537,10 +580,10 @@ export class QT {
                 day.endOf("day").toISOString(),
               )
             : void 0,
-          user ? like(schema.detectors.szUsername, user) : void 0,
-          zx ? like(schema.detectors.szWhModel, zx) : void 0,
-          zh ? like(schema.detectors.szZh, zh) : void 0,
-          result ? like(schema.detectors.szResult, result) : void 0,
+          user ? like(schema.detectors.szUsername, `%${user}%`) : void 0,
+          zx ? like(schema.detectors.szWhModel, `%${zx}%`) : void 0,
+          zh ? like(schema.detectors.szZh, `%${zh}%`) : void 0,
+          result ? like(schema.detectors.szResult, `%${result}%`) : void 0,
         ),
       );
 
@@ -568,8 +611,8 @@ export class QT {
                 day.endOf("day").toISOString(),
               )
             : void 0,
-          user ? like(schema.verifies.szUsername, user) : void 0,
-          zx ? like(schema.verifies.szWhModel, zx) : void 0,
+          user ? like(schema.verifies.szUsername, `%${user}%`) : void 0,
+          zx ? like(schema.verifies.szWhModel, `%${zx}%`) : void 0,
         ),
       );
 
@@ -597,8 +640,8 @@ export class QT {
                 day.endOf("day").toISOString(),
               )
             : void 0,
-          user ? like(schema.quartors.szUsername, user) : void 0,
-          zx ? like(schema.quartors.szWhModel, zx) : void 0,
+          user ? like(schema.quartors.szUsername, `%${user}%`) : void 0,
+          zx ? like(schema.quartors.szWhModel, `%${zx}%`) : void 0,
         ),
       );
 

@@ -11,7 +11,7 @@ export interface SetYiqiConfigLibInput {
 }
 
 export interface Fetch502DateInput {
-  in: string[];
+  ids: string[];
   user: string;
   zx: string;
   date: string;

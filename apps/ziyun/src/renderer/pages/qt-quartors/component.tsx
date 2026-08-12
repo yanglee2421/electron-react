@@ -35,7 +35,9 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { schema } from "@yanglee2421/external-db";
+import dayjs from "dayjs";
 import React from "react";
+import { useNavigate } from "react-router";
 
 type Row = typeof schema.quartors.$inferSelect;
 
@@ -79,13 +81,67 @@ const columns = [
   }),
 ];
 
+interface TT {
+  disabledPrint: boolean;
+  subheader?: React.ReactNode;
+}
+
+const calcPrintCheck = (...args: Row[]): TT => {
+  if (args.length !== 5) {
+    return { disabledPrint: true, subheader: "选中的行数必须为5" };
+  }
+
+  let date = "";
+  let user = "";
+  let zx = "";
+
+  for (const row of args) {
+    date ||= dayjs(row.tmNow).format("YYYY-MM-DD");
+    user ||= row.szUsername || "";
+    zx ||= row.szWhModel || "";
+
+    const isSameDate = dayjs(row.tmNow).format("YYYY-MM-DD") === date;
+
+    if (!isSameDate) {
+      return {
+        disabledPrint: true,
+        subheader: "选中的数据必须是同一天的",
+      };
+    }
+
+    const isSameUser = row.szUsername === user;
+
+    if (!isSameUser) {
+      return {
+        disabledPrint: true,
+        subheader: "选中的数据必须是同一个检测员的",
+      };
+    }
+
+    const isSameZX = row.szWhModel === zx;
+
+    if (!isSameZX) {
+      return {
+        disabledPrint: true,
+        subheader: "选中的数据必须是同一轴型的",
+      };
+    }
+  }
+
+  return {
+    disabledPrint: false,
+    subheader: `选中了${args.length}行，检测日期为${date}，检测员为${user}`,
+  };
+};
+
 export const Component = () => {
   const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(20);
+  const [pageSize, setPageSize] = React.useState(100);
   const [user, setUser] = React.useState("");
   const [zx, setZx] = React.useState("");
   const [day, setDay] = useDayjs();
 
+  const navigate = useNavigate();
   const date = day?.toISOString() || "";
   const query = useQuery(
     fetchQTQuartors({ pageIndex, pageSize, user, date, zx }),
@@ -98,6 +154,10 @@ export const Component = () => {
     getRowId: (r) => r.recId.toString(10),
     manualPagination: true,
   });
+
+  const printCheck = calcPrintCheck(
+    ...table.getSelectedRowModel().flatRows.map((row) => row.original),
+  );
 
   const renderRow = () => {
     if (query.isPending) {
@@ -150,6 +210,7 @@ export const Component = () => {
       <Card>
         <CardHeader
           title="季度校验"
+          subheader={printCheck.subheader}
           action={
             <IconButton
               onClick={() => {
@@ -202,7 +263,23 @@ export const Component = () => {
         </CardContent>
         <Divider />
         <CardContent>
-          <Button startIcon={<Print />} variant="outlined">
+          <Button
+            disabled={printCheck.disabledPrint}
+            startIcon={<Print />}
+            variant="outlined"
+            onClick={() => {
+              const search = new URLSearchParams();
+
+              table.getSelectedRowModel().flatRows.forEach((row) => {
+                search.append("row", row.id);
+              });
+
+              navigate({
+                pathname: "/qt/quartors/502",
+                search: "?" + search.toString(),
+              });
+            }}
+          >
             打印
           </Button>
         </CardContent>

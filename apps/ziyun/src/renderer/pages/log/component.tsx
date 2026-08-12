@@ -79,7 +79,7 @@ const DeleteButton = ({ id }: DeleteButtonProps) => {
 
 export const Component = () => {
   const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize] = React.useState(20);
+  const [pageSize] = React.useState(100);
   const [level, setLevel] = React.useState("all");
   const [startDate, setStartDate] = React.useState(initDayjs);
   const [endDate, setEndDate] = React.useState(initDayjs);

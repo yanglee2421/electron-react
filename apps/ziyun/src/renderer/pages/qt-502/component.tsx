@@ -309,9 +309,10 @@ export const Component = () => {
   const user = search.get("user");
   const zx = search.get("zx");
   const date = search.get("date");
+  const ids = search.getAll("row");
   const query = useQuery(
     fetchQT502({
-      in: [],
+      ids,
       user: user || "",
       zx: zx || "",
       date: date || "",

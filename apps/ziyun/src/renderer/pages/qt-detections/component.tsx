@@ -36,8 +36,9 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { schema } from "@yanglee2421/external-db";
+import dayjs from "dayjs";
 import React from "react";
-import { Link as RouterLink } from "react-router";
+import { Link as RouterLink, useNavigate } from "react-router";
 
 type Row = typeof schema.detectors.$inferSelect;
 
@@ -116,16 +117,70 @@ const columns = [
   }),
 ];
 
+interface ValidateSelectedResult {
+  disabledCH53A: boolean;
+  subheader?: React.ReactNode;
+}
+
+const validateSelected = (rows: Row[]): ValidateSelectedResult => {
+  if (rows.length === 0) {
+    return {
+      disabledCH53A: true,
+      subheader: "未选中作业记录",
+    };
+  }
+
+  let date = "";
+  let user = "";
+
+  for (const row of rows) {
+    date ||= dayjs(row.tmNow).format("YYYY-MM-DD");
+
+    const isSameDate = Object.is(date, dayjs(row.tmNow).format("YYYY-MM-DD"));
+
+    if (!isSameDate) {
+      return {
+        disabledCH53A: true,
+        subheader: "存在日期不一致的记录",
+      };
+    }
+
+    if (!row.szUsername) {
+      return {
+        disabledCH53A: true,
+        subheader: "不能选择无操作者的记录",
+      };
+    }
+
+    user ||= row.szUsername;
+
+    const isSameUser = Object.is(user, row.szUsername);
+
+    if (!isSameUser) {
+      return {
+        disabledCH53A: true,
+        subheader: "存在操作者不一致的记录",
+      };
+    }
+  }
+
+  return {
+    disabledCH53A: false,
+    subheader: `已选中${rows.length}条`,
+  };
+};
+
 export const Component = () => {
   "use no memo";
   const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(20);
+  const [pageSize, setPageSize] = React.useState(100);
   const [user, setUser] = React.useState("");
   const [day, setDay] = useDayjs();
   const [zx, setZx] = React.useState("");
   const [zh, setZh] = React.useState("");
   const [result, setResult] = React.useState("");
 
+  const navigate = useNavigate();
   const date = day?.toISOString() || "";
   const query = useQuery(
     fetchQTDetections({ pageIndex, pageSize, date, user, zx, zh, result }),
@@ -138,6 +193,10 @@ export const Component = () => {
     getRowId: (r) => r.recId.toString(10),
     manualPagination: true,
   });
+
+  const { subheader, disabledCH53A } = validateSelected(
+    table.getSelectedRowModel().flatRows.map((row) => row.original),
+  );
 
   const renderRow = () => {
     if (query.isPending) {
@@ -190,6 +249,7 @@ export const Component = () => {
       <Card>
         <CardHeader
           title="现车作业"
+          subheader={subheader}
           action={
             <IconButton
               onClick={() => {
@@ -260,7 +320,20 @@ export const Component = () => {
         </CardContent>
         <Divider />
         <CardContent>
-          <Button startIcon={<Print />} variant="outlined">
+          <Button
+            startIcon={<Print />}
+            disabled={disabledCH53A}
+            variant="outlined"
+            onClick={() => {
+              navigate("/qt/detections/53a", {
+                state: {
+                  ids: table
+                    .getSelectedRowModel()
+                    .flatRows.map((row) => row.original.recId),
+                },
+              });
+            }}
+          >
             打印
           </Button>
         </CardContent>

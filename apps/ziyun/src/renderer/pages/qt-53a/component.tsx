@@ -47,10 +47,10 @@ const MAX_ROWS_PER_PAGE = 28;
 
 export const Component = () => {
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const date = searchParams.get("date") || "";
   const user = searchParams.get("user") || "";
-  const ids = location.state?.ids;
+  const ids = location.state?.ids || [];
   const CELL_HEIGHT = 18;
   const query = useQuery(fetchQT53A({ ids, date, user }));
 
@@ -68,12 +68,10 @@ export const Component = () => {
       );
     }
 
-    return null;
+    const { rows, FACTORY_CLD } = query.data;
 
-    const { records, corporation } = query.data;
-
-    const pages = chunk(records, MAX_ROWS_PER_PAGE);
-    const firstRow = records.at(0);
+    const pages = chunk(rows, MAX_ROWS_PER_PAGE);
+    const firstRow = rows.at(0);
 
     if (!firstRow) {
       return (
@@ -109,7 +107,7 @@ export const Component = () => {
                       <Row>
                         <Col width={144}>
                           <Text style={[styles.textLeft]}>
-                            单位:{corporation.Factory}
+                            单位:{FACTORY_CLD}
                           </Text>
                         </Col>
                         <Col>
@@ -123,7 +121,7 @@ export const Component = () => {
                         </Col>
                         <Col width={60}>
                           <Text>
-                            {dayjs(firstRow.tmnow).format("YYYY-MM-DD")}
+                            {dayjs(firstRow.tmNow).format("YYYY-MM-DD")}
                           </Text>
                         </Col>
                       </Row>
@@ -134,9 +132,9 @@ export const Component = () => {
                           <Cell height={CELL_HEIGHT * 3}>{"序\n号"}</Cell>
                           {rows.map((row) => {
                             return (
-                              <Cell key={row.szIDs}>
-                                {records.findIndex((r) =>
-                                  Object.is(r.szIDs, row.szIDs),
+                              <Cell key={row.szIds}>
+                                {rows.findIndex((r) =>
+                                  Object.is(r.szIds, row.szIds),
                                 ) + 1}
                               </Cell>
                             );
@@ -148,7 +146,7 @@ export const Component = () => {
                         <Col width={34}>
                           <Cell height={CELL_HEIGHT * 3}>轴型</Cell>
                           {rows.map((row) => {
-                            return <Cell key={row.szIDs}>{row.szWHModel}</Cell>;
+                            return <Cell key={row.szIds}>{row.szWhModel}</Cell>;
                           })}
                           {ofRest.map((_) => (
                             <Cell key={_}></Cell>
@@ -157,9 +155,7 @@ export const Component = () => {
                         <Col width={54}>
                           <Cell height={CELL_HEIGHT * 3}>轴号</Cell>
                           {rows.map((row) => {
-                            return (
-                              <Cell key={row.szIDs}>{row.szIDsWheel}</Cell>
-                            );
+                            return <Cell key={row.szIds}>{row.szZh}</Cell>;
                           })}
                           {ofRest.map((_) => (
                             <Cell key={_}></Cell>
@@ -172,7 +168,7 @@ export const Component = () => {
                               <Cell>时间</Cell>
                               {rows.map((row) => {
                                 return (
-                                  <Cell key={row.szIDs}>{row.szTMFirst}</Cell>
+                                  <Cell key={row.szIds}>{row.szTmFirst}</Cell>
                                 );
                               })}
                               {ofRest.map((_) => (
@@ -183,7 +179,7 @@ export const Component = () => {
                               <Cell>单位</Cell>
                               {rows.map((row) => {
                                 return (
-                                  <Cell key={row.szIDs}>{row.szIDsFirst}</Cell>
+                                  <Cell key={row.szIds}>{row.szIdsFirst}</Cell>
                                 );
                               })}
                               {ofRest.map((_) => (
@@ -209,14 +205,14 @@ export const Component = () => {
                                           {rows.map((row) => {
                                             return (
                                               <Cell
-                                                key={row.szIDs}
+                                                key={row.szIds}
                                                 text={false}
                                               >
                                                 <CheckCell
                                                   place={place}
                                                   board={board}
-                                                  showLeft={!!row.bWheelLS}
-                                                  showRight={!!row.bWheelRS}
+                                                  showLeft={!!row.bWheelLs}
+                                                  showRight={!!row.bWheelRs}
                                                 />
                                               </Cell>
                                             );
@@ -236,7 +232,7 @@ export const Component = () => {
                         <Col width={40}>
                           <Cell height={CELL_HEIGHT * 3}>{"探测\n结果"}</Cell>
                           {rows.map((row) => (
-                            <Cell key={row.szIDs}>{row.szResult}</Cell>
+                            <Cell key={row.szIds}>{row.szResult}</Cell>
                           ))}
                           {ofRest.map((_) => (
                             <Cell key={_}></Cell>
@@ -245,7 +241,7 @@ export const Component = () => {
                         <Col width={60}>
                           <Cell height={CELL_HEIGHT * 3}>备注</Cell>
                           {rows.map((row) => (
-                            <Cell key={row.szIDs}>
+                            <Cell key={row.szIds}>
                               {!!row.szMemo && "待复验"}
                             </Cell>
                           ))}
