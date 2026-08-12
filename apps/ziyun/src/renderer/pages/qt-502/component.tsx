@@ -1,4 +1,4 @@
-import { fetchExternalDB502 } from "#renderer/api/qt";
+import { fetchQT502 } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import {
   Cell,
@@ -309,7 +309,7 @@ export const Component = () => {
   const zx = search.get("zx");
   const date = search.get("date");
   const query = useQuery(
-    fetchExternalDB502({
+    fetchQT502({
       in: [],
       user: user || "",
       zx: zx || "",

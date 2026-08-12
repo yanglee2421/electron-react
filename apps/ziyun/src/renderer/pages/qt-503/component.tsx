@@ -1,4 +1,4 @@
-import { fetchExternalDB503 } from "#renderer/api/qt";
+import { fetchQT503 } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import {
   Cell,
@@ -23,7 +23,7 @@ export const Component = () => {
   const CELL_HEIGHT = 18;
   const BLOCK_COL_WIDTH = 30;
   const params = useParams();
-  const query = useQuery(fetchExternalDB503(params.id!));
+  const query = useQuery(fetchQT503(params.id!));
 
   const renderQuery = () => {
     if (query.isPending) {

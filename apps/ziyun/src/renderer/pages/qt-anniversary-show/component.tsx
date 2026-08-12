@@ -1,11 +1,11 @@
-import { fetchExternalDBAnniversaryDetail } from "#renderer/api/qt";
+import { fetchQTAnniversaryDetail } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 
 export const Component = () => {
   const params = useParams();
-  const query = useQuery(fetchExternalDBAnniversaryDetail(params.id!));
+  const query = useQuery(fetchQTAnniversaryDetail(params.id!));
 
   const renderQuery = () => {
     if (query.isPending) {

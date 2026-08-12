@@ -15,60 +15,6 @@ import {
 
 export const QUERY_KEY = "qt";
 
-export const fetchExternalDBAnniversary = (input: AnniversaryInput) => {
-  return queryOptions({
-    queryKey: [QUERY_KEY, "qt/anniversary", input],
-    queryFn: async () => {
-      return ipc.invoke("qt/anniversary", input);
-    },
-  });
-};
-
-export const fetchExternalDBAnniversaryDetail = (id: string) => {
-  return queryOptions({
-    queryKey: [QUERY_KEY, "qt/anniversary-detail", id],
-    queryFn: async () => {
-      return ipc.invoke("qt/anniversary-detail", id);
-    },
-  });
-};
-
-export const fetchExternalDB501 = (id: string) => {
-  return queryOptions({
-    queryKey: [QUERY_KEY, "qt/501", id],
-    queryFn: () => {
-      return ipc.invoke("qt/501", id);
-    },
-  });
-};
-
-export const fetchExternalDB502 = (p: Fetch502DateInput) => {
-  return queryOptions({
-    queryKey: [QUERY_KEY, "qt/502", p],
-    queryFn: () => {
-      return ipc.invoke("qt/502", p);
-    },
-  });
-};
-
-export const fetchExternalDB503 = (id: string) => {
-  return queryOptions({
-    queryKey: [QUERY_KEY, "qt/503", id],
-    queryFn: () => {
-      return ipc.invoke("qt/503", id);
-    },
-  });
-};
-
-export const fetchQTCHR53A = (input: QTCHR53AInput) => {
-  return queryOptions({
-    queryKey: [QUERY_KEY, "qt/53a", input],
-    queryFn: async () => {
-      return ipc.invoke("qt/53a", input);
-    },
-  });
-};
-
 export const useSetupApp = () => {
   return useMutation({
     mutationFn: (p: SetupAppInput) => {
@@ -133,7 +79,25 @@ export const useStartApp = () => {
   });
 };
 
-export const fetchQtQuartors = () => {
+export const fetchQTDetections = (input: FetchDetectionsInput) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/detections", input],
+    queryFn: async () => {
+      return ipc.invoke("qt/detections", input);
+    },
+  });
+};
+
+export const fetchQTVerifies = () => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/verifies"],
+    queryFn: async () => {
+      return ipc.invoke("qt/verifies");
+    },
+  });
+};
+
+export const fetchQTQuartors = () => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/quartors"],
     queryFn: async () => {
@@ -142,11 +106,65 @@ export const fetchQtQuartors = () => {
   });
 };
 
-export const fetchQtDetections = (input: FetchDetectionsInput) => {
+export const fetchQTAnniversary = (input: AnniversaryInput) => {
   return queryOptions({
-    queryKey: [QUERY_KEY, "qt/detections", input],
+    queryKey: [QUERY_KEY, "qt/anniversary", input],
     queryFn: async () => {
-      return ipc.invoke("qt/detections", input);
+      return ipc.invoke("qt/anniversary", input);
+    },
+  });
+};
+
+export const fetchQTAnniversaryDetail = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/anniversary-detail", id],
+    queryFn: async () => {
+      return ipc.invoke("qt/anniversary-detail", id);
+    },
+  });
+};
+
+export const fetchQT501 = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/501", id],
+    queryFn: () => {
+      return ipc.invoke("qt/501", id);
+    },
+  });
+};
+
+export const fetchQT502 = (p: Fetch502DateInput) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/502", p],
+    queryFn: () => {
+      return ipc.invoke("qt/502", p);
+    },
+  });
+};
+
+export const fetchQT503 = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/503", id],
+    queryFn: () => {
+      return ipc.invoke("qt/503", id);
+    },
+  });
+};
+
+export const fetchQT52A = (id: string) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/52a"],
+    queryFn: async () => {
+      return ipc.invoke("qt/52a", id);
+    },
+  });
+};
+
+export const fetchQT53A = (input: QTCHR53AInput) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/53a", input],
+    queryFn: async () => {
+      return ipc.invoke("qt/53a", input);
     },
   });
 };

@@ -375,9 +375,57 @@ export class QT {
       .from(schema.detectionsData)
       .where(eq(schema.detectionsData.szIds, szIds));
 
+    const [record] = await this.client
+      .select()
+      .from(schema.detectors)
+      .where(eq(schema.detectors.szIds, szIds));
+
+    const flagFile = path.resolve(this.profile.state.qtAppPath, "../FlagFile");
+    const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
+    const imageDirectory = path.resolve(dataDirectory, "./detectors", szIds);
+    const lct = path.resolve(
+      imageDirectory,
+      `${record.szIds}.${record.szWhModel}.LCT.bmp`,
+    );
+    const llz = path.resolve(
+      imageDirectory,
+      `${record.szIds}.${record.szWhModel}.LLZ.bmp`,
+    );
+    const lxh = path.resolve(
+      imageDirectory,
+      `${record.szIds}.${record.szWhModel}.LXH.bmp`,
+    );
+    const rct = path.resolve(
+      imageDirectory,
+      `${record.szIds}.${record.szWhModel}.RCT.bmp`,
+    );
+    const rlz = path.resolve(
+      imageDirectory,
+      `${record.szIds}.${record.szWhModel}.RLZ.bmp`,
+    );
+    const rxh = path.resolve(
+      imageDirectory,
+      `${record.szIds}.${record.szWhModel}.RXH.bmp`,
+    );
+    const tmpPath = path.resolve(app.getPath("temp"), app.getName());
+
+    await fs.promises.mkdir(tmpPath, { recursive: true });
+
+    const jpegs: ChannelImage = await this.piscina.run({
+      tmpPath,
+      lct,
+      rct,
+      llz,
+      rlz,
+      lxh,
+      rxh,
+    });
+
     return {
       FACTORY_CLD: FACTORY_CLD?.value,
       datas,
+      record,
+      jpegs,
     };
   }
   async fetch53AData(input: QTCHR53AInput) {
@@ -386,12 +434,14 @@ export class QT {
       .from(schema.detectors)
       .where(
         and(
-          like(schema.detectors.szUsername, input.user),
-          between(
-            schema.detectors.tmNow,
-            dayjs(input.date).startOf("day").toISOString(),
-            dayjs(input.date).endOf("day").toISOString(),
-          ),
+          input.user ? like(schema.detectors.szUsername, input.user) : void 0,
+          input.date
+            ? between(
+                schema.detectors.tmNow,
+                dayjs(input.date).startOf("day").toISOString(),
+                dayjs(input.date).endOf("day").toISOString(),
+              )
+            : void 0,
         ),
       );
 
@@ -470,21 +520,25 @@ export class QT {
       .select({ count: sqlCount() })
       .from(schema.detectors)
       .where(
-        between(
-          schema.detectors.tmNow,
-          dayjs(input.date).startOf("day").toISOString(),
-          dayjs(input.date).endOf("day").toISOString(),
-        ),
+        input.date
+          ? between(
+              schema.detectors.tmNow,
+              dayjs(input.date).startOf("day").toISOString(),
+              dayjs(input.date).endOf("day").toISOString(),
+            )
+          : void 0,
       );
     const rows = await this.client
       .select()
       .from(schema.detectors)
       .where(
-        between(
-          schema.detectors.tmNow,
-          dayjs(input.date).startOf("day").toISOString(),
-          dayjs(input.date).endOf("day").toISOString(),
-        ),
+        input.date
+          ? between(
+              schema.detectors.tmNow,
+              dayjs(input.date).startOf("day").toISOString(),
+              dayjs(input.date).endOf("day").toISOString(),
+            )
+          : void 0,
       );
 
     return { count, rows };

@@ -1,4 +1,4 @@
-import { fetchExternalDBAnniversary } from "#renderer/api/qt";
+import { fetchQTAnniversary } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import { ArrowForward, Grid3x3, Refresh } from "@mui/icons-material";
 import {
@@ -21,7 +21,7 @@ export const Component = () => {
   const [pageIndex, setPageIndex] = React.useState(0);
   const pageSize = 20;
 
-  const query = useQuery(fetchExternalDBAnniversary({ pageIndex, pageSize }));
+  const query = useQuery(fetchQTAnniversary({ pageIndex, pageSize }));
 
   const renderQuery = () => {
     if (query.isPending) {

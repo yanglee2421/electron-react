@@ -1,4 +1,4 @@
-import { fetchQTCHR53A } from "#renderer/api/qt";
+import { fetchQT53A } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import {
   Cell,
@@ -52,7 +52,7 @@ export const Component = () => {
   const user = searchParams.get("user") || "";
   const ids = location.state?.ids;
   const CELL_HEIGHT = 18;
-  const query = useQuery(fetchQTCHR53A({ ids, date, user }));
+  const query = useQuery(fetchQT53A({ ids, date, user }));
 
   const renderQuery = () => {
     if (query.isPending) {

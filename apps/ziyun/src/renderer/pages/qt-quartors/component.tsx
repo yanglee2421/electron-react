@@ -1,9 +1,9 @@
-import { fetchQtQuartors } from "#renderer/api/qt";
+import { fetchQTQuartors } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import { useQuery } from "@tanstack/react-query";
 
 export const Component = () => {
-  const query = useQuery(fetchQtQuartors());
+  const query = useQuery(fetchQTQuartors());
 
   const renderQuery = () => {
     if (query.isPending) {

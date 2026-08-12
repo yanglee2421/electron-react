@@ -10,19 +10,10 @@ export interface SetYiqiConfigLibInput {
   lib: string;
 }
 
-export interface AnniversaryInput {
-  pageIndex: number;
-  pageSize: number;
-}
-
 export interface Fetch502DateInput {
   in: string[];
   user: string;
   zx: string;
-  date: string;
-}
-
-export interface FetchDetectionsInput {
   date: string;
 }
 
@@ -32,7 +23,28 @@ export interface QTCHR53AInput {
   ids: string[];
 }
 
+export interface FetchDetectionsInput {
+  date: string;
+}
+
+export interface AnniversaryInput {
+  pageIndex: number;
+  pageSize: number;
+}
+
 export interface IPC {
+  "qt/detections": {
+    args: [FetchDetectionsInput];
+    return: ReturnType<QT["fetchDetections"]>;
+  };
+  "qt/verifies": {
+    args: [];
+    return: ReturnType<QT["fetchVerifies"]>;
+  };
+  "qt/quartors": {
+    args: [];
+    return: ReturnType<QT["fetchQuartors"]>;
+  };
   "qt/anniversary": {
     args: [AnniversaryInput];
     return: ReturnType<QT["anniversary"]>;
@@ -53,13 +65,22 @@ export interface IPC {
     args: [string];
     return: ReturnType<QT["fetch503Data"]>;
   };
+  "qt/52a": {
+    args: [string];
+    return: ReturnType<QT["fetch52AData"]>;
+  };
   "qt/53a": {
     args: [QTCHR53AInput];
     return: ReturnType<QT["fetch53AData"]>;
   };
+
   "qt/setup-app": {
     args: [SetupAppInput];
     return: ReturnType<QT["setupApp"]>;
+  };
+  "qt/start-app": {
+    args: [];
+    return: ReturnType<QT["startApp"]>;
   };
   "qt/current-db-path": {
     args: [];
@@ -76,17 +97,5 @@ export interface IPC {
   "qt/yiqiConfig/flag": {
     args: [number];
     return: ReturnType<QT["setDeviceConfigFlag"]>;
-  };
-  "qt/start-app": {
-    args: [];
-    return: ReturnType<QT["startApp"]>;
-  };
-  "qt/quartors": {
-    args: [];
-    return: ReturnType<QT["fetchQuartors"]>;
-  };
-  "qt/detections": {
-    args: [FetchDetectionsInput];
-    return: ReturnType<QT["fetchDetections"]>;
   };
 }

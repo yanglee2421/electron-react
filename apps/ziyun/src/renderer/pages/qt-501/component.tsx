@@ -1,4 +1,4 @@
-import { fetchExternalDB501 } from "#renderer/api/qt";
+import { fetchQT501 } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import {
   Cell,
@@ -415,7 +415,7 @@ const ReportDoc = (props: ReportDocProps) => {
 
 export const Component = () => {
   const params = useParams();
-  const query = useQuery(fetchExternalDB501(params.id!));
+  const query = useQuery(fetchQT501(params.id!));
 
   const renderQuery = () => {
     if (query.isPending) {

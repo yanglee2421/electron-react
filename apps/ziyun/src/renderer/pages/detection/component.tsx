@@ -226,11 +226,7 @@ export const Component = () => {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length} align="center">
-            <Loading
-              slotProps={{
-                box: { padding: 0 },
-              }}
-            />
+            <Loading slotProps={{ box: { sx: { padding: 0 } } }} />
           </TableCell>
         </TableRow>
       );

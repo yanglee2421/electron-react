@@ -292,6 +292,11 @@ export const routes: RouteObject[] = [
                     path: "verifies",
                     children: [
                       {
+                        index: true,
+                        lazy: () =>
+                          import("#renderer/pages/qt-verifies/component"),
+                      },
+                      {
                         path: ":id",
                         children: [
                           {
@@ -331,6 +336,8 @@ export const routes: RouteObject[] = [
                         children: [
                           {
                             path: "52a",
+                            lazy: () =>
+                              import("#renderer/pages/qt-52a/component"),
                           },
                         ],
                       },
