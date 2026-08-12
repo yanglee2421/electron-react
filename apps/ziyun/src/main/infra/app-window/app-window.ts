@@ -71,7 +71,7 @@ export class AppWindow {
         const url = new URL(customURL);
 
         win.loadFile(RENDERER_FILE, {
-          hash: url.href.replace(url.origin, ""),
+          hash: url.pathname + url.search,
         });
       } else {
         win.loadFile(RENDERER_FILE);
@@ -94,7 +94,8 @@ export class AppWindow {
 
     const url = new URL(customURL);
     const CUSTOM_RENDERER_URL = new URL(RENDERER_URL);
-    CUSTOM_RENDERER_URL.hash = url.href.replace(url.origin, "");
+
+    CUSTOM_RENDERER_URL.hash = url.pathname + url.search;
     win.loadURL(CUSTOM_RENDERER_URL.href);
 
     return win;
