@@ -3,13 +3,9 @@ import { useUploadCHR52A } from "#renderer/api/kh";
 import { fetchDetections, fetchUser } from "#renderer/api/mdb";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
+import { CheckBoxCell } from "#renderer/components/table";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import {
-  CheckBoxOutlineBlankOutlined,
-  CheckBoxOutlined,
-  RefreshOutlined,
-  Upload,
-} from "@mui/icons-material";
+import { RefreshOutlined, Upload } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -71,10 +67,6 @@ const UploadCHR52A = (props: UploadCHR52A) => {
   );
 };
 
-const renderCheckBoxIcon = (value: boolean | null) => {
-  return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
-};
-
 const columnHelper = createColumnHelper<Detection>();
 const columns = [
   columnHelper.display({
@@ -103,12 +95,16 @@ const columns = [
   }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
   columnHelper.accessor("bWheelLS", {
-    cell: ({ getValue }) => renderCheckBoxIcon(getValue()),
+    cell: ({ getValue }) => {
+      return <CheckBoxCell value={!!getValue()} />;
+    },
     header: "左轴承",
     footer: "左轴承",
   }),
   columnHelper.accessor("bWheelRS", {
-    cell: ({ getValue }) => renderCheckBoxIcon(getValue()),
+    cell: ({ getValue }) => {
+      return <CheckBoxCell value={!!getValue()} />;
+    },
     header: "右轴承",
     footer: "右轴承",
   }),

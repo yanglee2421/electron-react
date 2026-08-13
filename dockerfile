@@ -20,7 +20,16 @@ ARG ELECTRON_MIRROR
 ARG ELECTRON_BUILDER_BINARIES_MIRROR
 ARG npm_package_config_node_gyp_dist_url
 WORKDIR /app
-COPY . .
+COPY apps/dsb/package.json ./apps/dsb/
+COPY apps/ziyun/package.json ./apps/ziyun/
+COPY packages/cpp-addon/package.json ./packages/cpp-addon/
+COPY packages/external-db/package.json ./packages/external-db/
+COPY packages/hmis-proxy/package.json ./packages/hmis-proxy/
+COPY .node-version .
+COPY .npmrc .
+COPY package.json .
+COPY pnpm-lock.yaml .
+COPY pnpm-workspace.yaml .
 RUN pnpm i --frozen-lockfile
 
 # ---- Stage 2: build ----
@@ -31,6 +40,7 @@ ARG ELECTRON_BUILDER_BINARIES_MIRROR
 ARG npm_package_config_node_gyp_dist_url
 WORKDIR /app
 COPY --from=deps /app .
+COPY . .
 RUN pnpm build
 
 # --- Stage 3: export

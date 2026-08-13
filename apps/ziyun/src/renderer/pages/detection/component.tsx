@@ -2,13 +2,9 @@ import type { Detection } from "#main/features/mdb/types";
 import { fetchDetections, fetchUser } from "#renderer/api/mdb";
 import { Loading } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
+import { CheckBoxCell } from "#renderer/components/table";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import {
-  CheckBoxOutlineBlankOutlined,
-  CheckBoxOutlined,
-  Print,
-  RefreshOutlined,
-} from "@mui/icons-material";
+import { Print, RefreshOutlined } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -44,10 +40,6 @@ import {
 import dayjs from "dayjs";
 import React from "react";
 import { Link as RouterLink, useNavigate } from "react-router";
-
-const renderCheckBoxIcon = (value: boolean | null) => {
-  return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
-};
 
 const szIDToId = (szID: string) => szID.split(".").at(0)?.slice(-7);
 const columnHelper = createColumnHelper<Detection>();
@@ -107,12 +99,16 @@ const columns = [
   }),
   columnHelper.accessor("szUsername", { header: "检测员", footer: "检测员" }),
   columnHelper.accessor("bWheelLS", {
-    cell: ({ getValue }) => renderCheckBoxIcon(getValue()),
+    cell: ({ getValue }) => {
+      return <CheckBoxCell value={!!getValue()} />;
+    },
     header: "左轴承",
     footer: "左轴承",
   }),
   columnHelper.accessor("bWheelRS", {
-    cell: ({ getValue }) => renderCheckBoxIcon(getValue()),
+    cell: ({ getValue }) => {
+      return <CheckBoxCell value={!!getValue()} />;
+    },
     header: "右轴承",
     footer: "右轴承",
   }),

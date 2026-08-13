@@ -1,14 +1,10 @@
 import { fetchQTDetections, fetchQTUsers } from "#renderer/api/qt";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
+import { CheckBoxCell } from "#renderer/components/table";
 import { useDayjs } from "#renderer/hooks/use-dayjs";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import {
-  CheckBoxOutlineBlankOutlined,
-  CheckBoxOutlined,
-  Print,
-  Refresh,
-} from "@mui/icons-material";
+import { Print, Refresh } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -47,14 +43,6 @@ import React from "react";
 import { Link as RouterLink, useNavigate } from "react-router";
 
 type Row = typeof schema.detectors.$inferSelect;
-
-interface CheckBoxCellProps {
-  value: boolean | null;
-}
-
-const CheckBoxCell = ({ value }: CheckBoxCellProps) => {
-  return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
-};
 
 const columnHelper = createColumnHelper<Row>();
 const columns = [

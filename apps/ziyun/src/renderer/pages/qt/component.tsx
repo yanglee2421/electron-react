@@ -40,9 +40,11 @@ import React from "react";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
+const ipv4Schema = z.ipv4().default("0.0.0.0");
+const portSchema = z.number().int().min(1).max(65535).default(80);
 const schema = z.object({
-  ip: z.string(),
-  port: z.number(),
+  ip: ipv4Schema,
+  port: portSchema,
 });
 
 const HMISCard = () => {
@@ -60,7 +62,7 @@ const HMISCard = () => {
       port: url?.port ? Number.parseInt(url.port) : 0,
     },
     validators: {
-      onChange: schema,
+      onChange: schema.required(),
     },
     onSubmit: async ({ value }) => {
       await setHmisConfig.mutateAsync(
