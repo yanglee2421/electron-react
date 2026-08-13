@@ -45,6 +45,7 @@ import type {
   FetchQTVerifiesInput,
   FetchQuartorsInput,
   QTCHR53AInput,
+  SetQTHMISConfigInput,
   SetupAppInput,
   SetYiqiConfigLibInput,
 } from "./types";
@@ -693,5 +694,33 @@ export class QT {
     const rows = await this.client.select().from(schema.userManager);
 
     return { rows };
+  }
+  async fetchHMISConfig() {
+    const [HMIS_Url] = await this.client
+      .select({ value: schema.sysConfig.configValue })
+      .from(schema.sysConfig)
+      .where(eq(schema.sysConfig.configKey, "HMIS_Url"));
+
+    return { HMIS_Url: HMIS_Url.value };
+  }
+  setHMISConfig(input: SetQTHMISConfigInput) {
+    const [HMIS_Url] = this.client.transaction((tx) => {
+      const result = tx
+        .insert(schema.sysConfig)
+        .values({
+          configKey: "HMIS_Url",
+          configValue: input.HMIS_Url,
+        })
+        .onConflictDoUpdate({
+          target: schema.sysConfig.configKey,
+          set: { configValue: input.HMIS_Url },
+        })
+        .returning({ value: schema.sysConfig.configValue })
+        .all();
+
+      return result;
+    });
+
+    return { HMIS_Url: HMIS_Url.value };
   }
 }

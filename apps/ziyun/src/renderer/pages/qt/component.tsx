@@ -1,17 +1,22 @@
 import { useSelectDirectory, useSelectFile } from "#renderer/api/fetch_preload";
 import {
   fetchCurrentLocalDB,
+  fetchQTHMISConfig,
   fetchYiqiConfig,
   QUERY_KEY,
+  useSetQTHmisConfig,
   useSetupApp,
   useSetYiqiFlag,
   useSetYiqiLib,
   useStartApp,
 } from "#renderer/api/qt";
-import { PendingIcon } from "#renderer/components/Loading";
+import { Loading, PendingIcon } from "#renderer/components/Loading";
+import { NumberField } from "#renderer/components/number";
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
-import { FindInPageOutlined } from "@mui/icons-material";
+import { FindInPageOutlined, Save } from "@mui/icons-material";
 import {
+  Alert,
+  AlertTitle,
   Button,
   Card,
   CardActions,
@@ -33,6 +38,120 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { toast } from "react-toastify";
+import { z } from "zod";
+
+const schema = z.object({
+  ip: z.string(),
+  port: z.number(),
+});
+
+const HMISCard = () => {
+  const formId = React.useId();
+
+  const hmisConfig = useQuery(fetchQTHMISConfig());
+  const setHmisConfig = useSetQTHmisConfig();
+  const url = URL.canParse(hmisConfig.data?.HMIS_Url || "")
+    ? new URL(hmisConfig.data?.HMIS_Url || "")
+    : null;
+
+  const form = useForm({
+    defaultValues: {
+      ip: url?.hostname || "",
+      port: url?.port ? Number.parseInt(url.port) : 0,
+    },
+    validators: {
+      onChange: schema,
+    },
+    onSubmit: async ({ value }) => {
+      await setHmisConfig.mutateAsync(
+        {
+          HMIS_Url: new URL(`http://${value.ip}:${value.port}`).href.replace(
+            /\/$/,
+            "",
+          ),
+        },
+        {
+          onError: (error) => {
+            toast.error(error.message);
+          },
+          onSuccess: () => {
+            toast.success("保存成功");
+          },
+        },
+      );
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader title="HMIS代理配置" />
+      <CardContent>
+        <form
+          id={formId}
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          onReset={() => {
+            form.reset();
+          }}
+          noValidate
+        >
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="ip">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={
+                      field.getMeta().errors.length
+                        ? field.getMeta().errors.at(0)?.message
+                        : "HMIS代理使用的IP地址"
+                    }
+                    label="IP地址"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="port">
+                {(field) => {
+                  return (
+                    <NumberField
+                      field={{
+                        value: field.state.value,
+                        onChange: field.handleChange,
+                        onBlur: field.handleBlur,
+                      }}
+                      fullWidth
+                      error={field.getMeta().errors.length > 0}
+                      helperText={
+                        field.getMeta().errors.length
+                          ? field.getMeta().errors.at(0)?.message
+                          : "HMIS代理使用的端口号"
+                      }
+                      label="HMIS代理服务端口"
+                    />
+                  );
+                }}
+              </form.Field>
+            </Grid>
+          </Grid>
+        </form>
+      </CardContent>
+      <CardActions>
+        <Button type="submit" form={formId} startIcon={<Save />}>
+          保存
+        </Button>
+      </CardActions>
+    </Card>
+  );
+};
 
 export const Component = () => {
   const formId = React.useId();
@@ -75,11 +194,16 @@ export const Component = () => {
 
   const renderYiqiConfig = () => {
     if (yiqiConfig.isPending) {
-      return null;
+      return <Loading />;
     }
 
     if (yiqiConfig.isError) {
-      return null;
+      return (
+        <Alert severity="error">
+          <AlertTitle>数据加载失败</AlertTitle>
+          {yiqiConfig.error.message}
+        </Alert>
+      );
     }
 
     return yiqiConfig.data.rows.map((row) => {
@@ -291,6 +415,7 @@ export const Component = () => {
         </CardContent>
         <CardActions></CardActions>
       </Card>
+      <HMISCard />
     </Stack>
   );
 };
