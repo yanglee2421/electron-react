@@ -1,4 +1,4 @@
-import { fetchQTQuartors } from "#renderer/api/qt";
+import { fetchQTQuartors, fetchQTUsers } from "#renderer/api/qt";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useDayjs } from "#renderer/hooks/use-dayjs";
@@ -7,6 +7,7 @@ import { Print, Refresh } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
+  Autocomplete,
   Button,
   Card,
   CardContent,
@@ -143,6 +144,7 @@ export const Component = () => {
 
   const navigate = useNavigate();
   const date = day?.toISOString() || "";
+  const users = useQuery(fetchQTUsers());
   const query = useQuery(
     fetchQTQuartors({ pageIndex, pageSize, user, date, zx }),
   );
@@ -240,23 +242,29 @@ export const Component = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
+              <Autocomplete
                 value={user}
-                onChange={(e) => {
-                  setUser(e.target.value);
+                onChange={(_, value) => {
+                  setUser(value || "");
                 }}
+                renderInput={(p) => <TextField {...p} label="检测员" />}
+                options={users.data ? users.data.rows.map((r) => r.name) : []}
+                freeSolo
                 fullWidth
-                label="检测员"
+                loading={users.isPending}
+                loadingText="加载中"
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
+              <Autocomplete
                 value={zx}
-                onChange={(e) => {
-                  setZx(e.target.value);
+                onChange={(_, value) => {
+                  setZx(value || "");
                 }}
+                renderInput={(p) => <TextField {...p} label="轴型" />}
+                options={["RE2B", "RD2"]}
+                freeSolo
                 fullWidth
-                label="轴型"
               />
             </Grid>
           </Grid>

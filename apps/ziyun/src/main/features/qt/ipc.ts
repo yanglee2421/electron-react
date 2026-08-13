@@ -7,11 +7,13 @@ export const registerIPCHandlers = (qt: QT) => {
   ipcHandle("qt/503", (_, id) => qt.fetch503Data(id));
   ipcHandle("qt/52a", (_, p) => qt.fetch52AData(p));
   ipcHandle("qt/53a", (_, p) => qt.fetch53AData(p));
+
   ipcHandle("qt/detections", (_, p) => qt.fetchDetections(p));
   ipcHandle("qt/verifies", (_, p) => qt.fetchVerifies(p));
   ipcHandle("qt/quartors", (_, p) => qt.fetchQuartors(p));
   ipcHandle("qt/anniversary", (_, p) => qt.anniversary(p));
   ipcHandle("qt/anniversary-detail", (_, id) => qt.anniversaryDetail(id));
+  ipcHandle("qt/users", (_) => qt.fetchUsers());
 
   ipcHandle("qt/setup-app", (_, p) => qt.setupApp(p));
   ipcHandle("qt/current-db-path", () => qt.getCurrentLocalDB());
@@ -26,11 +28,13 @@ export const registerIPCHandlers = (qt: QT) => {
     ipcRemoveHandle("qt/503");
     ipcRemoveHandle("qt/52a");
     ipcRemoveHandle("qt/53a");
+
     ipcRemoveHandle("qt/detections");
     ipcRemoveHandle("qt/verifies");
     ipcRemoveHandle("qt/quartors");
     ipcRemoveHandle("qt/anniversary");
     ipcRemoveHandle("qt/anniversary-detail");
+    ipcRemoveHandle("qt/users");
 
     ipcRemoveHandle("qt/setup-app");
     ipcRemoveHandle("qt/start-app");

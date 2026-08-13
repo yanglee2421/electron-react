@@ -7,6 +7,7 @@ import { Print, RefreshOutlined } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
+  Autocomplete,
   Button,
   Card,
   CardContent,
@@ -155,9 +156,6 @@ export const Component = () => {
   const [user, setUser] = React.useState("");
   const [zx, setZX] = React.useState("");
 
-  const userDataListId = React.useId();
-  const zxDataListId = React.useId();
-
   const navigate = useNavigate();
 
   const usersQuery = useQuery(
@@ -188,35 +186,6 @@ export const Component = () => {
   const printCheck = calcPrintCheck(
     ...table.getSelectedRowModel().flatRows.map((row) => row.original),
   );
-
-  const renderUserSelect = () => {
-    if (!usersQuery.isSuccess) {
-      return null;
-    }
-
-    return (
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <TextField
-          fullWidth
-          value={user}
-          onChange={(e) => {
-            setUser(e.target.value);
-          }}
-          label="检测员"
-          slotProps={{
-            htmlInput: {
-              list: userDataListId,
-            },
-          }}
-        />
-        <datalist id={userDataListId}>
-          {usersQuery.data.rows.map((user) => (
-            <option key={user.szUid} value={user.szUid}></option>
-          ))}
-        </datalist>
-      </Grid>
-    );
-  };
 
   const renderRow = () => {
     if (query.isPending) {
@@ -297,21 +266,33 @@ export const Component = () => {
               }}
             />
           </Grid>
-          {renderUserSelect()}
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="轴型"
-              value={zx}
-              onChange={(e) => {
-                setZX(e.target.value);
+            <Autocomplete
+              value={user}
+              onChange={(_, value) => {
+                setUser(value || "");
               }}
+              renderInput={(p) => <TextField {...p} label="检测员" />}
+              options={
+                usersQuery.data ? usersQuery.data.rows.map((r) => r.szUid) : []
+              }
+              freeSolo
               fullWidth
-              slotProps={{ htmlInput: { list: zxDataListId } }}
+              loading={usersQuery.isPending}
+              loadingText="加载中"
             />
-            <datalist id={zxDataListId}>
-              <option value="RE2B"></option>
-              <option value="RD2"></option>
-            </datalist>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Autocomplete
+              value={zx}
+              onChange={(_, value) => {
+                setZX(value || "");
+              }}
+              renderInput={(p) => <TextField {...p} label="轴型" />}
+              options={["RE2B", "RD2"]}
+              freeSolo
+              fullWidth
+            />
           </Grid>
         </Grid>
       </CardContent>

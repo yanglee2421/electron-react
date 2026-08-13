@@ -1,12 +1,18 @@
-import { fetchQTDetections } from "#renderer/api/qt";
+import { fetchQTDetections, fetchQTUsers } from "#renderer/api/qt";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useDayjs } from "#renderer/hooks/use-dayjs";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { Print, Refresh } from "@mui/icons-material";
+import {
+  CheckBoxOutlineBlankOutlined,
+  CheckBoxOutlined,
+  Print,
+  Refresh,
+} from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
+  Autocomplete,
   Button,
   Card,
   CardContent,
@@ -41,6 +47,14 @@ import React from "react";
 import { Link as RouterLink, useNavigate } from "react-router";
 
 type Row = typeof schema.detectors.$inferSelect;
+
+interface CheckBoxCellProps {
+  value: boolean | null;
+}
+
+const CheckBoxCell = ({ value }: CheckBoxCellProps) => {
+  return value ? <CheckBoxOutlined /> : <CheckBoxOutlineBlankOutlined />;
+};
 
 const columnHelper = createColumnHelper<Row>();
 const columns = [
@@ -105,9 +119,15 @@ const columns = [
   }),
   columnHelper.accessor("bWheelLs", {
     header: "左轴承",
+    cell: ({ getValue }) => {
+      return <CheckBoxCell value={!!getValue()} />;
+    },
   }),
   columnHelper.accessor("bWheelRs", {
     header: "右轴承",
+    cell: ({ getValue }) => {
+      return <CheckBoxCell value={!!getValue()} />;
+    },
   }),
   columnHelper.accessor("tmNow", {
     header: "时间",
@@ -182,6 +202,7 @@ export const Component = () => {
 
   const navigate = useNavigate();
   const date = day?.toISOString() || "";
+  const users = useQuery(fetchQTUsers());
   const query = useQuery(
     fetchQTDetections({ pageIndex, pageSize, date, user, zx, zh, result }),
   );
@@ -277,22 +298,28 @@ export const Component = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
+              <Autocomplete
                 value={user}
-                onChange={(e) => {
-                  setUser(e.target.value);
+                onChange={(_, value) => {
+                  setUser(value || "");
                 }}
-                label="检测员"
+                renderInput={(p) => <TextField {...p} label="检测员" />}
+                options={users.data ? users.data.rows.map((r) => r.name) : []}
+                freeSolo
                 fullWidth
+                loading={users.isPending}
+                loadingText="加载中"
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
+              <Autocomplete
                 value={zx}
-                onChange={(e) => {
-                  setZx(e.target.value);
+                onChange={(_, value) => {
+                  setZx(value || "");
                 }}
-                label="轴型"
+                renderInput={(p) => <TextField {...p} label="轴型" />}
+                options={["RE2B", "RD2"]}
+                freeSolo
                 fullWidth
               />
             </Grid>
@@ -307,12 +334,14 @@ export const Component = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
+              <Autocomplete
                 value={result}
-                onChange={(e) => {
-                  setResult(e.target.value);
+                onChange={(_, value) => {
+                  setResult(value || "");
                 }}
-                label="结果"
+                renderInput={(p) => <TextField {...p} label="检测结果" />}
+                options={["合格", "有故障"]}
+                freeSolo
                 fullWidth
               />
             </Grid>

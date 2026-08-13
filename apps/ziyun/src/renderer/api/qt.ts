@@ -126,6 +126,15 @@ export const fetchQTAnniversaryDetail = (id: string) => {
   });
 };
 
+export const fetchQTUsers = () => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/users"],
+    queryFn: async () => {
+      return ipc.invoke("qt/users");
+    },
+  });
+};
+
 export const fetchQT501 = (id: string) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/501", id],

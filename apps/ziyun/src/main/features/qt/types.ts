@@ -75,6 +75,12 @@ export interface IPC {
     args: [string];
     return: ReturnType<QT["anniversaryDetail"]>;
   };
+
+  "qt/users": {
+    args: [];
+    return: ReturnType<QT["fetchUsers"]>;
+  };
+
   "qt/501": {
     args: [string];
     return: ReturnType<QT["fetch501Data"]>;

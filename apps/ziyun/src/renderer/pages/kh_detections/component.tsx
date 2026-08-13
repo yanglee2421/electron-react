@@ -13,6 +13,7 @@ import {
 import {
   Alert,
   AlertTitle,
+  Autocomplete,
   Card,
   CardContent,
   CardHeader,
@@ -20,7 +21,6 @@ import {
   Grid,
   IconButton,
   LinearProgress,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -243,26 +243,30 @@ export const Component = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="检测员"
+              <Autocomplete
                 value={user}
-                onChange={(e) => setUser(e.target.value)}
+                onChange={(_, value) => {
+                  setUser(value || "");
+                }}
+                options={
+                  usersQuery.data
+                    ? usersQuery.data.rows.map((r) => r.szUid)
+                    : []
+                }
+                renderInput={(props) => <TextField {...props} label="检测员" />}
+                loading={usersQuery.isPending}
+                loadingText="加载中"
+                freeSolo
                 fullWidth
-                select
-              >
-                <MenuItem value={""}>未指定</MenuItem>
-                {usersQuery.data?.rows.map((user) => (
-                  <MenuItem key={user.szUid} value={user.szUid}>
-                    {user.szUid}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="轴型"
+              <Autocomplete
                 value={zx}
-                onChange={(e) => setZx(e.target.value)}
+                onChange={(_, value) => setZx(value || "")}
+                options={["RE2B", "RD2"]}
+                renderInput={(props) => <TextField {...props} label="轴型" />}
+                freeSolo
                 fullWidth
               />
             </Grid>
@@ -275,10 +279,14 @@ export const Component = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="检测结果"
+              <Autocomplete
                 value={result}
-                onChange={(e) => setResult(e.target.value)}
+                onChange={(_, value) => {
+                  setResult(value || "");
+                }}
+                renderInput={(p) => <TextField {...p} label="检测结果" />}
+                options={["合格", "有故障"]}
+                freeSolo
                 fullWidth
               />
             </Grid>

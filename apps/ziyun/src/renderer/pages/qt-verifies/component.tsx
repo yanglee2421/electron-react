@@ -1,4 +1,4 @@
-import { fetchQTVerifies } from "#renderer/api/qt";
+import { fetchQTUsers, fetchQTVerifies } from "#renderer/api/qt";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useDayjs } from "#renderer/hooks/use-dayjs";
@@ -7,6 +7,7 @@ import { Refresh } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
+  Autocomplete,
   Card,
   CardContent,
   CardHeader,
@@ -88,6 +89,8 @@ export const Component = () => {
     manualPagination: true,
   });
 
+  const users = useQuery(fetchQTUsers());
+
   const renderRow = () => {
     if (query.isPending) {
       return (
@@ -166,22 +169,28 @@ export const Component = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
+              <Autocomplete
                 value={user}
-                onChange={(e) => {
-                  setUser(e.target.value);
+                onChange={(_, value) => {
+                  setUser(value || "");
                 }}
-                label="检测员"
+                renderInput={(p) => <TextField {...p} label="检测员" />}
+                options={users.data ? users.data.rows.map((r) => r.name) : []}
+                freeSolo
                 fullWidth
+                loading={users.isPending}
+                loadingText="加载中"
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
+              <Autocomplete
                 value={zx}
-                onChange={(e) => {
-                  setZx(e.target.value);
+                onChange={(_, value) => {
+                  setZx(value || "");
                 }}
-                label="轴型"
+                renderInput={(p) => <TextField {...p} label="轴型" />}
+                options={["RE2B", "RD2"]}
+                freeSolo
                 fullWidth
               />
             </Grid>

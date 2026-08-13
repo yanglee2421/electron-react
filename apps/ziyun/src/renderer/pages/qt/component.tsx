@@ -92,7 +92,7 @@ export const Component = () => {
               onClick={async () => {
                 const paths = await selectFile.mutateAsync([
                   { extensions: ["dll", "so"], name: "库文件" },
-                  { extensions: ["*"], name: "所有文件" },
+                  { extensions: ["*", ""], name: "所有文件" },
                 ]);
 
                 const libPath = paths.at(0);
@@ -182,7 +182,7 @@ export const Component = () => {
                                           name: "可执行程序",
                                         },
                                         {
-                                          extensions: ["*"],
+                                          extensions: ["*", ""],
                                           name: "所有文件",
                                         },
                                       ],

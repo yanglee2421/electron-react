@@ -37,5 +37,6 @@ export default {
   linux: {
     target: ["deb"],
     artifactName: "${productName}-Linux-${version}.${ext}",
+    category: "Utility",
   },
 } satisfies Configuration;

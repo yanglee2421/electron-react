@@ -688,4 +688,10 @@ export class QT {
 
     return { rows };
   }
+
+  async fetchUsers() {
+    const rows = await this.client.select().from(schema.userManager);
+
+    return { rows };
+  }
 }

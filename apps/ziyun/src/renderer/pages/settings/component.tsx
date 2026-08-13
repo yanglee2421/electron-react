@@ -171,7 +171,7 @@ export const Component = () => {
                                         name: "可执行文件",
                                       },
                                       {
-                                        extensions: ["*"],
+                                        extensions: ["*", ""],
                                         name: "所有文件",
                                       },
                                     ],
@@ -289,7 +289,7 @@ export const Component = () => {
                                           name: "可执行文件",
                                         },
                                         {
-                                          extensions: ["*"],
+                                          extensions: ["*", ""],
                                           name: "所有文件",
                                         },
                                       ],
