@@ -14,17 +14,28 @@ import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 
 const SIDEBAR_SEARCH_KEY = "sidebar";
+const calcShowSidebarUpSmall = (search: string | null) => {
+  switch (search) {
+    case "1":
+    case null:
+      return true;
+    default:
+      return false;
+  }
+};
 
 export const Layout = (props: React.PropsWithChildren) => {
   const [showSidebarInPath, setShowSidebarInPath] = React.useState("");
+
+  const theme = useTheme();
+  const location = useLocation();
+  const isDownSmall = useMediaQuery(theme.breakpoints.down("sm"));
   const [searchParams, setSearchParams] = useSearchParams({
     [SIDEBAR_SEARCH_KEY]: "1",
   });
 
-  const showSidebarUpSmall = searchParams.get(SIDEBAR_SEARCH_KEY) === "1";
-  const theme = useTheme();
-  const location = useLocation();
-  const isDownSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  const sidebarSearch = searchParams.get(SIDEBAR_SEARCH_KEY);
+  const showSidebarUpSmall = calcShowSidebarUpSmall(sidebarSearch);
   const showSidebarDownSmall = Object.is(location.pathname, showSidebarInPath);
   const showSidebar = isDownSmall ? showSidebarDownSmall : showSidebarUpSmall;
 

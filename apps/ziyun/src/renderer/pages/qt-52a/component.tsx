@@ -106,8 +106,6 @@ const calcNote = (datas: DetectionData[], szMemo: string | null) => {
 
   const chunks = chunk(szMemo.split("") || [], 3);
   const flawMap = mapGroupBy(datas, (el) => {
-    console.log(el.nChannel);
-
     return el.nBoard !== null && el.nChannel !== null
       ? calcPlace(el.nBoard, el.nChannel)
       : "";
