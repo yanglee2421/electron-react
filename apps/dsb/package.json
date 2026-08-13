@@ -5,8 +5,8 @@
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dsb:dev": "vite",
+    "dsb:build": "tsc -b && vite build",
     "preview": "vite preview",
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
