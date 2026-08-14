@@ -2,17 +2,29 @@ import { useSelectDirectory, useSelectFile } from "#renderer/api/fetch_preload";
 import {
   fetchCurrentLocalDB,
   fetchQTConfig,
+  fetchQTUsers,
   fetchYiqiConfig,
   QUERY_KEY,
+  useDeleteQTUser,
   useSetQTConfig,
   useSetupApp,
   useSetYiqiFlag,
   useSetYiqiLib,
   useStartApp,
+  useUpsertQTUser,
 } from "#renderer/api/qt";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
-import { FindInPageOutlined, Restore, Save } from "@mui/icons-material";
+import { cellPaddingMap } from "#renderer/lib/constants";
+import {
+  Add,
+  Delete,
+  Edit,
+  FindInPageOutlined,
+  MoreVert,
+  Restore,
+  Save,
+} from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -25,16 +37,33 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  LinearProgress,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableFooter,
+  TableHead,
+  TableRow,
   TextField,
 } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import type { schema } from "@yanglee2421/external-db";
 import React from "react";
 import { toast } from "react-toastify";
 
@@ -139,6 +168,167 @@ const ConfigForm = () => {
           重置
         </Button>
       </CardActions>
+    </Card>
+  );
+};
+
+type Row = Omit<typeof schema.userManager.$inferSelect, "pwd">;
+const columnHelper = createColumnHelper<Row>();
+const columns = [
+  columnHelper.accessor("recId", {}),
+  columnHelper.accessor("name", {}),
+  columnHelper.accessor("power", {}),
+  columnHelper.accessor("regTime", {}),
+  columnHelper.display({
+    id: "action",
+    header: "操作",
+    cell: ({ getValue }) => {
+      return <ActionCell />;
+    },
+  }),
+];
+
+const ActionCell = () => {
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+
+  return (
+    <>
+      <IconButton
+        onClick={(e) => {
+          setAnchorEl(e.currentTarget);
+        }}
+      >
+        <MoreVert />
+      </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={!!anchorEl}
+        onClose={() => {
+          setAnchorEl(null);
+        }}
+      >
+        <MenuItem>
+          <ListItemIcon>
+            <Edit />
+          </ListItemIcon>
+          <ListItemText primary="编辑" />
+        </MenuItem>
+        <MenuItem>
+          <ListItemIcon>
+            <Delete />
+          </ListItemIcon>
+          <ListItemText primary="删除" />
+        </MenuItem>
+      </Menu>
+    </>
+  );
+};
+
+const UsersTable = () => {
+  const users = useQuery(fetchQTUsers());
+  const upsertUsers = useUpsertQTUser();
+  const deleteUsers = useDeleteQTUser();
+
+  const data = React.useMemo(() => users.data?.rows || [], [users.data]);
+
+  const table = useReactTable({
+    getCoreRowModel: getCoreRowModel(),
+    columns,
+    data,
+    getRowId: (r) => r.recId.toString(),
+  });
+
+  const renderRow = () => {
+    if (users.isPending) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
+            <Loading slotProps={{ box: { sx: { padding: 0 } } }} />
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (users.isError) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length}>
+            <Alert severity="error" variant="filled">
+              <AlertTitle>错误</AlertTitle>
+              {users.error?.message}
+            </Alert>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (!table.getRowCount()) {
+      return (
+        <TableRow>
+          <TableCell colSpan={table.getAllLeafColumns().length} align="center">
+            暂无数据
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return table.getRowModel().rows.map((row) => (
+      <TableRow key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    ));
+  };
+
+  return (
+    <Card>
+      <CardHeader title="用户管理" />
+      <CardContent>
+        <Button startIcon={<Add />}>添加</Button>
+      </CardContent>
+      {users.isPending && <LinearProgress />}
+      <TableContainer>
+        <Table>
+          <TableHead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableHead>
+          <TableBody>{renderRow()}</TableBody>
+          <TableFooter>
+            {table.getFooterGroups().map((footerGroup) => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    padding={cellPaddingMap.get(header.column.id)}
+                  >
+                    {flexRender(
+                      header.column.columnDef.footer,
+                      header.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableFooter>
+        </Table>
+      </TableContainer>
     </Card>
   );
 };
@@ -406,6 +596,7 @@ export const Component = () => {
         </CardContent>
       </Card>
       {config.isSuccess && <ConfigForm />}
+      <UsersTable />
     </Stack>
   );
 };

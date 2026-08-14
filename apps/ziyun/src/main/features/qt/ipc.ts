@@ -14,6 +14,8 @@ export const registerIPCHandlers = (qt: QT) => {
   ipcHandle("qt/anniversary", (_, p) => qt.anniversary(p));
   ipcHandle("qt/anniversary-detail", (_, id) => qt.anniversaryDetail(id));
   ipcHandle("qt/users", (_) => qt.fetchUsers());
+  ipcHandle("qt/upsert_users", (_, p) => qt.upsertUsers(p));
+  ipcHandle("qt/delete_users", (_, p) => qt.deleteUsers(p));
   ipcHandle("qt/get_config", () => qt.getConfig());
   ipcHandle("qt/set_config", (_, p) => qt.setConfig(p));
 
@@ -37,6 +39,8 @@ export const registerIPCHandlers = (qt: QT) => {
     ipcRemoveHandle("qt/anniversary");
     ipcRemoveHandle("qt/anniversary-detail");
     ipcRemoveHandle("qt/users");
+    ipcRemoveHandle("qt/upsert_users");
+    ipcRemoveHandle("qt/delete_users");
     ipcRemoveHandle("qt/get_config");
     ipcRemoveHandle("qt/set_config");
 

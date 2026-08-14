@@ -63,6 +63,13 @@ export interface SetQTConfigInput {
   values: QTConfigItem[];
 }
 
+export interface UpsertUserInput {
+  recId?: number;
+  name: string;
+  pwd: string;
+  power: string;
+}
+
 export interface IPC {
   "qt/detections": {
     args: [FetchDetectionsInput];
@@ -88,6 +95,14 @@ export interface IPC {
   "qt/users": {
     args: [];
     return: ReturnType<QT["fetchUsers"]>;
+  };
+  "qt/upsert_users": {
+    args: [UpsertUserInput];
+    return: ReturnType<QT["upsertUsers"]>;
+  };
+  "qt/delete_users": {
+    args: [number];
+    return: ReturnType<QT["deleteUsers"]>;
   };
   "qt/get_config": {
     args: [];

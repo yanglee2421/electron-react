@@ -8,6 +8,7 @@ import type {
   SetQTConfigInput,
   SetupAppInput,
   SetYiqiConfigLibInput,
+  UpsertUserInput,
 } from "#main/features/qt/types";
 import { ipc } from "#renderer/lib/ipc";
 import {
@@ -38,7 +39,7 @@ export const fetchCurrentLocalDB = () => {
 export const fetchYiqiConfig = () => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/yiqiConfig/list"],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("qt/yiqiConfig/list");
     },
   });
@@ -48,7 +49,7 @@ export const useSetYiqiLib = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (p: SetYiqiConfigLibInput) => {
+    mutationFn: (p: SetYiqiConfigLibInput) => {
       return ipc.invoke("qt/yiqiConfig/lib", p);
     },
     onSuccess: async () => {
@@ -63,7 +64,7 @@ export const useSetYiqiFlag = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (p: number) => {
+    mutationFn: (p: number) => {
       return ipc.invoke("qt/yiqiConfig/flag", p);
     },
     onSuccess: async () => {
@@ -76,7 +77,7 @@ export const useSetYiqiFlag = () => {
 
 export const useStartApp = () => {
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: () => {
       return ipc.invoke("qt/start-app");
     },
   });
@@ -85,7 +86,7 @@ export const useStartApp = () => {
 export const fetchQTDetections = (input: FetchDetectionsInput) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/detections", input],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("qt/detections", input);
     },
   });
@@ -94,7 +95,7 @@ export const fetchQTDetections = (input: FetchDetectionsInput) => {
 export const fetchQTVerifies = (input: FetchQTVerifiesInput) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/verifies", input],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("qt/verifies", input);
     },
   });
@@ -103,7 +104,7 @@ export const fetchQTVerifies = (input: FetchQTVerifiesInput) => {
 export const fetchQTQuartors = (input: FetchQuartorsInput) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/quartors", input],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("qt/quartors", input);
     },
   });
@@ -112,7 +113,7 @@ export const fetchQTQuartors = (input: FetchQuartorsInput) => {
 export const fetchQTAnniversary = (input: AnniversaryInput) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/anniversary", input],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("qt/anniversary", input);
     },
   });
@@ -121,7 +122,7 @@ export const fetchQTAnniversary = (input: AnniversaryInput) => {
 export const fetchQTAnniversaryDetail = (id: string) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/anniversary-detail", id],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("qt/anniversary-detail", id);
     },
   });
@@ -130,8 +131,38 @@ export const fetchQTAnniversaryDetail = (id: string) => {
 export const fetchQTUsers = () => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/users"],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("qt/users");
+    },
+  });
+};
+
+export const useDeleteQTUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => {
+      return ipc.invoke("qt/delete_users", id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY, "qt/users"],
+      });
+    },
+  });
+};
+
+export const useUpsertQTUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (p: UpsertUserInput) => {
+      return ipc.invoke("qt/upsert_users", p);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY, "qt/users"],
+      });
     },
   });
 };
@@ -166,7 +197,7 @@ export const fetchQT503 = (id: string) => {
 export const fetchQT52A = (id: string) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/52a", id],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("qt/52a", id);
     },
   });
@@ -175,7 +206,7 @@ export const fetchQT52A = (id: string) => {
 export const fetchQT53A = (input: QTCHR53AInput) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/53a", input],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("qt/53a", input);
     },
   });
@@ -184,7 +215,7 @@ export const fetchQT53A = (input: QTCHR53AInput) => {
 export const fetchQTConfig = () => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/get_config"],
-    queryFn: async () => {
+    queryFn: () => {
       return ipc.invoke("qt/get_config");
     },
   });
@@ -194,7 +225,7 @@ export const useSetQTConfig = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (p: SetQTConfigInput) => {
+    mutationFn: (p: SetQTConfigInput) => {
       return ipc.invoke("qt/set_config", p);
     },
     onSuccess: async () => {

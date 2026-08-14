@@ -48,6 +48,7 @@ import type {
   SetQTConfigInput,
   SetupAppInput,
   SetYiqiConfigLibInput,
+  UpsertUserInput,
 } from "./types";
 
 export class QT {
@@ -756,9 +757,46 @@ export class QT {
   }
 
   async fetchUsers() {
-    const rows = await this.client.select().from(schema.userManager);
+    const rows = await this.client
+      .select({
+        recId: schema.userManager.recId,
+        userName: schema.userManager.userName,
+        name: schema.userManager.name,
+        power: schema.userManager.power,
+        regTime: schema.userManager.regTime,
+      })
+      .from(schema.userManager);
 
     return { rows };
+  }
+  async upsertUsers(input: UpsertUserInput) {
+    const { name, recId, pwd, power } = input;
+
+    const rows = await this.client
+      .insert(schema.userManager)
+      .values({
+        recId,
+        name,
+        userName: name,
+        pwd,
+        power,
+        regTime: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+      })
+      .onConflictDoUpdate({
+        target: schema.userManager.recId,
+        set: {},
+      })
+      .returning();
+
+    return { rows };
+  }
+  async deleteUsers(id: number) {
+    const row = await this.client
+      .delete(schema.userManager)
+      .where(eq(schema.userManager.recId, id))
+      .returning();
+
+    return { row };
   }
   async getConfig() {
     const rows = await this.client
