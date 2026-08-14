@@ -54,8 +54,13 @@ export interface AnniversaryInput {
   pageSize: number;
 }
 
-export interface SetQTHMISConfigInput {
-  HMIS_Url: string;
+interface QTConfigItem {
+  key: string;
+  value: string;
+}
+
+export interface SetQTConfigInput {
+  values: QTConfigItem[];
 }
 
 export interface IPC {
@@ -84,13 +89,13 @@ export interface IPC {
     args: [];
     return: ReturnType<QT["fetchUsers"]>;
   };
-  "qt/hmis_config": {
+  "qt/get_config": {
     args: [];
-    return: ReturnType<QT["fetchHMISConfig"]>;
+    return: ReturnType<QT["getConfig"]>;
   };
-  "qt/set_hmis_config": {
-    args: [SetQTHMISConfigInput];
-    return: ReturnType<QT["setHMISConfig"]>;
+  "qt/set_config": {
+    args: [SetQTConfigInput];
+    return: ReturnType<QT["setConfig"]>;
   };
 
   "qt/501": {

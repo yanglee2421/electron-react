@@ -5,7 +5,7 @@ import type {
   FetchQTVerifiesInput,
   FetchQuartorsInput,
   QTCHR53AInput,
-  SetQTHMISConfigInput,
+  SetQTConfigInput,
   SetupAppInput,
   SetYiqiConfigLibInput,
 } from "#main/features/qt/types";
@@ -181,21 +181,21 @@ export const fetchQT53A = (input: QTCHR53AInput) => {
   });
 };
 
-export const fetchQTHMISConfig = () => {
+export const fetchQTConfig = () => {
   return queryOptions({
-    queryKey: [QUERY_KEY, "qt/hmis_config"],
+    queryKey: [QUERY_KEY, "qt/get_config"],
     queryFn: async () => {
-      return ipc.invoke("qt/hmis_config");
+      return ipc.invoke("qt/get_config");
     },
   });
 };
 
-export const useSetQTHmisConfig = () => {
+export const useSetQTConfig = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (p: SetQTHMISConfigInput) => {
-      return ipc.invoke("qt/set_hmis_config", p);
+    mutationFn: async (p: SetQTConfigInput) => {
+      return ipc.invoke("qt/set_config", p);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

@@ -14,8 +14,8 @@ export const registerIPCHandlers = (qt: QT) => {
   ipcHandle("qt/anniversary", (_, p) => qt.anniversary(p));
   ipcHandle("qt/anniversary-detail", (_, id) => qt.anniversaryDetail(id));
   ipcHandle("qt/users", (_) => qt.fetchUsers());
-  ipcHandle("qt/hmis_config", () => qt.fetchHMISConfig());
-  ipcHandle("qt/set_hmis_config", (_, p) => qt.setHMISConfig(p));
+  ipcHandle("qt/get_config", () => qt.getConfig());
+  ipcHandle("qt/set_config", (_, p) => qt.setConfig(p));
 
   ipcHandle("qt/setup-app", (_, p) => qt.setupApp(p));
   ipcHandle("qt/current-db-path", () => qt.getCurrentLocalDB());
@@ -37,8 +37,8 @@ export const registerIPCHandlers = (qt: QT) => {
     ipcRemoveHandle("qt/anniversary");
     ipcRemoveHandle("qt/anniversary-detail");
     ipcRemoveHandle("qt/users");
-    ipcRemoveHandle("qt/hmis_config");
-    ipcRemoveHandle("qt/set_hmis_config");
+    ipcRemoveHandle("qt/get_config");
+    ipcRemoveHandle("qt/set_config");
 
     ipcRemoveHandle("qt/setup-app");
     ipcRemoveHandle("qt/start-app");

@@ -97,6 +97,7 @@ export class AppWindow {
 
     CUSTOM_RENDERER_URL.hash = url.pathname + url.search;
     win.loadURL(CUSTOM_RENDERER_URL.href);
+    win.maximize();
 
     return win;
   }
@@ -110,6 +111,7 @@ export class AppWindow {
       win.restore();
     }
 
+    win.maximize();
     win.focus();
   }
 

@@ -1,19 +1,18 @@
 import { useSelectDirectory, useSelectFile } from "#renderer/api/fetch_preload";
 import {
   fetchCurrentLocalDB,
-  fetchQTHMISConfig,
+  fetchQTConfig,
   fetchYiqiConfig,
   QUERY_KEY,
-  useSetQTHmisConfig,
+  useSetQTConfig,
   useSetupApp,
   useSetYiqiFlag,
   useSetYiqiLib,
   useStartApp,
 } from "#renderer/api/qt";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
-import { NumberField } from "#renderer/components/number";
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
-import { FindInPageOutlined, Save } from "@mui/icons-material";
+import { FindInPageOutlined, Restore, Save } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -38,39 +37,33 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { toast } from "react-toastify";
-import { z } from "zod";
 
-const ipv4Schema = z.ipv4().default("0.0.0.0");
-const portSchema = z.number().int().min(1).max(65535).default(80);
-const schema = z.object({
-  ip: ipv4Schema,
-  port: portSchema,
-});
-
-const HMISCard = () => {
+const ConfigForm = () => {
   const formId = React.useId();
 
-  const hmisConfig = useQuery(fetchQTHMISConfig());
-  const setHmisConfig = useSetQTHmisConfig();
-  const url = URL.canParse(hmisConfig.data?.HMIS_Url || "")
-    ? new URL(hmisConfig.data?.HMIS_Url || "")
-    : null;
+  const config = useQuery(fetchQTConfig());
+  const setConfig = useSetQTConfig();
 
   const form = useForm({
     defaultValues: {
-      ip: url?.hostname || "",
-      port: url?.port ? Number.parseInt(url.port) : 0,
-    },
-    validators: {
-      onChange: schema.required(),
+      values:
+        config.data?.rows
+          .filter((r) => r.key)
+          .map((r) => ({
+            id: r.id,
+            key: r.key || "",
+            value: r.value || "",
+            description: r.description,
+            readOnly: !!r.readOnly,
+          })) ?? [],
     },
     onSubmit: async ({ value }) => {
-      await setHmisConfig.mutateAsync(
+      await setConfig.mutateAsync(
         {
-          HMIS_Url: new URL(`http://${value.ip}:${value.port}`).href.replace(
-            /\/$/,
-            "",
-          ),
+          values: value.values.map((i) => ({
+            key: i.key,
+            value: i.value,
+          })),
         },
         {
           onError: (error) => {
@@ -84,71 +77,66 @@ const HMISCard = () => {
     },
   });
 
+  if (config.isPending) {
+    return null;
+  }
+
+  if (config.isError) {
+    return null;
+  }
+
   return (
     <Card>
-      <CardHeader title="HMIS代理配置" />
+      <CardHeader title="QT软件设置" />
       <CardContent>
-        <form
-          id={formId}
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            form.handleSubmit();
-          }}
-          onReset={() => {
-            form.reset();
-          }}
-          noValidate
-        >
-          <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="ip">
-                {(field) => (
-                  <TextField
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={!!field.state.meta.errors.length}
-                    helperText={
-                      field.getMeta().errors.length
-                        ? field.getMeta().errors.at(0)?.message
-                        : "HMIS代理使用的IP地址"
-                    }
-                    label="IP地址"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="port">
-                {(field) => {
-                  return (
-                    <NumberField
-                      field={{
-                        value: field.state.value,
-                        onChange: field.handleChange,
-                        onBlur: field.handleBlur,
-                      }}
-                      fullWidth
-                      error={field.getMeta().errors.length > 0}
-                      helperText={
-                        field.getMeta().errors.length
-                          ? field.getMeta().errors.at(0)?.message
-                          : "HMIS代理使用的端口号"
-                      }
-                      label="HMIS代理服务端口"
-                    />
-                  );
+        <form.Field name="values" mode="array">
+          {(valuesField) => {
+            return (
+              <form
+                id={formId}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  form.handleSubmit();
                 }}
-              </form.Field>
-            </Grid>
-          </Grid>
-        </form>
+                onReset={() => {
+                  form.reset();
+                }}
+                noValidate
+              >
+                <Grid container spacing={1.5}>
+                  {valuesField.state.value.map((i, index) => {
+                    return (
+                      <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
+                        <form.Field name={`values[${index}].value`}>
+                          {(field) => (
+                            <TextField
+                              value={field.state.value}
+                              onChange={(e) => {
+                                field.handleChange(e.target.value);
+                              }}
+                              onBlur={field.handleBlur}
+                              helperText={i.description}
+                              fullWidth
+                              slotProps={{ input: { readOnly: i.readOnly } }}
+                            />
+                          )}
+                        </form.Field>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </form>
+            );
+          }}
+        </form.Field>
       </CardContent>
       <CardActions>
         <Button type="submit" form={formId} startIcon={<Save />}>
           保存
+        </Button>
+        <Button type="reset" form={formId} startIcon={<Restore />}>
+          重置
         </Button>
       </CardActions>
     </Card>
@@ -165,6 +153,7 @@ export const Component = () => {
   const selectFile = useSelectFile();
   const queryClient = useQueryClient();
   const selectDirectory = useSelectDirectory();
+  const config = useQuery(fetchQTConfig());
   const yiqiConfig = useQuery(fetchYiqiConfig());
   const currentLocal = useQuery(fetchCurrentLocalDB());
   const qtAppPath = useProfileStore((s) => s.qtAppPath);
@@ -415,9 +404,8 @@ export const Component = () => {
         <CardContent>
           <List>{renderYiqiConfig()}</List>
         </CardContent>
-        <CardActions></CardActions>
       </Card>
-      <HMISCard />
+      {config.isSuccess && <ConfigForm />}
     </Stack>
   );
 };

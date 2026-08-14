@@ -5,11 +5,13 @@ import { createServer } from "@yanglee2421/hmis-proxy";
 import dayjs from "dayjs";
 import {
   and,
+  asc,
   between,
   desc,
   eq,
   inArray,
   like,
+  lt,
   ne,
   count as sqlCount,
 } from "drizzle-orm";
@@ -20,22 +22,20 @@ import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { Piscina } from "piscina";
-import type { Observable, Subscription } from "rxjs";
+import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
   catchError,
+  defer,
   distinctUntilChanged,
   EMPTY,
-  last,
-  NEVER,
+  Observable,
   of,
   shareReplay,
-  startWith,
   switchMap,
-  takeUntil,
-  using,
 } from "rxjs";
 import workerPath from "../../workers/bmp?modulePath";
+import type { Logger } from "../logger";
 import type { Profile } from "../profile";
 import type { AppCradle } from "../types";
 import type {
@@ -45,7 +45,7 @@ import type {
   FetchQTVerifiesInput,
   FetchQuartorsInput,
   QTCHR53AInput,
-  SetQTHMISConfigInput,
+  SetQTConfigInput,
   SetupAppInput,
   SetYiqiConfigLibInput,
 } from "./types";
@@ -57,11 +57,13 @@ export class QT {
   private dbSubscription: Subscription;
   private hmisSubscription: Subscription;
 
-  private profile: Profile;
   private piscina: Piscina;
+  private profile: Profile;
+  private logger: Logger;
 
-  constructor({ profile }: AppCradle) {
+  constructor({ profile, logger }: AppCradle) {
     this.profile = profile;
+    this.logger = logger;
     this.piscina = new Piscina({
       filename: workerPath,
       minThreads: 1,
@@ -75,39 +77,38 @@ export class QT {
           return of(null);
         }
 
-        return using(
-          () => {
-            const flagFile = path.resolve(s.qtAppPath, "../FlagFile");
-            const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
-            const dbPath = path.resolve(dataDirectory, "./local.db");
-            const client = new DatabaseSync(dbPath);
-            const db = drizzle({ client, schema, relations });
+        return defer(() => {
+          const flagFile = path.resolve(s.qtAppPath, "../FlagFile");
+          const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
+          const dbPath = path.resolve(dataDirectory, "./local.db");
+          const client = new DatabaseSync(dbPath);
+          const db = drizzle({ client, schema, relations });
 
-            return {
-              unsubscribe: () => {
-                db.$client.close();
-              },
-              db,
+          return new Observable<DBClient>((sub) => {
+            sub.next(db);
+
+            return () => {
+              db.$client.close();
             };
-          },
-          (c) => {
-            const db: DBClient = Reflect.get(Object(c), "db");
+          });
+        }).pipe(
+          catchError((error) => {
+            if (import.meta.env.DEV) {
+              console.error(error);
+            }
 
-            return NEVER.pipe(
-              startWith(db),
-              takeUntil(this.profile.state$.pipe(last())),
-            );
-          },
+            if (error instanceof Error) {
+              this.logger.error({
+                title: error.message,
+                message: error.stack,
+              });
+            }
+
+            return EMPTY;
+          }),
         );
       }),
       shareReplay({ bufferSize: 1, refCount: true }),
-      catchError((error) => {
-        if (import.meta.env.DEV) {
-          console.error(error);
-        }
-
-        return EMPTY;
-      }),
     );
 
     this.hmis$ = this.profile.state$.pipe(
@@ -120,22 +121,42 @@ export class QT {
           return of(null);
         }
 
-        return using(
-          () => {
-            const server = createServer(state.qtHMISPort);
+        return defer(() => {
+          const server = createServer(state.qtHMISPort);
 
-            return {
-              unsubscribe: () => {
-                server.close();
-              },
+          return new Observable<null>((sub) => {
+            server.on("error", (error) => {
+              sub.error(error);
+            });
+
+            server.on("open", () => {
+              sub.next(null);
+            });
+
+            server.on("close", () => {
+              sub.complete();
+            });
+
+            return () => {
+              server.close();
             };
-          },
-          () =>
-            NEVER.pipe(
-              startWith(null),
-              takeUntil(this.profile.state$.pipe(last())),
-            ),
-        );
+          }).pipe(
+            catchError((error) => {
+              if (import.meta.env.DEV) {
+                console.error(error);
+              }
+
+              if (error instanceof Error) {
+                this.logger.error({
+                  title: error.message,
+                  message: error.stack,
+                });
+              }
+
+              return EMPTY;
+            }),
+          );
+        });
       }),
       shareReplay({ refCount: true, bufferSize: 1 }),
     );
@@ -296,7 +317,8 @@ export class QT {
       const rows = await this.client
         .select()
         .from(schema.quartors)
-        .where(inArray(schema.quartors.recId, idList));
+        .where(inArray(schema.quartors.recId, idList))
+        .orderBy(asc(schema.quartors.tmNow));
 
       if (rows.length !== 5) {
         throw new Error(`CHR502需要5条数据; 当前${rows.length}条`);
@@ -307,7 +329,25 @@ export class QT {
         .from(schema.quartorsData)
         .where(inArray(schema.quartorsData.precId, idList));
 
+      const firstRow = rows.at(0);
+      let previousRow = null;
+
+      if (firstRow) {
+        [previousRow] = await this.client
+          .select()
+          .from(schema.quartors)
+          .where(
+            and(
+              eq(schema.quartors.szWhModel, firstRow.szWhModel || ""),
+              lt(schema.quartors.tmNow, firstRow.tmNow || ""),
+            ),
+          )
+          .orderBy(desc(schema.quartors.tmNow))
+          .limit(1);
+      }
+
       return {
+        previousRow,
         rows,
         datas,
         FACTORY_CLD: FACTORY_CLD?.value,
@@ -340,9 +380,32 @@ export class QT {
     const datas = await this.client
       .select()
       .from(schema.quartorsData)
-      .where(inArray(schema.quartorsData.szIds, ids));
+      .where(
+        inArray(
+          schema.quartorsData.recId,
+          rows.map((r) => r.recId),
+        ),
+      );
+
+    const firstRow = rows.at(0);
+    let previousRow = null;
+
+    if (firstRow) {
+      [previousRow] = await this.client
+        .select()
+        .from(schema.quartors)
+        .where(
+          and(
+            eq(schema.quartors.szWhModel, firstRow.szWhModel || ""),
+            lt(schema.quartors.tmNow, firstRow.tmNow || ""),
+          ),
+        )
+        .orderBy(desc(schema.quartors.tmNow))
+        .limit(1);
+    }
 
     return {
+      previousRow,
       rows,
       datas,
       FACTORY_CLD: FACTORY_CLD?.value,
@@ -501,25 +564,27 @@ export class QT {
   async setupApp(params: SetupAppInput) {
     const { qtAppPath, qtDataDirectory } = params;
 
-    this.dbSubscription.unsubscribe();
+    try {
+      this.dbSubscription.unsubscribe();
 
-    await fs.promises.mkdir(qtDataDirectory, {
-      recursive: true,
-      mode: 0o666,
-    });
+      await fs.promises.mkdir(qtDataDirectory, {
+        recursive: true,
+        mode: 0o666,
+      });
 
-    const flagFilePath = path.resolve(qtAppPath, "..", "FlagFile");
-    const sourceDBPath = path.resolve(qtAppPath, "..", "local.db");
-    const targetDBPath = path.resolve(qtDataDirectory, "./local.db");
+      const flagFilePath = path.resolve(qtAppPath, "..", "FlagFile");
+      const sourceDBPath = path.resolve(qtAppPath, "..", "local.db");
+      const targetDBPath = path.resolve(qtDataDirectory, "./local.db");
 
-    await fs.promises.cp(sourceDBPath, targetDBPath);
-    await fs.promises.writeFile(flagFilePath, qtDataDirectory, {
-      encoding: "utf8",
-      flag: "w+",
-      mode: 0o666,
-    });
-
-    this.dbSubscription = this.db$.subscribe(this.client$);
+      await fs.promises.cp(sourceDBPath, targetDBPath);
+      await fs.promises.writeFile(flagFilePath, qtDataDirectory, {
+        encoding: "utf8",
+        flag: "w+",
+        mode: 0o666,
+      });
+    } finally {
+      this.dbSubscription = this.db$.subscribe(this.client$);
+    }
   }
 
   async getCurrentLocalDB() {
@@ -695,32 +760,38 @@ export class QT {
 
     return { rows };
   }
-  async fetchHMISConfig() {
-    const [HMIS_Url] = await this.client
-      .select({ value: schema.sysConfig.configValue })
+  async getConfig() {
+    const rows = await this.client
+      .select({
+        id: schema.sysConfig.recId,
+        key: schema.sysConfig.configKey,
+        value: schema.sysConfig.configValue,
+        description: schema.sysConfig.remark,
+        readOnly: schema.sysConfig.isReadOnly,
+      })
       .from(schema.sysConfig)
-      .where(eq(schema.sysConfig.configKey, "HMIS_Url"));
+      .where(and(ne(schema.sysConfig.configKey, "")));
 
-    return { HMIS_Url: HMIS_Url.value };
+    return { rows };
   }
-  setHMISConfig(input: SetQTHMISConfigInput) {
-    const [HMIS_Url] = this.client.transaction((tx) => {
-      const result = tx
-        .insert(schema.sysConfig)
-        .values({
-          configKey: "HMIS_Url",
-          configValue: input.HMIS_Url,
-        })
-        .onConflictDoUpdate({
-          target: schema.sysConfig.configKey,
-          set: { configValue: input.HMIS_Url },
-        })
-        .returning({ value: schema.sysConfig.configValue })
-        .all();
-
-      return result;
+  setConfig(input: SetQTConfigInput) {
+    const result = this.client.transaction((tx) => {
+      return input.values.map(({ key, value }) => {
+        return tx
+          .insert(schema.sysConfig)
+          .values({
+            configKey: key,
+            configValue: value,
+          })
+          .onConflictDoUpdate({
+            target: schema.sysConfig.configKey,
+            set: { configValue: value },
+          })
+          .returning()
+          .get();
+      });
     });
 
-    return { HMIS_Url: HMIS_Url.value };
+    return { result };
   }
 }
