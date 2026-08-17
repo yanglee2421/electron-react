@@ -23,7 +23,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import timers from "node:timers";
 import { Piscina } from "piscina";
 import type { Subscription } from "rxjs";
 import {
@@ -631,13 +630,19 @@ export class QT {
   }
 
   async startApp() {
-    this.qtProcess = spawn(this.profile.state.qtAppPath, [], {
-      shell: platform.isLinux,
-    });
-
-    console.log(this.profile.state.qtAppPath);
-
-    await timers.promises.setTimeout(1000 * 10);
+    if (platform.isLinux) {
+      const cwd = path.dirname(this.profile.state.qtAppPath);
+      this.qtProcess = spawn(this.profile.state.qtAppPath, [], {
+        cwd,
+        env: {
+          ...process.env,
+          QT_PLUGIN_PATH: "plugins",
+          LD_LIBRARY_PATH: `lib:${process.env.LD_LIBRARY_PATH || ""}`,
+        },
+      });
+    } else {
+      this.qtProcess = spawn(this.profile.state.qtAppPath, [], {});
+    }
 
     return this.qtProcess?.pid;
   }

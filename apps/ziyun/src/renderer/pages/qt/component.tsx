@@ -913,7 +913,7 @@ export const Component = () => {
                                           name: "可执行程序",
                                         },
                                         {
-                                          extensions: ["*", ""],
+                                          extensions: ["*"],
                                           name: "所有文件",
                                         },
                                       ],
