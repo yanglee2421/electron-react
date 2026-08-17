@@ -11,6 +11,7 @@ import {
   useSetYiqiFlag,
   useSetYiqiLib,
   useStartApp,
+  useStopApp,
   useUpsertQTUser,
 } from "#renderer/api/qt";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
@@ -24,6 +25,8 @@ import {
   MoreVert,
   Restore,
   Save,
+  Visibility,
+  VisibilityOff,
 } from "@mui/icons-material";
 import {
   Alert,
@@ -34,6 +37,11 @@ import {
   CardContent,
   CardHeader,
   Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
   Grid,
   IconButton,
   InputAdornment,
@@ -45,6 +53,8 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Radio,
+  RadioGroup,
   Stack,
   Table,
   TableBody,
@@ -63,15 +73,35 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useDialogs } from "@toolpad/core";
 import type { schema } from "@yanglee2421/external-db";
 import React from "react";
 import { toast } from "react-toastify";
+import { z } from "zod";
 
 const ConfigForm = () => {
   const formId = React.useId();
 
-  const config = useQuery(fetchQTConfig());
+  const dialog = useDialogs();
+  const start = useStartApp();
+  const stop = useStopApp();
   const setConfig = useSetQTConfig();
+  const config = useQuery(fetchQTConfig());
+
+  const handleRestart = async () => {
+    const comfired = await dialog.confirm("更改设置后需要重启，现在重启吗？", {
+      title: "提示",
+      severity: "warning",
+      okText: "确定",
+      cancelText: "稍后",
+    });
+
+    if (!comfired) return;
+
+    await stop.mutateAsync();
+    await new Promise((f) => setTimeout(f, 1000));
+    await start.mutateAsync();
+  };
 
   const form = useForm({
     defaultValues: {
@@ -98,9 +128,7 @@ const ConfigForm = () => {
           onError: (error) => {
             toast.error(error.message);
           },
-          onSuccess: () => {
-            toast.success("保存成功");
-          },
+          onSuccess: handleRestart,
         },
       );
     },
@@ -146,6 +174,7 @@ const ConfigForm = () => {
                               }}
                               onBlur={field.handleBlur}
                               helperText={i.description}
+                              label={i.key}
                               fullWidth
                               slotProps={{ input: { readOnly: i.readOnly } }}
                             />
@@ -175,24 +204,216 @@ const ConfigForm = () => {
 type Row = Omit<typeof schema.userManager.$inferSelect, "pwd">;
 const columnHelper = createColumnHelper<Row>();
 const columns = [
-  columnHelper.accessor("recId", {}),
-  columnHelper.accessor("name", {}),
-  columnHelper.accessor("power", {}),
-  columnHelper.accessor("regTime", {}),
+  columnHelper.accessor("recId", {
+    header: "ID",
+  }),
+  columnHelper.accessor("name", {
+    header: "用户名",
+  }),
+  columnHelper.accessor("power", {
+    header: "角色",
+    cell: ({ getValue }) => {
+      const val = getValue();
+
+      switch (val) {
+        case "1":
+          return "管理员";
+        default:
+          return " 非管理员";
+      }
+    },
+  }),
+  columnHelper.accessor("regTime", {
+    header: "注册时间",
+  }),
   columnHelper.display({
     id: "action",
     header: "操作",
-    cell: ({ getValue }) => {
-      return <ActionCell />;
+    cell: ({ row }) => {
+      return (
+        <ActionCell
+          rowId={row.original.recId}
+          user={row.original.name || ""}
+          power={row.original.power || ""}
+        />
+      );
     },
   }),
 ];
 
-const ActionCell = () => {
+interface ActionCellProps {
+  rowId: number;
+  user: string;
+  power: string;
+}
+
+const ActionCell = (props: ActionCellProps) => {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [showEdit, setShowEdit] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+
+  const formId = React.useId();
+
+  const dialog = useDialogs();
+  const deleteUsers = useDeleteQTUser();
+  const upsertUsers = useUpsertQTUser();
+
+  const form = useForm({
+    defaultValues: {
+      user: props.user,
+      password: "",
+      power: props.power,
+    },
+    onSubmit: async ({ value }) => {
+      await upsertUsers.mutateAsync(
+        {
+          recId: props.rowId,
+          name: value.user,
+          power: value.power,
+          pwd: value.password,
+        },
+        {
+          onError: (error) => {
+            toast.error(error.message);
+          },
+          onSuccess: () => {
+            form.reset();
+            setShowEdit(false);
+            toast.success("保存成功");
+          },
+        },
+      );
+    },
+    validators: {
+      onChange: z.object({
+        user: z.string().min(2),
+        password: z.string(),
+        power: z.string(),
+      }),
+    },
+  });
 
   return (
     <>
+      <Dialog
+        open={showEdit}
+        onClose={() => {
+          setShowEdit(false);
+        }}
+        fullWidth
+      >
+        <DialogTitle>编辑用户</DialogTitle>
+        <DialogContent>
+          <form
+            id={formId}
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+            onReset={() => {
+              form.reset();
+              setShowEdit(false);
+            }}
+            noValidate
+          >
+            <Grid container spacing={1.5} sx={{ mt: 1.5 }}>
+              <Grid size={12}>
+                <form.Field name="user">
+                  {(field) => {
+                    return (
+                      <TextField
+                        value={field.state.value}
+                        onChange={(e) => {
+                          field.handleChange(e.target.value);
+                        }}
+                        onBlur={field.handleBlur}
+                        name={field.name}
+                        error={!!field.state.meta.errors.length}
+                        helperText={field.state.meta.errors.at(0)?.message}
+                        label="用户名"
+                        fullWidth
+                      />
+                    );
+                  }}
+                </form.Field>
+              </Grid>
+              <Grid size={12}>
+                <form.Field name="password">
+                  {(field) => {
+                    return (
+                      <TextField
+                        value={field.state.value}
+                        onChange={(e) => {
+                          field.handleChange(e.target.value);
+                        }}
+                        onBlur={field.handleBlur}
+                        name={field.name}
+                        error={!!field.state.meta.errors.length}
+                        helperText={field.state.meta.errors.at(0)?.message}
+                        label="密码"
+                        fullWidth
+                        type={showPassword ? "text" : "password"}
+                        slotProps={{
+                          input: {
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  onClick={() => {
+                                    setShowPassword((p) => !p);
+                                  }}
+                                >
+                                  {showPassword ? (
+                                    <VisibilityOff />
+                                  ) : (
+                                    <Visibility />
+                                  )}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          },
+                        }}
+                      />
+                    );
+                  }}
+                </form.Field>
+              </Grid>
+              <Grid size={12}>
+                <form.Field name="power">
+                  {(field) => {
+                    return (
+                      <RadioGroup
+                        value={field.state.value}
+                        onChange={(_, value) => {
+                          field.handleChange(value);
+                        }}
+                        row
+                      >
+                        <FormControlLabel
+                          control={<Radio value={"1"} />}
+                          label="管理员"
+                        />
+                        <FormControlLabel
+                          control={<Radio value={"2"} />}
+                          label="非管理员"
+                        />
+                      </RadioGroup>
+                    );
+                  }}
+                </form.Field>
+              </Grid>
+            </Grid>
+          </form>
+        </DialogContent>
+        <DialogActions>
+          <Button form={formId} type="reset">
+            Cancel
+          </Button>
+          <Button form={formId} type="submit">
+            Ok
+          </Button>
+        </DialogActions>
+      </Dialog>
       <IconButton
         onClick={(e) => {
           setAnchorEl(e.currentTarget);
@@ -207,13 +428,36 @@ const ActionCell = () => {
           setAnchorEl(null);
         }}
       >
-        <MenuItem>
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null);
+            setShowEdit(true);
+          }}
+        >
           <ListItemIcon>
             <Edit />
           </ListItemIcon>
           <ListItemText primary="编辑" />
         </MenuItem>
-        <MenuItem>
+        <MenuItem
+          onClick={async () => {
+            setAnchorEl(null);
+
+            const confirmed = await dialog.confirm("确定要删除这条记录吗？", {
+              okText: "删除",
+              cancelText: "取消",
+              title: "警告",
+              severity: "error",
+            });
+
+            if (confirmed) {
+              await deleteUsers.mutateAsync(props.rowId);
+              toast.success("Ok");
+            } else {
+              toast.info("Canceled");
+            }
+          }}
+        >
           <ListItemIcon>
             <Delete />
           </ListItemIcon>
@@ -225,9 +469,47 @@ const ActionCell = () => {
 };
 
 const UsersTable = () => {
-  const users = useQuery(fetchQTUsers());
+  const [showEdit, setShowEdit] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+
+  const formId = React.useId();
+
   const upsertUsers = useUpsertQTUser();
-  const deleteUsers = useDeleteQTUser();
+  const users = useQuery(fetchQTUsers());
+
+  const form = useForm({
+    defaultValues: {
+      user: "",
+      password: "",
+      power: "2",
+    },
+    onSubmit: async ({ value }) => {
+      await upsertUsers.mutateAsync(
+        {
+          name: value.user,
+          power: value.power,
+          pwd: value.password,
+        },
+        {
+          onError: (error) => {
+            toast.error(error.message);
+          },
+          onSuccess: () => {
+            form.reset();
+            setShowEdit(false);
+            toast.success("保存成功");
+          },
+        },
+      );
+    },
+    validators: {
+      onChange: z.object({
+        user: z.string().min(2),
+        password: z.string(),
+        power: z.string(),
+      }),
+    },
+  });
 
   const data = React.useMemo(() => users.data?.rows || [], [users.data]);
 
@@ -287,7 +569,130 @@ const UsersTable = () => {
     <Card>
       <CardHeader title="用户管理" />
       <CardContent>
-        <Button startIcon={<Add />}>添加</Button>
+        <Button
+          onClick={() => {
+            setShowEdit(true);
+          }}
+          startIcon={<Add />}
+        >
+          添加
+        </Button>
+        <Dialog
+          open={showEdit}
+          onClose={() => {
+            setShowEdit(false);
+          }}
+          fullWidth
+        >
+          <DialogTitle>新增用户</DialogTitle>
+          <DialogContent>
+            <form
+              id={formId}
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                form.handleSubmit();
+              }}
+              onReset={() => {
+                form.reset();
+                setShowEdit(false);
+              }}
+              noValidate
+            >
+              <Grid container spacing={1.5} sx={{ mt: 1.5 }}>
+                <Grid size={12}>
+                  <form.Field name="user">
+                    {(field) => {
+                      return (
+                        <TextField
+                          value={field.state.value}
+                          onChange={(e) => {
+                            field.handleChange(e.target.value);
+                          }}
+                          onBlur={field.handleBlur}
+                          error={!!field.state.meta.errors.length}
+                          helperText={field.state.meta.errors.at(0)?.message}
+                          label="用户名"
+                          fullWidth
+                        />
+                      );
+                    }}
+                  </form.Field>
+                </Grid>
+                <Grid size={12}>
+                  <form.Field name="password">
+                    {(field) => {
+                      return (
+                        <TextField
+                          value={field.state.value}
+                          onChange={(e) => {
+                            field.handleChange(e.target.value);
+                          }}
+                          onBlur={field.handleBlur}
+                          error={!!field.state.meta.errors.length}
+                          helperText={field.state.meta.errors.at(0)?.message}
+                          label="密码"
+                          fullWidth
+                          slotProps={{
+                            input: {
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <IconButton
+                                    onClick={() => {
+                                      setShowPassword((p) => !p);
+                                    }}
+                                  >
+                                    {showPassword ? (
+                                      <VisibilityOff />
+                                    ) : (
+                                      <Visibility />
+                                    )}
+                                  </IconButton>
+                                </InputAdornment>
+                              ),
+                            },
+                          }}
+                        />
+                      );
+                    }}
+                  </form.Field>
+                </Grid>
+                <Grid size={12}>
+                  <form.Field name="power">
+                    {(field) => {
+                      return (
+                        <RadioGroup
+                          value={field.state.value}
+                          onChange={(_, value) => {
+                            field.handleChange(value);
+                          }}
+                          row
+                        >
+                          <FormControlLabel
+                            control={<Radio value={"1"} />}
+                            label="管理员"
+                          />
+                          <FormControlLabel
+                            control={<Radio value={"2"} />}
+                            label="非管理员"
+                          />
+                        </RadioGroup>
+                      );
+                    }}
+                  </form.Field>
+                </Grid>
+              </Grid>
+            </form>
+          </DialogContent>
+          <DialogActions>
+            <Button form={formId} type="reset">
+              Cancel
+            </Button>
+            <Button form={formId} type="submit">
+              Ok
+            </Button>
+          </DialogActions>
+        </Dialog>
       </CardContent>
       {users.isPending && <LinearProgress />}
       <TableContainer>
@@ -338,6 +743,10 @@ export const Component = () => {
 
   const setupApp = useSetupApp();
   const startApp = useStartApp();
+  const stopApp = useStopApp();
+  const dialog = useDialogs();
+  const start = useStartApp();
+  const stop = useStopApp();
   const yiqiLib = useSetYiqiLib();
   const yiqiFlag = useSetYiqiFlag();
   const selectFile = useSelectFile();
@@ -373,6 +782,21 @@ export const Component = () => {
     },
   });
 
+  const handleRestart = async () => {
+    const comfired = await dialog.confirm("更改设置后需要重启，现在重启吗？", {
+      title: "提示",
+      severity: "warning",
+      okText: "确定",
+      cancelText: "稍后",
+    });
+
+    if (!comfired) return;
+
+    await stop.mutateAsync();
+    await new Promise((f) => setTimeout(f, 1000));
+    await start.mutateAsync();
+  };
+
   const renderYiqiConfig = () => {
     if (yiqiConfig.isPending) {
       return <Loading />;
@@ -404,7 +828,8 @@ export const Component = () => {
 
                 if (!libPath) return;
 
-                yiqiLib.mutate({ id: row.recId, lib: libPath });
+                await yiqiLib.mutateAsync({ id: row.recId, lib: libPath });
+                await handleRestart();
               }}
             >
               <FindInPageOutlined />
@@ -413,8 +838,9 @@ export const Component = () => {
           disablePadding
         >
           <ListItemButton
-            onClick={() => {
-              yiqiFlag.mutate(row.recId);
+            onClick={async () => {
+              await yiqiFlag.mutateAsync(row.recId);
+              handleRestart();
             }}
           >
             <ListItemIcon>
@@ -577,7 +1003,7 @@ export const Component = () => {
         </CardContent>
         <CardActions>
           <Button type="submit" form={formId}>
-            Save
+            部署
           </Button>
           <Button
             onClick={() => {
@@ -585,7 +1011,15 @@ export const Component = () => {
             }}
             type="button"
           >
-            start
+            启动
+          </Button>
+          <Button
+            onClick={() => {
+              stopApp.mutate();
+            }}
+            type="button"
+          >
+            停止
           </Button>
         </CardActions>
       </Card>

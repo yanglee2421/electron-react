@@ -20,11 +20,12 @@ export const registerIPCHandlers = (qt: QT) => {
   ipcHandle("qt/set_config", (_, p) => qt.setConfig(p));
 
   ipcHandle("qt/setup-app", (_, p) => qt.setupApp(p));
+  ipcHandle("qt/start-app", () => qt.startApp());
+  ipcHandle("qt/stop-app", () => qt.stopApp());
   ipcHandle("qt/current-db-path", () => qt.getCurrentLocalDB());
   ipcHandle("qt/yiqiConfig/list", () => qt.deviceConfigList());
   ipcHandle("qt/yiqiConfig/lib", (_, p) => qt.setDeviceConfigLib(p));
   ipcHandle("qt/yiqiConfig/flag", (_, p) => qt.setDeviceConfigFlag(p));
-  ipcHandle("qt/start-app", () => qt.startApp());
 
   return () => {
     ipcRemoveHandle("qt/501");
@@ -46,6 +47,7 @@ export const registerIPCHandlers = (qt: QT) => {
 
     ipcRemoveHandle("qt/setup-app");
     ipcRemoveHandle("qt/start-app");
+    ipcRemoveHandle("qt/stop-app");
     ipcRemoveHandle("qt/current-db-path");
     ipcRemoveHandle("qt/yiqiConfig/list");
     ipcRemoveHandle("qt/yiqiConfig/lib");

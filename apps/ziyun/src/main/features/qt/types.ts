@@ -142,6 +142,10 @@ export interface IPC {
     args: [];
     return: ReturnType<QT["startApp"]>;
   };
+  "qt/stop-app": {
+    args: [];
+    return: ReturnType<QT["stopApp"]>;
+  };
   "qt/current-db-path": {
     args: [];
     return: ReturnType<QT["getCurrentLocalDB"]>;

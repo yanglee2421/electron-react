@@ -83,6 +83,14 @@ export const useStartApp = () => {
   });
 };
 
+export const useStopApp = () => {
+  return useMutation({
+    mutationFn: async () => {
+      return ipc.invoke("qt/stop-app");
+    },
+  });
+};
+
 export const fetchQTDetections = (input: FetchDetectionsInput) => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/detections", input],

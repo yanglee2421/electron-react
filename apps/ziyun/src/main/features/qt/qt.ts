@@ -16,11 +16,13 @@ import {
   count as sqlCount,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-sqlite";
-import { app, shell } from "electron";
+import { app } from "electron";
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import timers from "node:timers";
 import { Piscina } from "piscina";
 import type { Subscription } from "rxjs";
 import {
@@ -57,6 +59,8 @@ export class QT {
   private hmis$: Observable<null>;
   private dbSubscription: Subscription;
   private hmisSubscription: Subscription;
+
+  private qtProcess: ChildProcessWithoutNullStreams | null = null;
 
   private piscina: Piscina;
   private profile: Profile;
@@ -626,9 +630,14 @@ export class QT {
   }
 
   async startApp() {
-    const result = await shell.openPath(this.profile.state.qtAppPath);
+    this.qtProcess = spawn(this.profile.state.qtAppPath);
 
-    return result;
+    await timers.promises.setTimeout(1000 * 10);
+
+    return this.qtProcess?.pid;
+  }
+  async stopApp() {
+    this.qtProcess?.kill();
   }
 
   async fetchDetections(input: FetchDetectionsInput) {
@@ -784,7 +793,7 @@ export class QT {
       })
       .onConflictDoUpdate({
         target: schema.userManager.recId,
-        set: {},
+        set: { name, pwd, power },
       })
       .returning();
 

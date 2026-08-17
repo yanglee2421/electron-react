@@ -127,8 +127,9 @@ const ActionCell = (props: ActionCellProps) => {
         onClick={async () => {
           const confirmed = await dialog.confirm("确定要删除这条记录吗？", {
             okText: "删除",
-            title: "警告",
             cancelText: "取消",
+            title: "警告",
+            severity: "error",
           });
 
           if (confirmed) {

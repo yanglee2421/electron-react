@@ -182,6 +182,7 @@ const ActionCell = (props: ActionCellProps) => {
             okText: "删除",
             cancelText: "取消",
             title: "警告",
+            severity: "error",
           });
           if (confirmed) {
             deleteBarcode.mutate(props.id, {

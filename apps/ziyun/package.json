@@ -97,7 +97,7 @@
     "jimp": "^1.6.1",
     "mathjs": "^15.2.0",
     "mdb-reader": "^3.2.0",
-    "node-fxplc": "^0.1.6",
+    "node-fxplc": "^0.1.7",
     "nprogress": "^0.2.0",
     "p-limit": "^7.3.0",
     "qrcode.react": "^4.2.0",
