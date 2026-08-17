@@ -1,4 +1,5 @@
 import type { ChannelImage } from "#main/workers/bmp";
+import { platform } from "@electron-toolkit/utils";
 import type { DBClient } from "@yanglee2421/external-db";
 import { relations, schema } from "@yanglee2421/external-db";
 import { createServer } from "@yanglee2421/hmis-proxy";
@@ -630,7 +631,11 @@ export class QT {
   }
 
   async startApp() {
-    this.qtProcess = spawn(this.profile.state.qtAppPath);
+    this.qtProcess = spawn(this.profile.state.qtAppPath, [], {
+      shell: platform.isLinux,
+    });
+
+    console.log(this.profile.state.qtAppPath);
 
     await timers.promises.setTimeout(1000 * 10);
 
