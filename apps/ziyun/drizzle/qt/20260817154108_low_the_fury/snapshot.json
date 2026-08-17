@@ -1,0 +1,3665 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "c5701219-2170-4d93-bddc-a773d4b3f339",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "AlxInfo",
+      "entityType": "tables"
+    },
+    {
+      "name": "Channels",
+      "entityType": "tables"
+    },
+    {
+      "name": "detections_data",
+      "entityType": "tables"
+    },
+    {
+      "name": "detectors",
+      "entityType": "tables"
+    },
+    {
+      "name": "Gates",
+      "entityType": "tables"
+    },
+    {
+      "name": "OperLog",
+      "entityType": "tables"
+    },
+    {
+      "name": "QuartorChannel",
+      "entityType": "tables"
+    },
+    {
+      "name": "QuartorGates",
+      "entityType": "tables"
+    },
+    {
+      "name": "QuartorRecordInfo",
+      "entityType": "tables"
+    },
+    {
+      "name": "quartors",
+      "entityType": "tables"
+    },
+    {
+      "name": "quartors_data",
+      "entityType": "tables"
+    },
+    {
+      "name": "SysConfig",
+      "entityType": "tables"
+    },
+    {
+      "name": "UserManager",
+      "entityType": "tables"
+    },
+    {
+      "name": "verifies",
+      "entityType": "tables"
+    },
+    {
+      "name": "verifies_data",
+      "entityType": "tables"
+    },
+    {
+      "name": "YQConfig",
+      "entityType": "tables"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "ALXID",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ALXNAME",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "YBL_CT",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "YBL_XHC",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "YBL_LZ",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "HALF_ALXLEN",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTRADIUS",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTRADIUS0",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTRADIUS1",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTRADIUS2",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTRADIUS3",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTRADIUS4",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTRADIUS5",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTRADIUS6",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTRADIUS7",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTLENGTH0",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTLENGTH1",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FTLENGTH2",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "AVGSPEED",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ISDEFAULT",
+      "entityType": "columns",
+      "table": "AlxInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBoardIndex",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nChannelIndex",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nPhysicsIndex",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nWheelIndex",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szWheelName",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szName",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nSleep",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nSmooth",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ftRange",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nPluse",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDelay",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nAtten",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDbSub",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nWangle",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nZsize",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ftDistance",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bActive",
+      "entityType": "columns",
+      "table": "Channels"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "PRecID",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIds",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBoard",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nChannel",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nPhyChannel",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nTaIndex",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nAtten",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDbSub",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwIndex",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwIn",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwOut",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwCount",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueX",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueY",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueUs",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueUsh",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nWangle",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szRemark",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bDeleted",
+      "entityType": "columns",
+      "table": "detections_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIds",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szWhModel",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szUsername",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szDh",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szZh",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szSrdw",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szSryy",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szTmMake",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIdsMake",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szTmFirst",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIdsFirst",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szTmLast",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIdsLast",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ftRadiu",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bFlaws",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bWheelLs",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bWheelRs",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bSickLd",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bSickRd",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "tmNow",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szResult",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szMemo",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "startTime",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "endTime",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bIsEnable",
+      "entityType": "columns",
+      "table": "detectors"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBoardIndex",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nChannelIndex",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nChannelRectId",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szGateName",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nGateId",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nSubGateId",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szColor",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bActive",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nLeft",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nWidth",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nTop",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBleft",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBwidth",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBtop",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB1Count",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB1Width",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB1Height",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB2Count",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB2Width",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB2Height",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE1Count",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE1Width",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE1Height",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE2Count",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE2Width",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE2Height",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bSelected",
+      "entityType": "columns",
+      "table": "Gates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "OperLog"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "OperDate",
+      "entityType": "columns",
+      "table": "OperLog"
+    },
+    {
+      "type": "CHAR(100)",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "OperName",
+      "entityType": "columns",
+      "table": "OperLog"
+    },
+    {
+      "type": "CHAR(1024)",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "LogInfo",
+      "entityType": "columns",
+      "table": "OperLog"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBoardIndex",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nChannelIndex",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nPhysicsIndex",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nWheelIndex",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szWheelName",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szName",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nSleep",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nSmooth",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ftRange",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nPluse",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDelay",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nAtten",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDbSub",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nWangle",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nZsize",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ftDistance",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bActive",
+      "entityType": "columns",
+      "table": "QuartorChannel"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBoardIndex",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nChannelIndex",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nChannelRectId",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szGateName",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nGateId",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nSubGateId",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szColor",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bActive",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nLeft",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nWidth",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nTop",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBleft",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBwidth",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBtop",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB1Count",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB1Width",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB1Height",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB2Count",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB2Width",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nB2Height",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE1Count",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE1Width",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE1Height",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE2Count",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE2Width",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "nE2Height",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bSelected",
+      "entityType": "columns",
+      "table": "QuartorGates"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szUserName",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "tmNow",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIds",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBoardIndex",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nChannelIndex",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bResult",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bHorResult",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nHorAtten",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B0",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B1",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B2",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B3",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B4",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B5",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B0_LLZ",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B1_LLZ",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B2_LLZ",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B3_LLZ",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B4_LLZ",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHor_B5_LLZ",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fHorResult",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bDesResult",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDesAtten_H",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDesAtten_L",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDesAtten",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bAttResult",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fAtt_S0",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fAtt_S1",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fAtt_S",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bVerResult",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B0",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B1",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B2",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B3",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B4",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B5",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B6",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B7",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B8",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B9",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B10",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B11",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B12",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVer_B13",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B0",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B1",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B2",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B3",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B4",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B5",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B6",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B7",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B8",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B9",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B10",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B11",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B12",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fVerTgMax_B13",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDyn_S1",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDyn_S2",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDyn_MAX",
+      "entityType": "columns",
+      "table": "QuartorRecordInfo"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIds",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szWhModel",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szUsername",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szDh",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szZh",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szSrdw",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szSryy",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szTmMake",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIdsMake",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szTmFirst",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIdsFirst",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szTmLast",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIdsLast",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ftRadiu",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bFlaws",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bWheelLs",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bWheelRs",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bSickLd",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bSickRd",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "tmNow",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szResult",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szMemo",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "startTime",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "endTime",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bIsEnable",
+      "entityType": "columns",
+      "table": "quartors"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "PRecID",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIds",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBoard",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nChannel",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nPhyChannel",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nTaIndex",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nAtten",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDbSub",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwIndex",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwIn",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwOut",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwCount",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueX",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueY",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueUs",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueUsh",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nWangle",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szRemark",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bDeleted",
+      "entityType": "columns",
+      "table": "quartors_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "SysConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "TypeName",
+      "entityType": "columns",
+      "table": "SysConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ConfigKey",
+      "entityType": "columns",
+      "table": "SysConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ConfigValue",
+      "entityType": "columns",
+      "table": "SysConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "DefaultValue",
+      "entityType": "columns",
+      "table": "SysConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "Remark",
+      "entityType": "columns",
+      "table": "SysConfig"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "IsReadOnly",
+      "entityType": "columns",
+      "table": "SysConfig"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "UserManager"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "UserName",
+      "entityType": "columns",
+      "table": "UserManager"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "Pwd",
+      "entityType": "columns",
+      "table": "UserManager"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "Name",
+      "entityType": "columns",
+      "table": "UserManager"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "Power",
+      "entityType": "columns",
+      "table": "UserManager"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "RegTime",
+      "entityType": "columns",
+      "table": "UserManager"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIds",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szWhModel",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szUsername",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szDh",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szZh",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szSrdw",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szSryy",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szTmMake",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIdsMake",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szTmFirst",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIdsFirst",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szTmLast",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIdsLast",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ftRadiu",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bFlaws",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bWheelLs",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bWheelRs",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bSickLd",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bSickRd",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "tmNow",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szResult",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szMemo",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "startTime",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "numeric",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "endTime",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bIsEnable",
+      "entityType": "columns",
+      "table": "verifies"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "PRecID",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szIds",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nBoard",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nChannel",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nPhyChannel",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nTaIndex",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nAtten",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nDbSub",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwIndex",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwIn",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwOut",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nFwCount",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueX",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueY",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueUs",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fltValueUsh",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "nWangle",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "szRemark",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "BOOL",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bDeleted",
+      "entityType": "columns",
+      "table": "verifies_data"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "RecID",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "FactoryName",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "YQName",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "YQID",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ChannelNums",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ProductionDate",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "InstallationDate",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "CommMode",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "CommParam",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "CommParamBack",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "DllPath",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "UsedFlag",
+      "entityType": "columns",
+      "table": "YQConfig"
+    },
+    {
+      "columns": [
+        "ALXID"
+      ],
+      "nameExplicit": false,
+      "name": "AlxInfo_pk",
+      "table": "AlxInfo",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "Channels_pk",
+      "table": "Channels",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "detections_data_pk",
+      "table": "detections_data",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "detectors_pk",
+      "table": "detectors",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "Gates_pk",
+      "table": "Gates",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "OperLog_pk",
+      "table": "OperLog",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "QuartorChannel_pk",
+      "table": "QuartorChannel",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "QuartorGates_pk",
+      "table": "QuartorGates",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "QuartorRecordInfo_pk",
+      "table": "QuartorRecordInfo",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "quartors_pk",
+      "table": "quartors",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "quartors_data_pk",
+      "table": "quartors_data",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "SysConfig_pk",
+      "table": "SysConfig",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "UserManager_pk",
+      "table": "UserManager",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "verifies_pk",
+      "table": "verifies",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "verifies_data_pk",
+      "table": "verifies_data",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "RecID"
+      ],
+      "nameExplicit": false,
+      "name": "YQConfig_pk",
+      "table": "YQConfig",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "szIds"
+      ],
+      "nameExplicit": true,
+      "name": "detectors_szIDs_unique",
+      "entityType": "uniques",
+      "table": "detectors"
+    },
+    {
+      "columns": [
+        "szIds"
+      ],
+      "nameExplicit": true,
+      "name": "quartors_szIDs_unique",
+      "entityType": "uniques",
+      "table": "quartors"
+    },
+    {
+      "columns": [
+        "ConfigKey"
+      ],
+      "nameExplicit": true,
+      "name": "SysConfig_ConfigKey_unique",
+      "entityType": "uniques",
+      "table": "SysConfig"
+    },
+    {
+      "columns": [
+        "szIds"
+      ],
+      "nameExplicit": true,
+      "name": "verifies_szIDs_unique",
+      "entityType": "uniques",
+      "table": "verifies"
+    }
+  ],
+  "renames": []
+}

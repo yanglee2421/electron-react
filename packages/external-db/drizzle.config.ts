@@ -6,10 +6,9 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 export default defineConfig({
   schema: "./src/schema.ts",
-  out: "./drizzle/migrations",
+  out: path.resolve(__dirname, "../../apps/ziyun/drizzle/qt"),
   dialect: "sqlite",
   dbCredentials: {
-    // url: `file:${path.join(__dirname, "./local.db")}`,
     url: "D:\\qt-data\\local.db",
   },
 });

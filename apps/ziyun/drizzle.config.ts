@@ -5,7 +5,7 @@ import url from "node:url";
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  out: "./drizzle",
+  out: "./drizzle/db",
   schema: "./src/main/features/db/schema.ts",
   dialect: "sqlite",
   // Dynamic database path for Electron

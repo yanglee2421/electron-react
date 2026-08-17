@@ -1,9 +1,9 @@
 import {
-  browserWindowCreated$,
-  secondInstance$,
-  whenReady$,
-  willQuit$,
-  windowAllClosed$,
+    browserWindowCreated$,
+    secondInstance$,
+    whenReady$,
+    willQuit$,
+    windowAllClosed$,
 } from "#main/infra/app-rxjs";
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
@@ -13,24 +13,24 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import {
-  catchError,
-  concat,
-  defer,
-  EMPTY,
-  filter,
-  finalize,
-  fromEventPattern,
-  ignoreElements,
-  map,
-  mergeMap,
-  NEVER,
-  of,
-  shareReplay,
-  startWith,
-  take,
-  takeUntil,
-  tap,
-  using,
+    catchError,
+    concat,
+    defer,
+    EMPTY,
+    filter,
+    finalize,
+    fromEventPattern,
+    ignoreElements,
+    map,
+    mergeMap,
+    NEVER,
+    of,
+    shareReplay,
+    startWith,
+    take,
+    takeUntil,
+    tap,
+    using,
 } from "rxjs";
 import { container } from "./features";
 import * as cmdIPC from "./features/cmd/ipc";
@@ -85,7 +85,7 @@ const resource$ = using(
 
     const { db } = container.cradle;
     const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-    const migrationsFolder = path.resolve(__dirname, "../../drizzle");
+    const migrationsFolder = path.resolve(__dirname, "../../drizzle/db");
     db.migrate(migrationsFolder);
 
     const {
