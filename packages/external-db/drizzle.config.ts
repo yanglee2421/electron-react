@@ -9,6 +9,6 @@ export default defineConfig({
   out: path.resolve(__dirname, "../../apps/ziyun/drizzle/qt"),
   dialect: "sqlite",
   dbCredentials: {
-    url: "D:\\qt-data\\local.db",
+    url: "D:\\qtapp\\data\\local.db",
   },
 });

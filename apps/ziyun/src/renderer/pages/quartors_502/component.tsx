@@ -1,12 +1,12 @@
 import { fetchCHR502Data } from "#renderer/api/printer";
 import { Loading } from "#renderer/components/Loading";
 import {
-    Cell,
-    Col,
-    PageFooter,
-    PageHeader,
-    ReportTitle,
-    Row,
+  Cell,
+  Col,
+  PageFooter,
+  PageHeader,
+  ReportTitle,
+  Row,
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
 import { resolveCHR502 } from "#shared/functions/chr502";
@@ -223,8 +223,8 @@ export const Component = () => {
 
     if (query.isError) {
       return (
-        <Alert severity="error">
-          <AlertTitle>数据加载失败</AlertTitle>
+        <Alert>
+          <AlertTitle>错误</AlertTitle>
           {query.error.message}
         </Alert>
       );

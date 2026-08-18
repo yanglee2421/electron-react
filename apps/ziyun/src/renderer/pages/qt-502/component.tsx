@@ -326,8 +326,8 @@ export const Component = () => {
 
     if (query.isError) {
       return (
-        <Alert severity="error">
-          <AlertTitle>数据加载失败</AlertTitle>
+        <Alert>
+          <AlertTitle>错误</AlertTitle>
           {query.error.message}
           <div></div>
           <Button

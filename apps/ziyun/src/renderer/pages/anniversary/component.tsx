@@ -14,7 +14,6 @@ import {
   ListItemIcon,
   ListItemText,
   Pagination,
-  Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -34,7 +33,7 @@ export const Component = () => {
 
     if (query.isError) {
       return (
-        <Alert severity="error" variant="filled">
+        <Alert sx={{ mt: 1.5 }}>
           <AlertTitle>错误</AlertTitle>
           {query.error?.message}
         </Alert>
@@ -44,7 +43,12 @@ export const Component = () => {
     const rows = query.data.rows;
 
     if (!rows.length) {
-      return <Typography>暂无数据</Typography>;
+      return (
+        <Alert sx={{ mt: 1.5 }} severity="info">
+          <AlertTitle>信息</AlertTitle>
+          暂无数据
+        </Alert>
+      );
     }
 
     return (

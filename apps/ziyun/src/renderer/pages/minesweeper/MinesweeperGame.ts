@@ -173,7 +173,7 @@ export class MinesweeperGame {
   get isOver() {
     return !!this.endTime;
   }
-  get isRuning() {
+  get isrunning() {
     return this.isStarted && !this.isOver;
   }
   get isLost() {

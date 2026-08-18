@@ -18,6 +18,14 @@ const calculateTheme = (isDark: boolean) => {
       palette: {
         mode: "dark",
       },
+      components: {
+        MuiAlert: {
+          defaultProps: {
+            variant: "outlined",
+            severity: "error",
+          },
+        },
+      },
     });
 
     return darkTheme;
@@ -26,6 +34,14 @@ const calculateTheme = (isDark: boolean) => {
   const lightTheme = createTheme({
     palette: {
       mode: "light",
+    },
+    components: {
+      MuiAlert: {
+        defaultProps: {
+          variant: "outlined",
+          severity: "error",
+        },
+      },
     },
   });
 

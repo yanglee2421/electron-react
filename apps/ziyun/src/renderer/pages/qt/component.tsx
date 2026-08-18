@@ -15,6 +15,7 @@ import {
   useUpsertQTUser,
 } from "#renderer/api/qt";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
+import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import { cellPaddingMap } from "#renderer/lib/constants";
 import {
@@ -55,7 +56,7 @@ import {
   MenuItem,
   Radio,
   RadioGroup,
-  Stack,
+  Tab,
   Table,
   TableBody,
   TableCell,
@@ -63,6 +64,7 @@ import {
   TableFooter,
   TableHead,
   TableRow,
+  Tabs,
   TextField,
 } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
@@ -117,7 +119,7 @@ const ConfigForm = () => {
           })) ?? [],
     },
     onSubmit: async ({ value }) => {
-      await setConfig.mutateAsync(
+      const result = await setConfig.mutateAsync(
         {
           values: value.values.map((i) => ({
             key: i.key,
@@ -128,9 +130,12 @@ const ConfigForm = () => {
           onError: (error) => {
             toast.error(error.message);
           },
-          onSuccess: handleRestart,
         },
       );
+
+      if (!result.running) return;
+
+      await handleRestart();
     },
   });
 
@@ -139,12 +144,16 @@ const ConfigForm = () => {
   }
 
   if (config.isError) {
-    return null;
+    return (
+      <Alert>
+        <AlertTitle>错误</AlertTitle>
+        {config.error.message}
+      </Alert>
+    );
   }
 
   return (
-    <Card>
-      <CardHeader title="QT软件设置" />
+    <>
       <CardContent>
         <form.Field name="values" mode="array">
           {(valuesField) => {
@@ -173,8 +182,8 @@ const ConfigForm = () => {
                                 field.handleChange(e.target.value);
                               }}
                               onBlur={field.handleBlur}
-                              helperText={i.description}
-                              label={i.key}
+                              helperText={field.state.meta.errors.at(0)}
+                              label={i.description}
                               fullWidth
                               slotProps={{ input: { readOnly: i.readOnly } }}
                             />
@@ -197,7 +206,7 @@ const ConfigForm = () => {
           重置
         </Button>
       </CardActions>
-    </Card>
+    </>
   );
 };
 
@@ -255,6 +264,8 @@ const ActionCell = (props: ActionCellProps) => {
   const formId = React.useId();
 
   const dialog = useDialogs();
+  const startApp = useStartApp();
+  const stopApp = useStopApp();
   const deleteUsers = useDeleteQTUser();
   const upsertUsers = useUpsertQTUser();
 
@@ -292,6 +303,21 @@ const ActionCell = (props: ActionCellProps) => {
       }),
     },
   });
+
+  const handleRestart = async () => {
+    const comfired = await dialog.confirm("更改设置后需要重启，现在重启吗？", {
+      title: "提示",
+      severity: "warning",
+      okText: "确定",
+      cancelText: "稍后",
+    });
+
+    if (!comfired) return;
+
+    await stopApp.mutateAsync();
+    await new Promise((f) => setTimeout(f, 1000));
+    await startApp.mutateAsync();
+  };
 
   return (
     <>
@@ -451,7 +477,11 @@ const ActionCell = (props: ActionCellProps) => {
             });
 
             if (confirmed) {
-              await deleteUsers.mutateAsync(props.rowId);
+              const result = await deleteUsers.mutateAsync(props.rowId);
+
+              if (!result.running) return;
+              await handleRestart();
+
               toast.success("Ok");
             } else {
               toast.info("Canceled");
@@ -474,6 +504,9 @@ const UsersTable = () => {
 
   const formId = React.useId();
 
+  const dialog = useDialogs();
+  const startApp = useStartApp();
+  const stopApp = useStopApp();
   const upsertUsers = useUpsertQTUser();
   const users = useQuery(fetchQTUsers());
 
@@ -484,7 +517,7 @@ const UsersTable = () => {
       power: "2",
     },
     onSubmit: async ({ value }) => {
-      await upsertUsers.mutateAsync(
+      const result = await upsertUsers.mutateAsync(
         {
           name: value.user,
           power: value.power,
@@ -501,6 +534,10 @@ const UsersTable = () => {
           },
         },
       );
+
+      if (!result.running) return;
+
+      await handleRestart();
     },
     validators: {
       onChange: z.object({
@@ -520,6 +557,21 @@ const UsersTable = () => {
     getRowId: (r) => r.recId.toString(),
   });
 
+  const handleRestart = async () => {
+    const comfired = await dialog.confirm("更改设置后需要重启，现在重启吗？", {
+      title: "提示",
+      severity: "warning",
+      okText: "确定",
+      cancelText: "稍后",
+    });
+
+    if (!comfired) return;
+
+    await stopApp.mutateAsync();
+    await new Promise((f) => setTimeout(f, 1000));
+    await startApp.mutateAsync();
+  };
+
   const renderRow = () => {
     if (users.isPending) {
       return (
@@ -535,7 +587,7 @@ const UsersTable = () => {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length}>
-            <Alert severity="error" variant="filled">
+            <Alert>
               <AlertTitle>错误</AlertTitle>
               {users.error?.message}
             </Alert>
@@ -566,8 +618,7 @@ const UsersTable = () => {
   };
 
   return (
-    <Card>
-      <CardHeader title="用户管理" />
+    <>
       <CardContent>
         <Button
           onClick={() => {
@@ -734,11 +785,13 @@ const UsersTable = () => {
           </TableFooter>
         </Table>
       </TableContainer>
-    </Card>
+    </>
   );
 };
 
 export const Component = () => {
+  const [activatedTab, setActivatedTab] = React.useState(1);
+
   const formId = React.useId();
 
   const startApp = useStartApp();
@@ -796,8 +849,8 @@ export const Component = () => {
 
     if (yiqiConfig.isError) {
       return (
-        <Alert severity="error">
-          <AlertTitle>数据加载失败</AlertTitle>
+        <Alert>
+          <AlertTitle>错误</AlertTitle>
           {yiqiConfig.error.message}
         </Alert>
       );
@@ -820,7 +873,13 @@ export const Component = () => {
 
                 if (!libPath) return;
 
-                await yiqiLib.mutateAsync({ id: row.recId, lib: libPath });
+                const result = await yiqiLib.mutateAsync({
+                  id: row.recId,
+                  lib: libPath,
+                });
+
+                if (!result.running) return;
+
                 await handleRestart();
               }}
             >
@@ -831,7 +890,10 @@ export const Component = () => {
         >
           <ListItemButton
             onClick={async () => {
-              await yiqiFlag.mutateAsync(row.recId);
+              const result = await yiqiFlag.mutateAsync(row.recId);
+
+              if (!result.running) return;
+
               handleRestart();
             }}
           >
@@ -853,184 +915,215 @@ export const Component = () => {
     });
   };
 
+  const renderTabPanel = () => {
+    switch (activatedTab) {
+      case 1:
+        return (
+          <>
+            <CardContent>
+              <form
+                id={formId}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+
+                  form.handleSubmit();
+                }}
+                onReset={() => {
+                  form.reset();
+                }}
+                noValidate
+              >
+                <Grid container spacing={3}>
+                  <Grid size={12}>
+                    <form.Field name="qtAppPath">
+                      {(field) => {
+                        return (
+                          <TextField
+                            value={field.state.value}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            onBlur={field.handleBlur}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const file = e.dataTransfer.files.item(0);
+
+                              if (!file) return;
+
+                              const path =
+                                window.electron.webUtils.getPathForFile(file);
+                              field.handleChange(path);
+                            }}
+                            fullWidth
+                            label="软件目录"
+                            slotProps={{
+                              input: {
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    <IconButton
+                                      onClick={() => {
+                                        selectFile.mutate(
+                                          [
+                                            {
+                                              extensions: ["exe"],
+                                              name: "可执行程序",
+                                            },
+                                            {
+                                              extensions: ["*"],
+                                              name: "所有文件",
+                                            },
+                                          ],
+                                          {
+                                            onError: (error) => {
+                                              toast.error(error.message);
+                                            },
+                                            onSuccess: (paths) => {
+                                              const filepath = paths.at(0);
+
+                                              if (!filepath) return;
+                                              field.handleChange(filepath);
+                                            },
+                                          },
+                                        );
+                                      }}
+                                    >
+                                      <PendingIcon
+                                        isPending={selectFile.isPending}
+                                      >
+                                        <FindInPageOutlined />
+                                      </PendingIcon>
+                                    </IconButton>
+                                  </InputAdornment>
+                                ),
+                              },
+                            }}
+                          />
+                        );
+                      }}
+                    </form.Field>
+                  </Grid>
+                  <Grid size={12}>
+                    <form.Field name="qtDataDirectory">
+                      {(field) => {
+                        return (
+                          <TextField
+                            value={field.state.value}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            onBlur={field.handleBlur}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const file = e.dataTransfer.files.item(0);
+
+                              if (!file) return;
+
+                              const path =
+                                window.electron.webUtils.getPathForFile(file);
+                              field.handleChange(path);
+                            }}
+                            fullWidth
+                            label="数据库目录"
+                            slotProps={{
+                              input: {
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    <IconButton
+                                      onClick={() => {
+                                        selectDirectory.mutate(void 0, {
+                                          onError: (error) => {
+                                            toast.error(error.message);
+                                          },
+                                          onSuccess: (paths) => {
+                                            const filepath = paths.at(0);
+
+                                            if (!filepath) return;
+                                            field.handleChange(filepath);
+                                          },
+                                        });
+                                      }}
+                                    >
+                                      <PendingIcon
+                                        isPending={selectDirectory.isPending}
+                                      >
+                                        <FindInPageOutlined />
+                                      </PendingIcon>
+                                    </IconButton>
+                                  </InputAdornment>
+                                ),
+                              },
+                            }}
+                          />
+                        );
+                      }}
+                    </form.Field>
+                  </Grid>
+                </Grid>
+              </form>
+            </CardContent>
+            <CardActions>
+              <form.Subscribe selector={(s) => [s.canSubmit]}>
+                {([canSubmit]) => {
+                  return (
+                    <Button type="submit" form={formId} disabled={!canSubmit}>
+                      保存
+                    </Button>
+                  );
+                }}
+              </form.Subscribe>
+              <Button
+                onClick={() => {
+                  startApp.mutate();
+                }}
+                disabled={startApp.isPending}
+                type="button"
+              >
+                启动
+              </Button>
+              <Button
+                onClick={() => {
+                  stopApp.mutate();
+                }}
+                disabled={stopApp.isPending}
+                type="button"
+              >
+                停止
+              </Button>
+            </CardActions>
+          </>
+        );
+      case 2:
+        return (
+          <>
+            <CardContent>
+              <List>{renderYiqiConfig()}</List>
+            </CardContent>
+          </>
+        );
+      case 3:
+        return config.isSuccess && <ConfigForm />;
+      case 4:
+        return <UsersTable />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <Stack spacing={3}>
+    <>
+      <ScrollToTopButton />
       <Card>
-        <CardHeader title="配置QT软件" />
-        <CardContent>
-          <form
-            id={formId}
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-
-              form.handleSubmit();
-            }}
-            onReset={() => {
-              form.reset();
-            }}
-            noValidate
-          >
-            <Grid container spacing={3}>
-              <Grid size={12}>
-                <form.Field name="qtAppPath">
-                  {(field) => {
-                    return (
-                      <TextField
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const file = e.dataTransfer.files.item(0);
-
-                          if (!file) return;
-
-                          const path =
-                            window.electron.webUtils.getPathForFile(file);
-                          field.handleChange(path);
-                        }}
-                        fullWidth
-                        label="软件目录"
-                        slotProps={{
-                          input: {
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton
-                                  onClick={() => {
-                                    selectFile.mutate(
-                                      [
-                                        {
-                                          extensions: ["exe"],
-                                          name: "可执行程序",
-                                        },
-                                        {
-                                          extensions: ["*"],
-                                          name: "所有文件",
-                                        },
-                                      ],
-                                      {
-                                        onError: (error) => {
-                                          toast.error(error.message);
-                                        },
-                                        onSuccess: (paths) => {
-                                          const filepath = paths.at(0);
-
-                                          if (!filepath) return;
-                                          field.handleChange(filepath);
-                                        },
-                                      },
-                                    );
-                                  }}
-                                >
-                                  <PendingIcon isPending={selectFile.isPending}>
-                                    <FindInPageOutlined />
-                                  </PendingIcon>
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          },
-                        }}
-                      />
-                    );
-                  }}
-                </form.Field>
-              </Grid>
-              <Grid size={12}>
-                <form.Field name="qtDataDirectory">
-                  {(field) => {
-                    return (
-                      <TextField
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const file = e.dataTransfer.files.item(0);
-
-                          if (!file) return;
-
-                          const path =
-                            window.electron.webUtils.getPathForFile(file);
-                          field.handleChange(path);
-                        }}
-                        fullWidth
-                        label="数据库目录"
-                        slotProps={{
-                          input: {
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton
-                                  onClick={() => {
-                                    selectDirectory.mutate(void 0, {
-                                      onError: (error) => {
-                                        toast.error(error.message);
-                                      },
-                                      onSuccess: (paths) => {
-                                        const filepath = paths.at(0);
-
-                                        if (!filepath) return;
-                                        field.handleChange(filepath);
-                                      },
-                                    });
-                                  }}
-                                >
-                                  <PendingIcon
-                                    isPending={selectDirectory.isPending}
-                                  >
-                                    <FindInPageOutlined />
-                                  </PendingIcon>
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          },
-                        }}
-                      />
-                    );
-                  }}
-                </form.Field>
-              </Grid>
-            </Grid>
-          </form>
-        </CardContent>
-        <CardActions>
-          <form.Subscribe selector={(s) => [s.canSubmit]}>
-            {([canSubmit]) => {
-              return (
-                <Button type="submit" form={formId} disabled={!canSubmit}>
-                  保存
-                </Button>
-              );
-            }}
-          </form.Subscribe>
-          <Button
-            onClick={() => {
-              startApp.mutate();
-            }}
-            disabled={startApp.isPending}
-            type="button"
-          >
-            启动
-          </Button>
-          <Button
-            onClick={() => {
-              stopApp.mutate();
-            }}
-            disabled={stopApp.isPending}
-            type="button"
-          >
-            停止
-          </Button>
-        </CardActions>
+        <CardHeader title="QT" />
+        <Tabs
+          value={activatedTab}
+          onChange={(_, val) => {
+            setActivatedTab(val);
+          }}
+        >
+          <Tab label="部署" value={1} />
+          <Tab label="仪器" value={2} />
+          <Tab label="参数设置" value={3} />
+          <Tab label="用户管理" value={4} />
+        </Tabs>
+        {renderTabPanel()}
       </Card>
-      <Card>
-        <CardHeader title="仪器配置" />
-        <CardContent>
-          <List>{renderYiqiConfig()}</List>
-        </CardContent>
-      </Card>
-      {config.isSuccess && <ConfigForm />}
-      <UsersTable />
-    </Stack>
+    </>
   );
 };

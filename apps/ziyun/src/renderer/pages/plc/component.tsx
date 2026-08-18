@@ -118,7 +118,7 @@ const ErrorAlert = (props: ErrorAlertProps) => {
   };
 
   return (
-    <Alert severity="error" variant="outlined">
+    <Alert>
       <AlertTitle>错误</AlertTitle>
       {renderMessage()}
       <Button
@@ -1446,7 +1446,7 @@ export const Component = () => {
 
     if (query.data.length === 0) {
       return (
-        <Alert severity="info" variant="outlined">
+        <Alert severity="info">
           <AlertTitle>提示</AlertTitle>
           <Typography>当前设备无串口可用</Typography>
           <Button

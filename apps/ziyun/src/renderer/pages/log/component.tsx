@@ -3,6 +3,8 @@ import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useColorScheme } from "#renderer/hooks/dom/useColorScheme";
 import { ClearAllOutlined, Delete, Refresh } from "@mui/icons-material";
 import {
+  Alert,
+  AlertTitle,
   Box,
   Card,
   CardContent,
@@ -101,11 +103,25 @@ export const Component = () => {
     }
 
     if (logQuery.isError) {
-      return <Grid size={12}>{logQuery.error.message}</Grid>;
+      return (
+        <Grid size={12}>
+          <Alert>
+            <AlertTitle>错误</AlertTitle>
+            {logQuery.error?.message}
+          </Alert>
+        </Grid>
+      );
     }
 
     if (logQuery.data.rows.length === 0) {
-      return <Grid size={12}>暂无日志</Grid>;
+      return (
+        <Grid size={12}>
+          <Alert severity="info">
+            <AlertTitle>信息</AlertTitle>
+            暂无数据
+          </Alert>
+        </Grid>
+      );
     }
 
     return (
@@ -140,7 +156,7 @@ export const Component = () => {
           <>
             <IconButton
               onClick={() => {
-                void logQuery.refetch();
+                logQuery.refetch();
               }}
               disabled={logQuery.isRefetching}
             >

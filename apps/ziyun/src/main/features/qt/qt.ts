@@ -611,9 +611,17 @@ export class QT {
           LD_LIBRARY_PATH: `lib:${process.env.LD_LIBRARY_PATH || ""}`,
         },
       });
+
+      this.qtProcess.once("close", () => {
+        this.qtProcess = null;
+      });
     } else {
       this.qtProcess = spawn(appPath, [], {
         cwd,
+      });
+
+      this.qtProcess.once("close", () => {
+        this.qtProcess = null;
       });
     }
 
@@ -672,6 +680,8 @@ export class QT {
 
     sourceDB.$client.close();
     targetDB.$client.close();
+
+    return { running: calcRunning(this.qtProcess) };
   }
 
   getFlagFile() {
@@ -709,7 +719,7 @@ export class QT {
       this.dbSubscription = this.dbFlow$.subscribe(this.db$);
     }
 
-    return {};
+    return { running: calcRunning(this.qtProcess) };
   }
 
   async deviceConfigList() {
@@ -719,7 +729,7 @@ export class QT {
   }
 
   setDeviceConfigFlag(id: number) {
-    return this.db.transaction((tx) => {
+    const result = this.db.transaction((tx) => {
       tx.update(schema.yqConfig).set({ usedFlag: 0 }).run();
       return tx
         .update(schema.yqConfig)
@@ -728,6 +738,8 @@ export class QT {
         .returning()
         .get();
     });
+
+    return { result, running: calcRunning(this.qtProcess) };
   }
 
   async setDeviceConfigLib({ lib, id }: SetYiqiConfigLibInput) {
@@ -737,7 +749,7 @@ export class QT {
       .where(eq(schema.yqConfig.recId, id))
       .returning();
 
-    return result;
+    return { result, running: calcRunning(this.qtProcess) };
   }
 
   async fetchDetections(input: FetchDetectionsInput) {
@@ -897,7 +909,7 @@ export class QT {
       })
       .returning();
 
-    return { rows };
+    return { rows, running: calcRunning(this.qtProcess) };
   }
   async deleteUsers(id: number) {
     const row = await this.db
@@ -905,7 +917,7 @@ export class QT {
       .where(eq(schema.userManager.recId, id))
       .returning();
 
-    return { row };
+    return { row, running: calcRunning(this.qtProcess) };
   }
   async getConfig() {
     const rows = await this.db
@@ -939,6 +951,14 @@ export class QT {
       });
     });
 
-    return { result };
+    return { result, running: calcRunning(this.qtProcess) };
   }
 }
+
+const calcRunning = (cp: ChildProcessWithoutNullStreams | null) => {
+  if (!cp) {
+    return false;
+  }
+
+  return !cp.killed;
+};

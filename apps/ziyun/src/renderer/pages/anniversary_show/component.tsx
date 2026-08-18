@@ -14,7 +14,6 @@ import {
   Grid,
   IconButton,
   LinearProgress,
-  Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
@@ -30,7 +29,7 @@ export const Component = () => {
 
     if (query.isError) {
       return (
-        <Alert severity="error" variant="filled">
+        <Alert>
           <AlertTitle>错误</AlertTitle>
           {query.error?.message}
         </Alert>
@@ -40,7 +39,12 @@ export const Component = () => {
     const rows = query.data.rows;
 
     if (!rows.length) {
-      return <Typography>暂无数据</Typography>;
+      return (
+        <Alert severity="info">
+          <AlertTitle>提示</AlertTitle>
+          暂无数据
+        </Alert>
+      );
     }
 
     return (

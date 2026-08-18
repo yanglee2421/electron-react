@@ -2,6 +2,8 @@ import { fetchQTAnniversary } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import { ArrowForward, Grid3x3, Refresh } from "@mui/icons-material";
 import {
+  Alert,
+  AlertTitle,
   Card,
   CardContent,
   CardHeader,
@@ -29,7 +31,12 @@ export const Component = () => {
     }
 
     if (query.isError) {
-      return <>{query.error.message}</>;
+      return (
+        <Alert sx={{ mt: 1.5 }}>
+          <AlertTitle>错误</AlertTitle>
+          {query.error?.message}
+        </Alert>
+      );
     }
 
     return (

@@ -56,7 +56,7 @@ export const Component = () => {
 
     if (query.isError) {
       return (
-        <Alert severity="error">
+        <Alert>
           <AlertTitle>错误</AlertTitle>
           {query.error.message}
         </Alert>

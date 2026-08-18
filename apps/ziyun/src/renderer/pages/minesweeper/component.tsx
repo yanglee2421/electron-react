@@ -1,3 +1,4 @@
+import { useSize } from "#renderer/hooks/dom/useSize";
 import { RestartAltOutlined } from "@mui/icons-material";
 import {
   alpha,
@@ -26,7 +27,6 @@ import {
   teal,
 } from "@mui/material/colors";
 import React from "react";
-import { useSize } from "#renderer/hooks/dom/useSize";
 import { MinesweeperGame } from "./MinesweeperGame";
 
 const map = new Map<number, string>();
@@ -235,7 +235,7 @@ export const Component = () => {
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <span>
               <MemoGameTimer
-                enable={game.isRuning}
+                enable={game.isrunning}
                 isStarted={game.isStarted}
                 isOver={game.isOver}
                 startTime={game.startTime}

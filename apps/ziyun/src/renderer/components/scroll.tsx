@@ -10,18 +10,16 @@ const useScrollToTop = () => {
 
   React.useEffect(() => {
     const el = anchorEl.current;
+
     if (!el) return;
 
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setShowScrollToTop(false);
-      } else {
-        setShowScrollToTop(true);
-      }
+      setShowScrollToTop(!entry.isIntersecting);
     });
     observer.observe(el);
 
     return () => {
+      observer.unobserve(el);
       observer.disconnect();
     };
   }, []);
@@ -29,40 +27,30 @@ const useScrollToTop = () => {
   return [anchorEl, showScrollToTop] as const;
 };
 
-interface ScrollToTopProps {
-  ref: React.RefObject<HTMLDivElement | null>;
-  show: boolean;
-}
-
-const ScrollToTop = (props: ScrollToTopProps) => {
-  return (
-    <Zoom in={props.show} unmountOnExit>
-      <Fab
-        sx={{ position: "fixed", bottom: 36, right: 36 }}
-        size="small"
-        color="primary"
-        onClick={() => {
-          props.ref.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
-          });
-        }}
-      >
-        <ArrowUpwardOutlined />
-      </Fab>
-    </Zoom>
-  );
-};
-
-ScrollToTop.useScrollToTop = useScrollToTop;
-
 export const ScrollToTopButton = () => {
   const [ref, show] = useScrollToTop();
 
   return (
     <>
       <div ref={ref}></div>
-      {createPortal(<ScrollToTop ref={ref} show={show} />, document.body)}
+      {createPortal(
+        <Zoom in={show} unmountOnExit>
+          <Fab
+            sx={{ position: "fixed", bottom: 36, right: 36 }}
+            size="small"
+            color="primary"
+            onClick={() => {
+              ref.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "end",
+              });
+            }}
+          >
+            <ArrowUpwardOutlined />
+          </Fab>
+        </Zoom>,
+        document.body,
+      )}
     </>
   );
 };

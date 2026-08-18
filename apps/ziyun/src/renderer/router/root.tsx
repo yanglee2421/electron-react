@@ -71,7 +71,7 @@ export const RootErrorBoundary = () => {
 
   return (
     <Box sx={{ padding: 6 }}>
-      <Alert severity="error" variant="outlined">
+      <Alert>
         <ErrorAlertContent error={error} />
       </Alert>
     </Box>

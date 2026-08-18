@@ -202,7 +202,7 @@ export const Component = () => {
       return (
         <TableRow>
           <TableCell colSpan={table.getAllLeafColumns().length}>
-            <Alert severity="error" variant="filled">
+            <Alert>
               <AlertTitle>错误</AlertTitle>
               {query.error?.message}
             </Alert>
