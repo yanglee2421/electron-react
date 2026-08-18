@@ -6,7 +6,6 @@ import type {
   FetchQuartorsInput,
   QTCHR53AInput,
   SetQTConfigInput,
-  SetupAppInput,
   SetYiqiConfigLibInput,
   UpsertUserInput,
 } from "#main/features/qt/types";
@@ -19,19 +18,26 @@ import {
 
 export const QUERY_KEY = "qt";
 
-export const useSetupApp = () => {
-  return useMutation({
-    mutationFn: (p: SetupAppInput) => {
-      return ipc.invoke("qt/setup-app", p);
+export const fetchQTFlagFile = () => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/get-flagfile"],
+    queryFn: () => {
+      return ipc.invoke("qt/get-flagfile");
     },
   });
 };
 
-export const fetchCurrentLocalDB = () => {
-  return queryOptions({
-    queryKey: [QUERY_KEY, "qt/current-db-path"],
-    queryFn: () => {
-      return ipc.invoke("qt/current-db-path");
+export const useQTSetFlagFile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (p: string) => {
+      return ipc.invoke("qt/set-flagfile", p);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY],
+      });
     },
   });
 };
@@ -85,7 +91,7 @@ export const useStartApp = () => {
 
 export const useStopApp = () => {
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: () => {
       return ipc.invoke("qt/stop-app");
     },
   });
@@ -164,7 +170,7 @@ export const useUpsertQTUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (p: UpsertUserInput) => {
+    mutationFn: (p: UpsertUserInput) => {
       return ipc.invoke("qt/upsert_users", p);
     },
     onSuccess: async () => {

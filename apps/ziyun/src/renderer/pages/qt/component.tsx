@@ -1,13 +1,13 @@
 import { useSelectDirectory, useSelectFile } from "#renderer/api/fetch_preload";
 import {
-  fetchCurrentLocalDB,
   fetchQTConfig,
+  fetchQTFlagFile,
   fetchQTUsers,
   fetchYiqiConfig,
   QUERY_KEY,
   useDeleteQTUser,
+  useQTSetFlagFile,
   useSetQTConfig,
-  useSetupApp,
   useSetYiqiFlag,
   useSetYiqiLib,
   useStartApp,
@@ -741,12 +741,10 @@ const UsersTable = () => {
 export const Component = () => {
   const formId = React.useId();
 
-  const setupApp = useSetupApp();
   const startApp = useStartApp();
   const stopApp = useStopApp();
+  const setLocalDB = useQTSetFlagFile();
   const dialog = useDialogs();
-  const start = useStartApp();
-  const stop = useStopApp();
   const yiqiLib = useSetYiqiLib();
   const yiqiFlag = useSetYiqiFlag();
   const selectFile = useSelectFile();
@@ -754,7 +752,7 @@ export const Component = () => {
   const selectDirectory = useSelectDirectory();
   const config = useQuery(fetchQTConfig());
   const yiqiConfig = useQuery(fetchYiqiConfig());
-  const currentLocal = useQuery(fetchCurrentLocalDB());
+  const currentLocal = useQuery(fetchQTFlagFile());
   const qtAppPath = useProfileStore((s) => s.qtAppPath);
   const form = useForm({
     defaultValues: {
@@ -762,17 +760,11 @@ export const Component = () => {
       qtDataDirectory: currentLocal.data || "",
     },
     onSubmit: async ({ value }) => {
-      await setupApp.mutateAsync(
-        {
-          qtAppPath: value.qtAppPath,
-          qtDataDirectory: value.qtDataDirectory,
+      await setLocalDB.mutateAsync(value.qtDataDirectory, {
+        onError: (error) => {
+          toast.error(error.message);
         },
-        {
-          onError: (error) => {
-            toast.error(error.message);
-          },
-        },
-      );
+      });
 
       useProfileStore.setState((d) => {
         d.qtAppPath = value.qtAppPath;
@@ -792,9 +784,9 @@ export const Component = () => {
 
     if (!comfired) return;
 
-    await stop.mutateAsync();
+    await stopApp.mutateAsync();
     await new Promise((f) => setTimeout(f, 1000));
-    await start.mutateAsync();
+    await startApp.mutateAsync();
   };
 
   const renderYiqiConfig = () => {
@@ -1002,13 +994,20 @@ export const Component = () => {
           </form>
         </CardContent>
         <CardActions>
-          <Button type="submit" form={formId}>
-            部署
-          </Button>
+          <form.Subscribe selector={(s) => [s.canSubmit]}>
+            {([canSubmit]) => {
+              return (
+                <Button type="submit" form={formId} disabled={!canSubmit}>
+                  保存
+                </Button>
+              );
+            }}
+          </form.Subscribe>
           <Button
             onClick={() => {
               startApp.mutate();
             }}
+            disabled={startApp.isPending}
             type="button"
           >
             启动
@@ -1017,6 +1016,7 @@ export const Component = () => {
             onClick={() => {
               stopApp.mutate();
             }}
+            disabled={stopApp.isPending}
             type="button"
           >
             停止

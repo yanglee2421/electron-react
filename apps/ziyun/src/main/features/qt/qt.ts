@@ -17,12 +17,14 @@ import {
   count as sqlCount,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-sqlite";
+import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import { app } from "electron";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import url from "node:url";
 import { Piscina } from "piscina";
 import type { Subscription } from "rxjs";
 import {
@@ -48,15 +50,14 @@ import type {
   FetchQuartorsInput,
   QTCHR53AInput,
   SetQTConfigInput,
-  SetupAppInput,
   SetYiqiConfigLibInput,
   UpsertUserInput,
 } from "./types";
 
 export class QT {
-  readonly client$ = new BehaviorSubject<DBClient | null>(null);
-  private db$: Observable<DBClient | null>;
-  private hmis$: Observable<null>;
+  readonly db$ = new BehaviorSubject<DBClient | null>(null);
+  private dbFlow$: Observable<DBClient | null>;
+  private hmisFlow$: Observable<null>;
   private dbSubscription: Subscription;
   private hmisSubscription: Subscription;
 
@@ -75,17 +76,21 @@ export class QT {
       maxThreads: os.cpus().length,
     });
 
-    this.db$ = this.profile.state$.pipe(
+    this.dbFlow$ = this.profile.state$.pipe(
       distinctUntilChanged((p, c) => p.qtAppPath === c.qtAppPath),
       switchMap((s) => {
         if (!s.qtAppPath) {
           return of(null);
         }
 
+        const flagPath = this.readFlagPath();
+        const dbPath = flagPath.localDB;
+
+        if (!dbPath) {
+          return of(null);
+        }
+
         return defer(() => {
-          const flagFile = path.resolve(s.qtAppPath, "../FlagFile");
-          const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
-          const dbPath = path.resolve(dataDirectory, "./local.db");
           const client = new DatabaseSync(dbPath);
           const db = drizzle({ client, schema, relations });
 
@@ -116,7 +121,7 @@ export class QT {
       shareReplay({ bufferSize: 1, refCount: true }),
     );
 
-    this.hmis$ = this.profile.state$.pipe(
+    this.hmisFlow$ = this.profile.state$.pipe(
       distinctUntilChanged(
         (p, c) =>
           p.qtHMISEnabled === c.qtHMISEnabled && p.qtHMISPort === c.qtHMISPort,
@@ -166,12 +171,12 @@ export class QT {
       shareReplay({ refCount: true, bufferSize: 1 }),
     );
 
-    this.dbSubscription = this.db$.subscribe(this.client$);
-    this.hmisSubscription = this.hmis$.subscribe();
+    this.dbSubscription = this.dbFlow$.subscribe(this.db$);
+    this.hmisSubscription = this.hmisFlow$.subscribe();
   }
 
   async dispose() {
-    this.client$.complete();
+    this.db$.complete();
     this.piscina.destroy();
     this.dbSubscription.unsubscribe();
     this.hmisSubscription.unsubscribe();
@@ -188,8 +193,8 @@ export class QT {
     }
   }
 
-  get client() {
-    const db = this.client$.value;
+  get db() {
+    const db = this.db$.value;
 
     if (db === null) {
       throw new Error("QT App database is not ready yet");
@@ -198,8 +203,32 @@ export class QT {
     return db;
   }
 
+  get appPath() {
+    const appPath = this.profile.state.qtAppPath;
+
+    if (!appPath) {
+      throw Error("必须先指定QT APP的工作目录");
+    }
+
+    return appPath;
+  }
+
+  readFlagPath() {
+    const flagFile = path.resolve(this.appPath, "../FlagFile");
+    const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
+    const localDB = path.resolve(dataDirectory, "./local.db");
+    const appDB = path.resolve(this.appPath, "../local.db");
+
+    return {
+      flagFile,
+      dataDirectory,
+      localDB,
+      appDB,
+    };
+  }
+
   async fetch501Data(id: string) {
-    const [record] = await this.client
+    const [record] = await this.db
       .select()
       .from(schema.verifies)
       .where(eq(schema.verifies.szIds, id))
@@ -209,38 +238,41 @@ export class QT {
       throw new Error(`#${id}不存在`);
     }
 
-    const flaws = await this.client
+    const flaws = await this.db
       .select()
       .from(schema.verifiesData)
       .where(eq(schema.verifiesData.precId, record.recId));
 
-    const [FACTORY_CLD] = await this.client
+    const [FACTORY_CLD] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
       .limit(1);
 
-    const [FACTORY_SBXH] = await this.client
+    const [FACTORY_SBXH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBXH"))
       .limit(1);
 
-    const [FACTORY_SBBH] = await this.client
+    const [FACTORY_SBBH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBBH"))
       .limit(1);
 
-    const [FACTORY_SYRQ] = await this.client
+    const [FACTORY_SYRQ] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SYRQ"))
       .limit(1);
 
-    const flagFile = path.resolve(this.profile.state.qtAppPath, "../FlagFile");
-    const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
-    const imageDirectory = path.resolve(dataDirectory, "./verifies", id);
+    const flagPath = this.readFlagPath();
+    const imageDirectory = path.resolve(
+      flagPath.dataDirectory,
+      "./verifies",
+      id,
+    );
     const lct = path.resolve(
       imageDirectory,
       `${record.szIds}.${record.szWhModel}.LCT.bmp`,
@@ -292,25 +324,25 @@ export class QT {
   async fetch502Data(input: Fetch502DateInput) {
     const { date, user, zx, ids } = input;
 
-    const [FACTORY_CLD] = await this.client
+    const [FACTORY_CLD] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
       .limit(1);
 
-    const [FACTORY_SBXH] = await this.client
+    const [FACTORY_SBXH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBXH"))
       .limit(1);
 
-    const [FACTORY_SBBH] = await this.client
+    const [FACTORY_SBBH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBBH"))
       .limit(1);
 
-    const [FACTORY_SYRQ] = await this.client
+    const [FACTORY_SYRQ] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SYRQ"))
@@ -319,7 +351,7 @@ export class QT {
     if (ids.length > 0) {
       const idList = ids.map((i) => Number.parseInt(i));
 
-      const rows = await this.client
+      const rows = await this.db
         .select()
         .from(schema.quartors)
         .where(inArray(schema.quartors.recId, idList))
@@ -329,7 +361,7 @@ export class QT {
         throw new Error(`CHR502需要5条数据; 当前${rows.length}条`);
       }
 
-      const datas = await this.client
+      const datas = await this.db
         .select()
         .from(schema.quartorsData)
         .where(inArray(schema.quartorsData.precId, idList));
@@ -338,7 +370,7 @@ export class QT {
       let previousRow = null;
 
       if (firstRow) {
-        [previousRow] = await this.client
+        [previousRow] = await this.db
           .select()
           .from(schema.quartors)
           .where(
@@ -363,7 +395,7 @@ export class QT {
     }
 
     const day = dayjs(date);
-    const rows = await this.client
+    const rows = await this.db
       .select()
       .from(schema.quartors)
       .where(
@@ -382,7 +414,7 @@ export class QT {
       throw new Error(`CHR502需要5条数据; 当前${rows.length}条`);
     }
 
-    const datas = await this.client
+    const datas = await this.db
       .select()
       .from(schema.quartorsData)
       .where(
@@ -396,7 +428,7 @@ export class QT {
     let previousRow = null;
 
     if (firstRow) {
-      [previousRow] = await this.client
+      [previousRow] = await this.db
         .select()
         .from(schema.quartors)
         .where(
@@ -420,30 +452,30 @@ export class QT {
     };
   }
   async fetch503Data(szIds: string) {
-    const rows = await this.client
+    const rows = await this.db
       .select()
       .from(schema.quartorRecordInfo)
       .where(eq(schema.quartorRecordInfo.szIds, szIds));
 
-    const [FACTORY_CLD] = await this.client
+    const [FACTORY_CLD] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
       .limit(1);
 
-    const [FACTORY_SBXH] = await this.client
+    const [FACTORY_SBXH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBXH"))
       .limit(1);
 
-    const [FACTORY_SBBH] = await this.client
+    const [FACTORY_SBBH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBBH"))
       .limit(1);
 
-    const [FACTORY_SYRQ] = await this.client
+    const [FACTORY_SYRQ] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SYRQ"))
@@ -458,18 +490,18 @@ export class QT {
     };
   }
   async fetch52AData(szIds: string) {
-    const [FACTORY_CLD] = await this.client
+    const [FACTORY_CLD] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
       .limit(1);
 
-    const datas = await this.client
+    const datas = await this.db
       .select()
       .from(schema.detectionsData)
       .where(eq(schema.detectionsData.szIds, szIds));
 
-    const [record] = await this.client
+    const [record] = await this.db
       .select()
       .from(schema.detectors)
       .where(eq(schema.detectors.szIds, szIds));
@@ -525,7 +557,7 @@ export class QT {
   async fetch53AData(input: QTCHR53AInput) {
     const { date, user, ids } = input;
 
-    const [FACTORY_CLD] = await this.client
+    const [FACTORY_CLD] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
@@ -534,7 +566,7 @@ export class QT {
     if (ids.length) {
       const idList = ids.map((i) => Number.parseInt(i));
 
-      const rows = await this.client
+      const rows = await this.db
         .select()
         .from(schema.detectors)
         .where(inArray(schema.detectors.recId, idList));
@@ -546,7 +578,7 @@ export class QT {
     }
 
     const day = dayjs(date);
-    const rows = await this.client
+    const rows = await this.db
       .select()
       .from(schema.detectors)
       .where(
@@ -566,49 +598,128 @@ export class QT {
     };
   }
 
-  async setupApp(params: SetupAppInput) {
-    const { qtAppPath, qtDataDirectory } = params;
+  async startApp() {
+    const appPath = this.profile.state.qtAppPath;
+    const cwd = path.dirname(appPath);
+
+    if (platform.isLinux) {
+      this.qtProcess = spawn(appPath, [], {
+        cwd,
+        env: {
+          ...process.env,
+          QT_PLUGIN_PATH: "plugins",
+          LD_LIBRARY_PATH: `lib:${process.env.LD_LIBRARY_PATH || ""}`,
+        },
+      });
+    } else {
+      this.qtProcess = spawn(appPath, [], {
+        cwd,
+      });
+    }
+
+    return this.qtProcess?.pid;
+  }
+  async stopApp() {
+    this.qtProcess?.kill();
+  }
+  migrateDB(sourcePath: string, targetPath: string) {
+    if (sourcePath === targetPath) {
+      throw Error("目标路径与源路径完全一致");
+    }
+
+    const sourceDB = drizzle({
+      client: new DatabaseSync(sourcePath),
+      schema,
+      relations,
+    });
+    const targetDB = drizzle({
+      client: new DatabaseSync(targetPath),
+      schema,
+      relations,
+    });
+    const __filename = url.fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    migrate(targetDB, {
+      migrationsFolder: path.resolve(__dirname, "../../drizzle/qt"),
+    });
+
+    targetDB.transaction((tx) => {
+      const alxInfos = sourceDB.select().from(schema.alxInfo).all();
+      tx.insert(schema.alxInfo).values(alxInfos).run();
+      const channels = sourceDB.select().from(schema.channels).all();
+      tx.insert(schema.channels).values(channels).run();
+      const gates = sourceDB.select().from(schema.gates).all();
+      tx.insert(schema.gates).values(gates).run();
+      const quartorChannels = sourceDB
+        .select()
+        .from(schema.quartorChannel)
+        .all();
+      tx.insert(schema.quartorChannel).values(quartorChannels).run();
+      const quartorGates = sourceDB.select().from(schema.quartorGates).all();
+      tx.insert(schema.quartorGates).values(quartorGates).run();
+      const quartorRecordInfos = sourceDB
+        .select()
+        .from(schema.quartorRecordInfo)
+        .all();
+      tx.insert(schema.quartorRecordInfo).values(quartorRecordInfos).run();
+      const sysConfigs = sourceDB.select().from(schema.sysConfig).all();
+      tx.insert(schema.sysConfig).values(sysConfigs).run();
+      const users = sourceDB.select().from(schema.userManager).all();
+      tx.insert(schema.userManager).values(users).run();
+      const yqConfigs = sourceDB.select().from(schema.yqConfig).all();
+      tx.insert(schema.yqConfig).values(yqConfigs).run();
+    });
+
+    sourceDB.$client.close();
+    targetDB.$client.close();
+  }
+
+  getFlagFile() {
+    const flagPath = this.readFlagPath();
+
+    return flagPath.dataDirectory;
+  }
+  async setFlagFile(qtDataDirectory: string) {
+    const targetDB = path.resolve(qtDataDirectory, "./local.db");
+
+    if (fs.existsSync(targetDB)) {
+      throw new Error("目录路径数据库已存在");
+    }
+
+    await fs.promises.mkdir(path.dirname(targetDB), {
+      recursive: true,
+      mode: 0o666,
+    });
+
+    const flagPath = this.readFlagPath();
+    const sourceDB = fs.existsSync(flagPath.localDB)
+      ? flagPath.localDB
+      : flagPath.appDB;
+
+    this.migrateDB(sourceDB, targetDB);
 
     try {
-      this.dbSubscription.unsubscribe();
-
-      await fs.promises.mkdir(qtDataDirectory, {
-        recursive: true,
-        mode: 0o666,
-      });
-
-      const flagFilePath = path.resolve(qtAppPath, "..", "FlagFile");
-      const sourceDBPath = path.resolve(qtAppPath, "..", "local.db");
-      const targetDBPath = path.resolve(qtDataDirectory, "./local.db");
-
-      await fs.promises.cp(sourceDBPath, targetDBPath);
-      await fs.promises.writeFile(flagFilePath, qtDataDirectory, {
+      await fs.promises.writeFile(flagPath.flagFile, qtDataDirectory, {
         encoding: "utf8",
-        flag: "w+",
+        flag: "w",
         mode: 0o666,
       });
     } finally {
-      this.dbSubscription = this.db$.subscribe(this.client$);
+      this.dbSubscription.unsubscribe();
+      this.dbSubscription = this.dbFlow$.subscribe(this.db$);
     }
-  }
 
-  async getCurrentLocalDB() {
-    const qtAppPath = this.profile.state.qtAppPath;
-    const flagFilePath = path.resolve(qtAppPath, "..", "FlagFile");
-    const flagFileContent = await fs.promises.readFile(flagFilePath, "utf8");
-    const localDBPath = flagFileContent.trim();
-
-    return localDBPath;
+    return {};
   }
 
   async deviceConfigList() {
-    const rows = await this.client.select().from(schema.yqConfig);
+    const rows = await this.db.select().from(schema.yqConfig);
 
     return { rows };
   }
 
   setDeviceConfigFlag(id: number) {
-    return this.client.transaction((tx) => {
+    return this.db.transaction((tx) => {
       tx.update(schema.yqConfig).set({ usedFlag: 0 }).run();
       return tx
         .update(schema.yqConfig)
@@ -620,7 +731,7 @@ export class QT {
   }
 
   async setDeviceConfigLib({ lib, id }: SetYiqiConfigLibInput) {
-    const result = await this.client
+    const result = await this.db
       .update(schema.yqConfig)
       .set({ dllPath: lib })
       .where(eq(schema.yqConfig.recId, id))
@@ -629,32 +740,11 @@ export class QT {
     return result;
   }
 
-  async startApp() {
-    if (platform.isLinux) {
-      const cwd = path.dirname(this.profile.state.qtAppPath);
-      this.qtProcess = spawn(this.profile.state.qtAppPath, [], {
-        cwd,
-        env: {
-          ...process.env,
-          QT_PLUGIN_PATH: "plugins",
-          LD_LIBRARY_PATH: `lib:${process.env.LD_LIBRARY_PATH || ""}`,
-        },
-      });
-    } else {
-      this.qtProcess = spawn(this.profile.state.qtAppPath, [], {});
-    }
-
-    return this.qtProcess?.pid;
-  }
-  async stopApp() {
-    this.qtProcess?.kill();
-  }
-
   async fetchDetections(input: FetchDetectionsInput) {
     const { date, user, zx, zh, result, pageIndex, pageSize } = input;
 
     const day = date ? dayjs(date) : null;
-    const sqlCommand = this.client
+    const sqlCommand = this.db
       .select()
       .from(schema.detectors)
       .where(
@@ -675,7 +765,7 @@ export class QT {
       )
       .orderBy(desc(schema.detectors.tmNow));
 
-    const [{ count }] = await this.client
+    const [{ count }] = await this.db
       .select({ count: sqlCount() })
       .from(sqlCommand.as("rows"));
 
@@ -687,7 +777,7 @@ export class QT {
     const { pageIndex, pageSize, user, zx, date } = input;
 
     const day = date ? dayjs(date) : null;
-    const sqlCommand = this.client
+    const sqlCommand = this.db
       .select()
       .from(schema.verifies)
       .where(
@@ -706,7 +796,7 @@ export class QT {
       )
       .orderBy(desc(schema.verifies.tmNow));
 
-    const [{ count }] = await this.client
+    const [{ count }] = await this.db
       .select({ count: sqlCount() })
       .from(sqlCommand.as("rows"));
 
@@ -718,7 +808,7 @@ export class QT {
     const { user, date, zx, pageIndex = 0, pageSize = 20 } = input;
 
     const day = date ? dayjs(date) : null;
-    const sqlCommand = this.client
+    const sqlCommand = this.db
       .select()
       .from(schema.quartors)
       .where(
@@ -737,7 +827,7 @@ export class QT {
       )
       .orderBy(desc(schema.quartors.tmNow));
 
-    const [{ count }] = await this.client
+    const [{ count }] = await this.db
       .select({ count: sqlCount() })
       .from(sqlCommand.as("rows"));
 
@@ -748,7 +838,7 @@ export class QT {
   async anniversary(input: AnniversaryInput) {
     const { pageIndex, pageSize } = input;
 
-    const sqlCommand = this.client
+    const sqlCommand = this.db
       .select({
         recId: schema.quartorRecordInfo.szIds,
         date: schema.quartorRecordInfo.tmNow,
@@ -757,7 +847,7 @@ export class QT {
       .groupBy(schema.quartorRecordInfo.szIds)
       .orderBy(desc(schema.quartorRecordInfo.tmNow));
 
-    const [{ count }] = await this.client
+    const [{ count }] = await this.db
       .select({ count: sqlCount() })
       .from(sqlCommand.as("groups"));
 
@@ -767,7 +857,7 @@ export class QT {
   }
 
   async anniversaryDetail(szIds: string) {
-    const rows = await this.client
+    const rows = await this.db
       .select()
       .from(schema.quartorRecordInfo)
       .where(eq(schema.quartorRecordInfo.szIds, szIds));
@@ -776,7 +866,7 @@ export class QT {
   }
 
   async fetchUsers() {
-    const rows = await this.client
+    const rows = await this.db
       .select({
         recId: schema.userManager.recId,
         userName: schema.userManager.userName,
@@ -791,7 +881,7 @@ export class QT {
   async upsertUsers(input: UpsertUserInput) {
     const { name, recId, pwd, power } = input;
 
-    const rows = await this.client
+    const rows = await this.db
       .insert(schema.userManager)
       .values({
         recId,
@@ -810,7 +900,7 @@ export class QT {
     return { rows };
   }
   async deleteUsers(id: number) {
-    const row = await this.client
+    const row = await this.db
       .delete(schema.userManager)
       .where(eq(schema.userManager.recId, id))
       .returning();
@@ -818,7 +908,7 @@ export class QT {
     return { row };
   }
   async getConfig() {
-    const rows = await this.client
+    const rows = await this.db
       .select({
         id: schema.sysConfig.recId,
         key: schema.sysConfig.configKey,
@@ -832,7 +922,7 @@ export class QT {
     return { rows };
   }
   setConfig(input: SetQTConfigInput) {
-    const result = this.client.transaction((tx) => {
+    const result = this.db.transaction((tx) => {
       return input.values.map(({ key, value }) => {
         return tx
           .insert(schema.sysConfig)

@@ -18,11 +18,11 @@ export const registerIPCHandlers = (qt: QT) => {
   ipcHandle("qt/delete_users", (_, p) => qt.deleteUsers(p));
   ipcHandle("qt/get_config", () => qt.getConfig());
   ipcHandle("qt/set_config", (_, p) => qt.setConfig(p));
-
-  ipcHandle("qt/setup-app", (_, p) => qt.setupApp(p));
   ipcHandle("qt/start-app", () => qt.startApp());
   ipcHandle("qt/stop-app", () => qt.stopApp());
-  ipcHandle("qt/current-db-path", () => qt.getCurrentLocalDB());
+  ipcHandle("qt/get-flagfile", () => qt.getFlagFile());
+  ipcHandle("qt/set-flagfile", (_, p) => qt.setFlagFile(p));
+
   ipcHandle("qt/yiqiConfig/list", () => qt.deviceConfigList());
   ipcHandle("qt/yiqiConfig/lib", (_, p) => qt.setDeviceConfigLib(p));
   ipcHandle("qt/yiqiConfig/flag", (_, p) => qt.setDeviceConfigFlag(p));
@@ -45,10 +45,11 @@ export const registerIPCHandlers = (qt: QT) => {
     ipcRemoveHandle("qt/get_config");
     ipcRemoveHandle("qt/set_config");
 
-    ipcRemoveHandle("qt/setup-app");
     ipcRemoveHandle("qt/start-app");
     ipcRemoveHandle("qt/stop-app");
-    ipcRemoveHandle("qt/current-db-path");
+    ipcRemoveHandle("qt/get-flagfile");
+    ipcRemoveHandle("qt/set-flagfile");
+
     ipcRemoveHandle("qt/yiqiConfig/list");
     ipcRemoveHandle("qt/yiqiConfig/lib");
     ipcRemoveHandle("qt/yiqiConfig/flag");

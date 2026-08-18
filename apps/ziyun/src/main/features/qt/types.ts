@@ -134,10 +134,6 @@ export interface IPC {
     return: ReturnType<QT["fetch53AData"]>;
   };
 
-  "qt/setup-app": {
-    args: [SetupAppInput];
-    return: ReturnType<QT["setupApp"]>;
-  };
   "qt/start-app": {
     args: [];
     return: ReturnType<QT["startApp"]>;
@@ -146,10 +142,16 @@ export interface IPC {
     args: [];
     return: ReturnType<QT["stopApp"]>;
   };
-  "qt/current-db-path": {
+
+  "qt/get-flagfile": {
     args: [];
-    return: ReturnType<QT["getCurrentLocalDB"]>;
+    return: ReturnType<QT["getFlagFile"]>;
   };
+  "qt/set-flagfile": {
+    args: [string];
+    return: ReturnType<QT["setFlagFile"]>;
+  };
+
   "qt/yiqiConfig/list": {
     args: [];
     return: ReturnType<QT["deviceConfigList"]>;
