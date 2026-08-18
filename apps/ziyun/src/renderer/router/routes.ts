@@ -44,10 +44,6 @@ export const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/minesweeper/component"),
           },
           {
-            path: "qrcode",
-            lazy: () => import("#renderer/pages/qrcode/component"),
-          },
-          {
             path: "detection",
             children: [
               {

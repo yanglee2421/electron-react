@@ -1,4 +1,3 @@
-import * as pdf from "#renderer/api/pdf";
 import dayjs from "dayjs";
 import "dayjs/locale/zh";
 import { enableMapSet } from "immer";
@@ -12,7 +11,6 @@ const main = () => {
   dayjs.locale("zh");
   enableMapSet();
   z.config(zhCN());
-  pdf.prepareModule();
 
   createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
