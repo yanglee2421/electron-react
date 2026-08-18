@@ -213,6 +213,14 @@ export class QT {
     return appPath;
   }
 
+  get running() {
+    if (!this.qtProcess) {
+      return false;
+    }
+
+    return !this.qtProcess.killed;
+  }
+
   readFlagPath() {
     const flagFile = path.resolve(this.appPath, "../FlagFile");
     const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
@@ -681,7 +689,7 @@ export class QT {
     sourceDB.$client.close();
     targetDB.$client.close();
 
-    return { running: calcRunning(this.qtProcess) };
+    return { running: this.running };
   }
 
   getFlagFile() {
@@ -698,7 +706,7 @@ export class QT {
 
     await fs.promises.mkdir(path.dirname(targetDB), {
       recursive: true,
-      mode: 0o666,
+      mode: 0o755,
     });
 
     const flagPath = this.readFlagPath();
@@ -712,14 +720,13 @@ export class QT {
       await fs.promises.writeFile(flagPath.flagFile, qtDataDirectory, {
         encoding: "utf8",
         flag: "w",
-        mode: 0o666,
       });
     } finally {
       this.dbSubscription.unsubscribe();
       this.dbSubscription = this.dbFlow$.subscribe(this.db$);
     }
 
-    return { running: calcRunning(this.qtProcess) };
+    return { running: this.running };
   }
 
   async deviceConfigList() {
@@ -739,7 +746,7 @@ export class QT {
         .get();
     });
 
-    return { result, running: calcRunning(this.qtProcess) };
+    return { result, running: this.running };
   }
 
   async setDeviceConfigLib({ lib, id }: SetYiqiConfigLibInput) {
@@ -749,7 +756,7 @@ export class QT {
       .where(eq(schema.yqConfig.recId, id))
       .returning();
 
-    return { result, running: calcRunning(this.qtProcess) };
+    return { result, running: this.running };
   }
 
   async fetchDetections(input: FetchDetectionsInput) {
@@ -909,7 +916,7 @@ export class QT {
       })
       .returning();
 
-    return { rows, running: calcRunning(this.qtProcess) };
+    return { rows, running: this.running };
   }
   async deleteUsers(id: number) {
     const row = await this.db
@@ -917,7 +924,7 @@ export class QT {
       .where(eq(schema.userManager.recId, id))
       .returning();
 
-    return { row, running: calcRunning(this.qtProcess) };
+    return { row, running: this.running };
   }
   async getConfig() {
     const rows = await this.db
@@ -951,14 +958,6 @@ export class QT {
       });
     });
 
-    return { result, running: calcRunning(this.qtProcess) };
+    return { result, running: this.running };
   }
 }
-
-const calcRunning = (cp: ChildProcessWithoutNullStreams | null) => {
-  if (!cp) {
-    return false;
-  }
-
-  return !cp.killed;
-};
