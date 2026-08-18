@@ -42,6 +42,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControlLabel,
   Grid,
   IconButton,
@@ -625,6 +626,7 @@ const UsersTable = () => {
             setShowEdit(true);
           }}
           startIcon={<Add />}
+          variant="outlined"
         >
           添加
         </Button>
@@ -1091,11 +1093,9 @@ export const Component = () => {
         );
       case 2:
         return (
-          <>
-            <CardContent>
-              <List>{renderYiqiConfig()}</List>
-            </CardContent>
-          </>
+          <CardContent>
+            <List>{renderYiqiConfig()}</List>
+          </CardContent>
         );
       case 3:
         return config.isSuccess && <ConfigForm />;
@@ -1122,6 +1122,7 @@ export const Component = () => {
           <Tab label="参数设置" value={3} />
           <Tab label="用户管理" value={4} />
         </Tabs>
+        <Divider />
         {renderTabPanel()}
       </Card>
     </>

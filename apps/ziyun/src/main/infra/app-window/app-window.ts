@@ -73,6 +73,7 @@ export class AppWindow {
         win.loadFile(RENDERER_FILE, {
           hash: url.pathname + url.search,
         });
+        win.maximize();
       } else {
         win.loadFile(RENDERER_FILE);
       }
