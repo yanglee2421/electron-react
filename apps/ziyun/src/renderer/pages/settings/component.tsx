@@ -296,7 +296,6 @@ export const Component = () => {
                                       field.handleChange(path);
                                     }}
                                     multiple={false}
-                                    accept=".exe"
                                   />
                                   <FindInPageOutlined />
                                 </IconButton>

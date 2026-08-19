@@ -34,25 +34,45 @@ interface Item {
   YZC: boolean;
 }
 
-export const createServer = (port: number): ServerType => {
-  const schema = z.object({
-    dh: z.string(),
-    zh: z.string(),
-  });
+const schema = z.object({
+  dh: z.string(),
+  zh: z.string(),
+});
 
-  const factory = createFactory();
-  const heartbeatHandler = factory.createHandlers((c) => {
-    return c.json({ code: 200, message: "ok" });
-  });
-  const handler = factory.createHandlers(zValidator("json", schema), (c) => {
-    const { dh, zh } = c.req.valid("json");
-    const date = dayjs().format("YYYY-MM-DD");
-    const items: Item[] = [];
+const factory = createFactory();
+const heartbeatHandler = factory.createHandlers((c) => {
+  return c.json({ code: 200, message: "ok" });
+});
+const handler = factory.createHandlers(zValidator("json", schema), (c) => {
+  const { dh, zh } = c.req.valid("json");
+  const date = dayjs().format("YYYY-MM-DD");
+  const items: Item[] = [];
 
-    if (dh) {
-      items.push({
-        DH: dh,
-        ZH: "38254",
+  if (dh) {
+    items.push({
+      DH: dh,
+      ZH: "38254",
+      ZX: "RD2",
+      SRDW: "003",
+      SRYY: "",
+      CZZZDW: "005",
+      CZZZRQ: date,
+      SCZZDW: "009",
+      SCZZRQ: date,
+      MCZZDW: "007",
+      MCZZRQ: date,
+      ZZC: false,
+      YZC: false,
+    });
+
+    return c.json(items);
+  }
+
+  if (zh) {
+    items.push(
+      {
+        DH: "DH001",
+        ZH: zh,
         ZX: "RD2",
         SRDW: "003",
         SRYY: "",
@@ -64,57 +84,42 @@ export const createServer = (port: number): ServerType => {
         MCZZRQ: date,
         ZZC: false,
         YZC: false,
-      });
+      },
+      {
+        DH: "DH002",
+        ZH: zh,
+        ZX: "RE2B",
+        SRDW: "001",
+        SRYY: "",
+        CZZZDW: "002",
+        CZZZRQ: date,
+        SCZZDW: "003",
+        SCZZRQ: date,
+        MCZZDW: "004",
+        MCZZRQ: date,
+        ZZC: true,
+        YZC: true,
+      },
+    );
 
-      return c.json(items);
-    }
+    return c.json(items);
+  }
 
-    if (zh) {
-      items.push(
-        {
-          DH: "DH001",
-          ZH: zh,
-          ZX: "RD2",
-          SRDW: "003",
-          SRYY: "",
-          CZZZDW: "005",
-          CZZZRQ: date,
-          SCZZDW: "009",
-          SCZZRQ: date,
-          MCZZDW: "007",
-          MCZZRQ: date,
-          ZZC: false,
-          YZC: false,
-        },
-        {
-          DH: "DH002",
-          ZH: zh,
-          ZX: "RE2B",
-          SRDW: "001",
-          SRYY: "",
-          CZZZDW: "002",
-          CZZZRQ: date,
-          SCZZDW: "003",
-          SCZZRQ: date,
-          MCZZDW: "004",
-          MCZZRQ: date,
-          ZZC: true,
-          YZC: true,
-        },
-      );
+  throw new Error("dh或zh必须提供其中至少一个");
+});
 
-      return c.json(items);
-    }
+const handleUpload = factory.createHandlers((c) => {
+  return c.json({});
+});
 
-    throw new Error("dh或zh必须提供其中至少一个");
-  });
+const hmis = factory
+  .createApp()
+  .basePath("/hmis")
+  .post("/work", ...handler)
+  .post("/heartbeat", ...heartbeatHandler)
+  .post("/upload", ...handleUpload);
 
-  const hmis = factory
-    .createApp()
-    .basePath("/hmis")
-    .post("/work", ...handler)
-    .post("/heartbeat", ...heartbeatHandler);
-
+export const createServer = (port: number): ServerType => {
   return serve({
     fetch: hmis.fetch,
     port,

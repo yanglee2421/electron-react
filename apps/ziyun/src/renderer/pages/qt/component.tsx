@@ -978,7 +978,6 @@ export const Component = () => {
                                         }}
                                         type="file"
                                         hidden
-                                        accept=".exe"
                                         multiple={false}
                                       />
                                     </IconButton>
