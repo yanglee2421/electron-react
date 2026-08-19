@@ -102,7 +102,7 @@ const ConfigForm = () => {
     if (!comfired) return;
 
     await stop.mutateAsync();
-    await new Promise((f) => setTimeout(f, 1000));
+    await new Promise((f) => setTimeout(f, 1000 * 8));
     await start.mutateAsync();
   };
 
@@ -316,7 +316,7 @@ const ActionCell = (props: ActionCellProps) => {
     if (!comfired) return;
 
     await stopApp.mutateAsync();
-    await new Promise((f) => setTimeout(f, 1000));
+    await new Promise((f) => setTimeout(f, 1000 * 8));
     await startApp.mutateAsync();
   };
 
@@ -569,7 +569,7 @@ const UsersTable = () => {
     if (!comfired) return;
 
     await stopApp.mutateAsync();
-    await new Promise((f) => setTimeout(f, 1000));
+    await new Promise((f) => setTimeout(f, 1000 * 8));
     await startApp.mutateAsync();
   };
 
@@ -840,7 +840,7 @@ export const Component = () => {
     if (!comfired) return;
 
     await stopApp.mutateAsync();
-    await new Promise((f) => setTimeout(f, 1000));
+    await new Promise((f) => setTimeout(f, 1000 * 8));
     await startApp.mutateAsync();
   };
 
@@ -896,7 +896,7 @@ export const Component = () => {
 
               if (!result.running) return;
 
-              handleRestart();
+              await handleRestart();
             }}
           >
             <ListItemIcon>
@@ -961,38 +961,26 @@ export const Component = () => {
                               input: {
                                 endAdornment: (
                                   <InputAdornment position="end">
-                                    <IconButton
-                                      onClick={() => {
-                                        selectFile.mutate(
-                                          [
-                                            {
-                                              extensions: ["exe"],
-                                              name: "可执行程序",
-                                            },
-                                            {
-                                              extensions: ["*"],
-                                              name: "所有文件",
-                                            },
-                                          ],
-                                          {
-                                            onError: (error) => {
-                                              toast.error(error.message);
-                                            },
-                                            onSuccess: (paths) => {
-                                              const filepath = paths.at(0);
+                                    <IconButton component="label">
+                                      <FindInPageOutlined />
+                                      <input
+                                        value={""}
+                                        onChange={(e) => {
+                                          const file = e.target.files?.item(0);
 
-                                              if (!filepath) return;
-                                              field.handleChange(filepath);
-                                            },
-                                          },
-                                        );
-                                      }}
-                                    >
-                                      <PendingIcon
-                                        isPending={selectFile.isPending}
-                                      >
-                                        <FindInPageOutlined />
-                                      </PendingIcon>
+                                          if (!file) return;
+
+                                          const path =
+                                            window.electron.webUtils.getPathForFile(
+                                              file,
+                                            );
+                                          field.handleChange(path);
+                                        }}
+                                        type="file"
+                                        hidden
+                                        accept=".exe"
+                                        multiple={false}
+                                      />
                                     </IconButton>
                                   </InputAdornment>
                                 ),

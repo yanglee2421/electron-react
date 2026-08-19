@@ -619,19 +619,23 @@ export class QT {
           LD_LIBRARY_PATH: `lib:${process.env.LD_LIBRARY_PATH || ""}`,
         },
       });
-
-      this.qtProcess.once("close", () => {
-        this.qtProcess = null;
-      });
     } else {
       this.qtProcess = spawn(appPath, [], {
         cwd,
       });
-
-      this.qtProcess.once("close", () => {
-        this.qtProcess = null;
-      });
     }
+
+    this.qtProcess.once("close", () => {
+      this.qtProcess = null;
+    });
+
+    this.qtProcess.stderr.on("data", (data) => {
+      console.log(String(data));
+    });
+
+    this.qtProcess.stdout.on("data", (data) => {
+      console.log(String(data));
+    });
 
     return this.qtProcess?.pid;
   }

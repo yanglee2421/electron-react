@@ -280,42 +280,25 @@ export const Component = () => {
                           input: {
                             endAdornment: (
                               <InputAdornment position="end">
-                                <IconButton
-                                  onClick={() => {
-                                    selectFile.mutate(
-                                      [
-                                        {
-                                          extensions: ["exe"],
-                                          name: "可执行文件",
-                                        },
-                                        {
-                                          extensions: ["*", ""],
-                                          name: "所有文件",
-                                        },
-                                      ],
-                                      {
-                                        onSuccess: (paths) => {
-                                          const path = paths?.at(0);
+                                <IconButton component="label">
+                                  <input
+                                    type="file"
+                                    value={""}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.item(0);
 
-                                          if (!path) return;
+                                      if (!file) return;
 
-                                          profileForm.setFieldValue(
-                                            "qtAppPath",
-                                            path,
-                                          );
-                                          void profileForm.validateField(
-                                            "qtAppPath",
-                                            "change",
-                                          );
-                                        },
-                                      },
-                                    );
-                                  }}
-                                  disabled={selectFile.isPending}
-                                >
-                                  <PendingIcon isPending={selectFile.isPending}>
-                                    <FindInPageOutlined />
-                                  </PendingIcon>
+                                      const path =
+                                        window.electron.webUtils.getPathForFile(
+                                          file,
+                                        );
+                                      field.handleChange(path);
+                                    }}
+                                    multiple={false}
+                                    accept=".exe"
+                                  />
+                                  <FindInPageOutlined />
                                 </IconButton>
                               </InputAdornment>
                             ),

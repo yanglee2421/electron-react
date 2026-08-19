@@ -111,6 +111,7 @@ docker compose stats
 在WSL中使用Docker进行构建时会生成大量的缓存，这些缓存在使用`docker builder prune -a`后并不会将空间返回给宿主机器，需要使用`diskpart`对docker使用的虚拟磁盘进行压缩才能重新获取这些空间
 
 ```bash
+docker system df
 wsl --shutdown
 diskpart
 select vdisk file="C:\Users\lee\AppData\Local\Docker\wsl\disk\docker_data.vhdx"
