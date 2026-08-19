@@ -171,7 +171,7 @@ export const Component = () => {
                                         name: "可执行文件",
                                       },
                                       {
-                                        extensions: ["*", ""],
+                                        extensions: ["*"],
                                         name: "所有文件",
                                       },
                                     ],
@@ -181,14 +181,7 @@ export const Component = () => {
 
                                         if (!path) return;
 
-                                        profileForm.setFieldValue(
-                                          "appPath",
-                                          path,
-                                        );
-                                        void profileForm.validateField(
-                                          "appPath",
-                                          "change",
-                                        );
+                                        field.handleChange(path);
                                       },
                                     },
                                   );
@@ -280,24 +273,35 @@ export const Component = () => {
                           input: {
                             endAdornment: (
                               <InputAdornment position="end">
-                                <IconButton component="label">
-                                  <input
-                                    type="file"
-                                    value={""}
-                                    onChange={(e) => {
-                                      const file = e.target.files?.item(0);
+                                <IconButton
+                                  onClick={() => {
+                                    selectFile.mutate(
+                                      [
+                                        {
+                                          extensions: ["exe"],
+                                          name: "可执行文件",
+                                        },
+                                        {
+                                          extensions: ["*"],
+                                          name: "所有文件",
+                                        },
+                                      ],
+                                      {
+                                        onSuccess: (paths) => {
+                                          const path = paths?.at(0);
 
-                                      if (!file) return;
+                                          if (!path) return;
 
-                                      const path =
-                                        window.electron.webUtils.getPathForFile(
-                                          file,
-                                        );
-                                      field.handleChange(path);
-                                    }}
-                                    multiple={false}
-                                  />
-                                  <FindInPageOutlined />
+                                          field.handleChange(path);
+                                        },
+                                      },
+                                    );
+                                  }}
+                                  disabled={selectFile.isPending}
+                                >
+                                  <PendingIcon isPending={selectFile.isPending}>
+                                    <FindInPageOutlined />
+                                  </PendingIcon>
                                 </IconButton>
                               </InputAdornment>
                             ),

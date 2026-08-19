@@ -109,6 +109,8 @@ const handler = factory.createHandlers(zValidator("json", schema), (c) => {
 });
 
 const handleUpload = factory.createHandlers((c) => {
+  console.log("upload");
+
   return c.json({});
 });
 

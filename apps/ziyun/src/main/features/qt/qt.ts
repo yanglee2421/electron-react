@@ -221,17 +221,99 @@ export class QT {
     return !this.qtProcess.killed;
   }
 
+  migrateDB(sourcePath: string, targetPath: string) {
+    if (sourcePath === targetPath) {
+      throw Error("目标路径与源路径完全一致");
+    }
+
+    const sourceDB = drizzle({
+      client: new DatabaseSync(sourcePath),
+      schema,
+      relations,
+    });
+    const targetDB = drizzle({
+      client: new DatabaseSync(targetPath),
+      schema,
+      relations,
+    });
+    const __filename = url.fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    migrate(targetDB, {
+      migrationsFolder: path.resolve(__dirname, "../../drizzle/qt"),
+    });
+
+    targetDB.transaction((tx) => {
+      const alxInfos = sourceDB.select().from(schema.alxInfo).all();
+      tx.insert(schema.alxInfo).values(alxInfos).run();
+      const channels = sourceDB.select().from(schema.channels).all();
+      tx.insert(schema.channels).values(channels).run();
+      const gates = sourceDB.select().from(schema.gates).all();
+      tx.insert(schema.gates).values(gates).run();
+      const quartorChannels = sourceDB
+        .select()
+        .from(schema.quartorChannel)
+        .all();
+      tx.insert(schema.quartorChannel).values(quartorChannels).run();
+      const quartorGates = sourceDB.select().from(schema.quartorGates).all();
+      tx.insert(schema.quartorGates).values(quartorGates).run();
+      const quartorRecordInfos = sourceDB
+        .select()
+        .from(schema.quartorRecordInfo)
+        .all();
+      tx.insert(schema.quartorRecordInfo).values(quartorRecordInfos).run();
+      const sysConfigs = sourceDB.select().from(schema.sysConfig).all();
+      tx.insert(schema.sysConfig).values(sysConfigs).run();
+      const users = sourceDB.select().from(schema.userManager).all();
+      tx.insert(schema.userManager).values(users).run();
+      const yqConfigs = sourceDB.select().from(schema.yqConfig).all();
+      tx.insert(schema.yqConfig).values(yqConfigs).run();
+
+      fs.writeFileSync(
+        path.resolve(app.getPath("desktop"), "export.json"),
+        JSON.stringify({
+          alxInfos,
+          channels,
+          gates,
+          quartorChannels,
+          quartorGates,
+          quartorRecordInfos,
+          sysConfigs,
+          users,
+          yqConfigs,
+        }),
+        "utf-8",
+      );
+    });
+
+    sourceDB.$client.close();
+    targetDB.$client.close();
+
+    return { running: this.running };
+  }
+
   readFlagPath() {
-    const flagFile = path.resolve(this.appPath, "../FlagFile");
-    const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
-    const localDB = path.resolve(dataDirectory, "./local.db");
-    const appDB = path.resolve(this.appPath, "../local.db");
+    const that = this;
 
     return {
-      flagFile,
-      dataDirectory,
-      localDB,
-      appDB,
+      get flagFile() {
+        const flagFile = path.resolve(that.appPath, "../FlagFile");
+        return flagFile;
+      },
+      get dataDirectory() {
+        const dataDirectory = fs.readFileSync(this.flagFile, "utf8").trim();
+
+        return dataDirectory;
+      },
+      get localDB() {
+        const localDB = path.resolve(this.dataDirectory, "./local.db");
+
+        return localDB;
+      },
+      get appDB() {
+        const appDB = path.resolve(that.appPath, "../local.db");
+
+        return appDB;
+      },
     };
   }
 
@@ -642,59 +724,6 @@ export class QT {
   async stopApp() {
     this.qtProcess?.kill();
   }
-  migrateDB(sourcePath: string, targetPath: string) {
-    if (sourcePath === targetPath) {
-      throw Error("目标路径与源路径完全一致");
-    }
-
-    const sourceDB = drizzle({
-      client: new DatabaseSync(sourcePath),
-      schema,
-      relations,
-    });
-    const targetDB = drizzle({
-      client: new DatabaseSync(targetPath),
-      schema,
-      relations,
-    });
-    const __filename = url.fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    migrate(targetDB, {
-      migrationsFolder: path.resolve(__dirname, "../../drizzle/qt"),
-    });
-
-    targetDB.transaction((tx) => {
-      const alxInfos = sourceDB.select().from(schema.alxInfo).all();
-      tx.insert(schema.alxInfo).values(alxInfos).run();
-      const channels = sourceDB.select().from(schema.channels).all();
-      tx.insert(schema.channels).values(channels).run();
-      const gates = sourceDB.select().from(schema.gates).all();
-      tx.insert(schema.gates).values(gates).run();
-      const quartorChannels = sourceDB
-        .select()
-        .from(schema.quartorChannel)
-        .all();
-      tx.insert(schema.quartorChannel).values(quartorChannels).run();
-      const quartorGates = sourceDB.select().from(schema.quartorGates).all();
-      tx.insert(schema.quartorGates).values(quartorGates).run();
-      const quartorRecordInfos = sourceDB
-        .select()
-        .from(schema.quartorRecordInfo)
-        .all();
-      tx.insert(schema.quartorRecordInfo).values(quartorRecordInfos).run();
-      const sysConfigs = sourceDB.select().from(schema.sysConfig).all();
-      tx.insert(schema.sysConfig).values(sysConfigs).run();
-      const users = sourceDB.select().from(schema.userManager).all();
-      tx.insert(schema.userManager).values(users).run();
-      const yqConfigs = sourceDB.select().from(schema.yqConfig).all();
-      tx.insert(schema.yqConfig).values(yqConfigs).run();
-    });
-
-    sourceDB.$client.close();
-    targetDB.$client.close();
-
-    return { running: this.running };
-  }
 
   getFlagFile() {
     const flagPath = this.readFlagPath();
@@ -702,29 +731,18 @@ export class QT {
     return flagPath.dataDirectory;
   }
   async setFlagFile(qtDataDirectory: string) {
-    const targetDB = path.resolve(qtDataDirectory, "./local.db");
-
-    if (fs.existsSync(targetDB)) {
-      throw new Error("目录路径数据库已存在");
-    }
-
-    await fs.promises.mkdir(path.dirname(targetDB), {
-      recursive: true,
-      mode: 0o755,
-    });
-
     const flagPath = this.readFlagPath();
-    const sourceDB = fs.existsSync(flagPath.localDB)
-      ? flagPath.localDB
-      : flagPath.appDB;
-
-    this.migrateDB(sourceDB, targetDB);
-
     try {
       await fs.promises.writeFile(flagPath.flagFile, qtDataDirectory, {
         encoding: "utf8",
         flag: "w",
       });
+
+      await fs.promises.mkdir(qtDataDirectory, { recursive: true });
+
+      console.log(flagPath.appDB, flagPath.localDB);
+
+      this.migrateDB(flagPath.appDB, flagPath.localDB);
     } finally {
       this.dbSubscription.unsubscribe();
       this.dbSubscription = this.dbFlow$.subscribe(this.db$);

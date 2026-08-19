@@ -13,7 +13,7 @@ const queryClient = new QueryClient({
 
       retry: 1,
       retryDelay(attemptIndex) {
-        return Math.min(1000 * 2 ** attemptIndex, 1000 * 8);
+        return Math.min(1000 * 2 ** attemptIndex, 1000);
       },
 
       networkMode: "offlineFirst",

@@ -63,7 +63,7 @@ export const registerIPCHandlers = () => {
 
     const result = await dialog.showOpenDialog(win, {
       properties: ["openFile"],
-      filters,
+      filters: platform.isLinux ? void 0 : filters,
     });
 
     return result.filePaths;

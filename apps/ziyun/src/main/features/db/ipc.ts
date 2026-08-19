@@ -10,7 +10,7 @@ export const registerIPCHandlers = (db: DB) => {
       defaultPath: `${app.getPath("desktop")}/${dayjs().format("YYYY年MM月DD日-HH时mm分ss")}.db`,
       filters: [
         { name: "数据库文件", extensions: ["db"] },
-        { name: "所有文件", extensions: ["*", ""] },
+        { name: "所有文件", extensions: ["*"] },
       ],
     });
 

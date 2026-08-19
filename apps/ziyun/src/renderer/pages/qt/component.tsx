@@ -102,7 +102,7 @@ const ConfigForm = () => {
     if (!comfired) return;
 
     await stop.mutateAsync();
-    await new Promise((f) => setTimeout(f, 1000 * 8));
+    await new Promise((f) => setTimeout(f, 1000));
     await start.mutateAsync();
   };
 
@@ -316,7 +316,7 @@ const ActionCell = (props: ActionCellProps) => {
     if (!comfired) return;
 
     await stopApp.mutateAsync();
-    await new Promise((f) => setTimeout(f, 1000 * 8));
+    await new Promise((f) => setTimeout(f, 1000));
     await startApp.mutateAsync();
   };
 
@@ -569,7 +569,7 @@ const UsersTable = () => {
     if (!comfired) return;
 
     await stopApp.mutateAsync();
-    await new Promise((f) => setTimeout(f, 1000 * 8));
+    await new Promise((f) => setTimeout(f, 1000));
     await startApp.mutateAsync();
   };
 
@@ -840,7 +840,7 @@ export const Component = () => {
     if (!comfired) return;
 
     await stopApp.mutateAsync();
-    await new Promise((f) => setTimeout(f, 1000 * 8));
+    await new Promise((f) => setTimeout(f, 1000));
     await startApp.mutateAsync();
   };
 
@@ -867,8 +867,8 @@ export const Component = () => {
               edge="end"
               onClick={async () => {
                 const paths = await selectFile.mutateAsync([
-                  { extensions: ["dll", "so"], name: "库文件" },
-                  { extensions: ["*", ""], name: "所有文件" },
+                  { extensions: ["dll"], name: "库文件" },
+                  { extensions: ["*"], name: "所有文件" },
                 ]);
 
                 const libPath = paths.at(0);
@@ -961,25 +961,37 @@ export const Component = () => {
                               input: {
                                 endAdornment: (
                                   <InputAdornment position="end">
-                                    <IconButton component="label">
-                                      <FindInPageOutlined />
-                                      <input
-                                        value={""}
-                                        onChange={(e) => {
-                                          const file = e.target.files?.item(0);
+                                    <IconButton
+                                      onClick={() => {
+                                        selectFile.mutate(
+                                          [
+                                            {
+                                              extensions: ["exe"],
+                                              name: "可执行文件",
+                                            },
+                                            {
+                                              extensions: ["*"],
+                                              name: "所有文件",
+                                            },
+                                          ],
+                                          {
+                                            onSuccess: (paths) => {
+                                              const path = paths?.at(0);
 
-                                          if (!file) return;
+                                              if (!path) return;
 
-                                          const path =
-                                            window.electron.webUtils.getPathForFile(
-                                              file,
-                                            );
-                                          field.handleChange(path);
-                                        }}
-                                        type="file"
-                                        hidden
-                                        multiple={false}
-                                      />
+                                              field.handleChange(path);
+                                            },
+                                          },
+                                        );
+                                      }}
+                                      disabled={selectFile.isPending}
+                                    >
+                                      <PendingIcon
+                                        isPending={selectFile.isPending}
+                                      >
+                                        <FindInPageOutlined />
+                                      </PendingIcon>
                                     </IconButton>
                                   </InputAdornment>
                                 ),
