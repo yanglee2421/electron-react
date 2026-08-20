@@ -380,6 +380,18 @@ export const quartors = sqliteTable(
   (table) => [unique("quartors_szIDs_unique").on(table.szIds)],
 );
 
+export const portControl = sqliteTable(
+  "port_control",
+  {
+    id: integer("ID").primaryKey({ autoIncrement: true }),
+    nodeName: text("NodeName"),
+    isOn: integer("IsOn").default(0),
+    nodeDes: text("NodeDes"),
+    nodeNum: integer("NodeNum").default(0),
+  },
+  (table) => [unique("port_control_NodeName_unique").on(table.nodeName)],
+);
+
 export const detectors = sqliteTable(
   "detectors",
   {
@@ -409,6 +421,8 @@ export const detectors = sqliteTable(
     startTime: numeric(),
     endTime: numeric(),
     bIsEnable: customType({ dataType: () => "BOOL" })(),
+    uploadFlag: customType({ dataType: () => "BOOL" })(),
+    uploadTime: numeric(),
   },
   (table) => [unique("detectors_szIDs_unique").on(table.szIds)],
 );

@@ -6,7 +6,7 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 export default defineConfig({
   schema: "./src/schema.ts",
-  out: path.resolve(__dirname, "../../apps/ziyun/drizzle/qt"),
+  out: path.resolve(__dirname, "./drizzle"),
   dialect: "sqlite",
   dbCredentials: {
     url: "D:\\qtapp\\data\\local.db",
