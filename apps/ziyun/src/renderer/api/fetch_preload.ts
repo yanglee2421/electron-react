@@ -63,14 +63,6 @@ export const useMobileMode = () => {
   });
 };
 
-export const useSelectDirectory = () => {
-  return useMutation({
-    mutationFn: async () => {
-      return ipc.invoke("APP/SELECT_DIRECTORY");
-    },
-  });
-};
-
 export const useSelectFile = () => {
   return useMutation({
     mutationFn: async (filters: Electron.FileFilter[]) => {

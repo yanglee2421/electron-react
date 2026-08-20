@@ -40,20 +40,6 @@ export const registerIPCHandlers = () => {
     return mobile;
   });
 
-  ipcHandle("APP/SELECT_DIRECTORY", async () => {
-    const win = BrowserWindow.getAllWindows().at(0);
-
-    if (!win) {
-      throw new Error("No active window");
-    }
-
-    const result = await dialog.showOpenDialog(win, {
-      properties: ["openDirectory"],
-    });
-
-    return result.filePaths;
-  });
-
   ipcHandle("APP/SELECT_FILE", async (_, filters: Electron.FileFilter[]) => {
     const win = BrowserWindow.getAllWindows().at(0);
 
@@ -91,7 +77,6 @@ export const registerIPCHandlers = () => {
     ipcRemoveHandle("APP/OPEN_DEV_TOOLS");
     ipcRemoveHandle("APP/OPEN_PATH");
     ipcRemoveHandle("APP/MOBILE_MODE");
-    ipcRemoveHandle("APP/SELECT_DIRECTORY");
     ipcRemoveHandle("APP/SELECT_FILE");
     ipcRemoveHandle("APP/SHOW_OPEN_DIALOG");
     ipcRemoveHandle("app/version");

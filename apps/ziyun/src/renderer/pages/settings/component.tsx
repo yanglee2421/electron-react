@@ -4,7 +4,6 @@ import {
   fetchOpenAtLogin,
   useOpenAtLogin,
   useOpenDevTools,
-  useSelectDirectory,
   useSelectFile,
 } from "#renderer/api/fetch_preload";
 import { PendingIcon } from "#renderer/components/Loading";
@@ -106,7 +105,6 @@ export const Component = () => {
   const openAtLogin = useQuery(fetchOpenAtLogin());
   const isRunAsAdmin = useQuery(fetchIsRunAsAdmin());
   const openDevTools = useOpenDevTools();
-  const selectDirectory = useSelectDirectory();
   const profileForm = useProfileForm();
   const version = useQuery(fetchVersion());
   const exportDB = useExportDB();
@@ -156,7 +154,7 @@ export const Component = () => {
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
-                      disabled={selectDirectory.isPending}
+                      disabled={selectFile.isPending}
                       fullWidth
                       slotProps={{
                         input: {

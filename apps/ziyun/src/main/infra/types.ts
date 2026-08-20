@@ -15,10 +15,6 @@ export interface IPCContract {
     args: [boolean];
     return: boolean;
   };
-  "APP/SELECT_DIRECTORY": {
-    args: [];
-    return: string[];
-  };
   "APP/SELECT_FILE": {
     args: [Electron.FileFilter[]];
     return: string[];

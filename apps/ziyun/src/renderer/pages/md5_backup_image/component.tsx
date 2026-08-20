@@ -1,6 +1,6 @@
 import {
   useMD5BackupImage,
-  useSelectDirectory,
+  useShowOpenDialog,
 } from "#renderer/api/fetch_preload";
 import { PendingIcon } from "#renderer/components/Loading";
 import { FindInPageOutlined } from "@mui/icons-material";
@@ -42,7 +42,7 @@ export const Component = () => {
   const formId = React.useId();
 
   const md5BackupImage = useMD5BackupImage();
-  const selectDirectory = useSelectDirectory();
+  const selectDirectory = useShowOpenDialog();
   const form = useAppForm({
     defaultValues: {
       directory: "",
@@ -61,17 +61,6 @@ export const Component = () => {
       });
     },
   });
-
-  const handleDirectoryChange = () => {
-    selectDirectory.mutate(void 0, {
-      onError() {},
-      onSuccess([data]) {
-        if (!data) return;
-        form.setFieldValue("directory", data);
-        form.validateField("directory", "change");
-      },
-    });
-  };
 
   return (
     <Stack spacing={3}>
@@ -93,25 +82,38 @@ export const Component = () => {
             <Grid container>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <form.AppField name="directory">
-                  {(directoryField) => (
-                    <directoryField.TextField
-                      value={directoryField.state.value}
+                  {(field) => (
+                    <field.TextField
+                      value={field.state.value}
                       onChange={(e) => {
-                        directoryField.handleChange(e.target.value);
+                        field.handleChange(e.target.value);
                       }}
                       fullWidth
                       helperText={
-                        directoryField.getMeta().errors.length
-                          ? directoryField.getMeta().errors.at(0)?.message
+                        field.getMeta().errors.length
+                          ? field.getMeta().errors.at(0)?.message
                           : "图片目录的所在路径"
                       }
-                      error={directoryField.getMeta().errors.length > 0}
+                      error={field.getMeta().errors.length > 0}
                       slotProps={{
                         input: {
                           endAdornment: (
                             <InputAdornment position="end">
                               <IconButton
-                                onClick={handleDirectoryChange}
+                                onClick={() => {
+                                  selectDirectory.mutate(
+                                    {
+                                      properties: ["openDirectory"],
+                                    },
+                                    {
+                                      onError() {},
+                                      onSuccess([data]) {
+                                        if (!data) return;
+                                        field.handleChange(data);
+                                      },
+                                    },
+                                  );
+                                }}
                                 disabled={selectDirectory.isPending}
                               >
                                 <PendingIcon
