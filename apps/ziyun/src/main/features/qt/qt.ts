@@ -30,8 +30,11 @@ import {
   catchError,
   distinctUntilChanged,
   EMPTY,
+  endWith,
+  exhaustMap,
   Observable,
   of,
+  retry,
   shareReplay,
   switchMap,
 } from "rxjs";
@@ -1196,3 +1199,45 @@ export class QT {
     return { result, running: this.running };
   }
 }
+
+const flow$ = of(null).pipe(
+  exhaustMap(() => {
+    return new Observable((sub) => {
+      const cp = spawn("");
+
+      cp.on("error", () => {
+        sub.error();
+      });
+
+      cp.on("spawn", () => {
+        sub.next(cp);
+      });
+
+      cp.on("exit", () => {
+        sub.complete();
+      });
+
+      cp.stderr.on("data", (data) => {
+        const msg = String(data);
+
+        if (msg.includes("实例")) {
+          sub.error();
+        }
+
+        console.error(msg);
+      });
+
+      return () => {
+        cp.kill();
+      };
+    }).pipe(endWith(null));
+  }),
+  retry(1),
+  catchError((error) => {
+    if (import.meta.env.DEV) {
+      console.error(error);
+    }
+
+    return EMPTY;
+  }),
+);
