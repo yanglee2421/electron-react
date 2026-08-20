@@ -1,9 +1,9 @@
 import {
-    browserWindowCreated$,
-    secondInstance$,
-    whenReady$,
-    willQuit$,
-    windowAllClosed$,
+  browserWindowCreated$,
+  secondInstance$,
+  whenReady$,
+  willQuit$,
+  windowAllClosed$,
 } from "#main/infra/app-rxjs";
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
@@ -13,24 +13,22 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import {
-    catchError,
-    concat,
-    defer,
-    EMPTY,
-    filter,
-    finalize,
-    fromEventPattern,
-    ignoreElements,
-    map,
-    mergeMap,
-    NEVER,
-    of,
-    shareReplay,
-    startWith,
-    take,
-    takeUntil,
-    tap,
-    using,
+  catchError,
+  concat,
+  defer,
+  EMPTY,
+  filter,
+  finalize,
+  fromEventPattern,
+  ignoreElements,
+  map,
+  mergeMap,
+  Observable,
+  of,
+  shareReplay,
+  take,
+  takeUntil,
+  tap,
 } from "rxjs";
 import { container } from "./features";
 import * as cmdIPC from "./features/cmd/ipc";
@@ -79,101 +77,95 @@ if (platform.isLinux) {
 
 const APP_DB_PATH = path.resolve(app.getPath("userData"), "db.db");
 
-const resource$ = using(
-  () => {
-    container.register({ dbPath: asValue(APP_DB_PATH) });
+const resource$ = new Observable((sub) => {
+  container.register({ dbPath: asValue(APP_DB_PATH) });
 
-    const { db } = container.cradle;
-    const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-    const migrationsFolder = path.resolve(__dirname, "../../drizzle/db");
-    db.migrate(migrationsFolder);
+  const { db } = container.cradle;
+  const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+  const migrationsFolder = path.resolve(__dirname, "../../drizzle/db");
+  db.migrate(migrationsFolder);
 
-    const {
-      cmd,
-      qt,
-      guangzhoubei,
-      guangzhoucheliang,
-      guangzhoujibaoduan,
+  const {
+    cmd,
+    qt,
+    guangzhoubei,
+    guangzhoucheliang,
+    guangzhoujibaoduan,
 
-      hxzy,
-      image,
-      jtv,
-      kh,
-      kv,
-      logger,
-      mdb,
-      plc,
-      printer,
+    hxzy,
+    image,
+    jtv,
+    kh,
+    kv,
+    logger,
+    mdb,
+    plc,
+    printer,
 
-      appProtocol,
-      appTheme,
-      appTray,
-      appWindow,
-    } = container.cradle;
-    const infraUnIPC = infraIPC.registerIPCHandlers();
+    appProtocol,
+    appTheme,
+    appTray,
+    appWindow,
+  } = container.cradle;
+  const infraUnIPC = infraIPC.registerIPCHandlers();
 
-    const cmdUnIPC = cmdIPC.registerIPCHandlers(cmd);
-    const dbUnIPC = dbIPC.registerIPCHandlers(db);
-    const guangzhoubeiUnIPC = guangzhoubeiIPC.registerIPCHandlers(guangzhoubei);
-    const guangzhoucheliangUnIPC = guangzhoucheliangIPC.ipc(guangzhoucheliang);
-    const guangzhoujibaoduanUnIPC =
-      guangzhoujibaoduanIPC.registerIPCHandlers(guangzhoujibaoduan);
-    const hxzyUnIPC = hxzyIPC.registerIPCHandlers(hxzy);
-    const imageUnIPC = imageIPC.registerIPCHandlers(image);
-    const jtvUnIPC = jtvIPC.registerIPCHandlers(jtv);
-    const khUnIPC = khIPC.registerIPCHandlers(kh);
-    const kvUnIPC = kvIPC.registerIPCHandlers(kv);
-    const logUnIPC = logIPC.registerIPCHandlers(logger);
-    const mdbUnIPC = mdbIPC.registerIPCHandlers(mdb);
-    const plcUnIPC = plcIPC.registerIPCHandlers(plc);
-    const printerUnIPC = printerIPC.registerIPCHandlers(printer);
-    const qtUnIPC = qtIPC.registerIPCHandlers(qt);
-    const xmlUnIPC = xmlIPC.registerIPCHandlers();
+  const cmdUnIPC = cmdIPC.registerIPCHandlers(cmd);
+  const dbUnIPC = dbIPC.registerIPCHandlers(db);
+  const guangzhoubeiUnIPC = guangzhoubeiIPC.registerIPCHandlers(guangzhoubei);
+  const guangzhoucheliangUnIPC = guangzhoucheliangIPC.ipc(guangzhoucheliang);
+  const guangzhoujibaoduanUnIPC =
+    guangzhoujibaoduanIPC.registerIPCHandlers(guangzhoujibaoduan);
+  const hxzyUnIPC = hxzyIPC.registerIPCHandlers(hxzy);
+  const imageUnIPC = imageIPC.registerIPCHandlers(image);
+  const jtvUnIPC = jtvIPC.registerIPCHandlers(jtv);
+  const khUnIPC = khIPC.registerIPCHandlers(kh);
+  const kvUnIPC = kvIPC.registerIPCHandlers(kv);
+  const logUnIPC = logIPC.registerIPCHandlers(logger);
+  const mdbUnIPC = mdbIPC.registerIPCHandlers(mdb);
+  const plcUnIPC = plcIPC.registerIPCHandlers(plc);
+  const printerUnIPC = printerIPC.registerIPCHandlers(printer);
+  const qtUnIPC = qtIPC.registerIPCHandlers(qt);
+  const xmlUnIPC = xmlIPC.registerIPCHandlers();
 
-    appProtocol.handle();
-    void appTheme;
-    void appTray;
-    void appWindow;
+  appProtocol.handle();
+  void appTheme;
+  void appTray;
+  void appWindow;
+  sub.next(container);
 
-    return {
-      unsubscribe: () => {
-        container.dispose();
+  return () => {
+    container.dispose();
 
-        infraUnIPC();
+    infraUnIPC();
 
-        cmdUnIPC();
-        dbUnIPC();
-        qtUnIPC();
-        guangzhoubeiUnIPC();
-        guangzhoucheliangUnIPC();
-        guangzhoujibaoduanUnIPC();
-        hxzyUnIPC();
-        imageUnIPC();
-        jtvUnIPC();
-        khUnIPC();
-        kvUnIPC();
-        logUnIPC();
-        mdbUnIPC();
-        plcUnIPC();
-        printerUnIPC();
-        xmlUnIPC();
-      },
-    };
-  },
-  // A value must be emitted to trigger the next function,
-  // Even if we don't actually need it
-  () => NEVER.pipe(startWith(null), takeUntil(willQuit$)),
-).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    cmdUnIPC();
+    dbUnIPC();
+    qtUnIPC();
+    guangzhoubeiUnIPC();
+    guangzhoucheliangUnIPC();
+    guangzhoujibaoduanUnIPC();
+    hxzyUnIPC();
+    imageUnIPC();
+    jtvUnIPC();
+    khUnIPC();
+    kvUnIPC();
+    logUnIPC();
+    mdbUnIPC();
+    plcUnIPC();
+    printerUnIPC();
+    xmlUnIPC();
+  };
+}).pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
 /**
  * Main App Subscription
  */
-defer(() => {
+const main$ = defer(() => {
   const hasLock = app.requestSingleInstanceLock();
 
   // If this instance is the second instance, quit immediately
   if (!hasLock) {
-    return of(false).pipe(
+    return of(null).pipe(
       tap(() => {
         console.warn(
           "Another instance of the app is already running. This instance will be closed.",
@@ -218,7 +210,9 @@ defer(() => {
     }),
     finalize(() => app.quit()),
   );
-}).subscribe();
+});
+
+main$.pipe(takeUntil(willQuit$)).subscribe();
 
 secondInstance$
   .pipe(

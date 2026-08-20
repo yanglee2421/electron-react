@@ -6,14 +6,10 @@ import {
   BehaviorSubject,
   distinctUntilChanged,
   fromEventPattern,
-  last,
-  NEVER,
+  Observable,
   of,
   shareReplay,
-  startWith,
   switchMap,
-  takeUntil,
-  using,
 } from "rxjs";
 
 export class AppTray {
@@ -31,59 +27,48 @@ export class AppTray {
             return of(null);
           }
 
-          return using(
-            () => {
-              const tray = new Tray(nativeImage.createFromPath(iconPath));
-              const contextMenu = Menu.buildFromTemplate([
-                {
-                  label: "显示主界面",
-                  click: () => {
-                    appWindow.show();
-                  },
+          return new Observable<Tray>((sub) => {
+            const tray = new Tray(nativeImage.createFromPath(iconPath));
+            const contextMenu = Menu.buildFromTemplate([
+              {
+                label: "显示主界面",
+                click: () => {
+                  appWindow.show();
                 },
-                {
-                  label: "功能设置",
-                  click: () => {
-                    console.log("click setting");
-                  },
+              },
+              {
+                label: "功能设置",
+                click: () => {
+                  console.log("click setting");
                 },
-                { type: "separator" },
-                {
-                  label: "退出应用",
-                  click: () => {
-                    app.quit();
-                  },
+              },
+              { type: "separator" },
+              {
+                label: "退出应用",
+                click: () => {
+                  app.quit();
                 },
-              ]);
+              },
+            ]);
 
-              tray.setContextMenu(contextMenu);
+            tray.setContextMenu(contextMenu);
 
-              const trayClick$ = fromEventPattern(
-                (handler) => tray.on("click", handler),
-                (handler) => tray.off("click", handler),
-              );
+            const trayClick$ = fromEventPattern(
+              (handler) => tray.on("click", handler),
+              (handler) => tray.off("click", handler),
+            );
 
-              const subscription = trayClick$.subscribe(() => {
-                appWindow.show();
-              });
+            const subscription = trayClick$.subscribe(() => {
+              appWindow.show();
+            });
 
-              return {
-                unsubscribe: () => {
-                  subscription.unsubscribe();
-                  tray.destroy();
-                },
-                tray,
-              };
-            },
-            (c) => {
-              const tray: Tray = Reflect.get(Object(c), "tray");
+            sub.next(tray);
 
-              return NEVER.pipe(
-                startWith(tray),
-                takeUntil(profile.state$.pipe(last())),
-              );
-            },
-          );
+            return () => {
+              subscription.unsubscribe();
+              tray.destroy();
+            };
+          });
         }),
         shareReplay({ bufferSize: 1, refCount: true }),
       )

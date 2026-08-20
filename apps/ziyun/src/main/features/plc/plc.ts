@@ -1,16 +1,12 @@
 import { FXPLCClient, TransportSerial } from "node-fxplc";
-import type { Observable, Subscription } from "rxjs";
+import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
   distinctUntilChanged,
-  last,
-  NEVER,
+  Observable,
   of,
   shareReplay,
-  startWith,
   switchMap,
-  takeUntil,
-  using,
 } from "rxjs";
 import { SerialPort } from "serialport";
 import type {
@@ -61,26 +57,14 @@ export class PLC {
           return of(null);
         }
 
-        return using(
-          () => {
-            const plc = createPLCClient(path);
+        return new Observable<FXPLCClient>((sub) => {
+          const plc = createPLCClient(path);
+          sub.next(plc);
 
-            return {
-              unsubscribe: () => {
-                plc.close();
-              },
-              plc,
-            };
-          },
-          (c) => {
-            const plc: FXPLCClient = Reflect.get(Object(c), "plc");
-
-            return NEVER.pipe(
-              startWith(plc),
-              takeUntil(this.path$.pipe(last())),
-            );
-          },
-        );
+          return () => {
+            plc.close();
+          };
+        });
       }),
       shareReplay({ refCount: true, bufferSize: 1 }),
     );

@@ -16,14 +16,12 @@ import {
   ignoreElements,
   map,
   mergeMap,
-  NEVER,
+  Observable,
   of,
   shareReplay,
-  startWith,
   take,
   takeUntil,
   tap,
-  using,
 } from "rxjs";
 import { container } from "./ioc";
 
@@ -124,22 +122,18 @@ const secondInstance$ = fromEventPattern(
   (f) => app.off("second-instance", f),
 );
 
-const resource$ = using(
-  () => {
-    const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
-    container.register({ DB_PATH: asValue(DB_PATH) });
+const resource$ = new Observable((sub) => {
+  const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
+  container.register({ DB_PATH: asValue(DB_PATH) });
 
-    const { appDb } = container.cradle;
+  const { appDb } = container.cradle;
 
-    return {
-      unsubscribe: () => {
-        container.dispose();
-      },
-      appDb,
-    };
-  },
-  () => NEVER.pipe(startWith(null), takeUntil(willQuit$)),
-).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+  sub.next(appDb);
+
+  return () => {
+    container.dispose();
+  };
+}).pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
 const app$ = defer(() => {
   const hasLocked = app.requestSingleInstanceLock();
@@ -168,7 +162,7 @@ const app$ = defer(() => {
       app.quit();
     }),
   );
-});
+}).pipe(takeUntil(willQuit$));
 
 app$.subscribe();
 

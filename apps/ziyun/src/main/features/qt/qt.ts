@@ -28,7 +28,6 @@ import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
   catchError,
-  defer,
   distinctUntilChanged,
   EMPTY,
   Observable,
@@ -89,17 +88,14 @@ export class QT {
           return of(null);
         }
 
-        return defer(() => {
+        return new Observable<DBClient>((sub) => {
           const client = new DatabaseSync(dbPath);
           const db = drizzle({ client, schema, relations });
+          sub.next(db);
 
-          return new Observable<DBClient>((sub) => {
-            sub.next(db);
-
-            return () => {
-              db.$client.close();
-            };
-          });
+          return () => {
+            db.$client.close();
+          };
         }).pipe(
           catchError((error) => {
             if (import.meta.env.DEV) {
@@ -130,42 +126,40 @@ export class QT {
           return of(null);
         }
 
-        return defer(() => {
+        return new Observable<null>((sub) => {
           const server = createServer(state.qtHMISPort);
 
-          return new Observable<null>((sub) => {
-            server.on("error", (error) => {
-              sub.error(error);
-            });
+          server.on("error", (error) => {
+            sub.error(error);
+          });
 
-            server.on("open", () => {
-              sub.next(null);
-            });
+          server.on("open", () => {
+            sub.next(null);
+          });
 
-            server.on("close", () => {
-              sub.complete();
-            });
+          server.on("close", () => {
+            sub.complete();
+          });
 
-            return () => {
-              server.close();
-            };
-          }).pipe(
-            catchError((error) => {
-              if (import.meta.env.DEV) {
-                console.error(error);
-              }
+          return () => {
+            server.close();
+          };
+        }).pipe(
+          catchError((error) => {
+            if (import.meta.env.DEV) {
+              console.error(error);
+            }
 
-              if (error instanceof Error) {
-                this.logger.error({
-                  title: error.message,
-                  message: error.stack,
-                });
-              }
+            if (error instanceof Error) {
+              this.logger.error({
+                title: error.message,
+                message: error.stack,
+              });
+            }
 
-              return EMPTY;
-            }),
-          );
-        });
+            return EMPTY;
+          }),
+        );
       }),
       shareReplay({ refCount: true, bufferSize: 1 }),
     );
@@ -933,6 +927,8 @@ export class QT {
     return this.qtProcess?.pid;
   }
   async stopApp() {
+    console.log("stop-app");
+
     this.qtProcess?.kill();
   }
 

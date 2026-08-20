@@ -8,14 +8,10 @@ import {
   distinctUntilChanged,
   EMPTY,
   filter,
-  last,
   map,
-  NEVER,
+  Observable,
   shareReplay,
-  startWith,
   switchMap,
-  takeUntil,
-  using,
 } from "rxjs";
 import type { AppCradle } from "../types";
 
@@ -52,35 +48,27 @@ export class Profile {
             return EMPTY;
           }
 
-          return using(
-            () => {
-              globalShortcut.register("Alt+Space", () => {
-                BrowserWindow.getAllWindows().forEach((win) => {
-                  if (win.isDestroyed()) {
-                    return;
-                  }
+          return new Observable((sub) => {
+            globalShortcut.register("Alt+Space", () => {
+              BrowserWindow.getAllWindows().forEach((win) => {
+                if (win.isDestroyed()) {
+                  return;
+                }
 
-                  if (win.isMinimized()) {
-                    win.restore();
-                  }
+                if (win.isMinimized()) {
+                  win.restore();
+                }
 
-                  win.focus();
-                });
+                win.focus();
               });
+            });
 
-              return {
-                unsubscribe: () => {
-                  globalShortcut.unregisterAll();
-                },
-              };
-            },
-            () => {
-              return NEVER.pipe(
-                startWith(null),
-                takeUntil(this.state$.pipe(last())),
-              );
-            },
-          );
+            sub.next(null);
+
+            return () => {
+              globalShortcut.unregisterAll();
+            };
+          });
         }),
         shareReplay({ bufferSize: 1, refCount: true }),
       )
