@@ -80,7 +80,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "@yanglee2421/external-db": "workspace:*",
-    "@yanglee2421/hmis-proxy": "workspace:*",
     "@yotulee/run": "npm:@jsr/yotulee__run@^0.0.15",
     "awilix": "^13.0.3",
     "babel-plugin-react-compiler": "^1.0.0",

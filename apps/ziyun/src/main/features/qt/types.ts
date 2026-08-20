@@ -70,47 +70,44 @@ export interface UpsertUserInput {
   power: string;
 }
 
+export interface QTMigrateDBInput {
+  source: string;
+  target: string;
+}
+
 export interface IPC {
-  "qt/detections": {
-    args: [FetchDetectionsInput];
-    return: ReturnType<QT["fetchDetections"]>;
+  "qt/migrate-db": {
+    args: [QTMigrateDBInput];
+    return: ReturnType<QT["migrateDB"]>;
   };
-  "qt/verifies": {
-    args: [FetchQTVerifiesInput];
-    return: ReturnType<QT["fetchVerifies"]>;
-  };
-  "qt/quartors": {
-    args: [FetchQuartorsInput];
-    return: ReturnType<QT["fetchQuartors"]>;
-  };
-  "qt/anniversary": {
-    args: [AnniversaryInput];
-    return: ReturnType<QT["anniversary"]>;
-  };
-  "qt/anniversary-detail": {
-    args: [string];
-    return: ReturnType<QT["anniversaryDetail"]>;
+  "qt/reconnect-db": {
+    args: [];
+    return: ReturnType<QT["reconnectDB"]>;
   };
 
-  "qt/users": {
+  "qt/start-app": {
     args: [];
-    return: ReturnType<QT["fetchUsers"]>;
+    return: ReturnType<QT["startApp"]>;
   };
-  "qt/upsert_users": {
-    args: [UpsertUserInput];
-    return: ReturnType<QT["upsertUsers"]>;
-  };
-  "qt/delete_users": {
-    args: [number];
-    return: ReturnType<QT["deleteUsers"]>;
-  };
-  "qt/get_config": {
+  "qt/stop-app": {
     args: [];
-    return: ReturnType<QT["getConfig"]>;
+    return: ReturnType<QT["stopApp"]>;
   };
-  "qt/set_config": {
-    args: [SetQTConfigInput];
-    return: ReturnType<QT["setConfig"]>;
+  "qt/get-data-directory": {
+    args: [];
+    return: ReturnType<QT["getDataDirectory"]>;
+  };
+  "qt/get-local-db-path": {
+    args: [];
+    return: ReturnType<QT["getLocalDBPath"]>;
+  };
+  "qt/get-app-db-path": {
+    args: [];
+    return: ReturnType<QT["getAppDBPath"]>;
+  };
+  "qt/set-flagfile": {
+    args: [string];
+    return: ReturnType<QT["setFlagFile"]>;
   };
 
   "qt/501": {
@@ -134,24 +131,46 @@ export interface IPC {
     return: ReturnType<QT["fetch53AData"]>;
   };
 
-  "qt/start-app": {
-    args: [];
-    return: ReturnType<QT["startApp"]>;
+  "qt/detections": {
+    args: [FetchDetectionsInput];
+    return: ReturnType<QT["fetchDetections"]>;
   };
-  "qt/stop-app": {
-    args: [];
-    return: ReturnType<QT["stopApp"]>;
+  "qt/verifies": {
+    args: [FetchQTVerifiesInput];
+    return: ReturnType<QT["fetchVerifies"]>;
   };
-
-  "qt/get-flagfile": {
-    args: [];
-    return: ReturnType<QT["getFlagFile"]>;
+  "qt/quartors": {
+    args: [FetchQuartorsInput];
+    return: ReturnType<QT["fetchQuartors"]>;
   };
-  "qt/set-flagfile": {
+  "qt/anniversary": {
+    args: [AnniversaryInput];
+    return: ReturnType<QT["anniversary"]>;
+  };
+  "qt/anniversary-detail": {
     args: [string];
-    return: ReturnType<QT["setFlagFile"]>;
+    return: ReturnType<QT["anniversaryDetail"]>;
   };
-
+  "qt/users": {
+    args: [];
+    return: ReturnType<QT["fetchUsers"]>;
+  };
+  "qt/upsert_users": {
+    args: [UpsertUserInput];
+    return: ReturnType<QT["upsertUsers"]>;
+  };
+  "qt/delete_users": {
+    args: [number];
+    return: ReturnType<QT["deleteUsers"]>;
+  };
+  "qt/get_config": {
+    args: [];
+    return: ReturnType<QT["getConfig"]>;
+  };
+  "qt/set_config": {
+    args: [SetQTConfigInput];
+    return: ReturnType<QT["setConfig"]>;
+  };
   "qt/yiqiConfig/list": {
     args: [];
     return: ReturnType<QT["deviceConfigList"]>;

@@ -2,7 +2,6 @@ import type { ChannelImage } from "#main/workers/bmp";
 import { platform } from "@electron-toolkit/utils";
 import type { DBClient } from "@yanglee2421/external-db";
 import { relations, schema } from "@yanglee2421/external-db";
-import { createServer } from "@yanglee2421/hmis-proxy";
 import dayjs from "dayjs";
 import {
   and,
@@ -14,17 +13,16 @@ import {
   like,
   lt,
   ne,
+  sql,
   count as sqlCount,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-sqlite";
-import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import { app } from "electron";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import url from "node:url";
 import { Piscina } from "piscina";
 import type { Subscription } from "rxjs";
 import {
@@ -42,6 +40,7 @@ import workerPath from "../../workers/bmp?modulePath";
 import type { Logger } from "../logger";
 import type { Profile } from "../profile";
 import type { AppCradle } from "../types";
+import { createServer } from "./hmis";
 import type {
   AnniversaryInput,
   Fetch502DateInput,
@@ -49,6 +48,7 @@ import type {
   FetchQTVerifiesInput,
   FetchQuartorsInput,
   QTCHR53AInput,
+  QTMigrateDBInput,
   SetQTConfigInput,
   SetYiqiConfigLibInput,
   UpsertUserInput,
@@ -83,8 +83,7 @@ export class QT {
           return of(null);
         }
 
-        const flagPath = this.readFlagPath();
-        const dbPath = flagPath.localDB;
+        const dbPath = this.getLocalDBPath();
 
         if (!dbPath) {
           return of(null);
@@ -203,6 +202,14 @@ export class QT {
     return db;
   }
 
+  get running() {
+    if (!this.qtProcess) {
+      return false;
+    }
+
+    return !this.qtProcess.killed;
+  }
+
   get appPath() {
     const appPath = this.profile.state.qtAppPath;
 
@@ -212,109 +219,324 @@ export class QT {
 
     return appPath;
   }
+  getFlagFilePath() {
+    return path.resolve(this.appPath, "../FlagFile");
+  }
+  getDataDirectory() {
+    return fs.readFileSync(this.getFlagFilePath(), "utf8").trim();
+  }
+  getLocalDBPath(dataDirectory?: string) {
+    const base = dataDirectory || this.getDataDirectory();
 
-  get running() {
-    if (!this.qtProcess) {
-      return false;
-    }
-
-    return !this.qtProcess.killed;
+    return path.resolve(base, "./local.db");
+  }
+  getAppDBPath() {
+    return path.resolve(this.appPath, "../local.db");
   }
 
-  migrateDB(sourcePath: string, targetPath: string) {
-    if (sourcePath === targetPath) {
-      throw Error("目标路径与源路径完全一致");
-    }
-
+  migrateDB({ source, target }: QTMigrateDBInput) {
     const sourceDB = drizzle({
-      client: new DatabaseSync(sourcePath),
+      client: new DatabaseSync(source),
       schema,
       relations,
     });
     const targetDB = drizzle({
-      client: new DatabaseSync(targetPath),
+      client: new DatabaseSync(target),
       schema,
       relations,
     });
-    const __filename = url.fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    migrate(targetDB, {
-      migrationsFolder: path.resolve(__dirname, "../../drizzle/qt"),
-    });
 
-    targetDB.transaction((tx) => {
-      const alxInfos = sourceDB.select().from(schema.alxInfo).all();
-      tx.insert(schema.alxInfo).values(alxInfos).run();
-      const channels = sourceDB.select().from(schema.channels).all();
-      tx.insert(schema.channels).values(channels).run();
-      const gates = sourceDB.select().from(schema.gates).all();
-      tx.insert(schema.gates).values(gates).run();
-      const quartorChannels = sourceDB
-        .select()
-        .from(schema.quartorChannel)
-        .all();
-      tx.insert(schema.quartorChannel).values(quartorChannels).run();
-      const quartorGates = sourceDB.select().from(schema.quartorGates).all();
-      tx.insert(schema.quartorGates).values(quartorGates).run();
-      const quartorRecordInfos = sourceDB
-        .select()
-        .from(schema.quartorRecordInfo)
-        .all();
-      tx.insert(schema.quartorRecordInfo).values(quartorRecordInfos).run();
-      const sysConfigs = sourceDB.select().from(schema.sysConfig).all();
-      tx.insert(schema.sysConfig).values(sysConfigs).run();
-      const users = sourceDB.select().from(schema.userManager).all();
-      tx.insert(schema.userManager).values(users).run();
-      const yqConfigs = sourceDB.select().from(schema.yqConfig).all();
-      tx.insert(schema.yqConfig).values(yqConfigs).run();
-
-      fs.writeFileSync(
-        path.resolve(app.getPath("desktop"), "export.json"),
-        JSON.stringify({
-          alxInfos,
-          channels,
-          gates,
-          quartorChannels,
-          quartorGates,
-          quartorRecordInfos,
-          sysConfigs,
-          users,
-          yqConfigs,
-        }),
-        "utf-8",
-      );
-    });
-
-    sourceDB.$client.close();
-    targetDB.$client.close();
+    try {
+      targetDB.transaction((tx) => {
+        const alxInfos = sourceDB.select().from(schema.alxInfo).all();
+        tx.insert(schema.alxInfo)
+          .values(alxInfos)
+          .onConflictDoUpdate({
+            target: schema.alxInfo.alxid,
+            set: {
+              alxname: sql`excluded.ALXNAME`,
+              yblCt: sql`excluded.YBL_CT`,
+              yblXhc: sql`excluded.YBL_XHC`,
+              yblLz: sql`excluded.YBL_LZ`,
+              halfAlxlen: sql`excluded.HALF_ALXLEN`,
+              ftradius: sql`excluded.FTRADIUS`,
+              ftradius0: sql`excluded.FTRADIUS0`,
+              ftradius1: sql`excluded.FTRADIUS1`,
+              ftradius2: sql`excluded.FTRADIUS2`,
+              ftradius3: sql`excluded.FTRADIUS3`,
+              ftradius4: sql`excluded.FTRADIUS4`,
+              ftradius5: sql`excluded.FTRADIUS5`,
+              ftradius6: sql`excluded.FTRADIUS6`,
+              ftradius7: sql`excluded.FTRADIUS7`,
+              ftlength0: sql`excluded.FTLENGTH0`,
+              ftlength1: sql`excluded.FTLENGTH1`,
+              ftlength2: sql`excluded.FTLENGTH2`,
+              avgspeed: sql`excluded.AVGSPEED`,
+              isdefault: sql`excluded.ISDEFAULT`,
+            },
+          })
+          .run();
+        const channels = sourceDB.select().from(schema.channels).all();
+        tx.insert(schema.channels)
+          .values(channels)
+          .onConflictDoUpdate({
+            target: schema.channels.recId,
+            set: {
+              nBoardIndex: sql`excluded.nBoardIndex`,
+              nChannelIndex: sql`excluded.nChannelIndex`,
+              nPhysicsIndex: sql`excluded.nPhysicsIndex`,
+              nWheelIndex: sql`excluded.nWheelIndex`,
+              szWheelName: sql`excluded.szWheelName`,
+              szName: sql`excluded.szName`,
+              nSleep: sql`excluded.nSleep`,
+              nSmooth: sql`excluded.nSmooth`,
+              ftRange: sql`excluded.ftRange`,
+              nPluse: sql`excluded.nPluse`,
+              nDelay: sql`excluded.nDelay`,
+              nAtten: sql`excluded.nAtten`,
+              nDbSub: sql`excluded.nDbSub`,
+              nWangle: sql`excluded.nWangle`,
+              nZsize: sql`excluded.nZsize`,
+              ftDistance: sql`excluded.ftDistance`,
+              bActive: sql`excluded.bActive`,
+            },
+          })
+          .run();
+        const gates = sourceDB.select().from(schema.gates).all();
+        tx.insert(schema.gates)
+          .values(gates)
+          .onConflictDoUpdate({
+            target: schema.gates.recId,
+            set: {
+              nBoardIndex: sql`excluded.nBoardIndex`,
+              nChannelIndex: sql`excluded.nChannelIndex`,
+              nChannelRectId: sql`excluded.nChannelRectId`,
+              szGateName: sql`excluded.szGateName`,
+              nGateId: sql`excluded.nGateId`,
+              nSubGateId: sql`excluded.nSubGateId`,
+              szColor: sql`excluded.szColor`,
+              bActive: sql`excluded.bActive`,
+              nLeft: sql`excluded.nLeft`,
+              nWidth: sql`excluded.nWidth`,
+              nTop: sql`excluded.nTop`,
+              nBleft: sql`excluded.nBleft`,
+              nBwidth: sql`excluded.nBwidth`,
+              nBtop: sql`excluded.nBtop`,
+              nB1Count: sql`excluded.nB1Count`,
+              nB1Width: sql`excluded.nB1Width`,
+              nB1Height: sql`excluded.nB1Height`,
+              nB2Count: sql`excluded.nB2Count`,
+              nB2Width: sql`excluded.nB2Width`,
+              nB2Height: sql`excluded.nB2Height`,
+              nE1Count: sql`excluded.nE1Count`,
+              nE1Width: sql`excluded.nE1Width`,
+              nE1Height: sql`excluded.nE1Height`,
+              nE2Count: sql`excluded.nE2Count`,
+              nE2Width: sql`excluded.nE2Width`,
+              nE2Height: sql`excluded.nE2Height`,
+              bSelected: sql`excluded.bSelected`,
+            },
+          })
+          .run();
+        const quartorChannels = sourceDB
+          .select()
+          .from(schema.quartorChannel)
+          .all();
+        tx.insert(schema.quartorChannel)
+          .values(quartorChannels)
+          .onConflictDoUpdate({
+            target: schema.quartorChannel.recId,
+            set: {
+              nBoardIndex: sql`excluded.nBoardIndex`,
+              nChannelIndex: sql`excluded.nChannelIndex`,
+              nPhysicsIndex: sql`excluded.nPhysicsIndex`,
+              nWheelIndex: sql`excluded.nWheelIndex`,
+              szWheelName: sql`excluded.szWheelName`,
+              szName: sql`excluded.szName`,
+              nSleep: sql`excluded.nSleep`,
+              nSmooth: sql`excluded.nSmooth`,
+              ftRange: sql`excluded.ftRange`,
+              nPluse: sql`excluded.nPluse`,
+              nDelay: sql`excluded.nDelay`,
+              nAtten: sql`excluded.nAtten`,
+              nDbSub: sql`excluded.nDbSub`,
+              nWangle: sql`excluded.nWangle`,
+              nZsize: sql`nZsize`,
+              ftDistance: sql`excluded.ftDistance`,
+              bActive: sql`excluded.bActive`,
+            },
+          })
+          .run();
+        const quartorGates = sourceDB.select().from(schema.quartorGates).all();
+        tx.insert(schema.quartorGates)
+          .values(quartorGates)
+          .onConflictDoUpdate({
+            target: schema.quartorGates.recId,
+            set: {
+              nBoardIndex: sql`excluded.nBoardIndex`,
+              nChannelIndex: sql`excluded.nChannelIndex`,
+              nChannelRectId: sql`excluded.nChannelRectId`,
+              szGateName: sql`excluded.szGateName`,
+              nGateId: sql`excluded.nGateId`,
+              nSubGateId: sql`excluded.nSubGateId`,
+              szColor: sql`excluded.szColor`,
+              bActive: sql`excluded.bActive`,
+              nLeft: sql`excluded.nLeft`,
+              nWidth: sql`excluded.nWidth`,
+              nTop: sql`excluded.nTop`,
+              nBleft: sql`excluded.nBleft`,
+              nBwidth: sql`excluded.nBwidth`,
+              nBtop: sql`excluded.nBtop`,
+              nB1Count: sql`excluded.nB1Count`,
+              nB1Width: sql`excluded.nB1Width`,
+              nB1Height: sql`excluded.nB1Height`,
+              nB2Count: sql`excluded.nB2Count`,
+              nB2Width: sql`excluded.nB2Width`,
+              nB2Height: sql`excluded.nB2Height`,
+              nE1Count: sql`excluded.nE1Count`,
+              nE1Width: sql`excluded.nE1Width`,
+              nE1Height: sql`excluded.nE1Height`,
+              nE2Count: sql`excluded.nE2Count`,
+              nE2Width: sql`excluded.nE2Width`,
+              nE2Height: sql`excluded.nE2Height`,
+              bSelected: sql`excluded.bSelected`,
+            },
+          })
+          .run();
+        const quartorRecordInfos = sourceDB
+          .select()
+          .from(schema.quartorRecordInfo)
+          .all();
+        tx.insert(schema.quartorRecordInfo)
+          .values(quartorRecordInfos)
+          .onConflictDoUpdate({
+            target: schema.quartorRecordInfo.recId,
+            set: {
+              szUserName: sql`excluded.szUserName`,
+              tmNow: sql`excluded.tmNow`,
+              szIds: sql`excluded.szIds`,
+              nBoardIndex: sql`excluded.nBoardIndex`,
+              nChannelIndex: sql`excluded.nChannelIndex`,
+              bResult: sql`excluded.bResult`,
+              bHorResult: sql`excluded.bHorResult`,
+              nHorAtten: sql`excluded.nHorAtten`,
+              fHorB0: sql`excluded.fHor_B0`,
+              fHorB1: sql`excluded.fHor_B1`,
+              fHorB2: sql`excluded.fHor_B2`,
+              fHorB3: sql`excluded.fHor_B3`,
+              fHorB4: sql`excluded.fHor_B4`,
+              fHorB5: sql`excluded.fHor_B5`,
+              fHorB0Llz: sql`excluded.fHor_B0_LLZ`,
+              fHorB1Llz: sql`excluded.fHor_B1_LLZ`,
+              fHorB2Llz: sql`excluded.fHor_B2_LLZ`,
+              fHorB3Llz: sql`excluded.fHor_B3_LLZ`,
+              fHorB4Llz: sql`excluded.fHor_B4_LLZ`,
+              fHorB5Llz: sql`excluded.fHor_B5_LLZ`,
+              fHorResult: sql`excluded.fHorResult`,
+              bDesResult: sql`excluded.bDesResult`,
+              nDesAttenH: sql`excluded.nDesAtten_H`,
+              nDesAttenL: sql`excluded.nDesAtten_L`,
+              nDesAtten: sql`excluded.nDesAtten`,
+              bAttResult: sql`excluded.bAttResult`,
+              fAttS0: sql`excluded.fAtt_S0`,
+              fAttS1: sql`excluded.fAtt_S1`,
+              fAttS: sql`excluded.fAtt_S`,
+              bVerResult: sql`excluded.bVerResult`,
+              fVerB0: sql`excluded.fVer_B0`,
+              fVerB1: sql`excluded.fVer_B1`,
+              fVerB2: sql`excluded.fVer_B2`,
+              fVerB3: sql`excluded.fVer_B3`,
+              fVerB4: sql`excluded.fVer_B4`,
+              fVerB5: sql`excluded.fVer_B5`,
+              fVerB6: sql`excluded.fVer_B6`,
+              fVerB7: sql`excluded.fVer_B7`,
+              fVerB8: sql`excluded.fVer_B8`,
+              fVerB9: sql`excluded.fVer_B9`,
+              fVerB10: sql`excluded.fVer_B10`,
+              fVerB11: sql`excluded.fVer_B11`,
+              fVerB12: sql`excluded.fVer_B12`,
+              fVerB13: sql`excluded.fVer_B13`,
+              fVerTgMaxB0: sql`excluded.fVerTgMax_B0`,
+              fVerTgMaxB1: sql`excluded.fVerTgMax_B1`,
+              fVerTgMaxB2: sql`excluded.fVerTgMax_B2`,
+              fVerTgMaxB3: sql`excluded.fVerTgMax_B3`,
+              fVerTgMaxB4: sql`excluded.fVerTgMax_B4`,
+              fVerTgMaxB5: sql`excluded.fVerTgMax_B5`,
+              fVerTgMaxB6: sql`excluded.fVerTgMax_B6`,
+              fVerTgMaxB7: sql`excluded.fVerTgMax_B7`,
+              fVerTgMaxB8: sql`excluded.fVerTgMax_B8`,
+              fVerTgMaxB9: sql`excluded.fVerTgMax_B9`,
+              fVerTgMaxB10: sql`excluded.fVerTgMax_B10`,
+              fVerTgMaxB11: sql`excluded.fVerTgMax_B11`,
+              fVerTgMaxB12: sql`excluded.fVerTgMax_B12`,
+              fVerTgMaxB13: sql`excluded.fVerTgMax_B13`,
+              nDynS1: sql`excluded.nDyn_S1`,
+              nDynS2: sql`excluded.nDyn_S2`,
+              nDynMax: sql`excluded.nDyn_MAX`,
+            },
+          })
+          .run();
+        const sysConfigs = sourceDB.select().from(schema.sysConfig).all();
+        tx.insert(schema.sysConfig)
+          .values(sysConfigs)
+          .onConflictDoUpdate({
+            target: schema.sysConfig.recId,
+            set: {
+              typeName: sql`excluded.TypeName`,
+              configKey: sql`excluded.ConfigKey`,
+              configValue: sql`excluded.ConfigValue`,
+              defaultValue: sql`excluded.DefaultValue`,
+              remark: sql`excluded.Remark`,
+              isReadOnly: sql`excluded.IsReadOnly`,
+            },
+          })
+          .run();
+        const users = sourceDB.select().from(schema.userManager).all();
+        tx.insert(schema.userManager)
+          .values(users)
+          .onConflictDoUpdate({
+            target: schema.userManager.recId,
+            set: {
+              userName: sql`excluded.UserName`,
+              pwd: sql`excluded.Pwd`,
+              name: sql`excluded.Name`,
+              power: sql`excluded.Power`,
+              regTime: sql`excluded.RegTime`,
+            },
+          })
+          .run();
+        const yqConfigs = sourceDB.select().from(schema.yqConfig).all();
+        tx.insert(schema.yqConfig)
+          .values(yqConfigs)
+          .onConflictDoUpdate({
+            target: schema.yqConfig.recId,
+            set: {
+              factoryName: sql`excluded.FactoryName`,
+              yqName: sql`excluded.YQName`,
+              yqid: sql`excluded.YQID`,
+              channelNums: sql`excluded.ChannelNums`,
+              productionDate: sql`excluded.ProductionDate`,
+              installationDate: sql`excluded.InstallationDate`,
+              commMode: sql`excluded.CommMode`,
+              commParam: sql`excluded.CommParam`,
+              commParamBack: sql`excluded.CommParamBack`,
+              dllPath: sql`excluded.DllPath`,
+              usedFlag: sql`excluded.UsedFlag`,
+            },
+          })
+          .run();
+      });
+    } finally {
+      sourceDB.$client.close();
+      targetDB.$client.close();
+    }
 
     return { running: this.running };
   }
 
-  readFlagPath() {
-    const that = this;
-
-    return {
-      get flagFile() {
-        const flagFile = path.resolve(that.appPath, "../FlagFile");
-        return flagFile;
-      },
-      get dataDirectory() {
-        const dataDirectory = fs.readFileSync(this.flagFile, "utf8").trim();
-
-        return dataDirectory;
-      },
-      get localDB() {
-        const localDB = path.resolve(this.dataDirectory, "./local.db");
-
-        return localDB;
-      },
-      get appDB() {
-        const appDB = path.resolve(that.appPath, "../local.db");
-
-        return appDB;
-      },
-    };
+  reconnectDB() {
+    this.dbSubscription.unsubscribe();
+    this.dbSubscription = this.dbFlow$.subscribe(this.db$);
   }
 
   async fetch501Data(id: string) {
@@ -357,36 +579,15 @@ export class QT {
       .where(eq(schema.sysConfig.configKey, "FACTORY_SYRQ"))
       .limit(1);
 
-    const flagPath = this.readFlagPath();
-    const imageDirectory = path.resolve(
-      flagPath.dataDirectory,
-      "./verifies",
-      id,
-    );
-    const lct = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.LCT.bmp`,
-    );
-    const llz = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.LLZ.bmp`,
-    );
-    const lxh = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.LXH.bmp`,
-    );
-    const rct = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.RCT.bmp`,
-    );
-    const rlz = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.RLZ.bmp`,
-    );
-    const rxh = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.RXH.bmp`,
-    );
+    const dataDirectroy = this.getDataDirectory();
+    const imageDirectory = path.resolve(dataDirectroy, "./verifies", id);
+    const { szIds, szWhModel } = record;
+    const lct = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LCT.bmp`);
+    const llz = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LLZ.bmp`);
+    const lxh = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LXH.bmp`);
+    const rct = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RCT.bmp`);
+    const rlz = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RLZ.bmp`);
+    const rxh = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RXH.bmp`);
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     await fs.promises.mkdir(tmpPath, { recursive: true });
@@ -725,28 +926,34 @@ export class QT {
     this.qtProcess?.kill();
   }
 
-  getFlagFile() {
-    const flagPath = this.readFlagPath();
-
-    return flagPath.dataDirectory;
-  }
   async setFlagFile(qtDataDirectory: string) {
-    const flagPath = this.readFlagPath();
-    try {
-      await fs.promises.writeFile(flagPath.flagFile, qtDataDirectory, {
-        encoding: "utf8",
-        flag: "w",
+    const nextLocalDB = this.getLocalDBPath(qtDataDirectory);
+
+    if (!fs.existsSync(nextLocalDB)) {
+      await fs.promises.mkdir(qtDataDirectory, {
+        recursive: true,
+        mode: 0x755,
       });
 
-      await fs.promises.mkdir(qtDataDirectory, { recursive: true });
+      const appDBPath = this.getAppDBPath();
 
-      console.log(flagPath.appDB, flagPath.localDB);
-
-      this.migrateDB(flagPath.appDB, flagPath.localDB);
-    } finally {
-      this.dbSubscription.unsubscribe();
-      this.dbSubscription = this.dbFlow$.subscribe(this.db$);
+      await fs.promises.cp(appDBPath, nextLocalDB, {
+        errorOnExist: true,
+      });
     }
+
+    const previousLocalDB = this.getLocalDBPath();
+
+    if (fs.existsSync(previousLocalDB)) {
+      this.migrateDB({ source: previousLocalDB, target: nextLocalDB });
+    }
+
+    const flagFilePath = this.getFlagFilePath();
+
+    await fs.promises.writeFile(flagFilePath, qtDataDirectory, {
+      encoding: "utf8",
+      flag: "w",
+    });
 
     return { running: this.running };
   }

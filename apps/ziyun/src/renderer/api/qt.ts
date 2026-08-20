@@ -5,6 +5,7 @@ import type {
   FetchQTVerifiesInput,
   FetchQuartorsInput,
   QTCHR53AInput,
+  QTMigrateDBInput,
   SetQTConfigInput,
   SetYiqiConfigLibInput,
   UpsertUserInput,
@@ -18,11 +19,74 @@ import {
 
 export const QUERY_KEY = "qt";
 
-export const fetchQTFlagFile = () => {
+export const useQTReconnectDB = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => {
+      return ipc.invoke("qt/reconnect-db");
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY],
+      });
+    },
+  });
+};
+
+export const useQTMigrateDB = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (p: QTMigrateDBInput) => {
+      return ipc.invoke("qt/migrate-db", p);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY],
+      });
+    },
+  });
+};
+
+export const fetchQTDataDirectory = () => {
   return queryOptions({
-    queryKey: [QUERY_KEY, "qt/get-flagfile"],
+    queryKey: [QUERY_KEY, "qt/get-data-directory"],
     queryFn: () => {
-      return ipc.invoke("qt/get-flagfile");
+      return ipc.invoke("qt/get-data-directory");
+    },
+  });
+};
+
+export const fetchQTAppDBPath = () => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/get-app-db-path"],
+    queryFn: () => {
+      return ipc.invoke("qt/get-app-db-path");
+    },
+  });
+};
+
+export const fetchQTLocalDBPath = () => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/get-local-db-path"],
+    queryFn: () => {
+      return ipc.invoke("qt/get-local-db-path");
+    },
+  });
+};
+
+export const useQTSetConfig = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (p: SetQTConfigInput) => {
+      return ipc.invoke("qt/set_config", p);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY],
+      });
     },
   });
 };
@@ -36,7 +100,13 @@ export const useQTSetFlagFile = () => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: [QUERY_KEY],
+        queryKey: [QUERY_KEY, "qt/get-data-directory"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY, "qt/get-app-db-path"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEY, "qt/get-local-db-path"],
       });
     },
   });
@@ -60,7 +130,7 @@ export const useSetYiqiLib = () => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: [QUERY_KEY],
+        queryKey: [QUERY_KEY, "qt/yiqiConfig/list"],
       });
     },
   });
@@ -75,7 +145,7 @@ export const useSetYiqiFlag = () => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: [QUERY_KEY],
+        queryKey: [QUERY_KEY, "qt/yiqiConfig/list"],
       });
     },
   });
@@ -244,7 +314,7 @@ export const useSetQTConfig = () => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: [QUERY_KEY],
+        queryKey: [QUERY_KEY, "qt/get_config"],
       });
     },
   });

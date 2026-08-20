@@ -1,11 +1,12 @@
 import { useSelectDirectory, useSelectFile } from "#renderer/api/fetch_preload";
 import {
   fetchQTConfig,
-  fetchQTFlagFile,
+  fetchQTDataDirectory,
   fetchQTUsers,
   fetchYiqiConfig,
   QUERY_KEY,
   useDeleteQTUser,
+  useQTReconnectDB,
   useQTSetFlagFile,
   useSetQTConfig,
   useSetYiqiFlag,
@@ -24,6 +25,7 @@ import {
   Edit,
   FindInPageOutlined,
   MoreVert,
+  Refresh,
   Restore,
   Save,
   Visibility,
@@ -798,6 +800,7 @@ export const Component = () => {
 
   const startApp = useStartApp();
   const stopApp = useStopApp();
+  const reconnectDB = useQTReconnectDB();
   const setLocalDB = useQTSetFlagFile();
   const dialog = useDialogs();
   const yiqiLib = useSetYiqiLib();
@@ -807,7 +810,7 @@ export const Component = () => {
   const selectDirectory = useSelectDirectory();
   const config = useQuery(fetchQTConfig());
   const yiqiConfig = useQuery(fetchYiqiConfig());
-  const currentLocal = useQuery(fetchQTFlagFile());
+  const currentLocal = useQuery(fetchQTDataDirectory());
   const qtAppPath = useProfileStore((s) => s.qtAppPath);
   const form = useForm({
     defaultValues: {
@@ -818,6 +821,9 @@ export const Component = () => {
       await setLocalDB.mutateAsync(value.qtDataDirectory, {
         onError: (error) => {
           toast.error(error.message);
+        },
+        onSuccess: async () => {
+          await reconnectDB.mutateAsync();
         },
       });
 
@@ -1109,7 +1115,21 @@ export const Component = () => {
     <>
       <ScrollToTopButton />
       <Card>
-        <CardHeader title="QT" />
+        <CardHeader
+          title="QT"
+          action={
+            <IconButton
+              onClick={() => {
+                reconnectDB.mutate();
+              }}
+              disabled={reconnectDB.isPending}
+            >
+              <PendingIcon isPending={reconnectDB.isPending}>
+                <Refresh />
+              </PendingIcon>
+            </IconButton>
+          }
+        />
         <Tabs
           value={activatedTab}
           onChange={(_, val) => {

@@ -240,9 +240,6 @@ importers:
       '@yanglee2421/external-db':
         specifier: workspace:*
         version: link:../../packages/external-db
-      '@yanglee2421/hmis-proxy':
-        specifier: workspace:*
-        version: link:../../packages/hmis-proxy
       '@yotulee/run':
         specifier: npm:@jsr/yotulee__run@^0.0.15
         version: '@jsr/yotulee__run@0.0.15'
@@ -351,24 +348,6 @@ importers:
       drizzle-orm:
         specifier: 1.0.0-beta.22
         version: 1.0.0-beta.22(zod@4.4.3)
-
-  packages/hmis-proxy:
-    devDependencies:
-      '@hono/node-server':
-        specifier: ^2.0.4
-        version: 2.0.4(hono@4.12.23)
-      '@hono/zod-validator':
-        specifier: ^0.8.0
-        version: 0.8.0(hono@4.12.23)(zod@4.4.3)
-      dayjs:
-        specifier: ^1.11.20
-        version: 1.11.20
-      hono:
-        specifier: ^4.12.23
-        version: 4.12.23
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
 
 packages:
 

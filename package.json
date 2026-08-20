@@ -35,7 +35,8 @@
   "scripts": {
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
-    "lint": "vp lint"
+    "lint": "vp lint",
+    "ziyun": "pnpm -F app-ziyun dev"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",
