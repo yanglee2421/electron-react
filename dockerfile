@@ -24,7 +24,6 @@ COPY apps/dsb/package.json ./apps/dsb/
 COPY apps/ziyun/package.json ./apps/ziyun/
 COPY packages/cpp-addon/package.json ./packages/cpp-addon/
 COPY packages/external-db/package.json ./packages/external-db/
-COPY packages/hmis-proxy/package.json ./packages/hmis-proxy/
 COPY .node-version .
 COPY .npmrc .
 COPY package.json .
