@@ -156,6 +156,8 @@ export const useStartApp = () => {
     mutationFn: () => {
       return ipc.invoke("qt/start-app");
     },
+    retry: 1,
+    retryDelay: 1000,
   });
 };
 

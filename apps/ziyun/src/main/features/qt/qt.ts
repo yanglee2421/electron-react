@@ -890,34 +890,44 @@ export class QT {
   }
 
   async startApp() {
-    const appPath = this.profile.state.qtAppPath;
-    const cwd = path.dirname(appPath);
+    await new Promise((resolve, reject) => {
+      const appPath = this.profile.state.qtAppPath;
+      const cwd = path.dirname(appPath);
 
-    if (platform.isLinux) {
-      this.qtProcess = spawn(appPath, [], {
-        cwd,
-        env: {
-          ...process.env,
-          QT_PLUGIN_PATH: "plugins",
-          LD_LIBRARY_PATH: `lib:${process.env.LD_LIBRARY_PATH || ""}`,
-        },
+      if (platform.isLinux) {
+        this.qtProcess = spawn(appPath, [], {
+          cwd,
+          env: {
+            ...process.env,
+            QT_PLUGIN_PATH: "plugins",
+            LD_LIBRARY_PATH: `lib:${process.env.LD_LIBRARY_PATH || ""}`,
+          },
+        });
+      } else {
+        this.qtProcess = spawn(appPath, [], {
+          cwd,
+        });
+      }
+
+      this.qtProcess.once("close", () => {
+        this.qtProcess = null;
+        console.log("qtProcess close");
       });
-    } else {
-      this.qtProcess = spawn(appPath, [], {
-        cwd,
+
+      this.qtProcess.stderr.on("data", (data) => {
+        console.log("error:", String(data));
+
+        const message = String(data);
+
+        if (message.includes("该实例已在运行")) {
+          reject(message);
+        }
       });
-    }
 
-    this.qtProcess.once("close", () => {
-      this.qtProcess = null;
-    });
-
-    this.qtProcess.stderr.on("data", (data) => {
-      console.log(String(data));
-    });
-
-    this.qtProcess.stdout.on("data", (data) => {
-      console.log(String(data));
+      this.qtProcess.stdout.on("data", (data) => {
+        console.log("out: ", String(data));
+        resolve(null);
+      });
     });
 
     return this.qtProcess?.pid;
