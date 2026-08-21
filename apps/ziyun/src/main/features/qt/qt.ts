@@ -36,7 +36,9 @@ import {
   of,
   retry,
   shareReplay,
+  Subject,
   switchMap,
+  tap,
 } from "rxjs";
 import workerPath from "../../workers/bmp?modulePath";
 import type { Logger } from "../logger";
@@ -60,10 +62,13 @@ export class QT {
   readonly db$ = new BehaviorSubject<DBClient | null>(null);
   private dbFlow$: Observable<DBClient | null>;
   private hmisFlow$: Observable<null>;
+  private qtProcess$ =
+    new BehaviorSubject<ChildProcessWithoutNullStreams | null>(null);
+  private qtProcessFlow$: Observable<ChildProcessWithoutNullStreams | null>;
   private dbSubscription: Subscription;
   private hmisSubscription: Subscription;
-
-  private qtProcess: ChildProcessWithoutNullStreams | null = null;
+  private qtProcessSubscription: Subscription;
+  private qtProcessTrigger$ = new Subject();
 
   private piscina: Piscina;
   private profile: Profile;
@@ -167,8 +172,72 @@ export class QT {
       shareReplay({ refCount: true, bufferSize: 1 }),
     );
 
+    this.qtProcessFlow$ = this.qtProcessTrigger$.pipe(
+      exhaustMap(() => {
+        return new Observable<ChildProcessWithoutNullStreams | null>((sub) => {
+          const appPath = this.profile.state.qtAppPath;
+          const cwd = path.dirname(appPath);
+          const cp = spawn(appPath, [], {
+            cwd,
+            env: platform.isLinux
+              ? {
+                  ...process.env,
+                  QT_PLUGIN_PATH: "plugins",
+                  LD_LIBRARY_PATH: `lib:${process.env.LD_LIBRARY_PATH || ""}`,
+                }
+              : void 0,
+          });
+
+          cp.on("error", () => {
+            sub.error();
+          });
+
+          cp.on("spawn", () => {
+            sub.next(cp);
+          });
+
+          cp.on("exit", () => {
+            sub.complete();
+          });
+
+          cp.stderr.on("data", (data) => {
+            const msg = String(data);
+
+            if (msg.includes("实例")) {
+              sub.error();
+            }
+
+            console.error(msg);
+          });
+
+          cp.stdout.on("data", (data) => {
+            console.log(String(data));
+          });
+
+          return () => {
+            cp.kill();
+          };
+        }).pipe(endWith(null));
+      }),
+      retry(1),
+      catchError((error) => {
+        if (import.meta.env.DEV) {
+          console.error(error);
+        }
+
+        return EMPTY;
+      }),
+    );
+
     this.dbSubscription = this.dbFlow$.subscribe(this.db$);
     this.hmisSubscription = this.hmisFlow$.subscribe();
+    this.qtProcessSubscription = this.qtProcessFlow$
+      .pipe(
+        tap((val) => {
+          console.log("qtProcessFlow", !!val);
+        }),
+      )
+      .subscribe(this.qtProcess$);
   }
 
   async dispose() {
@@ -176,6 +245,7 @@ export class QT {
     this.piscina.destroy();
     this.dbSubscription.unsubscribe();
     this.hmisSubscription.unsubscribe();
+    this.qtProcessSubscription.unsubscribe();
 
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
@@ -200,11 +270,11 @@ export class QT {
   }
 
   get running() {
-    if (!this.qtProcess) {
+    if (!this.qtProcess$.value) {
       return false;
     }
 
-    return !this.qtProcess.killed;
+    return !this.qtProcess$.value?.killed;
   }
 
   get appPath() {
@@ -887,52 +957,14 @@ export class QT {
   }
 
   async startApp() {
-    await new Promise((resolve, reject) => {
-      const appPath = this.profile.state.qtAppPath;
-      const cwd = path.dirname(appPath);
+    this.qtProcessTrigger$.next(null);
 
-      if (platform.isLinux) {
-        this.qtProcess = spawn(appPath, [], {
-          cwd,
-          env: {
-            ...process.env,
-            QT_PLUGIN_PATH: "plugins",
-            LD_LIBRARY_PATH: `lib:${process.env.LD_LIBRARY_PATH || ""}`,
-          },
-        });
-      } else {
-        this.qtProcess = spawn(appPath, [], {
-          cwd,
-        });
-      }
-
-      this.qtProcess.once("close", () => {
-        this.qtProcess = null;
-        console.log("qtProcess close");
-      });
-
-      this.qtProcess.stderr.on("data", (data) => {
-        console.log("error:", String(data));
-
-        const message = String(data);
-
-        if (message.includes("该实例已在运行")) {
-          reject(message);
-        }
-      });
-
-      this.qtProcess.stdout.on("data", (data) => {
-        console.log("out: ", String(data));
-        resolve(null);
-      });
-    });
-
-    return this.qtProcess?.pid;
+    return this.qtProcess$.value?.pid;
   }
   async stopApp() {
     console.log("stop-app");
 
-    this.qtProcess?.kill();
+    this.qtProcess$.value?.kill();
   }
 
   async setFlagFile(qtDataDirectory: string) {
@@ -1199,45 +1231,3 @@ export class QT {
     return { result, running: this.running };
   }
 }
-
-const flow$ = of(null).pipe(
-  exhaustMap(() => {
-    return new Observable((sub) => {
-      const cp = spawn("");
-
-      cp.on("error", () => {
-        sub.error();
-      });
-
-      cp.on("spawn", () => {
-        sub.next(cp);
-      });
-
-      cp.on("exit", () => {
-        sub.complete();
-      });
-
-      cp.stderr.on("data", (data) => {
-        const msg = String(data);
-
-        if (msg.includes("实例")) {
-          sub.error();
-        }
-
-        console.error(msg);
-      });
-
-      return () => {
-        cp.kill();
-      };
-    }).pipe(endWith(null));
-  }),
-  retry(1),
-  catchError((error) => {
-    if (import.meta.env.DEV) {
-      console.error(error);
-    }
-
-    return EMPTY;
-  }),
-);
