@@ -54,7 +54,6 @@ interface CreateWindowOptions {
 }
 
 const createWindow = ({
-  additionalArguments,
   alwaysOnTop,
   customURL = "",
 }: CreateWindowOptions = {}) => {
@@ -68,7 +67,6 @@ const createWindow = ({
       contextIsolation: true,
 
       plugins: false,
-      additionalArguments,
     },
 
     show: false,
@@ -144,7 +142,6 @@ const app$ = defer(() => {
         console.warn(
           "Another instance of the app is already running. This instance will be closed.",
         );
-        app.quit();
       }),
     );
   }
@@ -158,11 +155,11 @@ const app$ = defer(() => {
 
       return EMPTY;
     }),
-    finalize(() => {
-      app.quit();
-    }),
   );
-}).pipe(takeUntil(willQuit$));
+}).pipe(
+  takeUntil(willQuit$),
+  finalize(() => app.quit()),
+);
 
 app$.subscribe();
 
@@ -171,6 +168,7 @@ secondInstance$.pipe(tap(() => createWindow())).subscribe();
 browserWindowCreated$
   .pipe(
     map(([, win]) => win),
+    tap((win) => optimizer.watchWindowShortcuts(win)),
     filter((win) => !win.isVisible()),
     mergeMap((win) => {
       return fromEventPattern(
@@ -188,13 +186,5 @@ windowAllClosed$
   .pipe(
     filter(() => !platform.isMacOS),
     tap(() => app.quit()),
-  )
-  .subscribe();
-
-browserWindowCreated$
-  .pipe(
-    map(([, win]) => win),
-    filter((win) => !win.isDestroyed()),
-    tap((win) => optimizer.watchWindowShortcuts(win)),
   )
   .subscribe();

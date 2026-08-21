@@ -105,10 +105,6 @@ export class QT {
           };
         }).pipe(
           catchError((error) => {
-            if (import.meta.env.DEV) {
-              console.error(error);
-            }
-
             if (error instanceof Error) {
               this.logger.error({
                 title: error.message,
@@ -153,10 +149,6 @@ export class QT {
           };
         }).pipe(
           catchError((error) => {
-            if (import.meta.env.DEV) {
-              console.error(error);
-            }
-
             if (error instanceof Error) {
               this.logger.error({
                 title: error.message,
@@ -187,8 +179,8 @@ export class QT {
               : void 0,
           });
 
-          cp.on("error", () => {
-            sub.error();
+          cp.on("error", (error) => {
+            sub.error(error);
           });
 
           cp.on("spawn", () => {
@@ -203,7 +195,7 @@ export class QT {
             const msg = String(data);
 
             if (msg.includes("该实例已在运行")) {
-              sub.error();
+              sub.error(new Error(msg));
             }
           });
 
@@ -213,8 +205,11 @@ export class QT {
         }).pipe(
           retry(1),
           catchError((error) => {
-            if (import.meta.env.DEV) {
-              console.error(error);
+            if (error instanceof Error) {
+              this.logger.error({
+                title: error.message,
+                message: error.stack,
+              });
             }
 
             return EMPTY;

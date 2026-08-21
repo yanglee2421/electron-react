@@ -160,7 +160,7 @@ const resource$ = new Observable((sub) => {
 /**
  * Main App Subscription
  */
-const main$ = defer(() => {
+const app$ = defer(() => {
   const hasLock = app.requestSingleInstanceLock();
 
   // If this instance is the second instance, quit immediately
@@ -170,7 +170,6 @@ const main$ = defer(() => {
         console.warn(
           "Another instance of the app is already running. This instance will be closed.",
         );
-        app.quit();
       }),
     );
   }
@@ -208,11 +207,13 @@ const main$ = defer(() => {
 
       return EMPTY;
     }),
-    finalize(() => app.quit()),
   );
-});
+}).pipe(
+  takeUntil(willQuit$),
+  finalize(() => app.quit()),
+);
 
-main$.pipe(takeUntil(willQuit$)).subscribe();
+app$.subscribe();
 
 secondInstance$
   .pipe(
@@ -221,22 +222,6 @@ secondInstance$
       const { appWindow } = container.cradle;
 
       appWindow.show(url);
-    }),
-  )
-  .subscribe();
-
-browserWindowCreated$
-  .pipe(
-    map(([, win]) => win),
-    filter((win) => !win.isVisible()),
-    mergeMap((win) => {
-      return fromEventPattern(
-        (f) => win.on("ready-to-show", f),
-        (f) => win.off("ready-to-show", f),
-      ).pipe(
-        take(1),
-        tap(() => win.show()),
-      );
     }),
   )
   .subscribe();
@@ -252,6 +237,7 @@ windowAllClosed$
 browserWindowCreated$
   .pipe(
     map(([, win]) => win),
+    tap((win) => optimizer.watchWindowShortcuts(win)),
     tap((win) => {
       win.on("focus", () => {
         win.webContents.send("windowFocus");
@@ -260,12 +246,15 @@ browserWindowCreated$
         win.webContents.send("windowBlur");
       });
     }),
-  )
-  .subscribe();
-
-browserWindowCreated$
-  .pipe(
-    map(([, win]) => win),
-    tap((win) => optimizer.watchWindowShortcuts(win)),
+    filter((win) => !win.isVisible()),
+    mergeMap((win) => {
+      return fromEventPattern(
+        (f) => win.on("ready-to-show", f),
+        (f) => win.off("ready-to-show", f),
+      ).pipe(
+        take(1),
+        tap(() => win.show()),
+      );
+    }),
   )
   .subscribe();

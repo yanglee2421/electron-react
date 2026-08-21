@@ -17,7 +17,6 @@ import { KH_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { KH_HMIS } from "#shared/instances/schema";
 import { kh_hmis } from "#shared/instances/schema";
 import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
-import { is } from "@electron-toolkit/utils";
 import { chunk, mapGroupBy } from "@yotulee/run";
 import { Client } from "basic-ftp";
 import dayjs from "dayjs";
@@ -2931,30 +2930,66 @@ export class KH {
       });
 
       await ftpClient.ensureDir("/sbjy/rj/");
-      await ftpClient.uploadFrom(lxhImage, lxhFtpPath).catch(() => {
+      await ftpClient.uploadFrom(lxhImage, lxhFtpPath).catch((error) => {
         lxhFtpPath = "";
-      });
-      await ftpClient.uploadFrom(rxhImage, rxhFtpPath).catch(() => {
-        rxhFtpPath = "";
-      });
-      await ftpClient.uploadFrom(llzImage, llzFtpPath).catch(() => {
-        llzFtpPath = "";
-      });
-      await ftpClient.uploadFrom(rlzImage, rlzFtpPath).catch(() => {
-        rlzFtpPath = "";
-      });
-      await ftpClient.uploadFrom(lctImage, lctFtpPath).catch(() => {
-        lctFtpPath = "";
-      });
-      await ftpClient.uploadFrom(rctImage, rctFtpPath).catch(() => {
-        rctFtpPath = "";
-      });
-    } catch (error) {
-      if (is.dev) {
-        console.error(error);
-      }
 
-      throw error;
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
+      await ftpClient.uploadFrom(rxhImage, rxhFtpPath).catch((error) => {
+        rxhFtpPath = "";
+
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
+      await ftpClient.uploadFrom(llzImage, llzFtpPath).catch((error) => {
+        llzFtpPath = "";
+
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
+      await ftpClient.uploadFrom(rlzImage, rlzFtpPath).catch((error) => {
+        rlzFtpPath = "";
+
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
+      await ftpClient.uploadFrom(lctImage, lctFtpPath).catch((error) => {
+        lctFtpPath = "";
+
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
+      await ftpClient.uploadFrom(rctImage, rctFtpPath).catch((error) => {
+        rctFtpPath = "";
+
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
     } finally {
       ftpClient.close();
     }
@@ -2995,30 +3030,66 @@ export class KH {
       });
 
       await ftpClient.ensureDir("/csbts/");
-      await ftpClient.uploadFrom(lxhImage, lxhFtpPath).catch(() => {
+      await ftpClient.uploadFrom(lxhImage, lxhFtpPath).catch((error) => {
         lxhFtpPath = "";
-      });
-      await ftpClient.uploadFrom(rxhImage, rxhFtpPath).catch(() => {
-        rxhFtpPath = "";
-      });
-      await ftpClient.uploadFrom(llzImage, llzFtpPath).catch(() => {
-        llzFtpPath = "";
-      });
-      await ftpClient.uploadFrom(rlzImage, rlzFtpPath).catch(() => {
-        rlzFtpPath = "";
-      });
-      await ftpClient.uploadFrom(lctImage, lctFtpPath).catch(() => {
-        lctFtpPath = "";
-      });
-      await ftpClient.uploadFrom(rctImage, rctFtpPath).catch(() => {
-        rctFtpPath = "";
-      });
-    } catch (error) {
-      if (is.dev) {
-        console.error(error);
-      }
 
-      throw error;
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
+      await ftpClient.uploadFrom(rxhImage, rxhFtpPath).catch((error) => {
+        rxhFtpPath = "";
+
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
+      await ftpClient.uploadFrom(llzImage, llzFtpPath).catch((error) => {
+        llzFtpPath = "";
+
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
+      await ftpClient.uploadFrom(rlzImage, rlzFtpPath).catch((error) => {
+        rlzFtpPath = "";
+
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
+      await ftpClient.uploadFrom(lctImage, lctFtpPath).catch((error) => {
+        lctFtpPath = "";
+
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
+      await ftpClient.uploadFrom(rctImage, rctFtpPath).catch((error) => {
+        rctFtpPath = "";
+
+        if (error instanceof Error) {
+          this.logger.error({
+            title: error.message,
+            message: error.stack,
+          });
+        }
+      });
     } finally {
       ftpClient.close();
     }
