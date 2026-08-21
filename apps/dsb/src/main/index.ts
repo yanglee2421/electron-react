@@ -169,7 +169,6 @@ browserWindowCreated$
   .pipe(
     map(([, win]) => win),
     tap((win) => optimizer.watchWindowShortcuts(win)),
-    filter((win) => !win.isVisible()),
     mergeMap((win) => {
       return fromEventPattern(
         (f) => win.on("ready-to-show", f),

@@ -226,19 +226,12 @@ secondInstance$
   )
   .subscribe();
 
-windowAllClosed$
-  .pipe(
-    filter(() => !platform.isMacOS),
-    filter(() => !container.cradle.profile.state.trayEnabled),
-    tap(() => app.quit()),
-  )
-  .subscribe();
-
 browserWindowCreated$
   .pipe(
     map(([, win]) => win),
-    tap((win) => optimizer.watchWindowShortcuts(win)),
     tap((win) => {
+      optimizer.watchWindowShortcuts(win);
+
       win.on("focus", () => {
         win.webContents.send("windowFocus");
       });
@@ -246,7 +239,6 @@ browserWindowCreated$
         win.webContents.send("windowBlur");
       });
     }),
-    filter((win) => !win.isVisible()),
     mergeMap((win) => {
       return fromEventPattern(
         (f) => win.on("ready-to-show", f),
@@ -256,5 +248,13 @@ browserWindowCreated$
         tap(() => win.show()),
       );
     }),
+  )
+  .subscribe();
+
+windowAllClosed$
+  .pipe(
+    filter(() => !platform.isMacOS),
+    filter(() => !container.cradle.profile.state.trayEnabled),
+    tap(() => app.quit()),
   )
   .subscribe();
