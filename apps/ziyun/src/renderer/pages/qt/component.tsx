@@ -294,7 +294,7 @@ interface YiqiListProps {
 const YiqiList = (props: YiqiListProps) => {
   const yiqiLib = useSetYiqiLib();
   const yiqiFlag = useSetYiqiFlag();
-  const selectFile = useSelectFile();
+  const selectFile = useShowOpenDialog();
   const yiqiConfig = useQuery(fetchYiqiConfig());
 
   const renderYiqiConfig = () => {
@@ -319,10 +319,13 @@ const YiqiList = (props: YiqiListProps) => {
             <IconButton
               edge="end"
               onClick={async () => {
-                const paths = await selectFile.mutateAsync([
-                  { extensions: ["dll"], name: "库文件" },
-                  { extensions: ["*"], name: "所有文件" },
-                ]);
+                const paths = await selectFile.mutateAsync({
+                  properties: ["openFile"],
+                  filters: [
+                    { extensions: ["dll"], name: "库文件" },
+                    { extensions: ["*"], name: "所有文件" },
+                  ],
+                });
 
                 const libPath = paths.at(0);
 
@@ -382,13 +385,13 @@ const SetupForm = () => {
 
   const startApp = useStartApp();
   const stopApp = useStopApp();
-  const selectFile = useShowOpenDialog();
+  const selectFile = useSelectFile();
+  const selectDirectory = useShowOpenDialog();
   const reconnectDB = useQTReconnectDB();
   const setLocalDB = useQTSetFlagFile();
   const queryClient = useQueryClient();
   const currentLocal = useQuery(fetchQTDataDirectory());
   const qtAppPath = useProfileStore((s) => s.qtAppPath);
-  const selectDirectory = useShowOpenDialog();
   const form = useForm({
     defaultValues: {
       qtAppPath,
@@ -456,19 +459,16 @@ const SetupForm = () => {
                               <IconButton
                                 onClick={() => {
                                   selectFile.mutate(
-                                    {
-                                      properties: ["openFile"],
-                                      filters: [
-                                        {
-                                          extensions: ["exe"],
-                                          name: "可执行文件",
-                                        },
-                                        {
-                                          extensions: ["*"],
-                                          name: "所有文件",
-                                        },
-                                      ],
-                                    },
+                                    [
+                                      {
+                                        extensions: ["exe"],
+                                        name: "可执行文件",
+                                      },
+                                      {
+                                        extensions: ["*"],
+                                        name: "所有文件",
+                                      },
+                                    ],
                                     {
                                       onSuccess: (paths) => {
                                         const path = paths?.at(0);

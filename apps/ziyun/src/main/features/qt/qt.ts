@@ -204,14 +204,15 @@ export class QT {
             const msg = String(data);
 
             if (msg.includes("实例")) {
+              console.log("sub.error");
               sub.error();
             }
 
-            console.error(msg);
+            console.error("stderr: ", msg);
           });
 
           cp.stdout.on("data", (data) => {
-            console.log(String(data));
+            console.log("stdout", String(data));
           });
 
           return () => {
@@ -973,7 +974,7 @@ export class QT {
     if (!fs.existsSync(nextLocalDB)) {
       await fs.promises.mkdir(qtDataDirectory, {
         recursive: true,
-        mode: 0x755,
+        mode: 0o755,
       });
 
       const appDBPath = this.getAppDBPath();
