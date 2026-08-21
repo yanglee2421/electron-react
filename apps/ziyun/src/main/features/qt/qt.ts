@@ -766,7 +766,7 @@ export class QT {
       .from(schema.quartorsData)
       .where(
         inArray(
-          schema.quartorsData.recId,
+          schema.quartorsData.precId,
           rows.map((r) => r.recId),
         ),
       );
