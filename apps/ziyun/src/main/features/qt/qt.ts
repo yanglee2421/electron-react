@@ -38,7 +38,6 @@ import {
   shareReplay,
   Subject,
   switchMap,
-  tap,
 } from "rxjs";
 import workerPath from "../../workers/bmp?modulePath";
 import type { Logger } from "../logger";
@@ -203,16 +202,9 @@ export class QT {
           cp.stderr.on("data", (data) => {
             const msg = String(data);
 
-            if (msg.includes("实例")) {
-              console.log("sub.error");
+            if (msg.includes("该实例已在运行")) {
               sub.error();
             }
-
-            console.error("stderr: ", msg);
-          });
-
-          cp.stdout.on("data", (data) => {
-            console.log("stdout", String(data));
           });
 
           return () => {
@@ -234,13 +226,7 @@ export class QT {
 
     this.dbSubscription = this.dbFlow$.subscribe(this.db$);
     this.hmisSubscription = this.hmisFlow$.subscribe();
-    this.qtProcessSubscription = this.qtProcessFlow$
-      .pipe(
-        tap((val) => {
-          console.log("qtProcessFlow", !!val);
-        }),
-      )
-      .subscribe(this.qtProcess$);
+    this.qtProcessSubscription = this.qtProcessFlow$.subscribe(this.qtProcess$);
   }
 
   async dispose() {
@@ -965,8 +951,6 @@ export class QT {
     return this.qtProcess$.value?.pid;
   }
   async stopApp() {
-    console.log("stop-app");
-
     this.qtProcess$.value?.kill();
   }
 
