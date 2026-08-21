@@ -218,15 +218,17 @@ export class QT {
           return () => {
             cp.kill();
           };
-        }).pipe(endWith(null));
-      }),
-      retry(1),
-      catchError((error) => {
-        if (import.meta.env.DEV) {
-          console.error(error);
-        }
+        }).pipe(
+          retry(1),
+          catchError((error) => {
+            if (import.meta.env.DEV) {
+              console.error(error);
+            }
 
-        return EMPTY;
+            return EMPTY;
+          }),
+          endWith(null),
+        );
       }),
     );
 
