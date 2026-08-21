@@ -4,7 +4,7 @@ import { BrowserWindow, app } from "electron";
 import path from "node:path";
 import url from "node:url";
 import type { Subscription } from "rxjs";
-import { distinctUntilChanged } from "rxjs";
+import { distinctUntilChanged, tap } from "rxjs";
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,15 +20,14 @@ export class AppWindow {
       distinctUntilChanged((previous, current) => {
         return previous.alwaysOnTop === current.alwaysOnTop;
       }),
-    );
-
-    this.subscriptions = [
-      modeChanged$.subscribe((state) => {
+      tap((state) => {
         BrowserWindow.getAllWindows().forEach((win) => {
           win.setAlwaysOnTop(state.alwaysOnTop);
         });
       }),
-    ];
+    );
+
+    this.subscriptions = [modeChanged$.subscribe()];
   }
 
   dispose() {

@@ -20,9 +20,6 @@ export const registerIPCHandlers = (printer: Printer) => {
   ipcHandle("printer/quartor-chr501", (_, id) => {
     return printer.getDataFromQuartor501(id);
   });
-  ipcHandle("printer/print", () => {
-    return printer.print();
-  });
 
   return () => {
     ipcRemoveHandle("printer/chr501");
@@ -31,6 +28,5 @@ export const registerIPCHandlers = (printer: Printer) => {
     ipcRemoveHandle("printer/chr53a");
     ipcRemoveHandle("printer/chr52a");
     ipcRemoveHandle("printer/quartor-chr501");
-    ipcRemoveHandle("printer/print");
   };
 };

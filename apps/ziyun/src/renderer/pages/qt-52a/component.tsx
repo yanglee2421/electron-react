@@ -32,7 +32,7 @@ const resolveMemoInfo = (params: string | null): MemoInfo => {
   if (!params) {
     return result;
   }
-
+  // 001 011 031 041 901 911 931 941
   return chunk(params.split(""), 3).reduce((map, item) => {
     const originBoard = item.at(0) || "0";
     const board = Number.parseInt(originBoard) > 8 ? 1 : 0;
@@ -44,11 +44,6 @@ const resolveMemoInfo = (params: string | null): MemoInfo => {
     return map;
   }, result);
 };
-
-// 011 031 041 911 931 941
-// 0-8 左 9-F左
-//
-// 011 021 041 051 921 941 951
 
 // 111 1*16 + 1=17 1=裂纹|2=透声不良|3=晶粗|4=压装不良
 const calcFlawType = (type?: number) => {

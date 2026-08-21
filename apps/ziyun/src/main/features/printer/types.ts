@@ -33,8 +33,4 @@ export interface IPCContract {
     args: [string];
     return: ReturnType<Printer["getDataFromQuartor501"]>;
   };
-  "printer/print": {
-    args: [];
-    return: ReturnType<Printer["print"]>;
-  };
 }

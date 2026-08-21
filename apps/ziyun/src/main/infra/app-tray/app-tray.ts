@@ -3,7 +3,6 @@ import iconPath from "#resources/icon.png?asset";
 import { app, Menu, nativeImage, Tray } from "electron";
 import type { Subscription } from "rxjs";
 import {
-  BehaviorSubject,
   distinctUntilChanged,
   fromEventPattern,
   Observable,
@@ -13,7 +12,6 @@ import {
 } from "rxjs";
 
 export class AppTray {
-  readonly tray$ = new BehaviorSubject<Tray | null>(null);
   private subscription: Subscription;
 
   constructor({ profile, appWindow }: AppCradle) {
@@ -72,15 +70,10 @@ export class AppTray {
         }),
         shareReplay({ bufferSize: 1, refCount: true }),
       )
-      .subscribe(this.tray$);
+      .subscribe();
   }
 
   dispose() {
-    this.tray$.complete();
     this.subscription.unsubscribe();
-  }
-
-  get tray() {
-    return this.tray$.value;
   }
 }

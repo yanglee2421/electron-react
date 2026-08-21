@@ -380,7 +380,7 @@ const YiqiList = (props: YiqiListProps) => {
   );
 };
 
-const SetupForm = () => {
+const SetupForm = (props: YiqiListProps) => {
   const formId = React.useId();
 
   const startApp = useStartApp();
@@ -398,12 +398,13 @@ const SetupForm = () => {
       qtDataDirectory: currentLocal.data || "",
     },
     onSubmit: async ({ value }) => {
-      await setLocalDB.mutateAsync(value.qtDataDirectory, {
+      const result = await setLocalDB.mutateAsync(value.qtDataDirectory, {
         onError: (error) => {
           toast.error(error.message);
         },
         onSuccess: async () => {
           await reconnectDB.mutateAsync();
+          toast.success("保存成功");
         },
       });
 
@@ -412,6 +413,10 @@ const SetupForm = () => {
       });
 
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+
+      if (!result.running) return;
+
+      await props.onRestart();
     },
   });
 
@@ -1290,7 +1295,7 @@ export const Component = () => {
   const renderTabPanel = () => {
     switch (activatedTab) {
       case 1:
-        return <SetupForm />;
+        return <SetupForm onRestart={handleRestart} />;
       case 2:
         return <YiqiList onRestart={handleRestart} />;
       case 3:

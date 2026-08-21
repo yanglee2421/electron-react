@@ -1,7 +1,7 @@
 import type { ChannelImage } from "#main/workers/bmp";
 import workerPath from "#main/workers/bmp?modulePath";
 import { atFirstOrThrow } from "@yotulee/run";
-import { app, BrowserWindow } from "electron";
+import { app } from "electron";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -78,19 +78,6 @@ export class Printer {
       detectors: detectors.rows,
       images: jpegs,
     };
-  }
-
-  async print() {
-    const win = BrowserWindow.getFocusedWindow();
-
-    if (!win) return;
-
-    const buf = await win.webContents.printToPDF({});
-    const filePath = path.resolve(
-      app.getPath("desktop"),
-      `print-${Date.now()}.pdf`,
-    );
-    await fs.promises.writeFile(filePath, buf);
   }
 
   async getDataForCHR502(ids: string[]) {
@@ -182,30 +169,13 @@ export class Printer {
 
     const corporation = await this.mdb.app().corporation();
     const rootPath = await this.mdb.rootFolder();
-    const lctImage = this.mdb.dataImagePath(
-      rootPath,
-      `${record.szIDs}.LCT.bmp`,
-    );
-    const rctImage = this.mdb.dataImagePath(
-      rootPath,
-      `${record.szIDs}.RCT.bmp`,
-    );
-    const llzImage = this.mdb.dataImagePath(
-      rootPath,
-      `${record.szIDs}.LLZ.bmp`,
-    );
-    const rlzImage = this.mdb.dataImagePath(
-      rootPath,
-      `${record.szIDs}.RLZ.bmp`,
-    );
-    const lxhImage = this.mdb.dataImagePath(
-      rootPath,
-      `${record.szIDs}.LXH.bmp`,
-    );
-    const rxhImage = this.mdb.dataImagePath(
-      rootPath,
-      `${record.szIDs}.RXH.bmp`,
-    );
+    const szIDs = record.szIDs;
+    const lctImage = this.mdb.dataImagePath(rootPath, `${szIDs}.LCT.bmp`);
+    const rctImage = this.mdb.dataImagePath(rootPath, `${szIDs}.RCT.bmp`);
+    const llzImage = this.mdb.dataImagePath(rootPath, `${szIDs}.LLZ.bmp`);
+    const rlzImage = this.mdb.dataImagePath(rootPath, `${szIDs}.RLZ.bmp`);
+    const lxhImage = this.mdb.dataImagePath(rootPath, `${szIDs}.LXH.bmp`);
+    const rxhImage = this.mdb.dataImagePath(rootPath, `${szIDs}.RXH.bmp`);
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     await fs.promises.mkdir(tmpPath, { recursive: true });
@@ -242,30 +212,13 @@ export class Printer {
       .detectors()
       .equal("szwheel", record.szWHModel || "");
     const rootPath = await this.mdb.rootFolder();
-    const lctImage = this.mdb.quartorImagePath(
-      rootPath,
-      `${record.szIDs}.LCT.bmp`,
-    );
-    const rctImage = this.mdb.quartorImagePath(
-      rootPath,
-      `${record.szIDs}.RCT.bmp`,
-    );
-    const llzImage = this.mdb.quartorImagePath(
-      rootPath,
-      `${record.szIDs}.LLZ.bmp`,
-    );
-    const rlzImage = this.mdb.quartorImagePath(
-      rootPath,
-      `${record.szIDs}.RLZ.bmp`,
-    );
-    const lxhImage = this.mdb.quartorImagePath(
-      rootPath,
-      `${record.szIDs}.LXH.bmp`,
-    );
-    const rxhImage = this.mdb.quartorImagePath(
-      rootPath,
-      `${record.szIDs}.RXH.bmp`,
-    );
+    const szIDs = record.szIDs;
+    const lctImage = this.mdb.quartorImagePath(rootPath, `${szIDs}.LCT.bmp`);
+    const rctImage = this.mdb.quartorImagePath(rootPath, `${szIDs}.RCT.bmp`);
+    const llzImage = this.mdb.quartorImagePath(rootPath, `${szIDs}.LLZ.bmp`);
+    const rlzImage = this.mdb.quartorImagePath(rootPath, `${szIDs}.RLZ.bmp`);
+    const lxhImage = this.mdb.quartorImagePath(rootPath, `${szIDs}.LXH.bmp`);
+    const rxhImage = this.mdb.quartorImagePath(rootPath, `${szIDs}.RXH.bmp`);
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     await fs.promises.mkdir(tmpPath, { recursive: true });
