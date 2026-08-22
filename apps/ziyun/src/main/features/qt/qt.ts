@@ -35,7 +35,6 @@ import {
   Observable,
   of,
   retry,
-  shareReplay,
   Subject,
   switchMap,
 } from "rxjs";
@@ -116,7 +115,6 @@ export class QT {
           }),
         );
       }),
-      shareReplay({ bufferSize: 1, refCount: true }),
     );
 
     this.hmisFlow$ = this.profile.state$.pipe(
@@ -160,7 +158,6 @@ export class QT {
           }),
         );
       }),
-      shareReplay({ refCount: true, bufferSize: 1 }),
     );
 
     this.qtProcessFlow$ = this.qtProcessTrigger$.pipe(

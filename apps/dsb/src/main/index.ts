@@ -18,7 +18,6 @@ import {
   mergeMap,
   Observable,
   of,
-  shareReplay,
   take,
   takeUntil,
   tap,
@@ -131,7 +130,15 @@ const resource$ = new Observable((sub) => {
   return () => {
     container.dispose();
   };
-}).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+}).pipe(
+  catchError((error) => {
+    if (import.meta.env.DEV) {
+      console.error(error);
+    }
+
+    return EMPTY;
+  }),
+);
 
 const app$ = defer(() => {
   const hasLocked = app.requestSingleInstanceLock();

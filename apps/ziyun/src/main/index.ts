@@ -25,7 +25,6 @@ import {
   mergeMap,
   Observable,
   of,
-  shareReplay,
   take,
   takeUntil,
   tap,
@@ -155,7 +154,25 @@ const resource$ = new Observable((sub) => {
     printerUnIPC();
     xmlUnIPC();
   };
-}).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+}).pipe(
+  catchError((error) => {
+    if (import.meta.env.DEV) {
+      console.error(error);
+    }
+
+    container.dispose().then(async () => {
+      const BACKUP_DB_PATH = path.resolve(
+        app.getPath("desktop"),
+        `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
+      );
+
+      await fs.promises.cp(APP_DB_PATH, BACKUP_DB_PATH, { recursive: true });
+      await fs.promises.rm(APP_DB_PATH, { recursive: true, force: true });
+    });
+
+    return EMPTY;
+  }),
+);
 
 /**
  * Main App Subscription
@@ -189,23 +206,6 @@ const app$ = defer(() => {
       });
 
       appWindow.show(openURL);
-    }),
-    catchError((error) => {
-      if (import.meta.env.DEV) {
-        console.error(error);
-      }
-
-      container.dispose().then(async () => {
-        const BACKUP_DB_PATH = path.resolve(
-          app.getPath("desktop"),
-          `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
-        );
-
-        await fs.promises.cp(APP_DB_PATH, BACKUP_DB_PATH, { recursive: true });
-        await fs.promises.rm(APP_DB_PATH, { recursive: true, force: true });
-      });
-
-      return EMPTY;
     }),
   );
 }).pipe(

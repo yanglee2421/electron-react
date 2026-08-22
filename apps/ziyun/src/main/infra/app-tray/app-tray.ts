@@ -7,7 +7,6 @@ import {
   fromEventPattern,
   Observable,
   of,
-  shareReplay,
   switchMap,
 } from "rxjs";
 
@@ -68,7 +67,6 @@ export class AppTray {
             };
           });
         }),
-        shareReplay({ bufferSize: 1, refCount: true }),
       )
       .subscribe();
   }

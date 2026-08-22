@@ -10,7 +10,6 @@ import {
   filter,
   map,
   Observable,
-  shareReplay,
   switchMap,
 } from "rxjs";
 import type { AppCradle } from "../types";
@@ -70,7 +69,6 @@ export class Profile {
             };
           });
         }),
-        shareReplay({ bufferSize: 1, refCount: true }),
       )
       .subscribe();
 

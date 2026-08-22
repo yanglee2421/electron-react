@@ -5,7 +5,6 @@ import {
   distinctUntilChanged,
   Observable,
   of,
-  shareReplay,
   switchMap,
 } from "rxjs";
 import { SerialPort } from "serialport";
@@ -66,7 +65,6 @@ export class PLC {
           };
         });
       }),
-      shareReplay({ refCount: true, bufferSize: 1 }),
     );
 
     this.plc = null;
