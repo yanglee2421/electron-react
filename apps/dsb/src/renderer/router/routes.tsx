@@ -10,14 +10,6 @@ export const createRoutes = (): RouteObject[] => {
           element: <Navigate to={{ pathname: "/scanner" }} />,
         },
         {
-          path: "dashboard",
-          lazy: () => import("#renderer/pages/dashboard/component"),
-        },
-        {
-          path: "crud-dashboard",
-          lazy: () => import("#renderer/pages/crud-dashboard/component"),
-        },
-        {
           path: "scanner",
           lazy: () => import("#renderer/pages/scanner/component"),
         },

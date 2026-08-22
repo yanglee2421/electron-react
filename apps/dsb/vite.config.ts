@@ -3,7 +3,8 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import path from "node:path";
 import url from "node:url";
 import { defineConfig } from "vite";
-import { VitePluginDoubleshot } from "vite-plugin-doubleshot";
+import electron from "vite-plugin-electron";
+import { esmShim } from "vite-plugin-electron/plugin";
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,47 +21,57 @@ export default defineConfig({
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] }),
-    VitePluginDoubleshot({
-      type: "electron",
-      main: path.resolve(__dirname, "./out/main/index.js"),
-      entry: path.resolve(__dirname, "./src/main/index.ts"),
-      outDir: path.resolve(__dirname, "./out/main"),
-      tsdownConfig: {
-        format: "esm",
-        outExtensions: () => ({ js: ".js" }),
-        shims: true,
-        deps: {
-          neverBundle: ["electron"],
-        },
-        clean: true,
-        alias,
-      },
-      electron: {
-        preload: {
-          entry: path.resolve(__dirname, "./src/preload/index.ts"),
-          outDir: path.resolve(__dirname, "./out/preload"),
-          tsdownConfig: {
-            format: "cjs",
-            outExtensions: () => ({ js: ".cjs" }),
-            shims: true,
-            deps: {
-              neverBundle: ["electron"],
+    electron([
+      {
+        vite: {
+          plugins: [esmShim()],
+          build: {
+            outDir: "out/main",
+            emptyOutDir: true,
+            rolldownOptions: {
+              output: {
+                entryFileNames: "index.js",
+              },
             },
-            clean: true,
-            alias,
+            lib: {
+              entry: path.resolve(__dirname, "src/main/index.ts"),
+              formats: ["es"],
+            },
+          },
+          root: __dirname,
+        },
+        onstart(args) {
+          args.startup();
+        },
+      },
+      {
+        vite: {
+          build: {
+            outDir: "out/preload",
+            emptyOutDir: true,
+            rolldownOptions: {
+              output: {
+                entryFileNames: "index.cjs",
+                codeSplitting: false,
+              },
+            },
+            lib: {
+              entry: path.resolve(__dirname, "src/preload/index.ts"),
+              formats: ["cjs"],
+            },
           },
         },
-        build: {
-          config: path.resolve(__dirname, "./electron-builder.ts"),
+        onstart(args) {
+          // Notify the Renderer process to reload the page when the Preload scripts build is complete,
+          // instead of restarting the entire Electron App.
+          args.reload();
         },
       },
-    }),
+    ]),
   ],
-  root: path.resolve(__dirname, "./src/renderer"),
   build: {
     outDir: path.resolve(__dirname, "./out/renderer"),
     emptyOutDir: true,
   },
-  base: "./",
   resolve: { alias },
 });

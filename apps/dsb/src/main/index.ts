@@ -81,20 +81,20 @@ const createWindow = ({
     return win;
   }
 
-  const RENDERER_URL = process.env.DS_RENDERER_URL!;
+  const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"]!;
 
-  if (!URL.canParse(RENDERER_URL)) {
+  if (!URL.canParse(VITE_DEV_SERVER_URL)) {
     console.warn(`process.env.DS_RENDERER_URL can not parse to URL !`);
     app.quit();
     return win;
   }
 
   if (!URL.canParse(customURL)) {
-    win.loadURL(RENDERER_URL);
+    win.loadURL(VITE_DEV_SERVER_URL);
     return win;
   }
 
-  const CUSTOM_RENDERER_URL = new URL(RENDERER_URL);
+  const CUSTOM_RENDERER_URL = new URL(VITE_DEV_SERVER_URL);
   CUSTOM_RENDERER_URL.hash = new URL(customURL).pathname;
   win.loadURL(CUSTOM_RENDERER_URL.href);
 
@@ -183,6 +183,7 @@ browserWindowCreated$
       ).pipe(
         take(1),
         tap(() => win.show()),
+        tap(() => win.webContents.openDevTools()),
       );
     }),
   )
