@@ -19,12 +19,11 @@ export class AppDB {
   client: DBClient;
 
   constructor({ DB_PATH }: AppCradle) {
-    // const DB_PATH = path.resolve(app.getPath("userData"), "db.db");
     const client = new DatabaseSync(DB_PATH);
+    const migrationsFolder = path.resolve(__dirname, "../../drizzle");
+
     this.client = drizzle({ client, relations, schema });
-    migrate(this.client, {
-      migrationsFolder: path.resolve(__dirname, "../../drizzle"),
-    });
+    migrate(this.client, { migrationsFolder });
   }
 
   dispose() {
