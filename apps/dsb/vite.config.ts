@@ -32,13 +32,14 @@ export default defineConfig({
               output: {
                 entryFileNames: "index.js",
               },
+              external: ["electron"],
             },
             lib: {
               entry: path.resolve(__dirname, "src/main/index.ts"),
               formats: ["es"],
             },
           },
-          root: __dirname,
+          resolve: { alias },
         },
         onstart(args) {
           args.startup();
@@ -54,12 +55,14 @@ export default defineConfig({
                 entryFileNames: "index.cjs",
                 codeSplitting: false,
               },
+              external: ["electron"],
             },
             lib: {
               entry: path.resolve(__dirname, "src/preload/index.ts"),
               formats: ["cjs"],
             },
           },
+          resolve: { alias },
         },
         onstart(args) {
           // Notify the Renderer process to reload the page when the Preload scripts build is complete,
