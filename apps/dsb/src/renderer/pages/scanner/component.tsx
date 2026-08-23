@@ -1,8 +1,15 @@
 export const Component = () => {
   return (
     <>
-      <h1>DSB app</h1>
-      <input type="text" />
+      <form action="">
+        <h1>DSB app</h1>
+        <div>
+          <input type="text" />
+        </div>
+        <div>
+          <button>submit</button>
+        </div>
+      </form>
     </>
   );
 };

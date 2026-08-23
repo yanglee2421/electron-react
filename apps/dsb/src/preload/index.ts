@@ -19,7 +19,6 @@ declare global {
   // interface ImportMeta {
   //   myname: string;
   // }
-
   // interface ImportMetaEnv {
   //   myname: string;
   // }

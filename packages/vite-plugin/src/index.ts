@@ -16,7 +16,7 @@ import {
   tap,
 } from "rxjs";
 import type { Plugin, ViteDevServer } from "vite";
-import { workerUrlPlugin } from "./worker-url.ts";
+import { worker } from "./worker.ts";
 
 const require = module.createRequire(import.meta.url);
 const __filename = url.fileURLToPath(import.meta.url);
@@ -46,46 +46,41 @@ const processSigterm = fromEventPattern(
   }),
 );
 
-const rolldownInputs: BuildOptions[] = [
-  {
-    input: "src/preload/index.ts",
-    output: {
-      format: "cjs",
-      file: "out/preload/index.cjs",
-      dir: "out/preload",
-      cleanDir: true,
-    },
-    external: ["electron", /^node:/],
-    platform: "node",
-    transform: {
-      inject: {
-        __dirname: [shimFile, "__dirname"] as [string, string],
-        __filename: [shimFile, "__filename"] as [string, string],
-      },
+const preloadInput: BuildOptions = {
+  input: "src/preload/index.ts",
+  output: {
+    format: "cjs",
+    file: "out/preload/index.cjs",
+  },
+  external: ["electron", /^node:/],
+  platform: "node",
+  transform: {
+    inject: {
+      __dirname: [shimFile, "__dirname"] as [string, string],
+      __filename: [shimFile, "__filename"] as [string, string],
     },
   },
-  {
-    input: "src/main/index.ts",
-    output: {
-      format: "esm",
-      file: "out/main/index.js",
-      dir: "out/main",
-      cleanDir: true,
-    },
-    external: ["electron", /^node:/],
-    platform: "node",
-    transform: {
-      inject: {
-        __dirname: [shimFile, "__dirname"] as [string, string],
-        __filename: [shimFile, "__filename"] as [string, string],
-      },
-    },
-    plugins: [workerUrlPlugin()],
-  },
-];
+};
 
-const electronMain$ = new Observable((sub) => {
-  const watcher = watch(rolldownInputs);
+const mainInput: BuildOptions = {
+  input: "src/main/index.ts",
+  output: {
+    format: "esm",
+    file: "out/main/index.js",
+  },
+  external: ["electron", /^node:/],
+  platform: "node",
+  transform: {
+    inject: {
+      __dirname: [shimFile, "__dirname"] as [string, string],
+      __filename: [shimFile, "__filename"] as [string, string],
+    },
+  },
+  plugins: [worker()],
+};
+
+const watchPreload$ = new Observable((sub) => {
+  const watcher = watch(preloadInput);
 
   watcher.on("event", (e) => {
     if (e.code === "BUNDLE_END") {
@@ -94,20 +89,32 @@ const electronMain$ = new Observable((sub) => {
   });
 
   return () => {
+    watcher.clear("event");
+    watcher.close();
+  };
+});
+
+const watchMain$ = new Observable((sub) => {
+  const watcher = watch(mainInput);
+
+  watcher.on("event", (e) => {
+    if (e.code === "BUNDLE_END") {
+      sub.next(null);
+    }
+  });
+
+  return () => {
+    watcher.clear("event");
     watcher.close();
   };
 }).pipe(
   debounceTime(1000 * 2),
-  tap(() => {
-    console.log("tap");
-  }),
   switchMap(() => {
     return new Observable((sub) => {
       const id = Date.now();
 
       const cp = spawn(require("electron"), ["."], {
         stdio: "inherit",
-        detached: true,
       });
 
       cp.on("error", (error) => {
@@ -154,18 +161,22 @@ const server$ = serverCreated$.pipe(
     );
 
     return listening$.pipe(
-      tap(() => {
-        console.log(devServer.resolvedUrls?.local);
-      }),
-      switchMap(() => {
-        return electronMain$;
-      }),
+      switchMap(() =>
+        merge(
+          watchPreload$.pipe(
+            tap(() => {
+              devServer.ws.send({ type: "full-reload" });
+            }),
+          ),
+          watchMain$,
+        ),
+      ),
       takeUntil(close$),
     );
   }),
 );
 
-export const vitePluginElectron = (): Plugin[] => {
+export const electron = (): Plugin[] => {
   server$.subscribe();
 
   return [
@@ -186,9 +197,6 @@ export const vitePluginElectron = (): Plugin[] => {
           },
         };
       },
-      configResolved(config) {
-        console.log(config.command);
-      },
       configureServer(server) {
         serverCreated$.next(server);
       },
@@ -205,9 +213,8 @@ export const vitePluginElectron = (): Plugin[] => {
           base: "./",
         };
       },
-
       async closeBundle() {
-        await build(rolldownInputs);
+        await build([preloadInput, mainInput]);
       },
     },
   ];

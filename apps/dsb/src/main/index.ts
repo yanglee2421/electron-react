@@ -1,3 +1,4 @@
+import wkPath from "#main/mdb.worker?worker&url";
 import { is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import { app, BrowserWindow } from "electron";
@@ -22,9 +23,6 @@ import {
   tap,
 } from "rxjs";
 import { container } from "./ioc";
-import wkPath from "./mdb.worker?worker&url";
-
-console.log("wkPath: ", wkPath);
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,7 +30,6 @@ const __dirname = path.dirname(__filename);
 interface CreateWindowOptions {
   additionalArguments?: string[];
   alwaysOnTop?: boolean;
-  customURL?: string;
 }
 
 const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
@@ -56,13 +53,9 @@ const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
   if (!is.dev) {
     const RENDERER_FILE = path.resolve(__dirname, "../renderer/index.html");
     win.loadFile(RENDERER_FILE);
-
-    return win;
   }
 
   win.loadURL("http://localhost:5173");
-
-  return win;
 };
 
 const whenReady$ = from(app.whenReady());
@@ -143,6 +136,7 @@ browserWindowCreated$
       ).pipe(
         take(1),
         tap(() => win.show()),
+        tap(() => win.webContents.openDevTools()),
       );
     }),
   )
@@ -154,3 +148,5 @@ windowAllClosed$
     tap(() => app.quit()),
   )
   .subscribe();
+
+console.log("wkPath:", wkPath);

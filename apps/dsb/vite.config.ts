@@ -1,6 +1,6 @@
 import babel from "@rolldown/plugin-babel";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { vitePluginElectron } from "@yanglee2421/vite-plugin";
+import { electron } from "@yanglee2421/vite-plugin";
 import path from "node:path";
 import url from "node:url";
 import { defineConfig } from "vite";
@@ -17,14 +17,6 @@ const alias = {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    babel({ presets: [reactCompilerPreset()] }),
-    vitePluginElectron(),
-  ],
-  build: {
-    outDir: path.resolve(__dirname, "./out/renderer"),
-    emptyOutDir: true,
-  },
+  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), electron()],
   resolve: { alias },
 });
