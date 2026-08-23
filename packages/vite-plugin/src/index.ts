@@ -35,8 +35,8 @@ const preloadInput: BuildOptions = {
   external: ["electron"],
   transform: {
     inject: {
-      __dirname: [shimFile, "__dirname"] as [string, string],
-      __filename: [shimFile, "__filename"] as [string, string],
+      __dirname: [shimFile, "__dirname"],
+      __filename: [shimFile, "__filename"],
     },
   },
 };
@@ -52,8 +52,8 @@ const mainInput: BuildOptions = {
   external: ["electron"],
   transform: {
     inject: {
-      __dirname: [shimFile, "__dirname"] as [string, string],
-      __filename: [shimFile, "__filename"] as [string, string],
+      __dirname: [shimFile, "__dirname"],
+      __filename: [shimFile, "__filename"],
     },
   },
   plugins: [worker()],
@@ -99,8 +99,17 @@ const watchMain$ = new Observable((sub) => {
   const watcher = watch(mainInput);
 
   watcher.on("event", (e) => {
-    if (e.code === "BUNDLE_END") {
-      sub.next(null);
+    switch (e.code) {
+      case "ERROR":
+        console.error(e.error);
+        break;
+      case "BUNDLE_END":
+        sub.next(null);
+        break;
+      case "START":
+      case "BUNDLE_START":
+      case "END":
+      default:
     }
   });
 
