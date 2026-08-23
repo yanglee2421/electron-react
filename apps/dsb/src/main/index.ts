@@ -50,12 +50,12 @@ const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
   });
   win.menuBarVisible = false;
 
-  if (!is.dev) {
+  if (is.dev) {
+    win.loadURL(process.env.RENDERER_URL!);
+  } else {
     const RENDERER_FILE = path.resolve(__dirname, "../renderer/index.html");
     win.loadFile(RENDERER_FILE);
   }
-
-  win.loadURL("http://localhost:5173");
 };
 
 const whenReady$ = from(app.whenReady());

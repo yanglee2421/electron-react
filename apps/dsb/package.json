@@ -1,7 +1,7 @@
 {
   "name": "app-dsb",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.3",
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
