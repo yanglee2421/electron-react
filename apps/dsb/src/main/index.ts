@@ -76,16 +76,17 @@ const resource$ = new Observable((sub) => {
   const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
   container.register({ DB_PATH: asValue(DB_PATH) });
 
-  const { appDb } = container.cradle;
-
-  sub.next(appDb);
+  const { appDB } = container.cradle;
+  sub.next(appDB);
 
   return () => {
     container.dispose();
   };
 }).pipe(
   catchError((error) => {
-    console.error(error);
+    if (is.dev) {
+      console.error(error);
+    }
 
     return EMPTY;
   }),

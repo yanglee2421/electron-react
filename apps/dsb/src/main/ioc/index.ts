@@ -8,7 +8,7 @@ export const container = createContainer<AppCradle>({
 });
 
 container.register({
-  appDb: asClass(AppDB)
+  appDB: asClass(AppDB)
     .singleton()
     .disposer((i) => i.dispose()),
 });

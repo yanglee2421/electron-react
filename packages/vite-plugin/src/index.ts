@@ -9,6 +9,7 @@ import {
   EMPTY,
   Observable,
   Subject,
+  catchError,
   debounceTime,
   fromEventPattern,
   merge,
@@ -146,7 +147,13 @@ const startElectron = (RENDERER_URL: string) => {
       cp.removeAllListeners();
       console.log("kill", id, cp.kill("SIGKILL"));
     };
-  });
+  }).pipe(
+    catchError((error) => {
+      console.error(error);
+
+      return EMPTY;
+    }),
+  );
 };
 
 const serverCreated$ = new Subject<ViteDevServer | null>();
