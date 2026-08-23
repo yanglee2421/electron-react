@@ -110,14 +110,12 @@ const watchMain$ = new Observable((sub) => {
   };
 });
 
-const startElectron = (url: string) => {
+const startElectron = (RENDERER_URL: string) => {
   return new Observable((sub) => {
     const id = Date.now();
     const cp = spawn(require("electron"), ["."], {
       stdio: "inherit",
-      env: {
-        RENDERER_URL: url,
-      },
+      env: { RENDERER_URL },
     });
 
     cp.on("error", (error) => {

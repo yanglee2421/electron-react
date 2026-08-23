@@ -1,4 +1,3 @@
-import wkPath from "#main/mdb.worker?worker&url";
 import { is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import { app, BrowserWindow } from "electron";
@@ -28,7 +27,6 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 interface CreateWindowOptions {
-  additionalArguments?: string[];
   alwaysOnTop?: boolean;
 }
 
@@ -41,8 +39,6 @@ const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
       webSecurity: true,
       nodeIntegration: false,
       contextIsolation: true,
-
-      plugins: false,
     },
 
     show: false,
@@ -136,7 +132,6 @@ browserWindowCreated$
       ).pipe(
         take(1),
         tap(() => win.show()),
-        tap(() => win.webContents.openDevTools()),
       );
     }),
   )
@@ -148,5 +143,3 @@ windowAllClosed$
     tap(() => app.quit()),
   )
   .subscribe();
-
-console.log("wkPath:", wkPath);
