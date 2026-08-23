@@ -1,7 +1,6 @@
 import { is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import { app, BrowserWindow } from "electron";
-import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import {
@@ -23,28 +22,12 @@ import {
   tap,
 } from "rxjs";
 import { container } from "./ioc";
+import wkPath from "./mdb.worker?worker&url";
 
-if (is.dev) {
-  const __filename = url.fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const packageJson = fs.readFileSync(
-    path.resolve(__dirname, "../../package.json"),
-    "utf-8",
-  );
+console.log("wkPath: ", wkPath);
 
-  try {
-    const name = JSON.parse(packageJson).name || app.getName();
-    app.setName(name);
-  } catch (error) {
-    console.error(error);
-  }
-
-  const USER_DATA_PATH_DEV = path.resolve(
-    app.getPath("appData"),
-    `./${app.getName()}-dev`,
-  );
-  app.setPath("userData", USER_DATA_PATH_DEV);
-}
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface CreateWindowOptions {
   additionalArguments?: string[];
@@ -52,10 +35,7 @@ interface CreateWindowOptions {
   customURL?: string;
 }
 
-const createWindow = ({
-  alwaysOnTop,
-  customURL = "",
-}: CreateWindowOptions = {}) => {
+const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
   const win = new BrowserWindow({
     webPreferences: {
       preload: path.resolve(__dirname, "../preload/index.cjs"),
@@ -75,28 +55,12 @@ const createWindow = ({
 
   if (!is.dev) {
     const RENDERER_FILE = path.resolve(__dirname, "../renderer/index.html");
-    win.loadFile(RENDERER_FILE, {
-      hash: URL.canParse(customURL) ? new URL(customURL).pathname : void 0,
-    });
+    win.loadFile(RENDERER_FILE);
+
     return win;
   }
 
-  const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"]!;
-
-  if (!URL.canParse(VITE_DEV_SERVER_URL)) {
-    console.warn(`process.env.DS_RENDERER_URL can not parse to URL !`);
-    app.quit();
-    return win;
-  }
-
-  if (!URL.canParse(customURL)) {
-    win.loadURL(VITE_DEV_SERVER_URL);
-    return win;
-  }
-
-  const CUSTOM_RENDERER_URL = new URL(VITE_DEV_SERVER_URL);
-  CUSTOM_RENDERER_URL.hash = new URL(customURL).pathname;
-  win.loadURL(CUSTOM_RENDERER_URL.href);
+  win.loadURL("http://localhost:5173");
 
   return win;
 };
@@ -132,9 +96,7 @@ const resource$ = new Observable((sub) => {
   };
 }).pipe(
   catchError((error) => {
-    if (import.meta.env.DEV) {
-      console.error(error);
-    }
+    console.error(error);
 
     return EMPTY;
   }),
@@ -156,9 +118,7 @@ const app$ = defer(() => {
   return concat(whenReady$.pipe(ignoreElements()), resource$).pipe(
     tap(() => createWindow()),
     catchError((error) => {
-      if (import.meta.env.DEV) {
-        console.error(error);
-      }
+      console.error(error);
 
       return EMPTY;
     }),
@@ -183,7 +143,6 @@ browserWindowCreated$
       ).pipe(
         take(1),
         tap(() => win.show()),
-        tap(() => win.webContents.openDevTools()),
       );
     }),
   )
