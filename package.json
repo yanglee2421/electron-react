@@ -36,7 +36,8 @@
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
     "lint": "vp lint",
-    "ziyun": "pnpm -F app-ziyun dev"
+    "ziyun": "pnpm -F app-ziyun dev",
+    "dsb": "pnpm -F app-dsb dsb:dev"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",
