@@ -96,8 +96,17 @@ const watchPreload$ = new Observable((sub) => {
   const watcher = watch(preloadInput);
 
   watcher.on("event", (e) => {
-    if (e.code === "BUNDLE_END") {
-      sub.next(null);
+    switch (e.code) {
+      case "ERROR":
+        console.error(e.error);
+        break;
+      case "BUNDLE_END":
+        sub.next(null);
+        break;
+      case "START":
+      case "BUNDLE_START":
+      case "END":
+      default:
     }
   });
 
@@ -133,7 +142,6 @@ const watchMain$ = new Observable((sub) => {
 
 const startElectron = (ELECTRON_RENDERER_URL: string) => {
   return new Observable((sub) => {
-    const id = Date.now();
     const cp = spawn(require("electron"), ["."], {
       stdio: "inherit",
       env: { ELECTRON_RENDERER_URL },
@@ -144,17 +152,15 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
     });
     cp.on("spawn", () => {
       sub.next(cp);
-      console.log("spawn", id);
     });
     cp.on("exit", () => {
       sub.complete();
-      console.log("exit", id);
       process.exit();
     });
 
     return () => {
       cp.removeAllListeners();
-      console.log("kill", id, cp.kill("SIGKILL"));
+      cp.kill("SIGKILL");
     };
   }).pipe(
     catchError((error) => {
