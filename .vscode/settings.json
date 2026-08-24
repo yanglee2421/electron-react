@@ -35,5 +35,6 @@
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
-  }
+  },
+  "css.lint.unknownAtRules": "ignore"
 }
