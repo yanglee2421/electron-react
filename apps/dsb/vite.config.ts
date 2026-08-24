@@ -1,4 +1,5 @@
 import babel from "@rolldown/plugin-babel";
+import tailwindcss from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { electron } from "@yanglee2421/vite-plugin";
 import path from "node:path";
@@ -17,6 +18,11 @@ const alias = {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), electron()],
+  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset()] }),
+    tailwindcss(),
+    electron(),
+  ],
   resolve: { alias },
 });
