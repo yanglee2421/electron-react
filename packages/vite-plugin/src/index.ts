@@ -5,6 +5,7 @@ import process from "node:process";
 import url from "node:url";
 import type { BuildOptions } from "rolldown";
 import { build, watch } from "rolldown";
+import type { Subscription } from "rxjs";
 import {
   EMPTY,
   Observable,
@@ -153,7 +154,7 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
     cp.on("spawn", () => {
       sub.next(cp);
     });
-    cp.on("exit", () => {
+    cp.on("close", () => {
       sub.complete();
       process.exit();
     });
@@ -171,10 +172,10 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
   );
 };
 
-const serverCreated$ = new Subject<ViteDevServer | null>();
-const server$ = serverCreated$.pipe(
-  switchMap((devServer) => {
-    const http = devServer?.httpServer;
+const server$ = new Subject<ViteDevServer>();
+const startDev$ = server$.pipe(
+  switchMap((server) => {
+    const http = server.httpServer;
 
     if (!http) {
       return EMPTY;
@@ -191,13 +192,13 @@ const server$ = serverCreated$.pipe(
 
     return listening$.pipe(
       switchMap(() => {
-        const RENDERER_URL = devServer.resolvedUrls?.local.at(0) || "";
+        const RENDERER_URL = server.resolvedUrls?.local.at(0) || "";
 
         return merge(
           watchPreload$.pipe(
             debounceTime(1000 * 2),
             tap(() => {
-              devServer.ws.send({ type: "full-reload" });
+              server.ws.send({ type: "full-reload" });
             }),
           ),
           watchMain$.pipe(
@@ -212,8 +213,15 @@ const server$ = serverCreated$.pipe(
   }),
 );
 
+/**
+ * vite.config.ts is re-executed whenever the Vite server restarts.
+ * Store the previous subscription to avoid creating duplicate subscriptions.
+ */
+let subscribtion: Subscription | null = null;
+
 export const electron = (): Plugin[] => {
-  server$.subscribe();
+  subscribtion?.unsubscribe();
+  subscribtion = startDev$.subscribe();
 
   return [
     {
@@ -234,7 +242,7 @@ export const electron = (): Plugin[] => {
         };
       },
       configureServer(server) {
-        serverCreated$.next(server);
+        server$.next(server);
       },
     },
     {
