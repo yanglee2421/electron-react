@@ -1,8 +1,6 @@
 {
   "name": "@yanglee2421/external-db",
   "scripts": {
-    "dev": "tsdown",
-    "build": "tsdown",
     "pull": "drizzle-kit pull",
     "push": "drizzle-kit push",
     "generate": "drizzle-kit generate",
@@ -10,13 +8,10 @@
     "studio": "drizzle-kit studio"
   },
   "files": [
-    "dist"
+    "src"
   ],
   "exports": {
-    "types": {
-      "import": "./dist/main.d.mts"
-    },
-    "import": "./dist/main.mjs"
+    "import": "./src/main.ts"
   },
   "peerDependencies": {
     "drizzle-orm": "1.0.0-beta.22"
