@@ -18,8 +18,7 @@ import {
   tap,
 } from "rxjs";
 import type { Plugin, ViteDevServer } from "vite";
-import { png } from "./png.ts";
-import { worker } from "./worker.ts";
+import { resources } from "./resources.ts";
 export { reactDevtools } from "./react-devtools.ts";
 
 const require = module.createRequire(import.meta.url);
@@ -42,7 +41,7 @@ const preloadInput: BuildOptions = {
       __filename: [shimFile, "__filename"],
     },
   },
-  plugins: [png()],
+  plugins: [resources()],
 };
 
 const mainInput: BuildOptions = {
@@ -69,7 +68,7 @@ const mainInput: BuildOptions = {
       __filename: [shimFile, "__filename"],
     },
   },
-  plugins: [worker(), png()],
+  plugins: [resources()],
 };
 
 const exit$ = fromEventPattern(
