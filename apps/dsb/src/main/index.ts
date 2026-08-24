@@ -48,7 +48,7 @@ const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
   win.menuBarVisible = false;
 
   if (is.dev) {
-    win.loadURL(process.env.RENDERER_URL!);
+    win.loadURL(process.env.ELECTRON_RENDERER_URL!);
   } else {
     const RENDERER_FILE = path.resolve(__dirname, "../renderer/index.html");
     win.loadFile(RENDERER_FILE);
