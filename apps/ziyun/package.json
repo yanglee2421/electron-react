@@ -23,7 +23,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/yanglee2421/electron-react.git",
-    "directory": "/packages/electron-app"
+    "directory": "/apps/ziyun"
   },
   "files": [
     "release"
@@ -31,9 +31,9 @@
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build && electron-builder",
-    "build:unpack": "vite build && electron-builder --dir",
+    "dev": "vite",
+    "build": "tsc -b && vite build && electron-builder",
+    "build:unpack": "tsc -b && vite build && electron-builder --dir",
     "preview": "vite preview",
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
