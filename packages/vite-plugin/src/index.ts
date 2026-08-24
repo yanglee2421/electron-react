@@ -30,10 +30,10 @@ const preloadInput: BuildOptions = {
   input: "src/preload/index.ts",
   output: {
     format: "cjs",
+    codeSplitting: false,
     file: "out/preload/index.cjs",
   },
   platform: "node",
-
   external: ["electron"],
   transform: {
     inject: {
@@ -47,10 +47,10 @@ const mainInput: BuildOptions = {
   input: "src/main/index.ts",
   output: {
     format: "esm",
+    codeSplitting: false,
     file: "out/main/index.js",
   },
   platform: "node",
-
   external: [
     "electron",
     "@yanglee2421/cpp-addon",

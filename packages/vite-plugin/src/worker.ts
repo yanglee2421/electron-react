@@ -1,5 +1,11 @@
+import path from "node:path";
+import url from "node:url";
 import type { Plugin } from "rolldown";
-import { rolldown } from "rolldown";
+import { build } from "rolldown";
+
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const shimFile = path.resolve(__dirname, "esm-shims.ts");
 
 export const worker = (): Plugin => {
   return {
@@ -10,8 +16,13 @@ export const worker = (): Plugin => {
       },
       async handler(id) {
         const workerFilePath = id.replace("?worker&url", "");
-        const bundle = await rolldown({
+        const { output } = await build({
+          write: false,
           input: workerFilePath,
+          output: {
+            format: "esm",
+            codeSplitting: false,
+          },
           platform: "node",
           external: [
             "electron",
@@ -23,12 +34,14 @@ export const worker = (): Plugin => {
             "piscina",
             "serialport",
           ],
+          transform: {
+            inject: {
+              __dirname: [shimFile, "__dirname"],
+              __filename: [shimFile, "__filename"],
+            },
+          },
         });
-        const { output } = await bundle.generate({
-          format: "esm",
-          codeSplitting: false,
-        });
-        const workerChunk = output.find((chunk) => chunk.type === "chunk")!;
+        const [workerChunk] = output;
         const referenceId = this.emitFile({
           type: "asset",
           source: workerChunk.code,
