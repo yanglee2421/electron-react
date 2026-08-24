@@ -1,7 +1,8 @@
 import { ls } from "#main/lib/fs";
-import loaderWASM from "#resources/zxing_full.wasm?loader";
+import { app } from "electron";
 import { XMLParser } from "fast-xml-parser";
 import fs from "node:fs";
+import path from "node:path";
 import { PDFParse } from "pdf-parse";
 import { getPath } from "pdf-parse/worker";
 import { prepareZXingModule, readBarcodes } from "zxing-wasm";
@@ -9,14 +10,18 @@ import type { Invoice, IssuItemInformation, XMLJSONData } from "./types";
 
 PDFParse.setWorker(getPath());
 
+const wasmPath = path.join(app.getAppPath(), "resources/zxing_full.wasm");
+const wasmFileBuffer = fs.readFileSync(wasmPath);
+
 prepareZXingModule({
   overrides: {
-    instantiateWasm: async (
+    instantiateWasm(
       imports: WebAssembly.Imports,
       successCallback: (instance: WebAssembly.Instance) => void,
-    ) => {
-      const instance = await loaderWASM(imports);
-      successCallback(instance);
+    ) {
+      WebAssembly.instantiate(wasmFileBuffer, imports).then(({ instance }) =>
+        successCallback(instance),
+      );
       return {};
     },
   },

@@ -1,6 +1,6 @@
 import type { AppCradle } from "#main/features/types";
-import iconPath from "#resources/icon.png?asset";
 import { app, Menu, nativeImage, Tray } from "electron";
+import path from "node:path";
 import type { Subscription } from "rxjs";
 import {
   distinctUntilChanged,
@@ -25,6 +25,7 @@ export class AppTray {
           }
 
           return new Observable<Tray>((sub) => {
+            const iconPath = path.join(app.getAppPath(), "resources/icon.png");
             const tray = new Tray(nativeImage.createFromPath(iconPath));
             const contextMenu = Menu.buildFromTemplate([
               {

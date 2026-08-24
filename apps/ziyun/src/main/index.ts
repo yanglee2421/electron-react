@@ -156,7 +156,7 @@ const resource$ = new Observable((sub) => {
   };
 }).pipe(
   catchError((error) => {
-    if (import.meta.env.DEV) {
+    if (is.dev) {
       console.error(error);
     }
 

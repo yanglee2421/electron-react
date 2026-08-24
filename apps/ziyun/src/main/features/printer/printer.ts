@@ -1,5 +1,6 @@
 import type { ChannelImage } from "#main/workers/bmp";
-import workerPath from "#main/workers/bmp?modulePath";
+import workerPath from "#main/workers/bmp?worker&url";
+import { is } from "@electron-toolkit/utils";
 import { atFirstOrThrow } from "@yotulee/run";
 import { app } from "electron";
 import fs from "node:fs";
@@ -31,7 +32,7 @@ export class Printer {
     try {
       await fs.promises.rm(tmpPath, { recursive: true, force: true });
     } catch (error) {
-      if (import.meta.env.DEV) {
+      if (is.dev) {
         console.error(error);
       }
     }

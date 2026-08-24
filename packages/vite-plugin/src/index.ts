@@ -19,6 +19,7 @@ import {
 } from "rxjs";
 import type { Plugin, ViteDevServer } from "vite";
 import { worker } from "./worker.ts";
+export { reactDevtools } from "./react-devtools.ts";
 
 const require = module.createRequire(import.meta.url);
 const __filename = url.fileURLToPath(import.meta.url);
@@ -29,10 +30,10 @@ const preloadInput: BuildOptions = {
   input: "src/preload/index.ts",
   output: {
     format: "cjs",
+    codeSplitting: false,
     file: "out/preload/index.cjs",
   },
   platform: "node",
-
   external: ["electron"],
   transform: {
     inject: {
@@ -46,11 +47,20 @@ const mainInput: BuildOptions = {
   input: "src/main/index.ts",
   output: {
     format: "esm",
+    codeSplitting: false,
     file: "out/main/index.js",
   },
   platform: "node",
-
-  external: ["electron"],
+  external: [
+    "electron",
+    "@yanglee2421/cpp-addon",
+    "fast-xml-parser",
+    "pdf-parse",
+    "pdf-parse/worker",
+    "pdfjs-dist",
+    "piscina",
+    "serialport",
+  ],
   transform: {
     inject: {
       __dirname: [shimFile, "__dirname"],
@@ -120,23 +130,21 @@ const watchMain$ = new Observable((sub) => {
   };
 });
 
-const startElectron = (RENDERER_URL: string) => {
+const startElectron = (ELECTRON_RENDERER_URL: string) => {
   return new Observable((sub) => {
     const id = Date.now();
     const cp = spawn(require("electron"), ["."], {
       stdio: "inherit",
-      env: { RENDERER_URL },
+      env: { ELECTRON_RENDERER_URL },
     });
 
     cp.on("error", (error) => {
       sub.error(error);
     });
-
     cp.on("spawn", () => {
       sub.next(cp);
       console.log("spawn", id);
     });
-
     cp.on("exit", () => {
       sub.complete();
       console.log("exit", id);
@@ -169,7 +177,6 @@ const server$ = serverCreated$.pipe(
       (f) => http.on("close", f),
       (f) => http.off("close", f),
     );
-
     const listening$ = fromEventPattern(
       (f) => http.on("listening", f),
       (f) => http.off("listening", f),

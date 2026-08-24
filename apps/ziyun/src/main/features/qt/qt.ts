@@ -1,5 +1,5 @@
 import type { ChannelImage } from "#main/workers/bmp";
-import { platform } from "@electron-toolkit/utils";
+import { is, platform } from "@electron-toolkit/utils";
 import type { DBClient } from "@yanglee2421/external-db";
 import { relations, schema } from "@yanglee2421/external-db";
 import dayjs from "dayjs";
@@ -38,7 +38,7 @@ import {
   Subject,
   switchMap,
 } from "rxjs";
-import workerPath from "../../workers/bmp?modulePath";
+import workerPath from "../../workers/bmp?worker&url";
 import type { Logger } from "../logger";
 import type { Profile } from "../profile";
 import type { AppCradle } from "../types";
@@ -235,7 +235,7 @@ export class QT {
     try {
       await fs.promises.rm(tmpPath, { recursive: true, force: true });
     } catch (error) {
-      if (import.meta.env.DEV) {
+      if (is.dev) {
         console.error(error);
       }
     }
