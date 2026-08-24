@@ -1,6 +1,7 @@
 **/node_modules
+apps/dsb/release
 apps/ziyun/release
 packages/**/dist
 packages/**/build
-packages/**/out
 packages/**/bin
+packages/external-db/drizzle
