@@ -19,6 +19,7 @@ import {
 } from "rxjs";
 import type { Plugin, ViteDevServer } from "vite";
 import { worker } from "./worker.ts";
+export { reactDevtools } from "./react-devtools.ts";
 
 const require = module.createRequire(import.meta.url);
 const __filename = url.fileURLToPath(import.meta.url);
