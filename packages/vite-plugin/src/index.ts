@@ -50,7 +50,16 @@ const mainInput: BuildOptions = {
   },
   platform: "node",
 
-  external: ["electron"],
+  external: [
+    "electron",
+    "@yanglee2421/cpp-addon",
+    "fast-xml-parser",
+    "pdf-parse",
+    "pdf-parse/worker",
+    "pdfjs-dist",
+    "piscina",
+    "serialport",
+  ],
   transform: {
     inject: {
       __dirname: [shimFile, "__dirname"],
@@ -120,23 +129,21 @@ const watchMain$ = new Observable((sub) => {
   };
 });
 
-const startElectron = (RENDERER_URL: string) => {
+const startElectron = (ELECTRON_RENDERER_URL: string) => {
   return new Observable((sub) => {
     const id = Date.now();
     const cp = spawn(require("electron"), ["."], {
       stdio: "inherit",
-      env: { RENDERER_URL },
+      env: { ELECTRON_RENDERER_URL },
     });
 
     cp.on("error", (error) => {
       sub.error(error);
     });
-
     cp.on("spawn", () => {
       sub.next(cp);
       console.log("spawn", id);
     });
-
     cp.on("exit", () => {
       sub.complete();
       console.log("exit", id);
@@ -169,7 +176,6 @@ const server$ = serverCreated$.pipe(
       (f) => http.on("close", f),
       (f) => http.off("close", f),
     );
-
     const listening$ = fromEventPattern(
       (f) => http.on("listening", f),
       (f) => http.off("listening", f),

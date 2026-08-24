@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import pLimit from "p-limit";
 import { Piscina } from "piscina";
-import workerPath from "./worker?modulePath";
+import workerPath from "./worker?worker&url";
 
 export class ImageModule {
   private piscina: Piscina;

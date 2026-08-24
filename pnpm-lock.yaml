@@ -207,6 +207,9 @@ importers:
       '@yanglee2421/external-db':
         specifier: workspace:*
         version: link:../../packages/external-db
+      '@yanglee2421/vite-plugin':
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin
       '@yotulee/run':
         specifier: npm:@jsr/yotulee__run@^0.0.15
         version: '@jsr/yotulee__run@0.0.15'
