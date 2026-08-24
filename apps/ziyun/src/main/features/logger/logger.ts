@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { BrowserWindow } from "electron";
 import type { Subscription } from "rxjs";
-import { Subject } from "rxjs";
+import { Subject, tap } from "rxjs";
 import type { DBClient } from "../db/types";
 import type { AppCradle } from "../types";
 import type { ListOptions } from "./types";
@@ -23,11 +23,15 @@ export class Logger {
   constructor({ db }: AppCradle) {
     this.db = db.client;
 
-    this.subscription = this.event$.subscribe(() => {
-      BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("logUpdated");
-      });
-    });
+    this.subscription = this.event$
+      .pipe(
+        tap(() => {
+          BrowserWindow.getAllWindows().forEach((win) => {
+            win.webContents.send("logUpdated");
+          });
+        }),
+      )
+      .subscribe();
   }
 
   dispose() {

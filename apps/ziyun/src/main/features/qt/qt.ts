@@ -223,6 +223,7 @@ export class QT {
 
   async dispose() {
     this.db$.complete();
+    this.qtProcessTrigger$.complete();
     this.piscina.destroy();
     this.dbSubscription.unsubscribe();
     this.hmisSubscription.unsubscribe();

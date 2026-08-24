@@ -1,3 +1,4 @@
+import { ipc as kvIpc } from "#main/ioc/kv/ipc";
 import { is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import { app, BrowserWindow } from "electron";
@@ -15,11 +16,11 @@ import {
   ignoreElements,
   map,
   mergeMap,
-  Observable,
   of,
   take,
   takeUntil,
   tap,
+  zip,
 } from "rxjs";
 import { container } from "./ioc";
 
@@ -72,26 +73,6 @@ const secondInstance$ = fromEventPattern(
   (f) => app.off("second-instance", f),
 );
 
-const resource$ = new Observable((sub) => {
-  const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
-  container.register({ DB_PATH: asValue(DB_PATH) });
-
-  const { appDB } = container.cradle;
-  sub.next(appDB);
-
-  return () => {
-    container.dispose();
-  };
-}).pipe(
-  catchError((error) => {
-    if (is.dev) {
-      console.error(error);
-    }
-
-    return EMPTY;
-  }),
-);
-
 const app$ = defer(() => {
   const hasLocked = app.requestSingleInstanceLock();
 
@@ -105,7 +86,17 @@ const app$ = defer(() => {
     );
   }
 
-  return concat(whenReady$.pipe(ignoreElements()), resource$).pipe(
+  return concat(
+    whenReady$.pipe(ignoreElements()),
+    defer(() => {
+      const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
+      container.register({ DB_PATH: asValue(DB_PATH) });
+
+      const { kv } = container.cradle;
+
+      return zip([kvIpc(kv)]);
+    }),
+  ).pipe(
     tap(() => createWindow()),
     catchError((error) => {
       console.error(error);
@@ -115,7 +106,10 @@ const app$ = defer(() => {
   );
 }).pipe(
   takeUntil(willQuit$),
-  finalize(() => app.quit()),
+  finalize(() => {
+    container.dispose();
+    app.quit();
+  }),
 );
 
 app$.subscribe();
@@ -144,3 +138,5 @@ windowAllClosed$
     tap(() => app.quit()),
   )
   .subscribe();
+
+console.log(app.getName());

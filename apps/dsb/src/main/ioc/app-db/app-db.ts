@@ -11,7 +11,7 @@ import * as schema from "./schema";
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-type DBClient = NodeSQLiteDatabase<typeof schema, typeof relations> & {
+export type DBClient = NodeSQLiteDatabase<typeof schema, typeof relations> & {
   $client: DatabaseSync;
 };
 
