@@ -541,15 +541,15 @@ export const PrintCHR501 = () => {
                   </StyledImageTD>
                 </StyledTr>
                 <StyledTr>
-                  <StyledTd sx={{ fontSize: "12pt" }}>左轮座部扫描图</StyledTd>
-                  <StyledTd sx={{ fontSize: "12pt" }}>右轮座部扫描图</StyledTd>
+                  <StyledTd sx={{ fontSize: "12pt" }}>左轮座扫描图</StyledTd>
+                  <StyledTd sx={{ fontSize: "12pt" }}>右轮座扫描图</StyledTd>
                 </StyledTr>
                 <StyledTr>
                   <StyledImageTD>
-                    <StyledImage src={images.llz} alt="左轮座部扫描图" />
+                    <StyledImage src={images.llz} alt="左轮座扫描图" />
                   </StyledImageTD>
                   <StyledImageTD>
-                    <StyledImage src={images.rlz} alt="右轮座部扫描图" />
+                    <StyledImage src={images.rlz} alt="右轮座扫描图" />
                   </StyledImageTD>
                 </StyledTr>
                 <StyledTr>

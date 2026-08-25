@@ -482,7 +482,7 @@ export const Component = () => {
                     <View style={[styles.borderTR]}>
                       <ReportImage src={jpegs.lxh} height={IMAGE_HEIGHT} />
                     </View>
-                    <Cell font12>左轮座部扫描图</Cell>
+                    <Cell font12>左轮座扫描图</Cell>
                     <View style={[styles.borderTR]}>
                       <ReportImage src={jpegs.llz} height={IMAGE_HEIGHT} />
                     </View>
@@ -492,7 +492,7 @@ export const Component = () => {
                     <View style={[styles.borderTR]}>
                       <ReportImage src={jpegs.rxh} height={IMAGE_HEIGHT} />
                     </View>
-                    <Cell font12>右轮座部扫描图</Cell>
+                    <Cell font12>右轮座扫描图</Cell>
                     <View style={[styles.flex1, styles.borderTR]}>
                       <ReportImage src={jpegs.rlz} height={IMAGE_HEIGHT} />
                     </View>

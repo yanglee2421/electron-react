@@ -595,12 +595,7 @@ export class KH {
     );
 
     const dataGroup = mapGroupBy(datas, (i) => `${i.nBoard}-${i.nChannel}`);
-
-    const images = await this.upload501ImagesByFtp(
-      firstRecord.szIDs,
-      corporation.DeviceNO || "",
-    );
-
+    const images = await this.upload501ImagesByFtp(firstRecord.szIDs);
     const l01Datas = dataGroup.get(`0-3`) || [];
     const l01Detector = detectorGroup.get(`0-3`) || [];
     const l02Datas = dataGroup.get("0-4") || [];
@@ -2811,10 +2806,7 @@ export class KH {
       return `${divideBy10(db)}dB;${flaws.map((flaw) => mathFormat(flaw.fltValueX, { precision: 0 })).join(" ")}`;
     };
 
-    const images = await this.upload52aImageByFtp(
-      firstRecord.szIDs,
-      firstRecord.szIDsWheel || "",
-    );
+    const images = await this.upload52aImageByFtp(firstRecord.szIDs);
 
     return {
       xrsj: dayjs().format("YYYY-MM-DD HH:mm:ss"),
@@ -2903,7 +2895,7 @@ export class KH {
       ysy: this.state.tsysy,
     };
   }
-  async upload501ImagesByFtp(id: string, sbbh: string) {
+  async upload501ImagesByFtp(id: string) {
     const rootPath = await this.mdb.rootFolder();
     const lxhImage = this.mdb.imagePath(rootPath, `${id}.LXH.bmp`);
     const rxhImage = this.mdb.imagePath(rootPath, `${id}.RXH.bmp`);
@@ -2911,14 +2903,13 @@ export class KH {
     const rlzImage = this.mdb.imagePath(rootPath, `${id}.RLZ.bmp`);
     const lctImage = this.mdb.imagePath(rootPath, `${id}.LCT.bmp`);
     const rctImage = this.mdb.imagePath(rootPath, `${id}.RCT.bmp`);
-    const date = dayjs().format("YYYYMMDD");
 
-    let lxhFtpPath = `/sbjy/rj/${sbbh + date}01.bmp`;
-    let rxhFtpPath = `/sbjy/rj/${sbbh + date}02.bmp`;
-    let llzFtpPath = `/sbjy/rj/${sbbh + date}03.bmp`;
-    let rlzFtpPath = `/sbjy/rj/${sbbh + date}04.bmp`;
-    let lctFtpPath = `/sbjy/rj/${sbbh + date}05.bmp`;
-    let rctFtpPath = `/sbjy/rj/${sbbh + date}06.bmp`;
+    let lxhFtpPath = `/sbjy/rj/左轴颈根部扫描图.bmp`;
+    let rxhFtpPath = `/sbjy/rj/右轴颈根部扫描图.bmp`;
+    let llzFtpPath = `/sbjy/rj/左轮座扫描图.bmp`;
+    let rlzFtpPath = `/sbjy/rj/右轮座扫描图.bmp`;
+    let lctFtpPath = `/sbjy/rj/左穿透扫描图.bmp`;
+    let rctFtpPath = `/sbjy/rj/右穿透扫描图.bmp`;
 
     const ftpClient = new Client();
 
@@ -3004,7 +2995,7 @@ export class KH {
       rctFtpPath,
     };
   }
-  async upload52aImageByFtp(id: string, zh: string) {
+  async upload52aImageByFtp(id: string) {
     const rootPath = await this.mdb.rootFolder();
     const lxhImage = this.mdb.dataImagePath(rootPath, `${id}.LXH.bmp`);
     const rxhImage = this.mdb.dataImagePath(rootPath, `${id}.RXH.bmp`);
@@ -3012,13 +3003,13 @@ export class KH {
     const rlzImage = this.mdb.dataImagePath(rootPath, `${id}.RLZ.bmp`);
     const lctImage = this.mdb.dataImagePath(rootPath, `${id}.LCT.bmp`);
     const rctImage = this.mdb.dataImagePath(rootPath, `${id}.RCT.bmp`);
-    const date = dayjs().format("YYYYMMDD");
-    let lxhFtpPath = `/csbts/${date + zh}01.bmp`;
-    let rxhFtpPath = `/csbts/${date + zh}02.bmp`;
-    let llzFtpPath = `/csbts/${date + zh}03.bmp`;
-    let rlzFtpPath = `/csbts/${date + zh}04.bmp`;
-    let lctFtpPath = `/csbts/${date + zh}05.bmp`;
-    let rctFtpPath = `/csbts/${date + zh}06.bmp`;
+
+    let lxhFtpPath = `/csbts/左轴颈根部扫描图.bmp`;
+    let rxhFtpPath = `/csbts/右轴颈根部扫描图.bmp`;
+    let llzFtpPath = `/csbts/左轮座扫描图.bmp`;
+    let rlzFtpPath = `/csbts/右轮座扫描图.bmp`;
+    let lctFtpPath = `/csbts/左穿透扫描图.bmp`;
+    let rctFtpPath = `/csbts/右穿透扫描图.bmp`;
 
     const ftpClient = new Client();
 

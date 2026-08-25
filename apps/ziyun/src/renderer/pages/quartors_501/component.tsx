@@ -377,7 +377,7 @@ const ReportDoc = (props: ReportDocProps) => {
                   <View style={[styles.borderTR]}>
                     <ReportImage height={IMAGE_HEIGHT} src={props.imageLXH} />
                   </View>
-                  <Cell font12>左轮座部扫描图</Cell>
+                  <Cell font12>左轮座扫描图</Cell>
                   <View style={[styles.borderTR]}>
                     <ReportImage height={IMAGE_HEIGHT} src={props.imageLLZ} />
                   </View>
@@ -387,7 +387,7 @@ const ReportDoc = (props: ReportDocProps) => {
                   <View style={[styles.borderTR]}>
                     <ReportImage height={IMAGE_HEIGHT} src={props.imageRXH} />
                   </View>
-                  <Cell font12>右轮座部扫描图</Cell>
+                  <Cell font12>右轮座扫描图</Cell>
                   <View style={[styles.flex1, styles.borderTR]}>
                     <ReportImage height={IMAGE_HEIGHT} src={props.imageRLZ} />
                   </View>
