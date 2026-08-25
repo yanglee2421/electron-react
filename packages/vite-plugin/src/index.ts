@@ -30,7 +30,7 @@ const shimFile = path.resolve(__dirname, "esm-shims.ts");
 const packageJsonPath = path.resolve(process.cwd(), "./package.json");
 const packageJson = fs.readFileSync(packageJsonPath, "utf-8");
 const { dependencies } = JSON.parse(packageJson);
-const external = ["electron", ...Object.keys(dependencies)];
+const external = ["electron", "pdf-parse/worker", ...Object.keys(dependencies)];
 
 const preloadInput: BuildOptions = {
   input: "src/preload/index.ts",

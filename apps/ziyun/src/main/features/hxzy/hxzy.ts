@@ -278,7 +278,7 @@ export class Hxzy {
     } = await this.mdb
       .root()
       .detections()
-      .equal("szIDsMake", record.zh)
+      .equal("szIDsWheel", record.zh)
       .date("tmnow", new Date(startDate), new Date(endDate))
       .orderBy("tmnow", "desc");
 

@@ -433,8 +433,9 @@ export class KH {
     } = await this.mdb
       .root()
       .detections()
-      .equal("szIDsMake", record.zh)
-      .date("tmnow", new Date(startDate), new Date(endDate));
+      .equal("szIDsWheel", record.zh)
+      .date("tmnow", new Date(startDate), new Date(endDate))
+      .orderBy("tmnow", "desc");
 
     if (!detection) {
       throw new Error(`未找到记录#${id}对应的检测数据`);
