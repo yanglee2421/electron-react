@@ -1314,7 +1314,7 @@ export const Component = () => {
       <ScrollToTopButton />
       <Card>
         <CardHeader
-          title="QT"
+          title="信创版软件"
           action={
             <IconButton
               onClick={() => {
