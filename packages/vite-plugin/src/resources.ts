@@ -1,14 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
-import type { Plugin } from "rolldown";
+import type { ExternalOption, Plugin } from "rolldown";
 import { build } from "rolldown";
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const shimFile = path.resolve(__dirname, "esm-shims.ts");
 
-export const resources = (): Plugin[] => {
+interface ResourcesInput {
+  external: ExternalOption;
+}
+
+export const resources = (input: ResourcesInput): Plugin[] => {
   return [
     {
       name: "resolver-worker",
@@ -24,16 +28,7 @@ export const resources = (): Plugin[] => {
               codeSplitting: false,
             },
             platform: "node",
-            external: [
-              "electron",
-              "@yanglee2421/cpp-addon",
-              "fast-xml-parser",
-              "pdf-parse",
-              "pdf-parse/worker",
-              "pdfjs-dist",
-              "piscina",
-              "serialport",
-            ],
+            external: input.external,
             transform: {
               inject: {
                 __dirname: [shimFile, "__dirname"],
@@ -56,9 +51,9 @@ export const resources = (): Plugin[] => {
       },
     },
     {
-      name: "resolver-png",
+      name: "resolver-assets",
       load: {
-        filter: { id: /\.png$/ },
+        filter: { id: [/\.png$/, /\.svg$/, /\.jpe?g$/] },
         handler(id) {
           const referenceId = this.emitFile({
             type: "asset",

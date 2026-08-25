@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 import module from "node:module";
 import path from "node:path";
 import process from "node:process";
@@ -26,6 +27,10 @@ const require = module.createRequire(import.meta.url);
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const shimFile = path.resolve(__dirname, "esm-shims.ts");
+const packageJsonPath = path.resolve(process.cwd(), "./package.json");
+const packageJson = fs.readFileSync(packageJsonPath, "utf-8");
+const { dependencies } = JSON.parse(packageJson);
+const external = ["electron", ...Object.keys(dependencies)];
 
 const preloadInput: BuildOptions = {
   input: "src/preload/index.ts",
@@ -35,14 +40,14 @@ const preloadInput: BuildOptions = {
     file: "out/preload/index.cjs",
   },
   platform: "node",
-  external: ["electron"],
+  external,
   transform: {
     inject: {
       __dirname: [shimFile, "__dirname"],
       __filename: [shimFile, "__filename"],
     },
   },
-  plugins: [resources()],
+  plugins: [resources({ external })],
 };
 
 const mainInput: BuildOptions = {
@@ -53,23 +58,14 @@ const mainInput: BuildOptions = {
     file: "out/main/index.js",
   },
   platform: "node",
-  external: [
-    "electron",
-    "@yanglee2421/cpp-addon",
-    "fast-xml-parser",
-    "pdf-parse",
-    "pdf-parse/worker",
-    "pdfjs-dist",
-    "piscina",
-    "serialport",
-  ],
+  external,
   transform: {
     inject: {
       __dirname: [shimFile, "__dirname"],
       __filename: [shimFile, "__filename"],
     },
   },
-  plugins: [resources()],
+  plugins: [resources({ external })],
 };
 
 const exit$ = fromEventPattern(

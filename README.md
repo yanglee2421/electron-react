@@ -43,24 +43,13 @@ docker compose up --build
 
 ## Note
 
-Before development and packaging, generate SQL files for database migration using the following command:
-
-Generating SQL depends on the contents of `schema.ts`. After modifying `schema.ts`, you need to regenerate the SQL files.
-
 ```bash
-npx drizzle-kit generate
-```
-
-If you need react dev tools
-
-```bash
+# If you need react dev tools
 npx react-devtools
 ```
 
-Setup terminal encode to UTF8 in Powershell
-
 ```bash
-# windows powershell
+# Setup terminal encode to UTF8 in Powershell
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 ```
 
@@ -70,23 +59,18 @@ $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 docker build ./your_directory
 docker build -t imageName:imageTag ./your_directory
 
-# 直接用 docker run 执行命令
-docker run --rm my-ubuntu-gcc11 gcc --version
 
-# 进入容器交互式检查
+docker run --rm my-ubuntu-gcc11 gcc --version
 docker run -it --rm my-ubuntu-gcc11 bash
 
-# 如果容器已经在运行
 docker ps
 docker exec -it <container_id_or_name> bash
 
-# 清理掉所有停止的容器、未使用的网络、悬空镜像（dangling images）以及构建缓存
+
 docker system prune
-# 默认的 prune 不会删掉“正在被某个容器使用”或者“有标签（Tag）”的镜像。如果你想连同未使用的镜像一起删掉，加上 -a
 docker system prune -a --volumes
-# 如果你只是想清空构建缓存，可以用
+
 docker builder prune
-# 如果要强制删除所有构建缓存（包括最近使用的）：
 docker builder prune -a
 ```
 
@@ -108,8 +92,6 @@ docker compose stats
 
 ### Diskpart
 
-在WSL中使用Docker进行构建时会生成大量的缓存，这些缓存在使用`docker builder prune -a`后并不会将空间返回给宿主机器，需要使用`diskpart`对docker使用的虚拟磁盘进行压缩才能重新获取这些空间
-
 ```bash
 docker system df
 wsl --shutdown
@@ -118,69 +100,4 @@ select vdisk file="C:\Users\lee\AppData\Local\Docker\wsl\disk\docker_data.vhdx"
 compact vdisk
 detach vdisk
 exit
-```
-
-Else
-
-- HMIS:从`usprofile.ini`文件读取`InputSkip`，确保自动填充不会引起闪退
-- password: `Joney`
-
-## URL规则
-
-```js
-// 协议 + 域名 + 端口 + path + search
-
-/**
- * 日常表 501
- *
- * 路径参数
- * RECORD_SZIDS: 对应记录的szIds
- *
- * 搜索参数
- * sidebar: 不存在或为1表示显示边栏；存在且不为1表示不显示边栏
- */
-"app-ziyun://localhost/qt/verifies/RECORD_SZIDS/501?sidebar=0";
-
-/**
- * 季度表 502
- *
- * 搜索参数
- * sidebar: 不存在或为1表示显示边栏；存在且不为1表示不显示边栏
- * user: 按操作工过滤
- * zx: 按轴型过滤
- * date: 按时间日期过滤
- */
-"app-ziyun://localhost/qt/quartors/502?user=UserName1&zx=re2b&date=2026-08-11";
-
-/**
- * 年度表503
- *
- * 路径参数
- * RECORD_SZIDS: 对应记录的szIds
- *
- * 搜索参数
- * sidebar: 不存在或为1表示显示边栏；存在且不为1表示不显示边栏
- */
-"app-ziyun://localhost/qt/anniversary/RECORD_SZIDS/503?sidebar=0";
-
-/**
- * 缺陷表 52A
- *
- * 路径参数
- * RECORD_SZIDS: 对应记录的szIds
- *
- * 搜索参数
- * sidebar: 不存在或为1表示显示边栏；存在且不为1表示不显示边栏
- */
-"app-ziyun://localhost/qt/detections/RECORD_SZIDS/52a?sidebar=0";
-
-/**
- * 现车作业记录表 53A
- *
- * 搜索参数
- * sidebar: 不存在或为1表示显示边栏；存在且不为1表示不显示边栏
- * user: 按操作工过滤
- * date: 按时间日期过滤
- */
-"app-ziyun://localhost/qt/detections/53a?sidebar=0&user=UserName&date=2026-08-11";
 ```
