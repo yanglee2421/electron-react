@@ -279,7 +279,8 @@ export class Hxzy {
       .root()
       .detections()
       .equal("szIDsMake", record.zh)
-      .date("tmnow", new Date(startDate), new Date(endDate));
+      .date("tmnow", new Date(startDate), new Date(endDate))
+      .orderBy("tmnow", "desc");
 
     if (!detection) {
       throw new Error(`记录#${id}对应的检测数据不存在`);
