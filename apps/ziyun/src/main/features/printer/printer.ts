@@ -50,14 +50,16 @@ export class Printer {
     const detectors = await this.mdb
       .app()
       .detectors()
-      .equal("szwheel", record.szWHModel || "");
+      .equal("szwheel", record.szWHModel || "")
+      .notEqual("szName", "空");
     const rootPath = await this.mdb.rootFolder();
-    const lctImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LCT.bmp`);
-    const rctImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RCT.bmp`);
-    const llzImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LLZ.bmp`);
-    const rlzImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RLZ.bmp`);
-    const lxhImage = this.mdb.imagePath(rootPath, `${record.szIDs}.LXH.bmp`);
-    const rxhImage = this.mdb.imagePath(rootPath, `${record.szIDs}.RXH.bmp`);
+    const szIDs = record.szIDs;
+    const lctImage = this.mdb.imagePath(rootPath, `${szIDs}.LCT.bmp`);
+    const rctImage = this.mdb.imagePath(rootPath, `${szIDs}.RCT.bmp`);
+    const llzImage = this.mdb.imagePath(rootPath, `${szIDs}.LLZ.bmp`);
+    const rlzImage = this.mdb.imagePath(rootPath, `${szIDs}.RLZ.bmp`);
+    const lxhImage = this.mdb.imagePath(rootPath, `${szIDs}.LXH.bmp`);
+    const rxhImage = this.mdb.imagePath(rootPath, `${szIDs}.RXH.bmp`);
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     await fs.promises.mkdir(tmpPath, { recursive: true });
@@ -90,11 +92,12 @@ export class Printer {
       .limit(5);
 
     const firstRecord = records.rows
-      .toSorted(
-        (a, b) =>
+      .toSorted((a, b) => {
+        return (
           (a.tmnow?.getTime() || Number.POSITIVE_INFINITY) -
-          (b.tmnow?.getTime() || Number.POSITIVE_INFINITY),
-      )
+          (b.tmnow?.getTime() || Number.POSITIVE_INFINITY)
+        );
+      })
       .at(0);
 
     if (!firstRecord) {
@@ -119,12 +122,18 @@ export class Printer {
       );
 
     const corporation = await this.mdb.app().corporation();
+    const { rows: detectors } = await this.mdb
+      .app()
+      .detectors()
+      .equal("szwheel", firstRecord.szWHModel || "")
+      .notEqual("szName", "空");
 
     return {
       records: records.rows,
       flaws: datas.rows,
       previousRecord: previousRecord.rows.at(0) || null,
       corporation,
+      detectors,
     };
   }
 
@@ -191,11 +200,18 @@ export class Printer {
       rxh: rxhImage,
     });
 
+    const { rows: detectors } = await this.mdb
+      .app()
+      .detectors()
+      .equal("szwheel", record.szWHModel || "")
+      .notEqual("szName", "空");
+
     return {
       record,
       datas: datasResult.rows,
       corporation,
       jpegs,
+      detectors,
     };
   }
 
@@ -211,7 +227,8 @@ export class Printer {
     const detectors = await this.mdb
       .app()
       .detectors()
-      .equal("szwheel", record.szWHModel || "");
+      .equal("szwheel", record.szWHModel || "")
+      .notEqual("szName", "空");
     const rootPath = await this.mdb.rootFolder();
     const szIDs = record.szIDs;
     const lctImage = this.mdb.quartorImagePath(rootPath, `${szIDs}.LCT.bmp`);

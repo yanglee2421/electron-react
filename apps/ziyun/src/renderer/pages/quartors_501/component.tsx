@@ -90,18 +90,24 @@ const EquipmentTable = (props: EquipmentTableProps) => {
 
 interface LZInfoTableProps {
   board: number;
-  jy3?: string;
-  jy4?: string;
-  jy2?: string;
-  bc3?: string;
-  bc4?: string;
-  bc2?: string;
-  ts3?: string;
-  ts4?: string;
-  ts2?: string;
-  zsj3?: string;
-  zsj4?: string;
+
+  chName2?: React.ReactNode;
   zsj2?: string;
+  jy2?: string;
+  bc2?: string;
+  ts2?: string;
+
+  chName3?: React.ReactNode;
+  zsj3?: string;
+  jy3?: string;
+  bc3?: string;
+  ts3?: string;
+
+  chName4?: React.ReactNode;
+  zsj4?: string;
+  jy4?: string;
+  bc4?: string;
+  ts4?: string;
 }
 
 const LZInfoTable = (props: LZInfoTableProps) => {
@@ -127,21 +133,21 @@ const LZInfoTable = (props: LZInfoTableProps) => {
           </Row>
         </Col>
         <Col>
-          <Cell>{direction}外</Cell>
+          <Cell>{props.jy3 ? props.chName3 : null}</Cell>
           <Cell>{props.zsj3}</Cell>
           <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy3}</Cell>
           <Cell>{props.bc3}</Cell>
           <Cell>{props.ts3}</Cell>
         </Col>
         <Col>
-          <Cell>{direction}内</Cell>
+          <Cell>{props.jy4 ? props.chName4 : null}</Cell>
           <Cell>{props.zsj4}</Cell>
           <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy4}</Cell>
           <Cell>{props.bc4}</Cell>
           <Cell>{props.ts4}</Cell>
         </Col>
         <Col>
-          <Cell>{props.jy2 ? direction + "A3" : null}</Cell>
+          <Cell>{props.jy2 ? props.chName2 : null}</Cell>
           <Cell>{props.jy2 ? props.zsj2 : null}</Cell>
           <Cell height={BASIC_ROW_HEIGHT * 1.5}>
             {props.jy2 ? props.jy2 : null}
@@ -156,16 +162,18 @@ const LZInfoTable = (props: LZInfoTableProps) => {
 
 interface XHCTableProps {
   board: number;
+  ctName?: React.ReactNode;
   ctJy?: string;
   ctBc?: string;
   ctTs?: string;
   ctZsj?: string;
   ctValue?: string;
+
+  xhChannelName?: React.ReactNode;
+  xhZsj?: string;
   xhJy?: string;
   xhBc?: string;
   xhTs?: string;
-  xhZsj?: string;
-  xhChannelName?: string;
   xhValue1?: string;
   xhValue2?: string;
   xhValue3?: string;
@@ -187,9 +195,9 @@ const XHCTable = (props: XHCTableProps) => {
       </Col>
       <Col width={XHC_CHANNEL_COL_WIDTH}>
         <Cell height={BASIC_ROW_HEIGHT * 2.5}>通道{"\n"}编号</Cell>
-        <Cell>{props.xhChannelName?.replace(/[左右0]/g, "")}</Cell>
+        <Cell>{props.xhChannelName}</Cell>
         <Cell></Cell>
-        <Cell height={BASIC_ROW_HEIGHT * 1.5}>CT</Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctName}</Cell>
       </Col>
       <Col width={XHC_ZSJ_COL_WIDTH}>
         <Cell height={BASIC_ROW_HEIGHT * 2.5}>拆射{"\n"}角度</Cell>
@@ -472,18 +480,23 @@ export const Component = () => {
               <View key={board} style={[styles.flex1]}>
                 <LZInfoTable
                   board={board}
+                  chName2={detectorInfo.get(`${board}-2`)?.chName}
+                  zsj2={detectorInfo.get(`${board}-2`)?.zsj}
                   jy2={detectorInfo.get(`${board}-2`)?.jy}
                   bc2={detectorInfo.get(`${board}-2`)?.bc}
                   ts2={detectorInfo.get(`${board}-2`)?.ts}
-                  zsj2={detectorInfo.get(`${board}-2`)?.zsj}
+
+                  chName3={detectorInfo.get(`${board}-3`)?.chName}
+                  zsj3={detectorInfo.get(`${board}-3`)?.zsj}
                   jy3={detectorInfo.get(`${board}-3`)?.jy}
                   bc3={detectorInfo.get(`${board}-3`)?.bc}
                   ts3={detectorInfo.get(`${board}-3`)?.ts}
-                  zsj3={detectorInfo.get(`${board}-3`)?.zsj}
+
+                  chName4={detectorInfo.get(`${board}-4`)?.chName}
+                  zsj4={detectorInfo.get(`${board}-4`)?.zsj}
                   jy4={detectorInfo.get(`${board}-4`)?.jy}
                   bc4={detectorInfo.get(`${board}-4`)?.bc}
                   ts4={detectorInfo.get(`${board}-4`)?.ts}
-                  zsj4={detectorInfo.get(`${board}-4`)?.zsj}
                 />
                 {of13.map((_, flawNo) => {
                   return (
@@ -517,16 +530,22 @@ export const Component = () => {
                 })}
                 <XHCTable
                   board={board}
+                  ctName={detectorInfo
+                    .get(`${board}-0`)
+                    ?.chName?.replace(/[左右0]/g, "")}
+                  ctZsj={detectorInfo.get(`${board}-0`)?.zsj}
                   ctBc={detectorInfo.get(`${board}-0`)?.bc}
                   ctJy={detectorInfo.get(`${board}-0`)?.jy}
                   ctTs={detectorInfo.get(`${board}-0`)?.ts}
-                  ctZsj={detectorInfo.get(`${board}-0`)?.zsj}
                   ctValue={flawInfo.get(`${board}-0`)?.at(0)?.value}
+
+                  xhChannelName={detectorInfo
+                    .get(`${board}-1`)
+                    ?.chName?.replace(/[左右0]/g, "")}
+                  xhZsj={detectorInfo.get(`${board}-1`)?.zsj}
                   xhBc={detectorInfo.get(`${board}-1`)?.bc}
                   xhJy={detectorInfo.get(`${board}-1`)?.jy}
                   xhTs={detectorInfo.get(`${board}-1`)?.ts}
-                  xhZsj={detectorInfo.get(`${board}-1`)?.zsj}
-                  xhChannelName={detectorInfo.get(`${board}-1`)?.place}
                   xhValue1={flawInfo.get(`${board}-1`)?.at(0)?.value}
                   xhValue2={flawInfo.get(`${board}-1`)?.at(1)?.value}
                   xhValue3={flawInfo.get(`${board}-1`)?.at(2)?.value}

@@ -86,12 +86,17 @@ export const Component = () => {
       );
     }
 
-    const { corporation, record, datas, jpegs } = query.data;
+    const { corporation, record, datas, jpegs, detectors } = query.data;
     const memoInfo = resolveMemoInfo(record.szMemo);
-    const flawGroup = mapGroupBy(
-      datas,
-      (data) => `${data.nBoard}-${data.nChannel}`,
-    );
+    const flawGroup = mapGroupBy(datas, (i) => `${i.nBoard}-${i.nChannel}`);
+    const chNameMap = detectors.reduce((map, item) => {
+      const board = item.nBoard;
+      const channel = item.nChannel;
+
+      map.set(`${board}-${channel}`, item.szName);
+
+      return map;
+    }, new Map<string, string | null>());
 
     const renderFlawCount = (board: number, channel: number) => {
       return flawGroup.get(`${board}-${channel}`)?.length || "无";
@@ -180,37 +185,37 @@ export const Component = () => {
                   <Col width={96}>
                     <Cell>探头编号</Cell>
                     <Cell center={false} pl>
-                      左穿透: {renderFlawCount(0, 0)}
+                      {chNameMap.get("0-0")}: {renderFlawCount(0, 0)}
                     </Cell>
                     <Cell center={false} pl>
-                      左A01: {renderFlawCount(0, 1)}
+                      {chNameMap.get("0-1")}: {renderFlawCount(0, 1)}
                     </Cell>
                     <Cell center={false} pl>
-                      左A02: {renderFlawCount(0, 2)}
+                      {chNameMap.get("0-2")}: {renderFlawCount(0, 2)}
                     </Cell>
                     <Cell center={false} pl>
-                      左轮座01: {renderFlawCount(0, 3)}
+                      {chNameMap.get("0-3")}: {renderFlawCount(0, 3)}
                     </Cell>
                     <Cell center={false} pl>
-                      左轮座02: {renderFlawCount(0, 4)}
+                      {chNameMap.get("0-4")}: {renderFlawCount(0, 4)}
                     </Cell>
                     {of(4).map((_) => {
                       return <Cell key={_}></Cell>;
                     })}
                     <Cell center={false} pl>
-                      右穿透: {renderFlawCount(1, 0)}
+                      {chNameMap.get("1-0")}: {renderFlawCount(1, 0)}
                     </Cell>
                     <Cell center={false} pl>
-                      右A01: {renderFlawCount(1, 1)}
+                      {chNameMap.get("1-1")}: {renderFlawCount(1, 1)}
                     </Cell>
                     <Cell center={false} pl>
-                      右A02: {renderFlawCount(1, 2)}
+                      {chNameMap.get("1-2")}: {renderFlawCount(1, 2)}
                     </Cell>
                     <Cell center={false} pl>
-                      右轮座01: {renderFlawCount(1, 3)}
+                      {chNameMap.get("1-3")}: {renderFlawCount(1, 3)}
                     </Cell>
                     <Cell center={false} pl>
-                      右轮座02: {renderFlawCount(1, 4)}
+                      {chNameMap.get("1-4")}: {renderFlawCount(1, 4)}
                     </Cell>
                     {of(4).map((_) => {
                       return <Cell key={_}></Cell>;

@@ -14,6 +14,7 @@ import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Alert, AlertTitle } from "@mui/material";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
+import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import React from "react";
 import { useSearchParams } from "react-router";
@@ -148,6 +149,11 @@ interface ReportDocProps {
   children?: React.ReactNode;
   tableHeader: TableHeaderProps;
   equipmentTable: EquipmentTableProps;
+  chName0?: React.ReactNode;
+  chName1?: React.ReactNode;
+  chName2?: React.ReactNode;
+  chName3?: React.ReactNode;
+  chName4?: React.ReactNode;
 }
 
 const ReportDoc = (props: ReportDocProps) => {
@@ -181,14 +187,14 @@ const ReportDoc = (props: ReportDocProps) => {
                       <Cell>全轴穿透</Cell>
                     </Col>
                     <Col>
-                      <Cell>A1</Cell>
-                      <Cell>A3</Cell>
-                      <Cell>01</Cell>
-                      <Cell>02</Cell>
+                      <Cell>{props.chName1}</Cell>
+                      <Cell>{props.chName2}</Cell>
+                      <Cell>{props.chName3}</Cell>
+                      <Cell>{props.chName4}</Cell>
                       {of(10).map((_) => (
                         <Cell key={_}></Cell>
                       ))}
-                      <Cell>CT</Cell>
+                      <Cell>{props.chName0}</Cell>
                     </Col>
                   </Row>
                 </Col>
@@ -231,13 +237,38 @@ export const Component = () => {
     }
 
     const of10 = of(10);
-    const { flaws, records, corporation, previousRecord } = query.data;
+    const { flaws, records, corporation, previousRecord, detectors } =
+      query.data;
     const { attenMap, resultInfo, maxDiffInfo } = resolveCHR502(flaws);
     const opids = records
-      .toSorted(
-        (a, b) => new Date(a.tmnow!).getTime() - new Date(b.tmnow!).getTime(),
-      )
+      .toSorted((a, b) => {
+        return new Date(a.tmnow!).getTime() - new Date(b.tmnow!).getTime();
+      })
       .map((record) => record.szIDs);
+    const chNameMap = detectors.reduce((map, item) => {
+      const board = item.nBoard;
+      const channel = item.nChannel;
+
+      map.set(`${board}-${channel}`, item.szName);
+
+      return map;
+    }, new Map<string, string | null>());
+    const flawsMap = mapGroupBy(flaws, (i) => `${i.nBoard}-${i.nChannel}`);
+    const renderChName = (channel: number) => {
+      const leftFlawCount = flawsMap.get(`0-${channel}`)?.length;
+
+      if (leftFlawCount) {
+        return chNameMap.get(`0-${channel}`)?.replace(/[左右0]/g, "");
+      }
+
+      const rightFlawCount = flawsMap.get(`1-${channel}`)?.length;
+
+      if (rightFlawCount) {
+        return chNameMap.get(`1-${channel}`)?.replace(/[左右0]/g, "");
+      }
+
+      return "";
+    };
 
     return (
       <PDFViewer
@@ -257,6 +288,11 @@ export const Component = () => {
               "YYYY-MM-DD",
             ),
           }}
+          chName0={renderChName(0)}
+          chName1={renderChName(1)}
+          chName2={renderChName(2)}
+          chName3={renderChName(3)}
+          chName4={renderChName(4)}
         >
           <Col>
             <Cell>反射波高(dB)</Cell>

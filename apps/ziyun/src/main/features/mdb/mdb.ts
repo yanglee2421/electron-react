@@ -103,6 +103,7 @@ class TableQueryBuilder<
 > extends QueryPromise<TResult> {
   private likes: FilterValue[] = [];
   private equals: FilterValue[] = [];
+  private notEquals: FilterValue[] = [];
   private ins: FilterInValues[] = [];
   private dates: FilterDateValue[] = [];
   private offsetValue: number = 0;
@@ -144,6 +145,11 @@ class TableQueryBuilder<
   }
   equal<TKey extends keyof TRow>(key: TKey, value: TRow[TKey]) {
     this.equals.push({ key, value });
+
+    return this;
+  }
+  notEqual<TKey extends keyof TRow>(key: TKey, value: TRow[TKey]) {
+    this.notEquals.push({ key, value });
 
     return this;
   }
@@ -189,6 +195,7 @@ class TableQueryBuilder<
       limit: this.limitValue,
       likes: this.likes,
       equals: this.equals,
+      notEquals: this.notEquals,
       ins: this.ins,
       dates: this.dates,
       orderBy: this.orderByKey,

@@ -579,45 +579,42 @@ export class KH {
       throw new Error(`未能找到#${id}对应的记录`);
     }
 
-    const corporation = await this.mdb.app().corporation();
     const { rows: detectors } = await this.mdb
       .app()
       .detectors()
-      .equal("szwheel", firstRecord.szWHModel || "");
+      .equal("szwheel", firstRecord.szWHModel || "")
+      .notEqual("szName", "空");
     const { rows: datas } = await this.mdb
       .root()
       .verifies_data()
       .equal("opid", firstRecord.szIDs);
 
-    const detectorGroup = mapGroupBy(
-      detectors,
-      (i) => `${i.nBoard}-${i.nChannel}`,
-    );
-
-    const dataGroup = mapGroupBy(datas, (i) => `${i.nBoard}-${i.nChannel}`);
+    const corporation = await this.mdb.app().corporation();
+    const chMap = mapGroupBy(detectors, (i) => `${i.nBoard}-${i.nChannel}`);
+    const flawMap = mapGroupBy(datas, (i) => `${i.nBoard}-${i.nChannel}`);
     const images = await this.upload501ImagesByFtp(firstRecord.szIDs);
-    const l01Datas = dataGroup.get(`0-3`) || [];
-    const l01Detector = detectorGroup.get(`0-3`) || [];
-    const l02Datas = dataGroup.get("0-4") || [];
-    const l02Detector = detectorGroup.get("0-4") || [];
-    const la3Datas = dataGroup.get(`0-2`) || [];
-    const la3Detector = detectorGroup.get("0-2") || [];
-    const r01Datas = dataGroup.get("1-3") || [];
-    const r01Detector = detectorGroup.get("1-3") || [];
-    const r02Datas = dataGroup.get("1-4") || [];
-    const r02Detector = detectorGroup.get("1-4") || [];
-    const ra3Datas = dataGroup.get("1-2") || [];
-    const ra3Detector = detectorGroup.get("1-2") || [];
+    const l01Datas = flawMap.get(`0-3`) || [];
+    const l01Detector = chMap.get(`0-3`) || [];
+    const l02Datas = flawMap.get("0-4") || [];
+    const l02Detector = chMap.get("0-4") || [];
+    const la3Datas = flawMap.get(`0-2`) || [];
+    const la3Detector = chMap.get("0-2") || [];
+    const r01Datas = flawMap.get("1-3") || [];
+    const r01Detector = chMap.get("1-3") || [];
+    const r02Datas = flawMap.get("1-4") || [];
+    const r02Detector = chMap.get("1-4") || [];
+    const ra3Datas = flawMap.get("1-2") || [];
+    const ra3Detector = chMap.get("1-2") || [];
 
-    const la1Datas = dataGroup.get("0-1") || [];
-    const la1Detector = detectorGroup.get("0-1") || [];
-    const ra1Datas = dataGroup.get("1-1") || [];
-    const ra1Detector = detectorGroup.get("1-1") || [];
+    const la1Datas = flawMap.get("0-1") || [];
+    const la1Detector = chMap.get("0-1") || [];
+    const ra1Datas = flawMap.get("1-1") || [];
+    const ra1Detector = chMap.get("1-1") || [];
 
-    const lctDatas = dataGroup.get("0-0") || [];
-    const lctDetector = detectorGroup.get("0-0") || [];
-    const rctDatas = dataGroup.get("1-0") || [];
-    const rctDetector = detectorGroup.get("1-0") || [];
+    const lctDatas = flawMap.get("0-0") || [];
+    const lctDetector = chMap.get("0-0") || [];
+    const rctDatas = flawMap.get("1-0") || [];
+    const rctDetector = chMap.get("1-0") || [];
 
     return {
       xrsj: dayjs().format("YYYY-MM-DD HH:mm:ss"),

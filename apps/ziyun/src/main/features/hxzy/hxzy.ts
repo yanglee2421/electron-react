@@ -497,12 +497,10 @@ export class Hxzy {
     const detectors = await this.mdb
       .app()
       .detectors()
-      .equal("szwheel", record.szWHModel || "");
-
-    const flawGroup = mapGroupBy(
-      datas.rows,
-      (row) => `${row.nBoard}-${row.nChannel}`,
-    );
+      .equal("szwheel", record.szWHModel || "")
+      .notEqual("szName", "空");
+    const list = datas.rows;
+    const flawGroup = mapGroupBy(list, (i) => `${i.nBoard}-${i.nChannel}`);
     const flawMap = calcFlawMap(flawGroup);
     const detectorMap = calcDetectorMap(detectors.rows, flawGroup);
 
