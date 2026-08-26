@@ -4,6 +4,7 @@ packages:
 
 allowBuilds:
   "@serialport/bindings-cpp": true
+  electron: true
   electron-winstaller: true
   esbuild: true
 
