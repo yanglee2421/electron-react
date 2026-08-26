@@ -492,21 +492,21 @@ export const Component = () => {
                         <Cell>{_}</Cell>
                       </Col>
                       <Col>
-                        <Cell text={false}>
+                        <Cell>
                           {!!flawInfo.get(`${board}-3`)?.at(flawNo)?.value && (
                             <CheckOK />
                           )}
                         </Cell>
                       </Col>
                       <Col>
-                        <Cell text={false}>
+                        <Cell>
                           {!!flawInfo.get(`${board}-4`)?.at(flawNo)?.value && (
                             <CheckOK />
                           )}
                         </Cell>
                       </Col>
                       <Col>
-                        <Cell text={false}>
+                        <Cell>
                           {!!flawInfo.get(`${board}-2`)?.at(flawNo)?.value && (
                             <CheckOK />
                           )}

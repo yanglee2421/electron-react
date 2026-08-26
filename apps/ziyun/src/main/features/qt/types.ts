@@ -1,3 +1,4 @@
+import type { schema } from "@yanglee2421/external-db";
 import type { QT } from "./qt";
 
 export interface SetupAppInput {
@@ -74,6 +75,8 @@ export interface QTMigrateDBInput {
   source: string;
   target: string;
 }
+
+export type Quartor = typeof schema.quartors.$inferSelect;
 
 export interface IPC {
   "qt/migrate-db": {

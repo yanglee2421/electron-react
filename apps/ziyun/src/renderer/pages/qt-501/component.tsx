@@ -92,18 +92,24 @@ const EquipmentTable = (props: EquipmentTableProps) => {
 
 interface LZInfoTableProps {
   board: number;
-  jy3?: string;
-  jy4?: string;
-  jy2?: string;
-  bc3?: string;
-  bc4?: string;
-  bc2?: string;
-  ts3?: string;
-  ts4?: string;
-  ts2?: string;
-  zsj3?: string;
-  zsj4?: string;
+
+  channelName2?: React.ReactNode;
   zsj2?: string;
+  jy2?: string;
+  bc2?: string;
+  ts2?: string;
+
+  channelName3?: React.ReactNode;
+  zsj3?: string;
+  jy3?: string;
+  bc3?: string;
+  ts3?: string;
+
+  channelName4?: React.ReactNode;
+  zsj4?: string;
+  jy4?: string;
+  bc4?: string;
+  ts4?: string;
 }
 
 const LZInfoTable = (props: LZInfoTableProps) => {
@@ -129,21 +135,21 @@ const LZInfoTable = (props: LZInfoTableProps) => {
           </Row>
         </Col>
         <Col>
-          <Cell>{direction}外</Cell>
+          <Cell>{props.jy3 ? props.channelName3 : null}</Cell>
           <Cell>{props.zsj3}</Cell>
           <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy3}</Cell>
           <Cell>{props.bc3}</Cell>
           <Cell>{props.ts3}</Cell>
         </Col>
         <Col>
-          <Cell>{direction}内</Cell>
+          <Cell>{props.jy4 ? props.channelName4 : null}</Cell>
           <Cell>{props.zsj4}</Cell>
           <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy4}</Cell>
           <Cell>{props.bc4}</Cell>
           <Cell>{props.ts4}</Cell>
         </Col>
         <Col>
-          <Cell>{props.jy2 ? direction + "A3" : null}</Cell>
+          <Cell>{props.jy2 ? props.channelName2 : null}</Cell>
           <Cell>{props.jy2 ? props.zsj2 : null}</Cell>
           <Cell height={BASIC_ROW_HEIGHT * 1.5}>
             {props.jy2 ? props.jy2 : null}
@@ -158,16 +164,19 @@ const LZInfoTable = (props: LZInfoTableProps) => {
 
 interface XHCTableProps {
   board: number;
+
+  ctName?: React.ReactNode;
+  ctZsj?: string;
   ctJy?: string;
   ctBc?: string;
   ctTs?: string;
-  ctZsj?: string;
   ctValue?: string;
+
+  xhChannelName?: React.ReactNode;
+  xhZsj?: string;
   xhJy?: string;
   xhBc?: string;
   xhTs?: string;
-  xhZsj?: string;
-  xhChannelName?: string;
   xhValue1?: string;
   xhValue2?: string;
   xhValue3?: string;
@@ -189,9 +198,11 @@ const XHCTable = (props: XHCTableProps) => {
       </Col>
       <Col width={XHC_CHANNEL_COL_WIDTH}>
         <Cell height={BASIC_ROW_HEIGHT * 2.5}>通道{"\n"}编号</Cell>
-        <Cell>{props.xhChannelName?.replace(/[左右0]/g, "")}</Cell>
+        <Cell>{props.xhJy ? props.xhChannelName : null}</Cell>
         <Cell></Cell>
-        <Cell height={BASIC_ROW_HEIGHT * 1.5}>CT</Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 1.5}>
+          {props.ctJy ? props.ctName : null}
+        </Cell>
       </Col>
       <Col width={XHC_ZSJ_COL_WIDTH}>
         <Cell height={BASIC_ROW_HEIGHT * 2.5}>拆射{"\n"}角度</Cell>
@@ -443,10 +454,26 @@ export const Component = () => {
       );
     }
 
-    const { record, flaws, FACTORY_CLD, FACTORY_SBBH, FACTORY_SBXH, jpegs } =
-      query.data;
+    const {
+      record,
+      flaws,
+      FACTORY_CLD,
+      FACTORY_SBBH,
+      FACTORY_SBXH,
+      jpegs,
+      channels,
+    } = query.data;
     const of13 = of(13);
     const asideTip = record.szWhModel?.split("").join("\n");
+    const chNameMap = channels.reduce((map, item) => {
+      const board = item.nBoardIndex || 0;
+      const nChannelIndex = item.nChannelIndex || 0;
+      const channel = nChannelIndex - board * 6;
+
+      map.set(`${board}-${channel}`, item.szName);
+
+      return map;
+    }, new Map<string, string | null>());
 
     const metaMap = new Map<
       string,
@@ -562,14 +589,19 @@ export const Component = () => {
               <View key={board} style={[styles.flex1]}>
                 <LZInfoTable
                   board={board}
+                  channelName2={chNameMap.get(`${board}-2`)}
                   jy2={metaMap.get(`${board}-2`)?.jy}
                   bc2={metaMap.get(`${board}-2`)?.bc}
                   ts2={metaMap.get(`${board}-2`)?.ts}
                   zsj2={metaMap.get(`${board}-2`)?.zsj}
+
+                  channelName3={chNameMap.get(`${board}-3`)}
                   jy3={metaMap.get(`${board}-3`)?.jy}
                   bc3={metaMap.get(`${board}-3`)?.bc}
                   ts3={metaMap.get(`${board}-3`)?.ts}
                   zsj3={metaMap.get(`${board}-3`)?.zsj}
+
+                  channelName4={chNameMap.get(`${board}-4`)}
                   jy4={metaMap.get(`${board}-4`)?.jy}
                   bc4={metaMap.get(`${board}-4`)?.bc}
                   ts4={metaMap.get(`${board}-4`)?.ts}
@@ -582,21 +614,21 @@ export const Component = () => {
                         <Cell>{_}</Cell>
                       </Col>
                       <Col>
-                        <Cell text={false}>
+                        <Cell>
                           {flawMap.get(`${board}-3`)?.at(index) ? (
                             <CheckOK />
                           ) : null}
                         </Cell>
                       </Col>
                       <Col>
-                        <Cell text={false}>
+                        <Cell>
                           {flawMap.get(`${board}-4`)?.at(index) ? (
                             <CheckOK />
                           ) : null}
                         </Cell>
                       </Col>
                       <Col>
-                        <Cell text={false}>
+                        <Cell>
                           {flawMap.get(`${board}-2`)?.at(index) ? (
                             <CheckOK />
                           ) : null}
@@ -607,16 +639,20 @@ export const Component = () => {
                 })}
                 <XHCTable
                   board={board}
+                  ctName={chNameMap.get(`${board}-0`)?.replace(/[左右0]/g, "")}
+                  ctZsj={metaMap.get(`${board}-0`)?.zsj}
                   ctBc={metaMap.get(`${board}-0`)?.bc}
                   ctJy={metaMap.get(`${board}-0`)?.jy}
                   ctTs={metaMap.get(`${board}-0`)?.ts}
-                  ctZsj={metaMap.get(`${board}-0`)?.zsj}
                   ctValue={flawMap.get(`${board}-0`)?.at(0)}
+
+                  xhChannelName={chNameMap
+                    .get(`${board}-1`)
+                    ?.replace(/[左右0]/g, "")}
+                  xhZsj={metaMap.get(`${board}-1`)?.zsj}
                   xhBc={metaMap.get(`${board}-1`)?.bc}
                   xhJy={metaMap.get(`${board}-1`)?.jy}
                   xhTs={metaMap.get(`${board}-1`)?.ts}
-                  xhZsj={metaMap.get(`${board}-1`)?.zsj}
-                  xhChannelName={record.szWhModel === "RD2" ? "A1" : "A2"}
                   xhValue1={flawMap.get(`${board}-1`)?.at(0)}
                   xhValue2={flawMap.get(`${board}-1`)?.at(1)}
                   xhValue3={flawMap.get(`${board}-1`)?.at(2)}
