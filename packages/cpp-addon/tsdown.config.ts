@@ -24,13 +24,16 @@ const calcualteDTSExtension = (format: string) => {
   }
 };
 
-export default defineConfig((conf) => {
-  const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+export default defineConfig(() => {
+  const __filename = url.fileURLToPath(import.meta.url)
+  const __dirname = path.dirname(__filename);
 
   return {
     entry: ["src/main.ts"],
-    dts: true,
-    format: "esm",
+    deps: {
+      // onlyBundle: [],
+    },
+
     outDir: path.resolve(__dirname, "dist"),
     outExtensions: ({ format }) => {
       return {
@@ -38,17 +41,13 @@ export default defineConfig((conf) => {
         dts: calcualteDTSExtension(format),
       };
     },
-    clean: true,
-
-    target: "node22",
+    format: "esm",
     platform: "node",
-
-    minify: !conf.watch,
+    target: "node24",
+    dts: true,
+    clean: true,
     fixedExtension: false,
-    plugins: [],
 
-    deps: {
-      // onlyBundle: [],
-    },
+    plugins: [],
   };
 });
