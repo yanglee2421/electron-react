@@ -5,7 +5,7 @@
     "import": "./src/index.ts"
   },
   "devDependencies": {
-    "electron": "^43.4.1",
+    "electron": "^42.10.1",
     "rolldown": "^1.2.5",
     "rxjs": "^7.8.2",
     "vite": "^8.2.2"

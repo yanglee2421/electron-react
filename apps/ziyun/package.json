@@ -1,6 +1,6 @@
 {
   "name": "app-ziyun",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
   "description": "WuTie ZiYun ToolKit",
   "keywords": [
@@ -87,7 +87,7 @@
     "basic-ftp": "^6.0.1",
     "dayjs": "^1.11.20",
     "drizzle-orm": "1.0.0-beta.22",
-    "electron": "^43.4.1",
+    "electron": "^42.10.1",
     "electron-builder": "^26.15.3",
     "hono": "^4.12.23",
     "iconv-lite": "^0.7.2",

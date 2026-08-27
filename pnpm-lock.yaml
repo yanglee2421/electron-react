@@ -34,10 +34,10 @@ importers:
         version: 7.29.0(supports-color@7.2.0)
       '@electron-toolkit/preload':
         specifier: ^3.0.2
-        version: 3.0.2(electron@43.4.1(supports-color@7.2.0))
+        version: 3.0.2(electron@42.10.1(supports-color@7.2.0))
       '@electron-toolkit/utils':
         specifier: ^4.0.0
-        version: 4.0.0(electron@43.4.1(supports-color@7.2.0))
+        version: 4.0.0(electron@42.10.1(supports-color@7.2.0))
       '@rolldown/plugin-babel':
         specifier: ^0.2.3
         version: 0.2.3(@babel/core@7.29.0(supports-color@7.2.0))(@babel/runtime@7.29.7)(rolldown@1.2.5)(vite@8.2.2(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
@@ -69,8 +69,8 @@ importers:
         specifier: 1.0.0-beta.22
         version: 1.0.0-beta.22(zod@4.4.3)
       electron:
-        specifier: ^43.4.1
-        version: 43.4.1(supports-color@7.2.0)
+        specifier: ^42.10.1
+        version: 42.10.1(supports-color@7.2.0)
       electron-builder:
         specifier: ^26.11.0
         version: 26.11.0(electron-builder-squirrel-windows@26.11.0)(supports-color@7.2.0)
@@ -140,10 +140,10 @@ importers:
         version: 3.2.2(react@19.2.7)
       '@electron-toolkit/preload':
         specifier: ^3.0.2
-        version: 3.0.2(electron@43.4.1(supports-color@7.2.0))
+        version: 3.0.2(electron@42.10.1(supports-color@7.2.0))
       '@electron-toolkit/utils':
         specifier: ^4.0.0
-        version: 4.0.0(electron@43.4.1(supports-color@7.2.0))
+        version: 4.0.0(electron@42.10.1(supports-color@7.2.0))
       '@emotion/react':
         specifier: ^11.14.0
         version: 11.14.0(@types/react@19.2.17)(react@19.2.7)(supports-color@7.2.0)
@@ -229,8 +229,8 @@ importers:
         specifier: 1.0.0-beta.22
         version: 1.0.0-beta.22(zod@4.4.3)
       electron:
-        specifier: ^43.4.1
-        version: 43.4.1(supports-color@7.2.0)
+        specifier: ^42.10.1
+        version: 42.10.1(supports-color@7.2.0)
       electron-builder:
         specifier: ^26.15.3
         version: 26.15.3(electron-builder-squirrel-windows@26.15.3)(supports-color@7.2.0)
@@ -319,8 +319,8 @@ importers:
   packages/vite-plugin:
     devDependencies:
       electron:
-        specifier: ^43.4.1
-        version: 43.4.1(supports-color@7.2.0)
+        specifier: ^42.10.1
+        version: 42.10.1(supports-color@7.2.0)
       rolldown:
         specifier: ^1.2.5
         version: 1.2.5
@@ -3812,8 +3812,8 @@ packages:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
 
-  electron@43.4.1:
-    resolution: {integrity: sha512-5b+EuiwkgG5iRcsEL34rimgRpkYp15SsfZOa0pC5kXs0Tb82TH4n95rpQzTZa7yRCbA7tm0WoEbuBL6NaAhAcA==}
+  electron@42.10.1:
+    resolution: {integrity: sha512-ITc1HPeoDzsxCCaH6MFsN67Nq2nUiJf5N9pBWxzhUpFfKJF0IwiAkKT3emg1lPbvC4OfFE+Cdwe4vhgdOZ1YKg==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -6233,13 +6233,13 @@ snapshots:
 
   '@electron-internal/extract-zip@1.0.5': {}
 
-  '@electron-toolkit/preload@3.0.2(electron@43.4.1(supports-color@7.2.0))':
+  '@electron-toolkit/preload@3.0.2(electron@42.10.1(supports-color@7.2.0))':
     dependencies:
-      electron: 43.4.1(supports-color@7.2.0)
+      electron: 42.10.1(supports-color@7.2.0)
 
-  '@electron-toolkit/utils@4.0.0(electron@43.4.1(supports-color@7.2.0))':
+  '@electron-toolkit/utils@4.0.0(electron@42.10.1(supports-color@7.2.0))':
     dependencies:
-      electron: 43.4.1(supports-color@7.2.0)
+      electron: 42.10.1(supports-color@7.2.0)
 
   '@electron/asar@3.4.1':
     dependencies:
@@ -9172,7 +9172,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@43.4.1(supports-color@7.2.0):
+  electron@42.10.1(supports-color@7.2.0):
     dependencies:
       '@electron-internal/extract-zip': 1.0.5
       '@electron/get': 5.1.0(supports-color@7.2.0)
