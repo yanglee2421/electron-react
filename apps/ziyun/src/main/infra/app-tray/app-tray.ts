@@ -8,6 +8,7 @@ import {
   Observable,
   of,
   switchMap,
+  tap,
 } from "rxjs";
 
 export class AppTray {
@@ -34,12 +35,6 @@ export class AppTray {
                   appWindow.show();
                 },
               },
-              {
-                label: "功能设置",
-                click: () => {
-                  console.log("click setting");
-                },
-              },
               { type: "separator" },
               {
                 label: "退出应用",
@@ -49,6 +44,7 @@ export class AppTray {
               },
             ]);
 
+            tray.setToolTip("武铁紫云接口面板");
             tray.setContextMenu(contextMenu);
 
             const trayClick$ = fromEventPattern(
@@ -56,14 +52,19 @@ export class AppTray {
               (handler) => tray.off("click", handler),
             );
 
-            const subscription = trayClick$.subscribe(() => {
-              appWindow.show();
-            });
+            const subscription = trayClick$
+              .pipe(
+                tap(() => {
+                  appWindow.show();
+                }),
+              )
+              .subscribe();
 
             sub.next(tray);
 
             return () => {
               subscription.unsubscribe();
+              tray.setContextMenu(null);
               tray.destroy();
             };
           });
