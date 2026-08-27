@@ -31,3 +31,6 @@ bin/
 build/
 *.db
 packages/external-db/drizzle/
+
+# Docker
+.docker-cache

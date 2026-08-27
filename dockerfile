@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # ---- Stage 0: enviornment ----
 # FROM ubuntu:20.04 AS enviornment
 # ENV DEBIAN_FRONTEND=noninteractive
@@ -19,6 +21,8 @@ FROM electron:linux AS deps
 ARG ELECTRON_MIRROR
 ARG ELECTRON_BUILDER_BINARIES_MIRROR
 ARG npm_package_config_node_gyp_dist_url
+ENV ELECTRON_CACHE=/root/.cache/electron \
+	ELECTRON_BUILDER_CACHE=/root/.cache/electron-builder
 WORKDIR /app
 COPY apps/dsb/package.json ./apps/dsb/
 COPY apps/ziyun/package.json ./apps/ziyun/
@@ -29,7 +33,11 @@ COPY .npmrc .
 COPY package.json .
 COPY pnpm-lock.yaml .
 COPY pnpm-workspace.yaml .
-RUN pnpm i --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+	--mount=type=cache,id=node-gyp-cache,target=/root/.cache/node-gyp \
+	--mount=type=cache,id=electron-cache,target=/root/.cache/electron \
+	--mount=type=cache,id=electron-builder-cache,target=/root/.cache/electron-builder \
+	pnpm i --frozen-lockfile
 
 # ---- Stage 2: build ----
 FROM electron:linux AS build
@@ -37,10 +45,16 @@ ARG NODE_ENV=production
 ARG ELECTRON_MIRROR
 ARG ELECTRON_BUILDER_BINARIES_MIRROR
 ARG npm_package_config_node_gyp_dist_url
+ENV ELECTRON_CACHE=/root/.cache/electron \
+	ELECTRON_BUILDER_CACHE=/root/.cache/electron-builder
 WORKDIR /app
 COPY --from=deps /app .
 COPY . .
-RUN pnpm build
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+	--mount=type=cache,id=node-gyp-cache,target=/root/.cache/node-gyp \
+	--mount=type=cache,id=electron-cache,target=/root/.cache/electron \
+	--mount=type=cache,id=electron-builder-cache,target=/root/.cache/electron-builder \
+	pnpm build
 
 # --- Stage 3: export
 FROM ubuntu:20.04 AS export
