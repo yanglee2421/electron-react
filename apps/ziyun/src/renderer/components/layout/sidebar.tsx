@@ -568,7 +568,7 @@ export const Sidebar = (props: SidebarProps) => {
               disableSticky
               sx={{ backgroundColor: "transparent" }}
             >
-              QT软件相关
+              信创版软件相关
             </ListSubheader>
           }
         >
@@ -580,7 +580,7 @@ export const Sidebar = (props: SidebarProps) => {
             <ListItemIcon>
               <Commit />
             </ListItemIcon>
-            <ListItemText primary={"QT"} />
+            <ListItemText primary={"信创版软件"} />
           </ListItemButton>
           <ListItemButton
             component={Link}

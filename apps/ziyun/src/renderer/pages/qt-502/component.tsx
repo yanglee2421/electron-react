@@ -75,9 +75,7 @@ const calcMaxDiff = (strings: string[]) => {
   const numbers = strings.map((str) => Number.parseFloat(str));
   const hasNan = numbers.some((num) => Number.isNaN(num));
 
-  if (hasNan) {
-    return "";
-  }
+  if (hasNan) return "";
 
   return Math.max(...numbers) - Math.min(...numbers);
 };
@@ -101,15 +99,6 @@ const calcResult = (left: number | string, right: number | string) => {
 
   return "合格";
 };
-
-// 日常
-// app-ziyun://localhost/qt/verify/501?szIds=123456
-// 季度
-// app-ziyun://localhost/qt/quartors/502?zx=re2b&date=2024-01-01
-// CH52A
-// app-ziyun://localhost/qt/detections/52a?szIds=123456
-// CH53A
-// app-ziyun://localhost/qt/detections/53a?user=xxx&date=2024-01-01
 
 const FIRST_COL_WIDTH = 50;
 const LAST_COL_WIDTH = 50;
@@ -241,6 +230,11 @@ interface ReportDocProps {
   children?: React.ReactNode;
   tableHeader: TableHeaderProps;
   equipmentTable: EquipmentTableProps;
+  chName0?: React.ReactNode;
+  chName1?: React.ReactNode;
+  chName2?: React.ReactNode;
+  chName3?: React.ReactNode;
+  chName4?: React.ReactNode;
 }
 
 const ReportDoc = (props: ReportDocProps) => {
@@ -274,14 +268,14 @@ const ReportDoc = (props: ReportDocProps) => {
                       <Cell>全轴穿透</Cell>
                     </Col>
                     <Col>
-                      <Cell>A1</Cell>
-                      <Cell>A3</Cell>
-                      <Cell>01</Cell>
-                      <Cell>02</Cell>
+                      <Cell>{props.chName1}</Cell>
+                      <Cell>{props.chName2}</Cell>
+                      <Cell>{props.chName3}</Cell>
+                      <Cell>{props.chName4}</Cell>
                       {of(10).map((_) => (
                         <Cell key={_}></Cell>
                       ))}
-                      <Cell>CT</Cell>
+                      <Cell>{props.chName0}</Cell>
                     </Col>
                   </Row>
                 </Col>
@@ -345,17 +339,41 @@ export const Component = () => {
     }
 
     const of10 = of(10);
-
-    const { FACTORY_CLD, FACTORY_SBBH, FACTORY_SYRQ, rows, datas } = query.data;
-
+    const { FACTORY_CLD, FACTORY_SBBH, FACTORY_SYRQ, rows, datas, channels } =
+      query.data;
     const firstRow = rows.at(0);
-
     const metas = rows.map((row) => {
       const flaws = datas.filter((data) => Object.is(data.szIds, row.szIds));
       const meta = calcRowAtten(flaws);
 
       return { row, meta };
     });
+    const chNameMap = channels.reduce((map, item) => {
+      const board = item.nBoardIndex || 0;
+      const nChannelIndex = item.nChannelIndex || 0;
+      const channel = nChannelIndex - board * 6;
+
+      map.set(`${board}-${channel}`, item.szName);
+
+      return map;
+    }, new Map<string, string | null>());
+    const flawsMap = mapGroupBy(datas, (i) => `${i.nBoard}-${i.nChannel}`);
+
+    const renderChName = (channel: number) => {
+      const leftFlawCount = flawsMap.get(`0-${channel}`)?.length;
+
+      if (leftFlawCount) {
+        return chNameMap.get(`0-${channel}`)?.replace(/[左右0]/g, "");
+      }
+
+      const rightFlawCount = flawsMap.get(`1-${channel}`)?.length;
+
+      if (rightFlawCount) {
+        return chNameMap.get(`1-${channel}`)?.replace(/[左右0]/g, "");
+      }
+
+      return "";
+    };
 
     return (
       <PDFViewer
@@ -373,6 +391,11 @@ export const Component = () => {
             createDate: dayjs(FACTORY_SYRQ).format("YYYY-MM-DD") || "",
             previousCheckDate: "",
           }}
+          chName0={renderChName(0)}
+          chName1={renderChName(1)}
+          chName2={renderChName(2)}
+          chName3={renderChName(3)}
+          chName4={renderChName(4)}
         >
           <Col>
             <Cell>反射波高(dB)</Cell>

@@ -51,6 +51,7 @@ import type {
   FetchQuartorsInput,
   QTCHR53AInput,
   QTMigrateDBInput,
+  Quartor,
   SetQTConfigInput,
   SetYiqiConfigLibInput,
   UpsertUserInput,
@@ -651,18 +652,100 @@ export class QT {
       rxh,
     });
 
+    const channels = await this.db
+      .select()
+      .from(schema.channels)
+      .where(
+        and(
+          eq(schema.channels.szWheelName, szWhModel || ""),
+          ne(schema.channels.bActive, 0),
+        ),
+      );
+
     return {
       record,
       flaws,
+      jpegs,
+      channels,
       FACTORY_CLD: FACTORY_CLD?.value,
       FACTORY_SBXH: FACTORY_SBXH?.value,
       FACTORY_SBBH: FACTORY_SBBH?.value,
       FACTORY_SYRQ: FACTORY_SYRQ?.value,
-      jpegs,
     };
   }
   async fetch502Data(input: Fetch502DateInput) {
     const { date, user, zx, ids } = input;
+
+    let rows: Quartor[] = [];
+
+    if (ids.length > 0) {
+      const idList = ids.map((i) => Number.parseInt(i));
+      rows = await this.db
+        .select()
+        .from(schema.quartors)
+        .where(inArray(schema.quartors.recId, idList))
+        .orderBy(asc(schema.quartors.tmNow));
+    } else {
+      const day = dayjs(date);
+      rows = await this.db
+        .select()
+        .from(schema.quartors)
+        .where(
+          and(
+            between(
+              schema.quartors.tmNow,
+              day.startOf("day").toISOString(),
+              day.endOf("day").toISOString(),
+            ),
+            like(schema.quartors.szUsername, `%${user}%`),
+            like(schema.quartors.szWhModel, `%${zx}%`),
+          ),
+        );
+    }
+
+    if (rows.length !== 5) {
+      throw new Error(`CHR502需要5条数据; 当前${rows.length}条`);
+    }
+
+    const firstRow = rows.at(0);
+
+    if (!firstRow) {
+      throw new Error("系统异常, 数据库中的第一条数据为Falsy");
+    }
+
+    const szWhModel = firstRow.szWhModel || "";
+
+    const [previousRow] = await this.db
+      .select()
+      .from(schema.quartors)
+      .where(
+        and(
+          eq(schema.quartors.szWhModel, szWhModel),
+          lt(schema.quartors.tmNow, firstRow.tmNow || ""),
+        ),
+      )
+      .orderBy(desc(schema.quartors.tmNow))
+      .limit(1);
+
+    const datas = await this.db
+      .select()
+      .from(schema.quartorsData)
+      .where(
+        inArray(
+          schema.quartorsData.precId,
+          rows.map((r) => r.recId),
+        ),
+      );
+
+    const channels = await this.db
+      .select()
+      .from(schema.channels)
+      .where(
+        and(
+          eq(schema.channels.szWheelName, szWhModel),
+          ne(schema.channels.bActive, 0),
+        ),
+      );
 
     const [FACTORY_CLD] = await this.db
       .select({ value: schema.sysConfig.configValue })
@@ -688,103 +771,11 @@ export class QT {
       .where(eq(schema.sysConfig.configKey, "FACTORY_SYRQ"))
       .limit(1);
 
-    if (ids.length > 0) {
-      const idList = ids.map((i) => Number.parseInt(i));
-
-      const rows = await this.db
-        .select()
-        .from(schema.quartors)
-        .where(inArray(schema.quartors.recId, idList))
-        .orderBy(asc(schema.quartors.tmNow));
-
-      if (rows.length !== 5) {
-        throw new Error(`CHR502需要5条数据; 当前${rows.length}条`);
-      }
-
-      const datas = await this.db
-        .select()
-        .from(schema.quartorsData)
-        .where(inArray(schema.quartorsData.precId, idList));
-
-      const firstRow = rows.at(0);
-      let previousRow = null;
-
-      if (firstRow) {
-        [previousRow] = await this.db
-          .select()
-          .from(schema.quartors)
-          .where(
-            and(
-              eq(schema.quartors.szWhModel, firstRow.szWhModel || ""),
-              lt(schema.quartors.tmNow, firstRow.tmNow || ""),
-            ),
-          )
-          .orderBy(desc(schema.quartors.tmNow))
-          .limit(1);
-      }
-
-      return {
-        previousRow,
-        rows,
-        datas,
-        FACTORY_CLD: FACTORY_CLD?.value,
-        FACTORY_SBXH: FACTORY_SBXH?.value,
-        FACTORY_SBBH: FACTORY_SBBH?.value,
-        FACTORY_SYRQ: FACTORY_SYRQ?.value,
-      };
-    }
-
-    const day = dayjs(date);
-    const rows = await this.db
-      .select()
-      .from(schema.quartors)
-      .where(
-        and(
-          between(
-            schema.quartors.tmNow,
-            day.startOf("day").toISOString(),
-            day.endOf("day").toISOString(),
-          ),
-          like(schema.quartors.szUsername, `%${user}%`),
-          like(schema.quartors.szWhModel, `%${zx}%`),
-        ),
-      );
-
-    if (rows.length !== 5) {
-      throw new Error(`CHR502需要5条数据; 当前${rows.length}条`);
-    }
-
-    const datas = await this.db
-      .select()
-      .from(schema.quartorsData)
-      .where(
-        inArray(
-          schema.quartorsData.precId,
-          rows.map((r) => r.recId),
-        ),
-      );
-
-    const firstRow = rows.at(0);
-    let previousRow = null;
-
-    if (firstRow) {
-      [previousRow] = await this.db
-        .select()
-        .from(schema.quartors)
-        .where(
-          and(
-            eq(schema.quartors.szWhModel, firstRow.szWhModel || ""),
-            lt(schema.quartors.tmNow, firstRow.tmNow || ""),
-          ),
-        )
-        .orderBy(desc(schema.quartors.tmNow))
-        .limit(1);
-    }
-
     return {
       previousRow,
       rows,
       datas,
+      channels,
       FACTORY_CLD: FACTORY_CLD?.value,
       FACTORY_SBXH: FACTORY_SBXH?.value,
       FACTORY_SBBH: FACTORY_SBBH?.value,
@@ -836,43 +827,26 @@ export class QT {
       .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
       .limit(1);
 
-    const datas = await this.db
-      .select()
-      .from(schema.detectionsData)
-      .where(eq(schema.detectionsData.szIds, szIds));
-
     const [record] = await this.db
       .select()
       .from(schema.detectors)
       .where(eq(schema.detectors.szIds, szIds));
 
+    const datas = await this.db
+      .select()
+      .from(schema.detectionsData)
+      .where(eq(schema.detectionsData.szIds, szIds));
+
     const flagFile = path.resolve(this.profile.state.qtAppPath, "../FlagFile");
     const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
-    const imageDirectory = path.resolve(dataDirectory, "./detectors", szIds);
-    const lct = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.LCT.bmp`,
-    );
-    const llz = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.LLZ.bmp`,
-    );
-    const lxh = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.LXH.bmp`,
-    );
-    const rct = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.RCT.bmp`,
-    );
-    const rlz = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.RLZ.bmp`,
-    );
-    const rxh = path.resolve(
-      imageDirectory,
-      `${record.szIds}.${record.szWhModel}.RXH.bmp`,
-    );
+    const imgDir = path.resolve(dataDirectory, "./detectors", szIds);
+    const szWhModel = record.szWhModel || "";
+    const lct = path.resolve(imgDir, `${szIds}.${szWhModel}.LCT.bmp`);
+    const llz = path.resolve(imgDir, `${szIds}.${szWhModel}.LLZ.bmp`);
+    const lxh = path.resolve(imgDir, `${szIds}.${szWhModel}.LXH.bmp`);
+    const rct = path.resolve(imgDir, `${szIds}.${szWhModel}.RCT.bmp`);
+    const rlz = path.resolve(imgDir, `${szIds}.${szWhModel}.RLZ.bmp`);
+    const rxh = path.resolve(imgDir, `${szIds}.${szWhModel}.RXH.bmp`);
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     await fs.promises.mkdir(tmpPath, { recursive: true });
@@ -887,11 +861,17 @@ export class QT {
       rxh,
     });
 
+    const channels = await this.db
+      .select()
+      .from(schema.channels)
+      .where(and(eq(schema.channels.szWheelName, szWhModel)));
+
     return {
       FACTORY_CLD: FACTORY_CLD?.value,
       datas,
       record,
       jpegs,
+      channels,
     };
   }
   async fetch53AData(input: QTCHR53AInput) {

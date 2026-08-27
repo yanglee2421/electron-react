@@ -248,7 +248,7 @@ export const Component = () => {
                 </profileForm.Field>
               </Grid>
               <Grid size={12}>
-                <FormLabel>QT软件相关</FormLabel>
+                <FormLabel>信创版软件相关</FormLabel>
               </Grid>
               <Grid size={{ xs: 12 }}>
                 <profileForm.Field name="qtAppPath">

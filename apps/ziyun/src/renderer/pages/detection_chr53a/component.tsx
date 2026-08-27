@@ -201,10 +201,7 @@ export const Component = () => {
                                           </Cell>
                                           {rows.map((row) => {
                                             return (
-                                              <Cell
-                                                key={row.szIDs}
-                                                text={false}
-                                              >
+                                              <Cell key={row.szIDs}>
                                                 <CheckCell
                                                   place={place}
                                                   board={board}

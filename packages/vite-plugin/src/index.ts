@@ -1,10 +1,12 @@
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 import module from "node:module";
 import path from "node:path";
 import process from "node:process";
 import url from "node:url";
 import type { BuildOptions } from "rolldown";
 import { build, watch } from "rolldown";
+import type { Subscription } from "rxjs";
 import {
   EMPTY,
   Observable,
@@ -25,6 +27,10 @@ const require = module.createRequire(import.meta.url);
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const shimFile = path.resolve(__dirname, "esm-shims.ts");
+const packageJsonPath = path.resolve(process.cwd(), "./package.json");
+const packageJson = fs.readFileSync(packageJsonPath, "utf-8");
+const { dependencies } = JSON.parse(packageJson);
+const external = ["electron", "pdf-parse/worker", ...Object.keys(dependencies)];
 
 const preloadInput: BuildOptions = {
   input: "src/preload/index.ts",
@@ -34,14 +40,14 @@ const preloadInput: BuildOptions = {
     file: "out/preload/index.cjs",
   },
   platform: "node",
-  external: ["electron"],
+  external,
   transform: {
     inject: {
       __dirname: [shimFile, "__dirname"],
       __filename: [shimFile, "__filename"],
     },
   },
-  plugins: [resources()],
+  plugins: [resources({ external })],
 };
 
 const mainInput: BuildOptions = {
@@ -52,23 +58,14 @@ const mainInput: BuildOptions = {
     file: "out/main/index.js",
   },
   platform: "node",
-  external: [
-    "electron",
-    "@yanglee2421/cpp-addon",
-    "fast-xml-parser",
-    "pdf-parse",
-    "pdf-parse/worker",
-    "pdfjs-dist",
-    "piscina",
-    "serialport",
-  ],
+  external,
   transform: {
     inject: {
       __dirname: [shimFile, "__dirname"],
       __filename: [shimFile, "__filename"],
     },
   },
-  plugins: [resources()],
+  plugins: [resources({ external })],
 };
 
 const exit$ = fromEventPattern(
@@ -96,8 +93,17 @@ const watchPreload$ = new Observable((sub) => {
   const watcher = watch(preloadInput);
 
   watcher.on("event", (e) => {
-    if (e.code === "BUNDLE_END") {
-      sub.next(null);
+    switch (e.code) {
+      case "ERROR":
+        console.error(e.error);
+        break;
+      case "BUNDLE_END":
+        sub.next(null);
+        break;
+      case "START":
+      case "BUNDLE_START":
+      case "END":
+      default:
     }
   });
 
@@ -133,7 +139,6 @@ const watchMain$ = new Observable((sub) => {
 
 const startElectron = (ELECTRON_RENDERER_URL: string) => {
   return new Observable((sub) => {
-    const id = Date.now();
     const cp = spawn(require("electron"), ["."], {
       stdio: "inherit",
       env: { ELECTRON_RENDERER_URL },
@@ -144,17 +149,15 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
     });
     cp.on("spawn", () => {
       sub.next(cp);
-      console.log("spawn", id);
     });
-    cp.on("exit", () => {
+    cp.on("close", () => {
       sub.complete();
-      console.log("exit", id);
       process.exit();
     });
 
     return () => {
       cp.removeAllListeners();
-      console.log("kill", id, cp.kill("SIGKILL"));
+      cp.kill("SIGKILL");
     };
   }).pipe(
     catchError((error) => {
@@ -165,10 +168,10 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
   );
 };
 
-const serverCreated$ = new Subject<ViteDevServer | null>();
-const server$ = serverCreated$.pipe(
-  switchMap((devServer) => {
-    const http = devServer?.httpServer;
+const server$ = new Subject<ViteDevServer>();
+const startDev$ = server$.pipe(
+  switchMap((server) => {
+    const http = server.httpServer;
 
     if (!http) {
       return EMPTY;
@@ -185,13 +188,13 @@ const server$ = serverCreated$.pipe(
 
     return listening$.pipe(
       switchMap(() => {
-        const RENDERER_URL = devServer.resolvedUrls?.local.at(0) || "";
+        const RENDERER_URL = server.resolvedUrls?.local.at(0) || "";
 
         return merge(
           watchPreload$.pipe(
             debounceTime(1000 * 2),
             tap(() => {
-              devServer.ws.send({ type: "full-reload" });
+              server.ws.send({ type: "full-reload" });
             }),
           ),
           watchMain$.pipe(
@@ -206,8 +209,15 @@ const server$ = serverCreated$.pipe(
   }),
 );
 
+/**
+ * vite.config.ts is re-executed whenever the Vite server restarts.
+ * Store the previous subscription to avoid creating duplicate subscriptions.
+ */
+let subscribtion: Subscription | null = null;
+
 export const electron = (): Plugin[] => {
-  server$.subscribe();
+  subscribtion?.unsubscribe();
+  subscribtion = startDev$.subscribe();
 
   return [
     {
@@ -228,7 +238,7 @@ export const electron = (): Plugin[] => {
         };
       },
       configureServer(server) {
-        serverCreated$.next(server);
+        server$.next(server);
       },
     },
     {

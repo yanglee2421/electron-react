@@ -217,10 +217,7 @@ export const Component = () => {
                               </Cell>
                               {rows.map((row) => {
                                 return (
-                                  <Cell
-                                    key={`${row.nBoard}-${row.nChannel}}`}
-                                    text={false}
-                                  >
+                                  <Cell key={`${row.nBoard}-${row.nChannel}}`}>
                                     {row.horResult ? <CheckOK /> : <CheckNG />}
                                   </Cell>
                                 );
@@ -233,10 +230,7 @@ export const Component = () => {
                               <Cell height={CELL_HEIGHT * 2}>{"分辨力"}</Cell>
                               {rows.map((row) => {
                                 return (
-                                  <Cell
-                                    key={`${row.nBoard}-${row.nChannel}}`}
-                                    text={false}
-                                  >
+                                  <Cell key={`${row.nBoard}-${row.nChannel}}`}>
                                     {row.decResult ? <CheckOK /> : <CheckNG />}
                                   </Cell>
                                 );
@@ -251,10 +245,7 @@ export const Component = () => {
                               </Cell>
                               {rows.map((row) => {
                                 return (
-                                  <Cell
-                                    key={`${row.nBoard}-${row.nChannel}}`}
-                                    text={false}
-                                  >
+                                  <Cell key={`${row.nBoard}-${row.nChannel}}`}>
                                     {row.horResult ? <CheckOK /> : <CheckNG />}
                                   </Cell>
                                 );
@@ -279,10 +270,7 @@ export const Component = () => {
                           <Cell height={CELL_HEIGHT * 2}>{"灵敏度\n余量"}</Cell>
                           {rows.map((row) => {
                             return (
-                              <Cell
-                                key={`${row.nBoard}-${row.nChannel}}`}
-                                text={false}
-                              >
+                              <Cell key={`${row.nBoard}-${row.nChannel}}`}>
                                 {row.attResult ? <CheckOK /> : <CheckNG />}
                               </Cell>
                             );

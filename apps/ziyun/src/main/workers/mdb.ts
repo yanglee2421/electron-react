@@ -58,6 +58,7 @@ interface ResolveQueryBuilderOptions {
   limit: number;
   likes: FilterValue[];
   equals: FilterValue[];
+  notEquals: FilterValue[];
   ins: FilterInValues[];
   dates: FilterDateValue[];
   orderBy?: string;
@@ -75,8 +76,17 @@ interface Row {
 const resolveQueryBuilder = async (
   options: ResolveQueryBuilderOptions,
 ): Promise<TableQueryResult<Row>> => {
-  const { databasePath, tableName, offset, limit, equals, likes, ins, dates } =
-    options;
+  const {
+    databasePath,
+    tableName,
+    offset,
+    limit,
+    equals,
+    notEquals,
+    likes,
+    ins,
+    dates,
+  } = options;
   const buffer = await fs.promises.readFile(databasePath);
   const reader = new MDBReader(buffer, { password: "Joney" });
   const tableNames = reader.getTableNames();
@@ -111,6 +121,12 @@ const resolveQueryBuilder = async (
         return Object.is(fieldValue, filter.value);
       });
 
+      const isNotEqualMatch = notEquals.every((filter) => {
+        const fieldValue = Reflect.get(row, String(filter.key));
+
+        return !Object.is(fieldValue, filter.value);
+      });
+
       const isInMatch = ins.every((filter) => {
         const fieldValue = Reflect.get(row, String(filter.key));
 
@@ -137,6 +153,7 @@ const resolveQueryBuilder = async (
       return (
         isLikeMatch &&
         isEqualMatch &&
+        isNotEqualMatch &&
         isInMatch &&
         isDateMatch &&
         isLtMatch &&

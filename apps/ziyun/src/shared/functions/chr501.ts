@@ -64,7 +64,7 @@ interface DetectorInfo {
   bc: string;
   jy: string;
   ts: string;
-  place: string;
+  chName: string;
   direction: string;
 }
 
@@ -93,7 +93,7 @@ export const resolveCHR501 = (flaws: VerifyData[], detectors: Detecotor[]) => {
       bc: divideBy10(detector.nDBSub),
       jy: flawAtten,
       ts: mathTs(detector.nDBSub, flaw?.nAtten),
-      place: detector.szName,
+      chName: detector.szName,
       direction: detector.nBoard === 0 ? "左" : "右",
     });
   }

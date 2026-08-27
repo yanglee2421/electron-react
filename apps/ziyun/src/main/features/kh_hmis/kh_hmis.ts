@@ -433,8 +433,9 @@ export class KH {
     } = await this.mdb
       .root()
       .detections()
-      .equal("szIDsMake", record.zh)
-      .date("tmnow", new Date(startDate), new Date(endDate));
+      .equal("szIDsWheel", record.zh)
+      .date("tmnow", new Date(startDate), new Date(endDate))
+      .orderBy("tmnow", "desc");
 
     if (!detection) {
       throw new Error(`未找到记录#${id}对应的检测数据`);
@@ -578,50 +579,42 @@ export class KH {
       throw new Error(`未能找到#${id}对应的记录`);
     }
 
-    const corporation = await this.mdb.app().corporation();
     const { rows: detectors } = await this.mdb
       .app()
       .detectors()
-      .equal("szwheel", firstRecord.szWHModel || "");
+      .equal("szwheel", firstRecord.szWHModel || "")
+      .notEqual("szName", "空");
     const { rows: datas } = await this.mdb
       .root()
       .verifies_data()
       .equal("opid", firstRecord.szIDs);
 
-    const detectorGroup = mapGroupBy(
-      detectors,
-      (i) => `${i.nBoard}-${i.nChannel}`,
-    );
+    const corporation = await this.mdb.app().corporation();
+    const chMap = mapGroupBy(detectors, (i) => `${i.nBoard}-${i.nChannel}`);
+    const flawMap = mapGroupBy(datas, (i) => `${i.nBoard}-${i.nChannel}`);
+    const images = await this.upload501ImagesByFtp(firstRecord.szIDs);
+    const l01Datas = flawMap.get(`0-3`) || [];
+    const l01Detector = chMap.get(`0-3`) || [];
+    const l02Datas = flawMap.get("0-4") || [];
+    const l02Detector = chMap.get("0-4") || [];
+    const la3Datas = flawMap.get(`0-2`) || [];
+    const la3Detector = chMap.get("0-2") || [];
+    const r01Datas = flawMap.get("1-3") || [];
+    const r01Detector = chMap.get("1-3") || [];
+    const r02Datas = flawMap.get("1-4") || [];
+    const r02Detector = chMap.get("1-4") || [];
+    const ra3Datas = flawMap.get("1-2") || [];
+    const ra3Detector = chMap.get("1-2") || [];
 
-    const dataGroup = mapGroupBy(datas, (i) => `${i.nBoard}-${i.nChannel}`);
+    const la1Datas = flawMap.get("0-1") || [];
+    const la1Detector = chMap.get("0-1") || [];
+    const ra1Datas = flawMap.get("1-1") || [];
+    const ra1Detector = chMap.get("1-1") || [];
 
-    const images = await this.upload501ImagesByFtp(
-      firstRecord.szIDs,
-      corporation.DeviceNO || "",
-    );
-
-    const l01Datas = dataGroup.get(`0-3`) || [];
-    const l01Detector = detectorGroup.get(`0-3`) || [];
-    const l02Datas = dataGroup.get("0-4") || [];
-    const l02Detector = detectorGroup.get("0-4") || [];
-    const la3Datas = dataGroup.get(`0-2`) || [];
-    const la3Detector = detectorGroup.get("0-2") || [];
-    const r01Datas = dataGroup.get("1-3") || [];
-    const r01Detector = detectorGroup.get("1-3") || [];
-    const r02Datas = dataGroup.get("1-4") || [];
-    const r02Detector = detectorGroup.get("1-4") || [];
-    const ra3Datas = dataGroup.get("1-2") || [];
-    const ra3Detector = detectorGroup.get("1-2") || [];
-
-    const la1Datas = dataGroup.get("0-1") || [];
-    const la1Detector = detectorGroup.get("0-1") || [];
-    const ra1Datas = dataGroup.get("1-1") || [];
-    const ra1Detector = detectorGroup.get("1-1") || [];
-
-    const lctDatas = dataGroup.get("0-0") || [];
-    const lctDetector = detectorGroup.get("0-0") || [];
-    const rctDatas = dataGroup.get("1-0") || [];
-    const rctDetector = detectorGroup.get("1-0") || [];
+    const lctDatas = flawMap.get("0-0") || [];
+    const lctDetector = chMap.get("0-0") || [];
+    const rctDatas = flawMap.get("1-0") || [];
+    const rctDetector = chMap.get("1-0") || [];
 
     return {
       xrsj: dayjs().format("YYYY-MM-DD HH:mm:ss"),
@@ -2810,10 +2803,7 @@ export class KH {
       return `${divideBy10(db)}dB;${flaws.map((flaw) => mathFormat(flaw.fltValueX, { precision: 0 })).join(" ")}`;
     };
 
-    const images = await this.upload52aImageByFtp(
-      firstRecord.szIDs,
-      firstRecord.szIDsWheel || "",
-    );
+    const images = await this.upload52aImageByFtp(firstRecord.szIDs);
 
     return {
       xrsj: dayjs().format("YYYY-MM-DD HH:mm:ss"),
@@ -2902,7 +2892,7 @@ export class KH {
       ysy: this.state.tsysy,
     };
   }
-  async upload501ImagesByFtp(id: string, sbbh: string) {
+  async upload501ImagesByFtp(id: string) {
     const rootPath = await this.mdb.rootFolder();
     const lxhImage = this.mdb.imagePath(rootPath, `${id}.LXH.bmp`);
     const rxhImage = this.mdb.imagePath(rootPath, `${id}.RXH.bmp`);
@@ -2910,14 +2900,13 @@ export class KH {
     const rlzImage = this.mdb.imagePath(rootPath, `${id}.RLZ.bmp`);
     const lctImage = this.mdb.imagePath(rootPath, `${id}.LCT.bmp`);
     const rctImage = this.mdb.imagePath(rootPath, `${id}.RCT.bmp`);
-    const date = dayjs().format("YYYYMMDD");
 
-    let lxhFtpPath = `/sbjy/rj/${sbbh + date}01.bmp`;
-    let rxhFtpPath = `/sbjy/rj/${sbbh + date}02.bmp`;
-    let llzFtpPath = `/sbjy/rj/${sbbh + date}03.bmp`;
-    let rlzFtpPath = `/sbjy/rj/${sbbh + date}04.bmp`;
-    let lctFtpPath = `/sbjy/rj/${sbbh + date}05.bmp`;
-    let rctFtpPath = `/sbjy/rj/${sbbh + date}06.bmp`;
+    let lxhFtpPath = `/sbjy/rj/左轴颈根部扫描图.bmp`;
+    let rxhFtpPath = `/sbjy/rj/右轴颈根部扫描图.bmp`;
+    let llzFtpPath = `/sbjy/rj/左轮座扫描图.bmp`;
+    let rlzFtpPath = `/sbjy/rj/右轮座扫描图.bmp`;
+    let lctFtpPath = `/sbjy/rj/左穿透扫描图.bmp`;
+    let rctFtpPath = `/sbjy/rj/右穿透扫描图.bmp`;
 
     const ftpClient = new Client();
 
@@ -3003,7 +2992,7 @@ export class KH {
       rctFtpPath,
     };
   }
-  async upload52aImageByFtp(id: string, zh: string) {
+  async upload52aImageByFtp(id: string) {
     const rootPath = await this.mdb.rootFolder();
     const lxhImage = this.mdb.dataImagePath(rootPath, `${id}.LXH.bmp`);
     const rxhImage = this.mdb.dataImagePath(rootPath, `${id}.RXH.bmp`);
@@ -3011,13 +3000,13 @@ export class KH {
     const rlzImage = this.mdb.dataImagePath(rootPath, `${id}.RLZ.bmp`);
     const lctImage = this.mdb.dataImagePath(rootPath, `${id}.LCT.bmp`);
     const rctImage = this.mdb.dataImagePath(rootPath, `${id}.RCT.bmp`);
-    const date = dayjs().format("YYYYMMDD");
-    let lxhFtpPath = `/csbts/${date + zh}01.bmp`;
-    let rxhFtpPath = `/csbts/${date + zh}02.bmp`;
-    let llzFtpPath = `/csbts/${date + zh}03.bmp`;
-    let rlzFtpPath = `/csbts/${date + zh}04.bmp`;
-    let lctFtpPath = `/csbts/${date + zh}05.bmp`;
-    let rctFtpPath = `/csbts/${date + zh}06.bmp`;
+
+    let lxhFtpPath = `/csbts/左轴颈根部扫描图.bmp`;
+    let rxhFtpPath = `/csbts/右轴颈根部扫描图.bmp`;
+    let llzFtpPath = `/csbts/左轮座扫描图.bmp`;
+    let rlzFtpPath = `/csbts/右轮座扫描图.bmp`;
+    let lctFtpPath = `/csbts/左穿透扫描图.bmp`;
+    let rctFtpPath = `/csbts/右穿透扫描图.bmp`;
 
     const ftpClient = new Client();
 

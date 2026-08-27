@@ -52,14 +52,36 @@ export const Cell = (props: CellProps) => {
     b,
     l,
     font12,
-    text = true,
     center = true,
     pl,
     pr,
+    children,
   } = props;
 
   const cellHeight = React.use(CellHeightContext);
   const height = resolveCellHeight(cellHeight, propsHeight);
+
+  const renderChildren = () => {
+    if (!(children instanceof Object)) {
+      return <Text>{children}</Text>;
+    }
+
+    if (!Array.isArray(children)) {
+      return children;
+    }
+
+    if (children.every((i) => !(i instanceof Object))) {
+      return <Text>{children}</Text>;
+    }
+
+    return children.map((i) => {
+      if (i instanceof Object) {
+        return children;
+      }
+
+      return <Text>{i}</Text>;
+    });
+  };
 
   return (
     <View
@@ -78,7 +100,7 @@ export const Cell = (props: CellProps) => {
         { height },
       )}
     >
-      {text ? <Text>{props.children}</Text> : props.children}
+      {renderChildren()}
     </View>
   );
 };
