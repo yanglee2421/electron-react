@@ -11,14 +11,6 @@ services:
   linux-builder:
     build:
       context: .
-      cache_from:
-        - type=local,src=./.docker-cache/build
-      cache_to:
-        - type=local,dest=./.docker-cache/build,mode=max
-      args:
-        ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-        ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
-        npm_package_config_node_gyp_dist_url: https://npmmirror.com/mirrors/node/
     image: builder:linux
     container_name: build_linux
     volumes:

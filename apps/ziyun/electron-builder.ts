@@ -13,7 +13,9 @@ export default {
   },
   npmRebuild: true,
   electronDownload: {
-    mirror: "https://npmmirror.com/mirrors/electron/",
+    mirrorOptions: {
+      mirror: "https://npmmirror.com/mirrors/electron/",
+    },
   },
   publish: {
     provider: "generic",

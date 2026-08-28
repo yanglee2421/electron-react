@@ -11,18 +11,12 @@
 # RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 # RUN apt-get install -y nodejs
 # RUN corepack enable pnpm
-# RUN corepack prepare pnpm@11.1.3 --activate
 # RUN apt-get install -y g++-11 gcc-11
 # RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110
 # RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 110
 
 # ---- Stage 1: deps ----
 FROM electron:linux AS deps
-ARG ELECTRON_MIRROR
-ARG ELECTRON_BUILDER_BINARIES_MIRROR
-ARG npm_package_config_node_gyp_dist_url
-ENV ELECTRON_CACHE=/root/.cache/electron \
-	ELECTRON_BUILDER_CACHE=/root/.cache/electron-builder
 WORKDIR /app
 COPY apps/dsb/package.json ./apps/dsb/
 COPY apps/ziyun/package.json ./apps/ziyun/
@@ -33,31 +27,22 @@ COPY .npmrc .
 COPY package.json .
 COPY pnpm-lock.yaml .
 COPY pnpm-workspace.yaml .
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-	--mount=type=cache,id=node-gyp-cache,target=/root/.cache/node-gyp \
-	--mount=type=cache,id=electron-cache,target=/root/.cache/electron \
-	--mount=type=cache,id=electron-builder-cache,target=/root/.cache/electron-builder \
+RUN --mount=type=cache,id=electron-react-local,target=/root/.local \
+ 	--mount=type=cache,id=electron-react-cache,target=/root/.cache \
 	pnpm i --frozen-lockfile
 
 # ---- Stage 2: build ----
 FROM electron:linux AS build
 ARG NODE_ENV=production
-ARG ELECTRON_MIRROR
-ARG ELECTRON_BUILDER_BINARIES_MIRROR
-ARG npm_package_config_node_gyp_dist_url
-ENV ELECTRON_CACHE=/root/.cache/electron \
-	ELECTRON_BUILDER_CACHE=/root/.cache/electron-builder
 WORKDIR /app
 COPY --from=deps /app .
 COPY . .
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-	--mount=type=cache,id=node-gyp-cache,target=/root/.cache/node-gyp \
-	--mount=type=cache,id=electron-cache,target=/root/.cache/electron \
-	--mount=type=cache,id=electron-builder-cache,target=/root/.cache/electron-builder \
+RUN --mount=type=cache,id=electron-react-local,target=/root/.local \
+ 	--mount=type=cache,id=electron-react-cache,target=/root/.cache \
 	pnpm build
 
 # --- Stage 3: export
-FROM ubuntu:20.04 AS export
+FROM alpine:latest AS export
 WORKDIR /app
 COPY --from=build /app/apps/ziyun/release .
 CMD ["sh", "-c", "cp -r /app/. /output_dist"]
