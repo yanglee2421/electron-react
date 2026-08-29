@@ -4,7 +4,7 @@ import module from "node:module";
 import path from "node:path";
 import process from "node:process";
 import url from "node:url";
-import type { BuildOptions } from "rolldown";
+import type { BuildOptions, ExternalOption } from "rolldown";
 import { build, watch } from "rolldown";
 import type { Subscription } from "rxjs";
 import {
@@ -31,6 +31,55 @@ const packageJsonPath = path.resolve(process.cwd(), "./package.json");
 const packageJson = fs.readFileSync(packageJsonPath, "utf-8");
 const { dependencies } = JSON.parse(packageJson);
 const excludes = ["electron", ...Object.keys(dependencies)];
+const includes = ["@yanglee2421/external-db"];
+const calcExternal = (isDev: boolean): ExternalOption => {
+  return (id, parentId, isResolved) => {
+    void parentId;
+
+    if (!isResolved) {
+      // Excludes
+      if (
+        excludes.some((pkg) => {
+          const reg = new RegExp(`^${pkg}/?`);
+
+          return reg.test(id);
+        })
+      ) {
+        return true;
+      }
+
+      // Includes
+      if (
+        includes.some((pkg) => {
+          const reg = new RegExp(`^${pkg}/?`);
+
+          return reg.test(id);
+        })
+      ) {
+        return false;
+      }
+
+      // Relative path
+      if (id.startsWith(".")) {
+        return false;
+      }
+
+      // Alias path
+      if (id.startsWith("#")) {
+        return false;
+      }
+
+      // node_modules
+      return isDev;
+    } else {
+      if (isDev) {
+        return id.includes("node_modules");
+      }
+
+      return false;
+    }
+  };
+};
 
 const preloadInput: BuildOptions = {
   input: "src/preload/index.ts",
@@ -59,82 +108,7 @@ const createMainInput = (isDev: boolean): BuildOptions => {
       file: "out/main/index.js",
     },
     platform: "node",
-    external(id, parentId, isResolved) {
-      void parentId;
-
-      if (isDev) {
-        /**@abstract
-         * Id maybe is bellow case
-         * 1. absolute path
-         * 2. relative path
-         * 3. URL
-         * 4. alias
-         * 5. package name
-         */
-        if (!isResolved) {
-          if (path.isAbsolute(id)) {
-            return false;
-          }
-          if (id.startsWith(".")) {
-            return false;
-          }
-          if (URL.canParse(id)) {
-            return false;
-          }
-          if (id.startsWith("#")) {
-            return false;
-          }
-          if (
-            excludes.some((name) => {
-              const reg = new RegExp(`^${name}/?`);
-
-              return reg.test(id);
-            })
-          ) {
-            return true;
-          }
-          if (id.startsWith("@yanglee2421/external-db")) {
-            return false;
-          }
-
-          return true;
-
-          // Handle absolute path
-        } else {
-          return id.includes("node_modules");
-        }
-      } else {
-        if (!isResolved) {
-          if (!isResolved) {
-            if (path.isAbsolute(id)) {
-              return false;
-            }
-            if (id.startsWith(".")) {
-              return false;
-            }
-            if (URL.canParse(id)) {
-              return false;
-            }
-            if (id.startsWith("#")) {
-              return false;
-            }
-            if (
-              excludes.some((name) => {
-                const reg = new RegExp(`^${name}/?`);
-
-                return reg.test(id);
-              })
-            ) {
-              return true;
-            }
-
-            return false;
-          } else {
-            return false;
-          }
-        }
-      }
-    },
+    external: calcExternal(isDev),
     transform: {
       inject: {
         __dirname: [shimFile, "__dirname"],
