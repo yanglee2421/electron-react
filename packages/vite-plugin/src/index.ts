@@ -30,7 +30,7 @@ const shimFile = path.resolve(__dirname, "esm-shims.ts");
 const packageJsonPath = path.resolve(process.cwd(), "./package.json");
 const packageJson = fs.readFileSync(packageJsonPath, "utf-8");
 const { dependencies } = JSON.parse(packageJson);
-const external = ["electron", "pdf-parse/worker", ...Object.keys(dependencies)];
+const excludes = ["electron", ...Object.keys(dependencies)];
 
 const preloadInput: BuildOptions = {
   input: "src/preload/index.ts",
@@ -40,32 +40,109 @@ const preloadInput: BuildOptions = {
     file: "out/preload/index.cjs",
   },
   platform: "node",
-  external,
+  external: ["electron"],
   transform: {
     inject: {
       __dirname: [shimFile, "__dirname"],
       __filename: [shimFile, "__filename"],
     },
   },
-  plugins: [resources({ external })],
+  plugins: [resources({ external: excludes })],
 };
 
-const mainInput: BuildOptions = {
-  input: "src/main/index.ts",
-  output: {
-    format: "esm",
-    codeSplitting: false,
-    file: "out/main/index.js",
-  },
-  platform: "node",
-  external,
-  transform: {
-    inject: {
-      __dirname: [shimFile, "__dirname"],
-      __filename: [shimFile, "__filename"],
+const createMainInput = (isDev: boolean): BuildOptions => {
+  return {
+    input: "src/main/index.ts",
+    output: {
+      format: "esm",
+      codeSplitting: false,
+      file: "out/main/index.js",
     },
-  },
-  plugins: [resources({ external })],
+    platform: "node",
+    external(id, parentId, isResolved) {
+      void parentId;
+
+      if (isDev) {
+        /**@abstract
+         * Id maybe is bellow case
+         * 1. absolute path
+         * 2. relative path
+         * 3. URL
+         * 4. alias
+         * 5. package name
+         */
+        if (!isResolved) {
+          if (path.isAbsolute(id)) {
+            return false;
+          }
+          if (id.startsWith(".")) {
+            return false;
+          }
+          if (URL.canParse(id)) {
+            return false;
+          }
+          if (id.startsWith("#")) {
+            return false;
+          }
+          if (
+            excludes.some((name) => {
+              const reg = new RegExp(`^${name}/?`);
+
+              return reg.test(id);
+            })
+          ) {
+            return true;
+          }
+          if (id.startsWith("@yanglee2421/external-db")) {
+            return false;
+          }
+
+          return true;
+
+          // Handle absolute path
+        } else {
+          return id.includes("node_modules");
+        }
+      } else {
+        if (!isResolved) {
+          if (!isResolved) {
+            if (path.isAbsolute(id)) {
+              return false;
+            }
+            if (id.startsWith(".")) {
+              return false;
+            }
+            if (URL.canParse(id)) {
+              return false;
+            }
+            if (id.startsWith("#")) {
+              return false;
+            }
+            if (
+              excludes.some((name) => {
+                const reg = new RegExp(`^${name}/?`);
+
+                return reg.test(id);
+              })
+            ) {
+              return true;
+            }
+
+            return false;
+          } else {
+            return false;
+          }
+        }
+      }
+    },
+    transform: {
+      inject: {
+        __dirname: [shimFile, "__dirname"],
+        __filename: [shimFile, "__filename"],
+      },
+    },
+    plugins: [resources({ external: excludes })],
+  };
 };
 
 const exit$ = fromEventPattern(
@@ -114,7 +191,7 @@ const watchPreload$ = new Observable((sub) => {
 });
 
 const watchMain$ = new Observable((sub) => {
-  const watcher = watch(mainInput);
+  const watcher = watch(createMainInput(true));
 
   watcher.on("event", (e) => {
     switch (e.code) {
@@ -254,7 +331,7 @@ export const electron = (): Plugin[] => {
         };
       },
       async closeBundle() {
-        await build([preloadInput, mainInput]);
+        await build([preloadInput, createMainInput(false)]);
       },
     },
   ];

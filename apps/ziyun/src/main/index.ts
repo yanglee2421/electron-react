@@ -70,9 +70,9 @@ if (is.dev) {
 /**
  * Disable GPU & Sandbox to avoid crash
  */
-if (platform.isLinux) {
-  app.disableHardwareAcceleration();
-}
+// if (platform.isLinux) {
+//   app.disableHardwareAcceleration();
+// }
 
 const APP_DB_PATH = path.resolve(app.getPath("userData"), "db.db");
 
