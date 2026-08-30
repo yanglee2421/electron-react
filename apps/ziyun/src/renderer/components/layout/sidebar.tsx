@@ -43,6 +43,30 @@ const StyledLink = styled(Link)(({ theme }) => {
   };
 });
 
+const useIntersection = () => {
+  const [isIntersecting, setIsIntersecting] = React.useState(false);
+
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const el = ref.current;
+
+    if (!el) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsIntersecting(entry.isIntersecting);
+    });
+    observer.observe(el);
+
+    return () => {
+      observer.unobserve(el);
+      observer.disconnect();
+    };
+  }, []);
+
+  return [isIntersecting, ref] as const;
+};
+
 interface SidebarProps {
   action?: React.ReactNode;
 }
@@ -57,6 +81,7 @@ export const Sidebar = (props: SidebarProps) => {
     React.useState(true);
   const [khOpen, setKhOpen] = React.useState(true);
 
+  const [isIntersecting, scrollRef] = useIntersection();
   const theme = useTheme();
   const location = useLocation();
   const showHxzyHmisMenu = useProfileStore((s) => s.showHxzyHmisMenu);
@@ -82,7 +107,12 @@ export const Sidebar = (props: SidebarProps) => {
 
   return (
     <>
-      <Toolbar>
+      <Toolbar
+        sx={{
+          boxShadow: !isIntersecting ? theme.shadows[1] : theme.shadows[0],
+          transition: theme.transitions.create("box-shadow"),
+        }}
+      >
         <StyledLink to={{ pathname: "/" }}>
           <KeyboardCommandKey color="primary" />
           <Typography variant="h6" color="primary">
@@ -102,6 +132,7 @@ export const Sidebar = (props: SidebarProps) => {
           overflow: "auto",
         }}
       >
+        <div ref={scrollRef}></div>
         {showHmis && (
           <List
             subheader={
