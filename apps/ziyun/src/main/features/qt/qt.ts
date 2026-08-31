@@ -17,7 +17,7 @@ import {
   count as sqlCount,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-sqlite";
-import { app } from "electron";
+import { app, dialog } from "electron";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -551,6 +551,7 @@ export class QT {
               commParamBack: sql`excluded.CommParamBack`,
               dllPath: sql`excluded.DllPath`,
               usedFlag: sql`excluded.UsedFlag`,
+              funCode: sql`excluded.FunCode`,
             },
           })
           .run();
@@ -561,6 +562,20 @@ export class QT {
     }
 
     return { running: this.running };
+  }
+  async exportDB() {
+    const result = await dialog.showSaveDialog({
+      title: "导出数据库",
+      defaultPath: `${app.getPath("desktop")}/local.db`,
+      filters: [
+        { name: "数据库文件", extensions: ["db"] },
+        { name: "所有文件", extensions: ["*"] },
+      ],
+    });
+
+    const source = this.getLocalDBPath();
+    const target = result.filePath;
+    this.migrateDB({ source, target });
   }
 
   reconnectDB() {

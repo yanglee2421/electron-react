@@ -3,6 +3,7 @@ import type { QT } from "./qt";
 
 export const registerIPCHandlers = (qt: QT) => {
   ipcHandle("qt/migrate-db", (_, p) => qt.migrateDB(p));
+  ipcHandle("qt/export-db", () => qt.exportDB());
   ipcHandle("qt/reconnect-db", () => qt.reconnectDB());
   ipcHandle("qt/start-app", () => qt.startApp());
   ipcHandle("qt/stop-app", () => qt.stopApp());
@@ -33,6 +34,7 @@ export const registerIPCHandlers = (qt: QT) => {
 
   return () => {
     ipcRemoveHandle("qt/migrate-db");
+    ipcRemoveHandle("qt/export-db");
     ipcRemoveHandle("qt/reconnect-db");
     ipcRemoveHandle("qt/start-app");
     ipcRemoveHandle("qt/stop-app");

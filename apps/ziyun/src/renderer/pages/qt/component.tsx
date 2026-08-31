@@ -1,3 +1,4 @@
+import { useExportDB } from "#renderer/api/app";
 import { useSelectFile, useShowOpenDialog } from "#renderer/api/fetch_preload";
 import {
   fetchQTAppDBPath,
@@ -27,7 +28,8 @@ import {
   Delete,
   Edit,
   FindInPageOutlined,
-  Input,
+  ImportExport,
+  IosShare,
   MoreVert,
   Refresh,
   Restore,
@@ -91,6 +93,7 @@ import { z } from "zod";
 const MigrateForm = () => {
   const formId = React.useId();
 
+  const exportDB = useExportDB();
   const migrateDB = useQTMigrateDB();
   const selectSourceDB = useShowOpenDialog();
   const selectTargetDB = useShowOpenDialog();
@@ -272,7 +275,7 @@ const MigrateForm = () => {
                 type="submit"
                 startIcon={
                   <PendingIcon isPending={isSubmiting}>
-                    <Input />
+                    <ImportExport />
                   </PendingIcon>
                 }
                 disabled={!canSubmit}
@@ -282,6 +285,19 @@ const MigrateForm = () => {
             );
           }}
         </form.Subscribe>
+        <Button
+          startIcon={
+            <PendingIcon isPending={exportDB.isPending}>
+              <IosShare />
+            </PendingIcon>
+          }
+          onClick={() => {
+            exportDB.mutate();
+          }}
+          disabled={exportDB.isPending}
+        >
+          导出
+        </Button>
       </CardActions>
     </>
   );

@@ -83,6 +83,10 @@ export interface IPC {
     args: [QTMigrateDBInput];
     return: ReturnType<QT["migrateDB"]>;
   };
+  "qt/export-db": {
+    args: [];
+    return: ReturnType<QT["exportDB"]>;
+  };
   "qt/reconnect-db": {
     args: [];
     return: ReturnType<QT["reconnectDB"]>;

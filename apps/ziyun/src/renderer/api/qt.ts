@@ -49,6 +49,14 @@ export const useQTMigrateDB = () => {
   });
 };
 
+export const useQTExportDB = () => {
+  return useMutation({
+    mutationFn: () => {
+      return ipc.invoke("qt/export-db");
+    },
+  });
+};
+
 export const fetchQTDataDirectory = () => {
   return queryOptions({
     queryKey: [QUERY_KEY, "qt/get-data-directory"],

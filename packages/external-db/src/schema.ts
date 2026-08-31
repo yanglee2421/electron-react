@@ -37,6 +37,7 @@ export const yqConfig = sqliteTable("YQConfig", {
   commParamBack: text("CommParamBack"),
   dllPath: text("DllPath"),
   usedFlag: integer("UsedFlag"),
+  funCode: text("FunCode"),
 });
 
 export const gates = sqliteTable("Gates", {
