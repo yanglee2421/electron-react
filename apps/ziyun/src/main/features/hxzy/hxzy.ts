@@ -161,6 +161,7 @@ export class Hxzy {
               return hxzy_hmis.parse(e.value ? JSON.parse(e.value).state : {});
             case "remove":
             case "clear":
+            default:
               return hxzy_hmis.parse({});
           }
         }),
@@ -356,15 +357,10 @@ export class Hxzy {
   }
 
   async handleRecordRead(_: SQLiteGetParams) {
-    const rows = await this.db
+    const query = this.db
       .select()
       .from(schema.hxzyBarcodeTable)
       .offset(_.pageIndex * _.pageSize)
-      .limit(_.pageSize);
-
-    const [{ count }] = await this.db
-      .select({ count: sql.count() })
-      .from(schema.hxzyBarcodeTable)
       .where(
         sql.between(
           schema.hxzyBarcodeTable.date,
@@ -372,7 +368,14 @@ export class Hxzy {
           new Date(_.endDate),
         ),
       )
+      .limit(_.pageSize);
+
+    const [{ count }] = await this.db
+      .select({ count: sql.count() })
+      .from(query.as("rows"))
       .limit(1);
+
+    const rows = await query;
 
     return { rows, count };
   }

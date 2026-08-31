@@ -1,5 +1,5 @@
 import type { ChannelImage } from "#main/workers/bmp";
-import { is, platform } from "@electron-toolkit/utils";
+import { platform } from "@electron-toolkit/utils";
 import type { DBClient } from "@yanglee2421/external-db";
 import { relations, schema } from "@yanglee2421/external-db";
 import dayjs from "dayjs";
@@ -20,10 +20,8 @@ import { drizzle } from "drizzle-orm/node-sqlite";
 import { app } from "electron";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { Piscina } from "piscina";
 import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
@@ -38,7 +36,6 @@ import {
   Subject,
   switchMap,
 } from "rxjs";
-import workerPath from "../../workers/bmp?worker&url";
 import type { Logger } from "../logger";
 import type { Profile } from "../profile";
 import type { AppCradle } from "../types";
@@ -69,18 +66,12 @@ export class QT {
   private qtProcessSubscription: Subscription;
   private qtProcessTrigger$ = new Subject();
 
-  private piscina: Piscina;
   private profile: Profile;
   private logger: Logger;
 
   constructor({ profile, logger }: AppCradle) {
     this.profile = profile;
     this.logger = logger;
-    this.piscina = new Piscina({
-      filename: workerPath,
-      minThreads: 1,
-      maxThreads: os.cpus().length,
-    });
 
     this.dbFlow$ = this.profile.state$.pipe(
       distinctUntilChanged((p, c) => p.qtAppPath === c.qtAppPath),
@@ -225,21 +216,9 @@ export class QT {
   async dispose() {
     this.db$.complete();
     this.qtProcessTrigger$.complete();
-    this.piscina.destroy();
     this.dbSubscription.unsubscribe();
     this.hmisSubscription.unsubscribe();
     this.qtProcessSubscription.unsubscribe();
-
-    const tmpPath = path.resolve(app.getPath("temp"), app.getName());
-
-    // Cleanup temporary files created by worker threads
-    try {
-      await fs.promises.rm(tmpPath, { recursive: true, force: true });
-    } catch (error) {
-      if (is.dev) {
-        console.error(error);
-      }
-    }
   }
 
   get db() {
@@ -632,25 +611,21 @@ export class QT {
     const dataDirectroy = this.getDataDirectory();
     const imageDirectory = path.resolve(dataDirectroy, "./verifies", id);
     const { szIds, szWhModel } = record;
-    const lct = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LCT.bmp`);
-    const llz = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LLZ.bmp`);
-    const lxh = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LXH.bmp`);
-    const rct = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RCT.bmp`);
-    const rlz = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RLZ.bmp`);
-    const rxh = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RXH.bmp`);
-    const tmpPath = path.resolve(app.getPath("temp"), app.getName());
+    const lct = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LCT.png`);
+    const llz = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LLZ.png`);
+    const lxh = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LXH.png`);
+    const rct = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RCT.png`);
+    const rlz = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RLZ.png`);
+    const rxh = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RXH.png`);
 
-    await fs.promises.mkdir(tmpPath, { recursive: true });
-
-    const jpegs: ChannelImage = await this.piscina.run({
-      tmpPath,
+    const jpegs: ChannelImage = {
       lct,
       rct,
       llz,
       rlz,
       lxh,
       rxh,
-    });
+    };
 
     const channels = await this.db
       .select()
@@ -841,25 +816,24 @@ export class QT {
     const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
     const imgDir = path.resolve(dataDirectory, "./detectors", szIds);
     const szWhModel = record.szWhModel || "";
-    const lct = path.resolve(imgDir, `${szIds}.${szWhModel}.LCT.bmp`);
-    const llz = path.resolve(imgDir, `${szIds}.${szWhModel}.LLZ.bmp`);
-    const lxh = path.resolve(imgDir, `${szIds}.${szWhModel}.LXH.bmp`);
-    const rct = path.resolve(imgDir, `${szIds}.${szWhModel}.RCT.bmp`);
-    const rlz = path.resolve(imgDir, `${szIds}.${szWhModel}.RLZ.bmp`);
-    const rxh = path.resolve(imgDir, `${szIds}.${szWhModel}.RXH.bmp`);
+    const lct = path.resolve(imgDir, `${szIds}.${szWhModel}.LCT.png`);
+    const llz = path.resolve(imgDir, `${szIds}.${szWhModel}.LLZ.png`);
+    const lxh = path.resolve(imgDir, `${szIds}.${szWhModel}.LXH.png`);
+    const rct = path.resolve(imgDir, `${szIds}.${szWhModel}.RCT.png`);
+    const rlz = path.resolve(imgDir, `${szIds}.${szWhModel}.RLZ.png`);
+    const rxh = path.resolve(imgDir, `${szIds}.${szWhModel}.RXH.png`);
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());
 
     await fs.promises.mkdir(tmpPath, { recursive: true });
 
-    const jpegs: ChannelImage = await this.piscina.run({
-      tmpPath,
+    const jpegs: ChannelImage = {
       lct,
       rct,
       llz,
       rlz,
       lxh,
       rxh,
-    });
+    };
 
     const channels = await this.db
       .select()
