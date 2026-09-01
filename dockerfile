@@ -11,12 +11,13 @@
 # RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 # RUN apt-get install -y nodejs
 # RUN corepack enable pnpm
+# RUN corepack prepare pnpm@11.21.0 --activate
 # RUN apt-get install -y g++-11 gcc-11
 # RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110
 # RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 110
 
 # ---- Stage 1: build ----
-FROM electron:linux AS deps
+FROM electron:linux AS build
 ARG NODE_ENV=production
 WORKDIR /app
 COPY .npmrc .
