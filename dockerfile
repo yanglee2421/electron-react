@@ -27,8 +27,9 @@ COPY .npmrc .
 COPY package.json .
 COPY pnpm-lock.yaml .
 COPY pnpm-workspace.yaml .
-RUN --mount=type=cache,id=electron-react-local,target=/root/.local \
- 	--mount=type=cache,id=electron-react-cache,target=/root/.cache \
+RUN --mount=type=cache,id=pnpm-store-cache,target=/root/.local/share/pnpm/store/v11 \
+ 	--mount=type=cache,id=electron-cache,target=/root/.cache/electron \
+ 	--mount=type=cache,id=electron-builder-cache,target=/root/.cache/electron-builder \
 	pnpm i --frozen-lockfile
 
 # ---- Stage 2: build ----
@@ -37,9 +38,11 @@ ARG NODE_ENV=production
 WORKDIR /app
 COPY --from=deps /app .
 COPY . .
-RUN --mount=type=cache,id=electron-react-local,target=/root/.local \
- 	--mount=type=cache,id=electron-react-cache,target=/root/.cache \
+RUN --mount=type=cache,id=pnpm-store-cache,target=/root/.local/share/pnpm/store/v11 \
+ 	--mount=type=cache,id=electron-cache,target=/root/.cache/electron \
+ 	--mount=type=cache,id=electron-builder-cache,target=/root/.cache/electron-builder \
 	pnpm build
+# CMD ["tail", "-f", "/dev/null"]
 
 # --- Stage 3: export
 FROM alpine:latest AS export
