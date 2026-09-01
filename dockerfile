@@ -15,36 +15,23 @@
 # RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110
 # RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 110
 
-# ---- Stage 1: deps ----
+# ---- Stage 1: build ----
 FROM electron:linux AS deps
+ARG NODE_ENV=production
 WORKDIR /app
-COPY apps/dsb/package.json ./apps/dsb/
-COPY apps/ziyun/package.json ./apps/ziyun/
-COPY packages/cpp-addon/package.json ./packages/cpp-addon/
-COPY packages/external-db/package.json ./packages/external-db/
-COPY .node-version .
 COPY .npmrc .
-COPY package.json .
 COPY pnpm-lock.yaml .
 COPY pnpm-workspace.yaml .
 RUN --mount=type=cache,id=pnpm-store-cache,target=/root/.local/share/pnpm/store/v11 \
- 	--mount=type=cache,id=electron-cache,target=/root/.cache/electron \
- 	--mount=type=cache,id=electron-builder-cache,target=/root/.cache/electron-builder \
-	pnpm i --frozen-lockfile
-
-# ---- Stage 2: build ----
-FROM electron:linux AS build
-ARG NODE_ENV=production
-WORKDIR /app
-COPY --from=deps /app .
+	pnpm fetch
 COPY . .
 RUN --mount=type=cache,id=pnpm-store-cache,target=/root/.local/share/pnpm/store/v11 \
  	--mount=type=cache,id=electron-cache,target=/root/.cache/electron \
  	--mount=type=cache,id=electron-builder-cache,target=/root/.cache/electron-builder \
-	pnpm build
+	pnpm i --frozen-lockfile --offline && pnpm build
 # CMD ["tail", "-f", "/dev/null"]
 
-# --- Stage 3: export
+# --- Stage 2: export
 FROM alpine:latest AS export
 WORKDIR /app
 COPY --from=build /app/apps/ziyun/release .
