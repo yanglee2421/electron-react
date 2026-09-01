@@ -136,24 +136,22 @@ const LZInfoTable = (props: LZInfoTableProps) => {
         </Col>
         <Col>
           <Cell>{props.jy3 ? props.channelName3 : null}</Cell>
-          <Cell>{props.zsj3}</Cell>
+          <Cell>{props.jy3 ? props.zsj3 : null}</Cell>
           <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy3}</Cell>
-          <Cell>{props.bc3}</Cell>
-          <Cell>{props.ts3}</Cell>
+          <Cell>{props.jy3 ? props.bc3 : null}</Cell>
+          <Cell>{props.jy3 ? props.ts3 : null}</Cell>
         </Col>
         <Col>
           <Cell>{props.jy4 ? props.channelName4 : null}</Cell>
-          <Cell>{props.zsj4}</Cell>
+          <Cell>{props.jy4 ? props.zsj4 : null}</Cell>
           <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy4}</Cell>
-          <Cell>{props.bc4}</Cell>
-          <Cell>{props.ts4}</Cell>
+          <Cell>{props.jy4 ? props.bc4 : null}</Cell>
+          <Cell>{props.jy4 ? props.ts4 : null}</Cell>
         </Col>
         <Col>
           <Cell>{props.jy2 ? props.channelName2 : null}</Cell>
           <Cell>{props.jy2 ? props.zsj2 : null}</Cell>
-          <Cell height={BASIC_ROW_HEIGHT * 1.5}>
-            {props.jy2 ? props.jy2 : null}
-          </Cell>
+          <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy2}</Cell>
           <Cell>{props.jy2 ? props.bc2 : null}</Cell>
           <Cell>{props.jy2 ? props.ts2 : null}</Cell>
         </Col>
@@ -206,9 +204,11 @@ const XHCTable = (props: XHCTableProps) => {
       </Col>
       <Col width={XHC_ZSJ_COL_WIDTH}>
         <Cell height={BASIC_ROW_HEIGHT * 2.5}>拆射{"\n"}角度</Cell>
-        <Cell>{props.xhZsj}</Cell>
+        <Cell>{props.xhJy ? props.xhZsj : null}</Cell>
         <Cell></Cell>
-        <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctZsj}</Cell>
+        <Cell height={BASIC_ROW_HEIGHT * 1.5}>
+          {props.ctJy ? props.ctZsj : null}
+        </Cell>
       </Col>
       <Col>
         <Cell>灵敏度(dB)</Cell>
@@ -221,15 +221,19 @@ const XHCTable = (props: XHCTableProps) => {
           </Col>
           <Col>
             <Cell height={BASIC_ROW_HEIGHT * 1.5}>补偿</Cell>
-            <Cell>{props.xhBc}</Cell>
+            <Cell>{props.xhJy ? props.xhBc : null}</Cell>
             <Cell></Cell>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctBc}</Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>
+              {props.ctJy ? props.ctBc : null}
+            </Cell>
           </Col>
           <Col>
             <Cell height={BASIC_ROW_HEIGHT * 1.5}>探伤</Cell>
-            <Cell>{props.xhTs}</Cell>
+            <Cell>{props.xhJy ? props.xhTs : null}</Cell>
             <Cell></Cell>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctTs}</Cell>
+            <Cell height={BASIC_ROW_HEIGHT * 1.5}>
+              {props.ctJy ? props.ctTs : null}
+            </Cell>
           </Col>
         </Row>
       </Col>
