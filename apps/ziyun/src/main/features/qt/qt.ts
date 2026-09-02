@@ -157,7 +157,7 @@ export class QT {
         return new Observable<ChildProcessWithoutNullStreams | null>((sub) => {
           const appPath = this.profile.state.qtAppPath;
           const cwd = path.dirname(appPath);
-          const cp = spawn(appPath, [], {
+          const ps = spawn(appPath, [], {
             cwd,
             env: platform.isLinux
               ? {
@@ -168,19 +168,16 @@ export class QT {
               : void 0,
           });
 
-          cp.on("error", (error) => {
+          ps.on("error", (error) => {
             sub.error(error);
           });
-
-          cp.on("spawn", () => {
-            sub.next(cp);
+          ps.on("spawn", () => {
+            sub.next(ps);
           });
-
-          cp.on("exit", () => {
+          ps.on("close", () => {
             sub.complete();
           });
-
-          cp.stderr.on("data", (data) => {
+          ps.stderr.on("data", (data) => {
             const msg = String(data);
 
             if (msg.includes("该实例已在运行")) {
@@ -189,7 +186,7 @@ export class QT {
           });
 
           return () => {
-            cp.kill();
+            ps.kill();
           };
         }).pipe(
           retry(1),
@@ -604,19 +601,16 @@ export class QT {
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
       .limit(1);
-
     const [FACTORY_SBXH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBXH"))
       .limit(1);
-
     const [FACTORY_SBBH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBBH"))
       .limit(1);
-
     const [FACTORY_SYRQ] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
@@ -742,19 +736,16 @@ export class QT {
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
       .limit(1);
-
     const [FACTORY_SBXH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBXH"))
       .limit(1);
-
     const [FACTORY_SBBH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBBH"))
       .limit(1);
-
     const [FACTORY_SYRQ] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
@@ -783,19 +774,16 @@ export class QT {
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_CLD"))
       .limit(1);
-
     const [FACTORY_SBXH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBXH"))
       .limit(1);
-
     const [FACTORY_SBBH] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
       .where(eq(schema.sysConfig.configKey, "FACTORY_SBBH"))
       .limit(1);
-
     const [FACTORY_SYRQ] = await this.db
       .select({ value: schema.sysConfig.configValue })
       .from(schema.sysConfig)
