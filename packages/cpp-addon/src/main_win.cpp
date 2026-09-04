@@ -101,81 +101,80 @@ Napi::Value IsRunAsAdminWrapped(const Napi::CallbackInfo& info) {
   });
 }
 
+class AutoInputWorker : public Napi::AsyncWorker {
+ public:
+  AutoInputWorker(
+      Napi::Env env,
+      const std::u16string& zx,
+      const std::u16string& zh,
+      const std::u16string& czzzdw,
+      const std::u16string& sczzdw,
+      const std::u16string& mczzdw,
+      const std::u16string& czzzrq,
+      const std::u16string& sczzrq,
+      const std::u16string& mczzrq,
+      int ztx,
+      int ytx)
+      : Napi::AsyncWorker(env),
+        zx_(zx),
+        zh_(zh),
+        czzzdw_(czzzdw),
+        sczzdw_(sczzdw),
+        mczzdw_(mczzdw),
+        czzzrq_(czzzrq),
+        sczzrq_(sczzrq),
+        mczzrq_(mczzrq),
+        ztx_(ztx),
+        ytx_(ytx),
+        deferred_(Napi::Promise::Deferred::New(env)) {}
+  Napi::Promise Promise() {
+    return deferred_.Promise();
+  }
+
+ protected:
+  void Execute() override {
+    JS::TryExecute(
+        [&]() {
+          if (!IsRunAsAdmin()) {
+            SetError("自动填充需要管理员权限，请以管理员身份运行程序!");
+            return;
+          }
+
+          std::string err;
+          bool ok = AutoInputToVC(
+              zx_,
+              zh_,
+              czzzdw_,
+              sczzdw_,
+              mczzdw_,
+              czzzrq_,
+              sczzrq_,
+              mczzrq_,
+              ztx_,
+              ytx_,
+              err);
+
+          if (!ok) {
+            SetError(err);
+          }
+        },
+        [&](const std::string& err) { SetError(err); });
+  }
+  void OnError(const Napi::Error& e) override {
+    deferred_.Reject(e.Value());
+  }
+  void OnOK() override {
+    deferred_.Resolve(Napi::Boolean::New(Env(), true));
+  }
+
+ private:
+  Napi::Promise::Deferred deferred_;
+  std::u16string zx_, zh_, czzzdw_, sczzdw_, mczzdw_, czzzrq_, sczzrq_, mczzrq_;
+  int ztx_, ytx_;
+};
+
 Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
   auto env = info.Env();
-
-  class AutoInputWorker : public Napi::AsyncWorker {
-   public:
-    AutoInputWorker(
-        Napi::Env env,
-        const std::u16string& zx,
-        const std::u16string& zh,
-        const std::u16string& czzzdw,
-        const std::u16string& sczzdw,
-        const std::u16string& mczzdw,
-        const std::u16string& czzzrq,
-        const std::u16string& sczzrq,
-        const std::u16string& mczzrq,
-        int ztx,
-        int ytx)
-        : Napi::AsyncWorker(env),
-          zx_(zx),
-          zh_(zh),
-          czzzdw_(czzzdw),
-          sczzdw_(sczzdw),
-          mczzdw_(mczzdw),
-          czzzrq_(czzzrq),
-          sczzrq_(sczzrq),
-          mczzrq_(mczzrq),
-          ztx_(ztx),
-          ytx_(ytx),
-          deferred_(Napi::Promise::Deferred::New(env)) {}
-    Napi::Promise Promise() {
-      return deferred_.Promise();
-    }
-
-   protected:
-    void Execute() override {
-      JS::TryExecute(
-          [&]() {
-            if (!IsRunAsAdmin()) {
-              SetError("自动填充需要管理员权限，请以管理员身份运行程序!");
-              return;
-            }
-
-            std::string err;
-            bool ok = AutoInputToVC(
-                zx_,
-                zh_,
-                czzzdw_,
-                sczzdw_,
-                mczzdw_,
-                czzzrq_,
-                sczzrq_,
-                mczzrq_,
-                ztx_,
-                ytx_,
-                err);
-
-            if (!ok) {
-              SetError(err);
-            }
-          },
-          [&](const std::string& err) { SetError(err); });
-    }
-    void OnError(const Napi::Error& e) override {
-      deferred_.Reject(e.Value());
-    }
-    void OnOK() override {
-      deferred_.Resolve(Napi::Boolean::New(Env(), true));
-    }
-
-   private:
-    Napi::Promise::Deferred deferred_;
-    std::u16string zx_, zh_, czzzdw_, sczzdw_, mczzdw_, czzzrq_, sczzrq_,
-        mczzrq_;
-    int ztx_, ytx_;
-  };
 
   return JS::Try(env, [&]() -> Napi::Value {
     std::u16string zx = info[0].As<Napi::String>().Utf16Value();
