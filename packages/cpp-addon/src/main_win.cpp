@@ -93,7 +93,7 @@ bool AutoInputToVC(
 }
 
 Napi::Value IsRunAsAdminWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
 
   return JS::Try(env, [&]() -> Napi::Value {
     bool isAdmin = IsRunAsAdmin();
@@ -102,10 +102,12 @@ Napi::Value IsRunAsAdminWrapped(const Napi::CallbackInfo& info) {
 }
 
 Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
+  auto env = info.Env();
+
   class AutoInputWorker : public Napi::AsyncWorker {
    public:
     AutoInputWorker(
-        Napi::Function& callback,
+        Napi::Env env,
         const std::u16string& zx,
         const std::u16string& zh,
         const std::u16string& czzzdw,
@@ -115,9 +117,8 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
         const std::u16string& sczzrq,
         const std::u16string& mczzrq,
         int ztx,
-        int ytx,
-        Napi::Promise::Deferred deferred)
-        : Napi::AsyncWorker(callback),
+        int ytx)
+        : Napi::AsyncWorker(env),
           zx_(zx),
           zh_(zh),
           czzzdw_(czzzdw),
@@ -128,8 +129,12 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
           mczzrq_(mczzrq),
           ztx_(ztx),
           ytx_(ytx),
-          deferred_(deferred) {}
+          deferred_(Napi::Promise::Deferred::New(env)) {}
+    Napi::Promise Promise() {
+      return deferred_.Promise();
+    }
 
+   protected:
     void Execute() override {
       JS::TryExecute(
           [&]() {
@@ -151,27 +156,26 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
                 ztx_,
                 ytx_,
                 err);
+
             if (!ok) {
               SetError(err);
             }
           },
           [&](const std::string& err) { SetError(err); });
     }
-    void OnOK() override {
-      deferred_.Resolve(Napi::Boolean::New(Env(), true));
-    }
     void OnError(const Napi::Error& e) override {
       deferred_.Reject(e.Value());
     }
+    void OnOK() override {
+      deferred_.Resolve(Napi::Boolean::New(Env(), true));
+    }
 
    private:
+    Napi::Promise::Deferred deferred_;
     std::u16string zx_, zh_, czzzdw_, sczzdw_, mczzdw_, czzzrq_, sczzrq_,
         mczzrq_;
     int ztx_, ytx_;
-    Napi::Promise::Deferred deferred_;
   };
-
-  Napi::Env env = info.Env();
 
   return JS::Try(env, [&]() -> Napi::Value {
     std::u16string zx = info[0].As<Napi::String>().Utf16Value();
@@ -185,29 +189,17 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
     int ztx = info[8].As<Napi::Number>().Int32Value();
     int ytx = info[9].As<Napi::Number>().Int32Value();
 
-    Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
-    Napi::Function cb =
-        Napi::Function::New(env, [](const Napi::CallbackInfo&) {});
     AutoInputWorker* worker = new AutoInputWorker(
-        cb,
-        zx,
-        zh,
-        czzzdw,
-        sczzdw,
-        mczzdw,
-        czzzrq,
-        sczzrq,
-        mczzrq,
-        ztx,
-        ytx,
-        deferred);
+        env, zx, zh, czzzdw, sczzdw, mczzdw, czzzrq, sczzrq, mczzrq, ztx, ytx);
+
     worker->Queue();
-    return deferred.Promise();
+
+    return worker->Promise();
   });
 }
 
 Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
 
   return JS::Try(env, [&]() -> Napi::Value {
     if (info.Length() < 2) {
@@ -237,7 +229,7 @@ Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
 }
 
 Napi::Value SetForegroundWindowWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
 
   return JS::Try(env, [&]() -> Napi::Value {
     if (info.Length() < 1 || !info[0].IsNumber()) {
@@ -280,7 +272,7 @@ static BOOL CALLBACK EnumChildWindowsCallbackProc(HWND hwnd, LPARAM lParam) {
 }
 
 Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
 
   return JS::Try(env, [&]() -> Napi::Value {
     if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsFunction()) {
@@ -306,7 +298,7 @@ Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {
 }
 
 Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
 
   return JS::Try(env, [&]() -> Napi::Value {
     if (info.Length() < 4 || !info[0].IsNumber() || !info[1].IsNumber() ||

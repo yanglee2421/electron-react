@@ -6,43 +6,47 @@
 // Stub implementations for Linux
 
 Napi::Value ShowAlert(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
   return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Number::New(env, 0); });
 }
 
 Napi::Value IsRunAsAdminWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
   return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Boolean::New(env, false); });
 }
 
 Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
-  return JS::Try(
-      env, [&]() -> Napi::Value { return Napi::Boolean::New(env, false); });
+  auto env = info.Env();
+  return JS::Try(env, [&]() -> Napi::Value {
+    auto deferred = Napi::Promise::Deferred::New(env);
+    deferred.Resolve(Napi::Boolean::New(env, false));
+
+    return deferred.Promise();
+  });
 }
 
 Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
   return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Number::New(env, 0); });
 }
 
 Napi::Value SetForegroundWindowWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
   return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Boolean::New(env, false); });
 }
 
 Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
   return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Boolean::New(env, false); });
 }
 
 Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
+  auto env = info.Env();
   return JS::Try(
       env, [&]() -> Napi::Value { return Napi::Number::New(env, 0); });
 }
