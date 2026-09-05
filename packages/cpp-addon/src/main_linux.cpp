@@ -1,15 +1,9 @@
-#include <string>
 #define NAPI_CPP_EXCEPTIONS
 #include <napi.h>
+#include <string>
 #include "js_util.h"
 
 // Stub implementations for Linux
-
-Napi::Value ShowAlert(const Napi::CallbackInfo& info) {
-  auto env = info.Env();
-  return JS::Try(
-      env, [&]() -> Napi::Value { return Napi::Number::New(env, 0); });
-}
 
 Napi::Value IsRunAsAdminWrapped(const Napi::CallbackInfo& info) {
   auto env = info.Env();

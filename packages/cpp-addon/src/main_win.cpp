@@ -1,7 +1,7 @@
-#include <windows.h>
-#include <string>
 #define NAPI_CPP_EXCEPTIONS
 #include <napi.h>
+#include <windows.h>
+#include <string>
 #include "js_util.h"
 
 struct AutoInputParams {
