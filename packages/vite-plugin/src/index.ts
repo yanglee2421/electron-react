@@ -190,6 +190,7 @@ const watchMain$ = new Observable((sub) => {
 
 const startElectron = (ELECTRON_RENDERER_URL: string) => {
   return new Observable((sub) => {
+    console.log("Starting Electron...");
     const cp = spawn(require("electron"), ["."], {
       stdio: "inherit",
       env: { ELECTRON_RENDERER_URL },
@@ -207,6 +208,7 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
     });
 
     return () => {
+      console.log("Stopping Electron...");
       cp.removeAllListeners();
       cp.kill("SIGKILL");
     };
