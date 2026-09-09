@@ -42,7 +42,7 @@ export const resolveQT503 = (rows: AnniversaryItem[]) => {
       decResult: !!item.bDesResult,
       decValue: divideBy10(item.nDesAtten || 0),
       attResult: !!item.bAttResult,
-      attValue: divideBy10(item.nDynMax || 0),
+      attValue: divideBy10(item.fAttS || 0),
     };
   });
 
