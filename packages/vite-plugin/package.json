@@ -5,13 +5,13 @@
     "import": "./src/index.ts"
   },
   "devDependencies": {
-    "electron": "^42.10.1",
+    "electron": "^40.10.6",
     "rolldown": "^1.2.5",
     "rxjs": "^7.8.2",
     "vite": "^8.2.2"
   },
   "peerDependencies": {
-    "electron": "^43.4.1",
+    "electron": "^40.10.6",
     "rolldown": "^1.2.5",
     "rxjs": "^7.8.2",
     "vite": "^8.2.2"
