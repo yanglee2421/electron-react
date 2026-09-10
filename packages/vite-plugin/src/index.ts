@@ -126,18 +126,10 @@ const exit$ = fromEventPattern(
 const sigint$ = fromEventPattern(
   (f) => process.on("SIGINT", f),
   (f) => process.off("SIGINT", f),
-).pipe(
-  tap(() => {
-    process.exit();
-  }),
 );
 const sigterm$ = fromEventPattern(
   (f) => process.on("SIGTERM", f),
   (f) => process.off("SIGTERM", f),
-).pipe(
-  tap(() => {
-    process.exit();
-  }),
 );
 
 const watchPreload$ = new Observable((sub) => {
@@ -204,7 +196,6 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
     });
     cp.on("close", () => {
       sub.complete();
-      process.exit();
     });
 
     return () => {
@@ -217,6 +208,11 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
       console.error(error);
 
       return EMPTY;
+    }),
+    tap({
+      complete() {
+        process.exit();
+      },
     }),
   );
 };
@@ -253,13 +249,13 @@ const startDev$ = server$.pipe(
           watchMain$.pipe(
             debounceTime(1000 * 2),
             switchMap(() => startElectron(RENDERER_URL)),
-            takeUntil(merge(exit$, sigint$, sigterm$)),
           ),
         );
       }),
       takeUntil(close$),
     );
   }),
+  takeUntil(merge(exit$, sigint$, sigterm$)),
 );
 
 /**

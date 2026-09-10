@@ -75,7 +75,6 @@ if (is.dev) {
 // }
 
 const APP_DB_PATH = path.resolve(app.getPath("userData"), "db.db");
-
 const resource$ = new Observable((sub) => {
   container.register({ dbPath: asValue(APP_DB_PATH) });
 
