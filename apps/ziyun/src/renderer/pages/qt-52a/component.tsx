@@ -118,7 +118,7 @@ const calcNote = (datas: DetectionData[], szMemo: string | null) => {
     })
     .join("; ");
 
-  return "不合格(" + flawsNote + "), 请人工复探!";
+  return <Text>{"不合格(" + flawsNote + "), 请人工复探!"}</Text>;
 };
 
 const MemoInfoContext = React.createContext<MemoInfo>(new Map());
@@ -130,13 +130,15 @@ interface ChannelFlawsProps {
   channel: number;
 }
 
-const ChannelFlaws = (props: ChannelFlawsProps): string => {
+const ChannelFlaws = (props: ChannelFlawsProps) => {
   const { board, channel } = props;
   const memoInfo = React.use(MemoInfoContext);
   const flawGroup = React.use(FlawGroupContext);
 
   const typeNumber = memoInfo.get(`${board}-${channel}`);
   const flawType = calcFlawType(typeNumber);
+
+  console.log(flawType);
 
   if (flawType !== "裂纹") {
     return "";
@@ -145,7 +147,11 @@ const ChannelFlaws = (props: ChannelFlawsProps): string => {
   const flaws = flawGroup.get(`${board}-${channel}`) || [];
   const db = flaws?.at(0)?.nAtten || 0;
 
-  return `${divideBy10(db)}dB;${flaws.map((flaw) => mathFormat(flaw.fltValueX, { precision: 0 })).join(" ")}`;
+  return (
+    <Text>
+      {`${divideBy10(db)}dB;${flaws.map((flaw) => mathFormat(flaw.fltValueX, { precision: 0 })).join(" ")}`}
+    </Text>
+  );
 };
 
 interface NoteCellProps {
@@ -153,10 +159,10 @@ interface NoteCellProps {
   datas: DetectionData[];
 }
 
-const NoteCell = (props: NoteCellProps): string => {
+const NoteCell = (props: NoteCellProps) => {
   const { record, datas } = props;
 
-  return calcNote(datas, record.szMemo);
+  return <Text>{calcNote(datas, record.szMemo)}</Text>;
 };
 
 export const Component = () => {

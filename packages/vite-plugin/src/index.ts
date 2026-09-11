@@ -123,18 +123,10 @@ const createMainInput = (isDev: boolean): BuildOptions => {
 const exit$ = fromEventPattern(
   (f) => process.on("exit", f),
   (f) => process.off("exit", f),
-).pipe(
-  tap(() => {
-    console.log("exit process");
-  }),
 );
 const sigint$ = fromEventPattern(
   (f) => process.on("SIGINT", f),
   (f) => process.off("SIGINT", f),
-).pipe(
-  tap(() => {
-    console.log("SIGINT process");
-  }),
 );
 const sigterm$ = fromEventPattern(
   (f) => process.on("SIGTERM", f),
@@ -207,11 +199,17 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
       sub.complete();
     });
 
-    ps.stdout.addListener("data", () => {});
-    ps.stderr.addListener("data", () => {});
+    ps.stdout.addListener("data", (data) => {
+      console.log(String(data));
+    });
+    ps.stderr.addListener("data", (data) => {
+      console.log(String(data));
+    });
 
     return () => {
       console.log("Stopping Electron...");
+      ps.stderr.removeAllListeners();
+      ps.stdout.removeAllListeners();
       ps.removeAllListeners();
       ps.kill("SIGKILL");
     };
