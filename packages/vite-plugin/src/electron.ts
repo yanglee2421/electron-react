@@ -8,9 +8,9 @@ import type { BuildOptions, ExternalOption } from "rolldown";
 import { build, watch } from "rolldown";
 import type { Subscription } from "rxjs";
 import {
-  BehaviorSubject,
   EMPTY,
   Observable,
+  Subject,
   catchError,
   debounceTime,
   fromEventPattern,
@@ -80,22 +80,24 @@ const calcExternal = (isDev: boolean): ExternalOption => {
   };
 };
 
-const preloadInput: BuildOptions = {
-  input: "src/preload/index.ts",
-  output: {
-    format: "cjs",
-    codeSplitting: false,
-    file: "out/preload/index.cjs",
-  },
-  platform: "node",
-  external: ["electron"],
-  transform: {
-    inject: {
-      __dirname: [shimFile, "__dirname"],
-      __filename: [shimFile, "__filename"],
+const createPreloadInput = (): BuildOptions => {
+  return {
+    input: "src/preload/index.ts",
+    output: {
+      format: "cjs",
+      codeSplitting: false,
+      file: "out/preload/index.cjs",
     },
-  },
-  plugins: [resources({ external: excludes })],
+    platform: "node",
+    external: ["electron"],
+    transform: {
+      inject: {
+        __dirname: [shimFile, "__dirname"],
+        __filename: [shimFile, "__filename"],
+      },
+    },
+    plugins: [resources({ external: excludes })],
+  };
 };
 
 const createMainInput = (isDev: boolean): BuildOptions => {
@@ -118,55 +120,35 @@ const createMainInput = (isDev: boolean): BuildOptions => {
   };
 };
 
-const watchPreload$ = new Observable((sub) => {
-  const watcher = watch(preloadInput);
+const startWatch = (options: BuildOptions) => {
+  return new Observable((sub) => {
+    const watcher = watch(options);
 
-  watcher.on("event", (e) => {
-    switch (e.code) {
-      case "ERROR":
-        console.error(e.error);
-        break;
-      case "BUNDLE_END":
-        sub.next(null);
-        break;
-      case "START":
-      case "BUNDLE_START":
-      case "END":
-      default:
-    }
+    watcher.on("event", (e) => {
+      switch (e.code) {
+        case "ERROR":
+          console.error(e.error);
+          break;
+        case "BUNDLE_END":
+          sub.next(null);
+          break;
+        case "START":
+        case "BUNDLE_START":
+        case "END":
+        default:
+      }
+    });
+
+    return () => {
+      watcher.clear("event");
+      watcher.close();
+    };
   });
+};
 
-  return () => {
-    watcher.clear("event");
-    watcher.close();
-  };
-});
+const startElectron = (server: ViteDevServer) => {
+  const ELECTRON_RENDERER_URL = server.resolvedUrls?.local.at(0) || "";
 
-const watchMain$ = new Observable((sub) => {
-  const watcher = watch(createMainInput(true));
-
-  watcher.on("event", (e) => {
-    switch (e.code) {
-      case "ERROR":
-        console.error(e.error);
-        break;
-      case "BUNDLE_END":
-        sub.next(null);
-        break;
-      case "START":
-      case "BUNDLE_START":
-      case "END":
-      default:
-    }
-  });
-
-  return () => {
-    watcher.clear("event");
-    watcher.close();
-  };
-});
-
-const startElectron = (ELECTRON_RENDERER_URL: string) => {
   return new Observable((sub) => {
     console.log("Starting Electron...");
     const ps = spawn(require("electron"), ["."], {
@@ -196,12 +178,12 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
       ps.stdout.removeAllListeners();
       ps.stderr.removeAllListeners();
       ps.removeAllListeners();
-      ps.kill("SIGKILL");
+      ps.kill();
     };
   }).pipe(
     tap({
       complete() {
-        server$.value?.close();
+        server.close();
       },
     }),
     catchError((error) => {
@@ -212,45 +194,43 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
   );
 };
 
-const server$ = new BehaviorSubject<ViteDevServer | null>(null);
-const startDev$ = server$.pipe(
-  switchMap((server) => {
-    const http = server?.httpServer;
+const startDev = (server: ViteDevServer) => {
+  const http = server?.httpServer;
 
-    if (!http) {
-      return EMPTY;
-    }
+  if (!http) {
+    return EMPTY;
+  }
 
-    const close$ = fromEventPattern(
-      (f) => http.on("close", f),
-      (f) => http.off("close", f),
-    );
-    const listening$ = fromEventPattern(
-      (f) => http.on("listening", f),
-      (f) => http.off("listening", f),
-    );
+  const close$ = fromEventPattern(
+    (f) => http.on("close", f),
+    (f) => http.off("close", f),
+  );
+  const listening$ = fromEventPattern(
+    (f) => http.on("listening", f),
+    (f) => http.off("listening", f),
+  );
 
-    return listening$.pipe(
-      switchMap(() => {
-        const RENDERER_URL = server.resolvedUrls?.local.at(0) || "";
+  return listening$.pipe(
+    switchMap(() => {
+      return merge(
+        startWatch(createPreloadInput()).pipe(
+          debounceTime(1000 * 2),
+          tap(() => {
+            server.ws.send({ type: "full-reload" });
+          }),
+        ),
+        startWatch(createMainInput(true)).pipe(
+          debounceTime(1000 * 2),
+          switchMap(() => startElectron(server)),
+        ),
+      );
+    }),
+    takeUntil(close$),
+  );
+};
 
-        return merge(
-          watchPreload$.pipe(
-            debounceTime(1000 * 2),
-            tap(() => {
-              server.ws.send({ type: "full-reload" });
-            }),
-          ),
-          watchMain$.pipe(
-            debounceTime(1000 * 2),
-            switchMap(() => startElectron(RENDERER_URL)),
-          ),
-        );
-      }),
-      takeUntil(close$),
-    );
-  }),
-);
+const server$ = new Subject<ViteDevServer>();
+const dev$ = server$.pipe(switchMap((server) => startDev(server)));
 
 /**
  * vite.config.ts is re-executed whenever the Vite server restarts.
@@ -260,7 +240,7 @@ let subscribtion: Subscription | null = null;
 
 export const electron = (): Plugin[] => {
   subscribtion?.unsubscribe();
-  subscribtion = startDev$.subscribe();
+  subscribtion = dev$.subscribe();
 
   return [
     {
@@ -297,7 +277,7 @@ export const electron = (): Plugin[] => {
         };
       },
       async closeBundle() {
-        await build([preloadInput, createMainInput(false)]);
+        await build([createPreloadInput(), createMainInput(false)]);
       },
     },
   ];
