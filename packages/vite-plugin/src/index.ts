@@ -8,12 +8,11 @@ import type { BuildOptions, ExternalOption } from "rolldown";
 import { build, watch } from "rolldown";
 import type { Subscription } from "rxjs";
 import {
+  BehaviorSubject,
   EMPTY,
   Observable,
-  Subject,
   catchError,
   debounceTime,
-  finalize,
   fromEventPattern,
   merge,
   switchMap,
@@ -120,19 +119,6 @@ const createMainInput = (isDev: boolean): BuildOptions => {
   };
 };
 
-const exit$ = fromEventPattern(
-  (f) => process.on("exit", f),
-  (f) => process.off("exit", f),
-);
-const sigint$ = fromEventPattern(
-  (f) => process.on("SIGINT", f),
-  (f) => process.off("SIGINT", f),
-);
-const sigterm$ = fromEventPattern(
-  (f) => process.on("SIGTERM", f),
-  (f) => process.off("SIGTERM", f),
-);
-
 const watchPreload$ = new Observable((sub) => {
   const watcher = watch(preloadInput);
 
@@ -199,38 +185,38 @@ const startElectron = (ELECTRON_RENDERER_URL: string) => {
       sub.complete();
     });
 
-    ps.stdout.addListener("data", (data) => {
+    ps.stderr.addListener("data", (data) => {
       console.log(String(data));
     });
-    ps.stderr.addListener("data", (data) => {
+    ps.stdout.addListener("data", (data) => {
       console.log(String(data));
     });
 
     return () => {
       console.log("Stopping Electron...");
-      ps.stderr.removeAllListeners();
       ps.stdout.removeAllListeners();
+      ps.stderr.removeAllListeners();
       ps.removeAllListeners();
       ps.kill("SIGKILL");
     };
   }).pipe(
+    tap({
+      complete() {
+        server$.value?.close();
+      },
+    }),
     catchError((error) => {
       console.error(error);
 
       return EMPTY;
     }),
-    tap({
-      complete() {
-        process.exit();
-      },
-    }),
   );
 };
 
-const server$ = new Subject<ViteDevServer>();
+const server$ = new BehaviorSubject<ViteDevServer | null>(null);
 const startDev$ = server$.pipe(
   switchMap((server) => {
-    const http = server.httpServer;
+    const http = server?.httpServer;
 
     if (!http) {
       return EMPTY;
@@ -264,10 +250,6 @@ const startDev$ = server$.pipe(
       }),
       takeUntil(close$),
     );
-  }),
-  takeUntil(merge(exit$, sigint$, sigterm$)),
-  finalize(() => {
-    process.exit();
   }),
 );
 
