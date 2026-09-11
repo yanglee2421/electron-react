@@ -156,21 +156,21 @@ const startElectron = (server: ViteDevServer) => {
       env: { ELECTRON_RENDERER_URL },
     });
 
-    ps.on("error", (error) => {
-      sub.error(error);
-    });
     ps.on("spawn", () => {
       sub.next(ps);
+    });
+    ps.on("error", (error) => {
+      sub.error(error);
     });
     ps.on("close", () => {
       sub.complete();
     });
 
-    ps.stderr.addListener("data", (data) => {
-      console.log(String(data));
-    });
     ps.stdout.addListener("data", (data) => {
-      console.log(String(data));
+      console.log(String(data).trim());
+    });
+    ps.stderr.addListener("data", (data) => {
+      console.error(String(data).trim());
     });
 
     return () => {
