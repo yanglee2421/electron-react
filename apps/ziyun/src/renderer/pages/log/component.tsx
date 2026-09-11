@@ -1,7 +1,12 @@
 import { fetchLog, useClearLog, useDeleteLog } from "#renderer/api/logger";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useColorScheme } from "#renderer/hooks/dom/useColorScheme";
-import { ClearAllOutlined, Delete, Refresh } from "@mui/icons-material";
+import {
+  ClearAllOutlined,
+  ContentCopy,
+  Delete,
+  Refresh,
+} from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -19,6 +24,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import React from "react";
+import { toast } from "react-toastify";
 import { codeToHtml } from "shiki";
 
 const initDayjs = () => dayjs();
@@ -45,18 +51,33 @@ const CodeBlock = ({ code }: { code: string }) => {
   }
 
   return (
-    <Box
-      sx={{
-        "& pre.shiki": {
-          whiteSpace: "pre-wrap",
-          fontSize: "20px",
-          fontFamily: "Consolas, 'Courier New', monospace",
-        },
-      }}
-      dangerouslySetInnerHTML={{
-        __html: codeQuery.data,
-      }}
-    ></Box>
+    <Box sx={{ position: "relative" }}>
+      <IconButton
+        onClick={async () => {
+          await navigator.clipboard.writeText(code);
+          toast.success("已复制");
+        }}
+        sx={{
+          position: "absolute",
+          insetBlockStart: 0,
+          insetInlineEnd: 10,
+        }}
+      >
+        <ContentCopy />
+      </IconButton>
+      <Box
+        sx={{
+          "& pre.shiki": {
+            whiteSpace: "pre-wrap",
+            fontSize: "20px",
+            fontFamily: "Consolas, 'Courier New', monospace",
+          },
+        }}
+        dangerouslySetInnerHTML={{
+          __html: codeQuery.data,
+        }}
+      ></Box>
+    </Box>
   );
 };
 

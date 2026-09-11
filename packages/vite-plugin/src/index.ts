@@ -13,6 +13,7 @@ import {
   Subject,
   catchError,
   debounceTime,
+  finalize,
   fromEventPattern,
   merge,
   switchMap,
@@ -122,10 +123,18 @@ const createMainInput = (isDev: boolean): BuildOptions => {
 const exit$ = fromEventPattern(
   (f) => process.on("exit", f),
   (f) => process.off("exit", f),
+).pipe(
+  tap(() => {
+    console.log("exit process");
+  }),
 );
 const sigint$ = fromEventPattern(
   (f) => process.on("SIGINT", f),
   (f) => process.off("SIGINT", f),
+).pipe(
+  tap(() => {
+    console.log("SIGINT process");
+  }),
 );
 const sigterm$ = fromEventPattern(
   (f) => process.on("SIGTERM", f),
@@ -183,25 +192,28 @@ const watchMain$ = new Observable((sub) => {
 const startElectron = (ELECTRON_RENDERER_URL: string) => {
   return new Observable((sub) => {
     console.log("Starting Electron...");
-    const cp = spawn(require("electron"), ["."], {
-      stdio: "inherit",
+    const ps = spawn(require("electron"), ["."], {
+      stdio: "pipe",
       env: { ELECTRON_RENDERER_URL },
     });
 
-    cp.on("error", (error) => {
+    ps.on("error", (error) => {
       sub.error(error);
     });
-    cp.on("spawn", () => {
-      sub.next(cp);
+    ps.on("spawn", () => {
+      sub.next(ps);
     });
-    cp.on("close", () => {
+    ps.on("close", () => {
       sub.complete();
     });
 
+    ps.stdout.addListener("data", () => {});
+    ps.stderr.addListener("data", () => {});
+
     return () => {
       console.log("Stopping Electron...");
-      cp.removeAllListeners();
-      cp.kill("SIGKILL");
+      ps.removeAllListeners();
+      ps.kill("SIGKILL");
     };
   }).pipe(
     catchError((error) => {
@@ -256,6 +268,9 @@ const startDev$ = server$.pipe(
     );
   }),
   takeUntil(merge(exit$, sigint$, sigterm$)),
+  finalize(() => {
+    process.exit();
+  }),
 );
 
 /**
