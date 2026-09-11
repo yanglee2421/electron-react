@@ -141,7 +141,7 @@ const ChannelFlaws = (props: ChannelFlawsProps) => {
   console.log(flawType);
 
   if (flawType !== "裂纹") {
-    return "";
+    return null;
   }
 
   const flaws = flawGroup.get(`${board}-${channel}`) || [];

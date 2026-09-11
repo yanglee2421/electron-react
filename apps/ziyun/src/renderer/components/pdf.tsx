@@ -62,24 +62,20 @@ export const Cell = (props: CellProps) => {
   const height = resolveCellHeight(cellHeight, propsHeight);
 
   const renderChildren = () => {
-    if (!(children instanceof Object)) {
-      return <Text>{children}</Text>;
-    }
-
     if (!Array.isArray(children)) {
-      return children;
-    }
-
-    if (children.every((i) => !(i instanceof Object))) {
-      return <Text>{children}</Text>;
-    }
-
-    return children.map((i) => {
-      if (i instanceof Object) {
+      if (React.isValidElement(children)) {
         return children;
       }
 
-      return <Text>{i}</Text>;
+      return <Text>{children}</Text>;
+    }
+
+    return children.map((child, index) => {
+      if (React.isValidElement(child)) {
+        return React.cloneElement(child, { key: child.key ?? index });
+      }
+
+      return <Text key={index}>{child}</Text>;
     });
   };
 
