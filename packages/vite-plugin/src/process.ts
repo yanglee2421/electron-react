@@ -9,7 +9,7 @@ export const sigint$ = fromEventPattern(
   (f) => process.on("SIGINT", f),
   (f) => process.off("SIGINT", f),
 );
-const sigterm$ = fromEventPattern(
+export const sigterm$ = fromEventPattern(
   (f) => process.on("SIGTERM", f),
   (f) => process.off("SIGTERM", f),
 );
