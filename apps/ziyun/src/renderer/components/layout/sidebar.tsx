@@ -99,6 +99,7 @@ export const Sidebar = (props: SidebarProps) => {
   const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
   const showFuzhoudong = useProfileStore((s) => s.showFuzhoudong);
   const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
+  const showQT = useProfileStore((s) => s.showQT);
   const showHmis =
     showHxzyHmisMenu ||
     showJtvHmisMenu ||
@@ -676,79 +677,81 @@ export const Sidebar = (props: SidebarProps) => {
         </List>
 
         {/* QT */}
-        <List
-          subheader={
-            <ListSubheader
-              disableSticky
-              sx={{ backgroundColor: "transparent" }}
+        {showQT && (
+          <List
+            subheader={
+              <ListSubheader
+                disableSticky
+                sx={{ backgroundColor: "transparent" }}
+              >
+                信创版软件相关
+              </ListSubheader>
+            }
+          >
+            <ListItemButton
+              component={Link}
+              to={{ pathname: "/qt" }}
+              selected={Object.is(normalizePathname(location.pathname), "/qt")}
             >
-              信创版软件相关
-            </ListSubheader>
-          }
-        >
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/qt" }}
-            selected={Object.is(normalizePathname(location.pathname), "/qt")}
-          >
-            <ListItemIcon>
-              <Commit />
-            </ListItemIcon>
-            <ListItemText primary={"信创版软件"} />
-          </ListItemButton>
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/qt/detections" }}
-            selected={Object.is(
-              normalizePathname(location.pathname),
-              "/qt/detections",
-            )}
-          >
-            <ListItemIcon>
-              <Train />
-            </ListItemIcon>
-            <ListItemText primary={"现车作业"} />
-          </ListItemButton>
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/qt/verifies" }}
-            selected={Object.is(
-              normalizePathname(location.pathname),
-              "/qt/verifies",
-            )}
-          >
-            <ListItemIcon>
-              <TodayRounded />
-            </ListItemIcon>
-            <ListItemText primary={"日常校验"} />
-          </ListItemButton>
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/qt/quartors" }}
-            selected={Object.is(
-              normalizePathname(location.pathname),
-              "/qt/quartors",
-            )}
-          >
-            <ListItemIcon>
-              <CalendarMonthRounded />
-            </ListItemIcon>
-            <ListItemText primary={"季度校验"} />
-          </ListItemButton>
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/qt/anniversary" }}
-            selected={Object.is(
-              normalizePathname(location.pathname),
-              "/qt/anniversary",
-            )}
-          >
-            <ListItemIcon>
-              <CalendarTodayRounded />
-            </ListItemIcon>
-            <ListItemText primary={"年度校验"} />
-          </ListItemButton>
-        </List>
+              <ListItemIcon>
+                <Commit />
+              </ListItemIcon>
+              <ListItemText primary={"信创版软件"} />
+            </ListItemButton>
+            <ListItemButton
+              component={Link}
+              to={{ pathname: "/qt/detections" }}
+              selected={Object.is(
+                normalizePathname(location.pathname),
+                "/qt/detections",
+              )}
+            >
+              <ListItemIcon>
+                <Train />
+              </ListItemIcon>
+              <ListItemText primary={"现车作业"} />
+            </ListItemButton>
+            <ListItemButton
+              component={Link}
+              to={{ pathname: "/qt/verifies" }}
+              selected={Object.is(
+                normalizePathname(location.pathname),
+                "/qt/verifies",
+              )}
+            >
+              <ListItemIcon>
+                <TodayRounded />
+              </ListItemIcon>
+              <ListItemText primary={"日常校验"} />
+            </ListItemButton>
+            <ListItemButton
+              component={Link}
+              to={{ pathname: "/qt/quartors" }}
+              selected={Object.is(
+                normalizePathname(location.pathname),
+                "/qt/quartors",
+              )}
+            >
+              <ListItemIcon>
+                <CalendarMonthRounded />
+              </ListItemIcon>
+              <ListItemText primary={"季度校验"} />
+            </ListItemButton>
+            <ListItemButton
+              component={Link}
+              to={{ pathname: "/qt/anniversary" }}
+              selected={Object.is(
+                normalizePathname(location.pathname),
+                "/qt/anniversary",
+              )}
+            >
+              <ListItemIcon>
+                <CalendarTodayRounded />
+              </ListItemIcon>
+              <ListItemText primary={"年度校验"} />
+            </ListItemButton>
+          </List>
+        )}
 
         {/* Else */}
         <List

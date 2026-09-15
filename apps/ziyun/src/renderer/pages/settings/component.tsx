@@ -124,6 +124,7 @@ export const Component = () => {
   const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
   const showFuzhoudong = useProfileStore((s) => s.showFuzhoudong);
   const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
+  const showQT = useProfileStore((s) => s.showQT);
 
   const handleOpenDevTools = () => {
     openDevTools.mutate();
@@ -573,6 +574,20 @@ export const Component = () => {
             }
           >
             <ListItemText primary={"显示PLC菜单"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showQT}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showQT = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示信创功能菜单"} />
           </ListItem>
         </List>
       </Card>

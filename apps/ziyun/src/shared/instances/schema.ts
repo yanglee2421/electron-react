@@ -30,6 +30,7 @@ export const profile = z.object({
   showPLCMenu: z.boolean().default(false),
 
   // For QT App
+  showQT: z.boolean().default(false),
   qtAppPath: z.string().default(""),
   qtHMISEnabled: z.boolean().default(false),
   qtHMISPort: portSchema.default(5003),
