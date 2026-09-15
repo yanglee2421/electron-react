@@ -2,6 +2,7 @@ import { AppProtocol, AppTheme, AppTray, AppWindow } from "#main/infra";
 import { asClass, createContainer } from "awilix";
 import { Cmd } from "./cmd";
 import { DB } from "./db";
+import { Fuzhoudong } from "./fuzhoudong/fuzhoudong";
 import { Guangzhoubei } from "./guangzhoubei";
 import { Guangzhoucheliang } from "./guangzhoucheliang";
 import { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
@@ -65,6 +66,9 @@ container.register({
     .singleton()
     .disposer((i) => i.dispose()),
   qt: asClass(QT)
+    .singleton()
+    .disposer((i) => i.dispose()),
+  fuzhoudong: asClass(Fuzhoudong)
     .singleton()
     .disposer((i) => i.dispose()),
 

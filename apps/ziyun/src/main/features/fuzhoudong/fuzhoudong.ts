@@ -1,110 +1,62 @@
-// 康华 安康
-import * as schema from "#main/features/db/schema";
+// 福州东车辆段
 import type { Logger } from "#main/features/logger";
 import type { QuartorData } from "#main/features/mdb/types";
-import { createEmit } from "#main/lib";
 import { calculateMaxDiff, calculateResult } from "#shared/functions/chr502";
 import { resolveCHR503 } from "#shared/functions/chr503";
 import {
   calcFlawType,
   calcNote,
-  calcPlace,
   resolveMemoInfo,
 } from "#shared/functions/chr52a";
 import { calculateXHCFlaws } from "#shared/functions/flawDetection";
 import { divideBy10, mathFormat } from "#shared/functions/math";
-import { KH_HMIS_STORAGE_KEY } from "#shared/instances/constants";
-import type { KH_HMIS } from "#shared/instances/schema";
-import { kh_hmis } from "#shared/instances/schema";
-import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
-import { chunk, mapGroupBy } from "@yotulee/run";
-import { Client } from "basic-ftp";
+import { FUZHOUDONG_STORAGE_KEY } from "#shared/instances/constants";
+import type { FUZHOUDONG } from "#shared/instances/schema";
+import { fuzhoudong } from "#shared/instances/schema";
+import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
-import * as sql from "drizzle-orm";
 import { net } from "electron";
-import path from "node:path";
-import pLimit from "p-limit";
 import type { Subscription } from "rxjs";
-import {
-  BehaviorSubject,
-  distinctUntilChanged,
-  EMPTY,
-  filter,
-  interval,
-  map,
-  switchMap,
-  tap,
-} from "rxjs";
-import type { DBClient } from "../db/types";
+import { BehaviorSubject, filter, map } from "rxjs";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
 import type { I501Record } from "./501";
 import type { I502Record } from "./502";
 import type { I503 } from "./503";
 import type { I52a } from "./52a";
-import type {
-  KHGetResponse,
-  PostRequestItem,
-  PostResponse,
-  QXDataParams,
-} from "./types";
 
-const emit = createEmit("api_set");
-
-export class KH {
-  readonly state$: BehaviorSubject<KH_HMIS>;
+export class Fuzhoudong {
+  readonly state$: BehaviorSubject<FUZHOUDONG>;
   private subscriptions: Subscription[];
 
-  private db: DBClient;
   private logger: Logger;
   private mdb: MDB;
 
-  constructor({ db, mdb, logger, kv }: AppCradle) {
-    this.db = db.client;
+  constructor({ mdb, logger, kv }: AppCradle) {
     this.mdb = mdb;
     this.logger = logger;
 
-    const stateJSON = kv.getItem(KH_HMIS_STORAGE_KEY);
+    const stateJSON = kv.getItem(FUZHOUDONG_STORAGE_KEY);
     const data = stateJSON ? JSON.parse(stateJSON).state : {};
-    const state = kh_hmis.parse(data);
+    const state = fuzhoudong.parse(data);
     this.state$ = new BehaviorSubject(state);
 
     const subscription1 = kv.events$
       .pipe(
-        filter((e) => e.key === KH_HMIS_STORAGE_KEY),
+        filter((e) => e.key === FUZHOUDONG_STORAGE_KEY),
         map((e) => {
           switch (e.action) {
             case "set":
-              return kh_hmis.parse(e.value ? JSON.parse(e.value).state : {});
+              return fuzhoudong.parse(e.value ? JSON.parse(e.value).state : {});
             case "remove":
             case "clear":
-              return kh_hmis.parse({});
+              return fuzhoudong.parse({});
           }
         }),
       )
       .subscribe(this.state$);
 
-    const subscription2 = this.state$
-      .pipe(
-        distinctUntilChanged(
-          (previous, current) =>
-            previous.autoUpload === current.autoUpload &&
-            previous.autoUploadInterval === current.autoUploadInterval,
-        ),
-        switchMap((state) => {
-          if (!state.autoUpload) {
-            return EMPTY;
-          }
-
-          return interval(state.autoUploadInterval * 1000);
-        }),
-        tap(() => {
-          this.autoUploadLoop();
-        }),
-      )
-      .subscribe();
-
-    this.subscriptions = [subscription1, subscription2];
+    this.subscriptions = [subscription1];
   }
 
   dispose() {
@@ -116,108 +68,15 @@ export class KH {
     return this.state$.getValue();
   }
 
-  async autoUploadLoop() {
-    const limit = pLimit(1);
-    const barcodes = await this.db
-      .select()
-      .from(schema.khBarcodeTable)
-      .where(
-        sql.and(
-          sql.eq(schema.khBarcodeTable.isUploaded, false),
-          sql.between(
-            schema.khBarcodeTable.date,
-            dayjs().startOf("day").toDate(),
-            dayjs().endOf("day").toDate(),
-          ),
-        ),
-      );
-
-    await Promise.allSettled(
-      barcodes.map((barcode) => limit(() => this.handleUpload(barcode.id))),
-    );
-  }
-
-  async sendQxToServer(params: QXDataParams) {
-    const body = JSON.stringify(params);
-    const url = new URL(
-      "/api/lzdx_csbtsj_whzy_tsjgqx/save",
-      `http://${this.state.ip}:${this.state.port}`,
-    );
-
-    this.logger.log({
-      title: `请求数据[${url.href}]:`,
-      json: body,
-    });
-
-    const res = await net.fetch(url.href, {
-      method: "POST",
-      body,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!res.ok) {
-      throw `接口异常[${res.status}]:${res.statusText}`;
-    }
-
-    const data: PostResponse = await res.json();
-    this.logger.log({
-      title: `返回数据[${url.href}]:`,
-      json: JSON.stringify(data),
-    });
-
-    if (data.code !== 200) {
-      throw `接口异常[${data.code}]:${data.msg}`;
-    }
-
-    return data;
-  }
-
-  async sendDataToServer(params: PostRequestItem) {
-    const body = JSON.stringify(params);
-    const url = new URL(
-      "/api/lzdx_csbtsj_tsjg/save",
-      `http://${this.state.ip}:${this.state.port}`,
-    );
-
-    this.logger.log({
-      title: `请求数据:`,
-      message: url.href,
-      json: body,
-    });
-
-    const res = await net.fetch(url.href, {
-      method: "POST",
-      body,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!res.ok) {
-      throw `接口异常[${res.status}]:${res.statusText}`;
-    }
-
-    const data: PostResponse = await res.json();
-    this.logger.log({
-      title: `返回数据:`,
-      message: url.href,
-      json: JSON.stringify(data),
-    });
-
-    if (data.code !== 200) {
-      throw `接口异常[${data.code}]:${data.msg}`;
-    }
-
-    return data;
-  }
   async sendCHR501ToServer(params: I501Record) {
     const body = JSON.stringify(params);
     const url = new URL(
-      `/api/csbts_501/save`,
+      `/pmss/example.do`,
       `http://${this.state.ip}:${this.state.port}`,
     );
+    // ?method=saveData&type=501
+    url.searchParams.set("method", "saveData");
+    url.searchParams.set("type", "501");
 
     this.logger.log({
       title: `请求数据:`,
@@ -237,25 +96,23 @@ export class KH {
       throw `接口异常[${res.status}]:${res.statusText}`;
     }
 
-    const data: PostResponse = await res.json();
+    const data = await res.json();
     this.logger.log({
       title: `返回数据:`,
       message: url.href,
       json: JSON.stringify(data),
     });
-
-    if (data.code !== 200) {
-      throw `接口异常[${data.code}]:${data.msg}`;
-    }
 
     return data;
   }
   async sendCHR502ToServer(params: I502Record) {
     const body = JSON.stringify(params);
     const url = new URL(
-      `/api/csbts_502/save`,
+      `/pmss/example.do`,
       `http://${this.state.ip}:${this.state.port}`,
     );
+    url.searchParams.set("method", "saveData");
+    url.searchParams.set("type", "502");
 
     this.logger.log({
       title: `请求数据:`,
@@ -275,25 +132,23 @@ export class KH {
       throw `接口异常[${res.status}]:${res.statusText}`;
     }
 
-    const data: PostResponse = await res.json();
+    const data = await res.json();
     this.logger.log({
       title: `返回数据:`,
       message: url.href,
       json: JSON.stringify(data),
     });
-
-    if (data.code !== 200) {
-      throw `接口异常[${data.code}]:${data.msg}`;
-    }
 
     return data;
   }
   async sendCHR503ToServer(params: I503) {
     const body = JSON.stringify(params);
     const url = new URL(
-      `/api/csbts_503/save`,
+      `/pmss/example.do`,
       `http://${this.state.ip}:${this.state.port}`,
     );
+    url.searchParams.set("method", "saveData");
+    url.searchParams.set("type", "503");
 
     this.logger.log({
       title: `请求数据:`,
@@ -313,242 +168,14 @@ export class KH {
       throw `接口异常[${res.status}]:${res.statusText}`;
     }
 
-    const data: PostResponse = await res.json();
+    const data = await res.json();
     this.logger.log({
       title: `返回数据:`,
       message: url.href,
       json: JSON.stringify(data),
     });
 
-    if (data.code !== 200) {
-      throw `接口异常[${data.code}]:${data.msg}`;
-    }
-
     return data;
-  }
-  async sendCHR52AToServer(params: I52a) {
-    const body = JSON.stringify(params);
-    const url = new URL(
-      "/api/ct52a1_3/save",
-      `http://${this.state.ip}:${this.state.port}`,
-    );
-
-    this.logger.log({
-      title: `请求数据:`,
-      message: url.href,
-      json: body,
-    });
-
-    const res = await net.fetch(url.href, {
-      method: "POST",
-      body,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!res.ok) {
-      throw `接口异常[${res.status}]:${res.statusText}`;
-    }
-
-    const data: PostResponse = await res.json();
-    this.logger.log({
-      title: `返回数据:`,
-      message: url.href,
-      json: JSON.stringify(data),
-    });
-
-    if (data.code !== 200) {
-      throw `接口异常[${data.code}]:${data.msg}`;
-    }
-
-    return data;
-  }
-
-  async handleFetch(dh: string) {
-    const body = JSON.stringify({ mesureId: dh });
-    const url = new URL(
-      `/api/lzdx_csbtsj_get/get`,
-      `http://${this.state.ip}:${this.state.port}`,
-    );
-
-    this.logger.log({
-      title: `请求数据:`,
-      message: url.href,
-      json: body,
-    });
-
-    const res = await net.fetch(url.href, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body,
-    });
-
-    if (!res.ok) {
-      throw `接口异常[${res.status}]:${res.statusText}`;
-    }
-
-    const data: KHGetResponse = await res.json();
-    this.logger.log({
-      title: `返回数据:`,
-      message: url.href,
-      json: JSON.stringify(data),
-    });
-
-    if (data.code !== 200) {
-      throw `接口异常[${data.code}]:${data.msg}`;
-    }
-
-    return data;
-  }
-  async handleUpload(id: number) {
-    const [record] = await this.db
-      .select()
-      .from(schema.khBarcodeTable)
-      .where(sql.eq(schema.khBarcodeTable.id, id))
-      .limit(1);
-
-    if (!record) {
-      throw new Error(`#${id}不存在`);
-    }
-
-    const zh = record.zh;
-    const barCode = record.barCode;
-
-    if (!zh) {
-      throw new Error(`#${id}未记录轴号`);
-    }
-
-    if (!barCode) {
-      throw new Error(`#${id}未记录条形码`);
-    }
-
-    const startDate = dayjs(record.date).toISOString();
-    const endDate = dayjs(record.date).endOf("day").toISOString();
-    const corporation = await this.mdb.app().corporation();
-    const {
-      rows: [detection],
-    } = await this.mdb
-      .root()
-      .detections()
-      .equal("szIDsWheel", record.zh)
-      .date("tmnow", new Date(startDate), new Date(endDate))
-      .orderBy("tmnow", "desc");
-
-    if (!detection) {
-      throw new Error(`未找到记录#${id}对应的检测数据`);
-    }
-
-    const JCJG = detection.szResult === "合格" ? "1" : "0";
-    const basicBody: PostRequestItem = {
-      mesureId: barCode,
-      ZH: zh,
-      // 1 探伤 0 不探伤
-      ZCTJG: "1",
-      YCTJG: "1",
-      ZLZJG: "1",
-      YLZJG: "1",
-      ZZJJG: detection.bWheelLS ? "1" : "0",
-      YZJJG: detection.bWheelRS ? "1" : "0",
-      JCJG,
-      BZ: "",
-      TSRY: detection.szUsername || "",
-      JCSJ: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-      sbbh: corporation.DeviceNO || "",
-    };
-
-    await this.sendDataToServer(basicBody);
-
-    const szMemo = detection.szMemo || "";
-    const memoMetas = chunk(szMemo.split(""), 8).map((i) => {
-      const board = Number(i.at(0)) ? 1 : 0;
-      const channel = Number(i.at(1));
-      const flawType = Number(i.at(-1));
-
-      return {
-        board,
-        channel,
-        flawType,
-      };
-    });
-
-    await Promise.allSettled(
-      memoMetas.map((meta) => {
-        const uploadFlawInput: QXDataParams = {
-          mesureid: barCode,
-          zh: zh,
-          testdatetime: dayjs(detection.tmnow).format("YYYY-MM-DD HH:mm:ss"),
-          testtype: "超声波",
-          btcw: calcPlace(meta.board, meta.channel),
-          tsr: detection.szUsername || "",
-          tsgz: this.state.tsgz,
-          tszjy: this.state.tszjy,
-          tsysy: this.state.tsysy,
-          gzmc: calcFlawType(meta.flawType),
-          clff: "人工复探",
-          bz: "",
-        };
-
-        return this.sendQxToServer(uploadFlawInput);
-      }),
-    );
-
-    const result = await this.db
-      .update(schema.khBarcodeTable)
-      .set({ isUploaded: true })
-      .where(sql.eq(schema.khBarcodeTable.id, id))
-      .returning();
-
-    emit();
-
-    return result;
-  }
-  async handleReadRecord(params: SQLiteGetParams) {
-    const [{ count }] = await this.db
-      .select({ count: sql.count() })
-      .from(schema.khBarcodeTable)
-      .where(
-        sql.between(
-          schema.khBarcodeTable.date,
-          new Date(params.startDate),
-          new Date(params.endDate),
-        ),
-      )
-      .limit(1);
-
-    const rows = await this.db
-      .select()
-      .from(schema.khBarcodeTable)
-      .where(
-        sql.between(
-          schema.khBarcodeTable.date,
-          new Date(params.startDate),
-          new Date(params.endDate),
-        ),
-      )
-      .offset(params.pageIndex * params.pageSize)
-      .limit(params.pageSize);
-
-    return { rows, count };
-  }
-  handleDeleteRecord(id: number) {
-    return this.db
-      .delete(schema.khBarcodeTable)
-      .where(sql.eq(schema.khBarcodeTable.id, id))
-      .returning();
-  }
-  handleInsertRecord(params: InsertRecordParams) {
-    return this.db
-      .insert(schema.khBarcodeTable)
-      .values({
-        barCode: params.DH,
-        zh: params.ZH,
-        date: new Date(),
-        isUploaded: false,
-      })
-      .returning();
   }
   async handleUploadCHR501(id: string) {
     const chr501Params = await this.resolveCHR501InputParams(id);
@@ -564,11 +191,6 @@ export class KH {
     const chr503Params = await this.resolveCHR503InputParams(id);
 
     return this.sendCHR503ToServer(chr503Params);
-  }
-  async handleUploadCHR52A(id: string) {
-    const params = await this.resolveCHR52AInputParams(id);
-
-    return this.sendCHR52AToServer(params);
   }
 
   async resolveCHR501InputParams(id: string): Promise<I501Record> {
@@ -592,7 +214,6 @@ export class KH {
     const corporation = await this.mdb.app().corporation();
     const chMap = mapGroupBy(detectors, (i) => `${i.nBoard}-${i.nChannel}`);
     const flawMap = mapGroupBy(datas, (i) => `${i.nBoard}-${i.nChannel}`);
-    const images = await this.upload501ImagesByFtp(firstRecord.szIDs);
     const l01Datas = flawMap.get(`0-3`) || [];
     const l01Detector = chMap.get(`0-3`) || [];
     const l02Datas = flawMap.get("0-4") || [];
@@ -1565,24 +1186,24 @@ export class KH {
       yqx15_16: "",
 
       czz: firstRecord.szUsername || "",
-      gz: this.state.tsgz,
-      wxg: this.state.tswxg,
-      zjy: this.state.tszjy,
-      ysy: this.state.tsysy,
+      gz: "",
+      wxg: "",
+      zjy: "",
+      ysy: "",
       bz: "",
 
-      img1_mc: path.basename(images.lxhFtpPath),
-      img1_lj: images.lxhFtpPath,
-      img2_mc: path.basename(images.rxhFtpPath),
-      img2_lj: images.rxhFtpPath,
-      img3_mc: path.basename(images.llzFtpPath),
-      img3_lj: images.llzFtpPath,
-      img4_mc: path.basename(images.rlzFtpPath),
-      img4_lj: images.rlzFtpPath,
-      img5_mc: path.basename(images.lctFtpPath),
-      img5_lj: images.lctFtpPath,
-      img6_mc: path.basename(images.rctFtpPath),
-      img6_lj: images.rctFtpPath,
+      img1_mc: "",
+      img1_lj: "",
+      img2_mc: "",
+      img2_lj: "",
+      img3_mc: "",
+      img3_lj: "",
+      img4_mc: "",
+      img4_lj: "",
+      img5_mc: "",
+      img5_lj: "",
+      img6_mc: "",
+      img6_lj: "",
       img7_mc: "",
       img7_lj: "",
       img8_mc: "",
@@ -2376,13 +1997,13 @@ export class KH {
       lzxrb_33jg: "",
 
       tsg: firstRecord.szUsername || "",
-      gz: this.state.tsgz,
-      zjy: this.state.tszjy,
-      ysy: this.state.tsysy,
-      wxg: this.state.tswxg,
-      sbzz: this.state.sbzz,
-      tszz: this.state.tszz,
-      zgld: this.state.zgld,
+      gz: "",
+      zjy: "",
+      ysy: "",
+      wxg: "",
+      sbzz: "",
+      tszz: "",
+      zgld: "",
       bz: "",
     };
   }
@@ -2756,13 +2377,13 @@ export class KH {
       jg355: "",
 
       tsg: firstRecord.szUsername || "",
-      gz: this.state.tsgz,
-      zjy: this.state.tszjy,
-      ysy: this.state.tsysy,
-      wxg: this.state.tswxg,
-      sbzz: this.state.sbzz,
-      tszz: this.state.tszz,
-      zgld: this.state.zgld,
+      gz: "",
+      zjy: "",
+      ysy: "",
+      wxg: "",
+      sbzz: "",
+      tszz: "",
+      zgld: "",
       bz: "",
     };
   }
@@ -2802,8 +2423,6 @@ export class KH {
 
       return `${divideBy10(db)}dB;${flaws.map((flaw) => mathFormat(flaw.fltValueX, { precision: 0 })).join(" ")}`;
     };
-
-    const images = await this.upload52aImageByFtp(firstRecord.szIDs);
 
     return {
       xrsj: dayjs().format("YYYY-MM-DD HH:mm:ss"),
@@ -2878,218 +2497,18 @@ export class KH {
       qxslwz15: "",
       qxlx15: "",
 
-      zzjsmt: images.lxhFtpPath,
-      yzjsmt: images.rxhFtpPath,
-      zlzsmt: images.llzFtpPath,
-      ylzsmt: images.rlzFtpPath,
-      zctsmt: images.lctFtpPath,
-      yctsmt: images.rctFtpPath,
+      zzjsmt: "",
+      yzjsmt: "",
+      zlzsmt: "",
+      ylzsmt: "",
+      zctsmt: "",
+      yctsmt: "",
 
       clff: calcNote(datas, firstRecord.szMemo),
       tsg: firstRecord.szUsername || "",
-      gz: this.state.tsgz,
-      zjy: this.state.tszjy,
-      ysy: this.state.tsysy,
-    };
-  }
-  async upload501ImagesByFtp(id: string) {
-    const rootPath = await this.mdb.rootFolder();
-    const lxhImage = this.mdb.imagePath(rootPath, `${id}.LXH.bmp`);
-    const rxhImage = this.mdb.imagePath(rootPath, `${id}.RXH.bmp`);
-    const llzImage = this.mdb.imagePath(rootPath, `${id}.LLZ.bmp`);
-    const rlzImage = this.mdb.imagePath(rootPath, `${id}.RLZ.bmp`);
-    const lctImage = this.mdb.imagePath(rootPath, `${id}.LCT.bmp`);
-    const rctImage = this.mdb.imagePath(rootPath, `${id}.RCT.bmp`);
-
-    let lxhFtpPath = `/sbjy/rj/左轴颈根部扫描图.bmp`;
-    let rxhFtpPath = `/sbjy/rj/右轴颈根部扫描图.bmp`;
-    let llzFtpPath = `/sbjy/rj/左轮座扫描图.bmp`;
-    let rlzFtpPath = `/sbjy/rj/右轮座扫描图.bmp`;
-    let lctFtpPath = `/sbjy/rj/左穿透扫描图.bmp`;
-    let rctFtpPath = `/sbjy/rj/右穿透扫描图.bmp`;
-
-    const ftpClient = new Client();
-
-    try {
-      await ftpClient.access({
-        host: this.state.ftpHost,
-        port: this.state.ftpPort,
-        user: this.state.ftpUser,
-        password: this.state.ftpPassword,
-      });
-
-      await ftpClient.ensureDir("/sbjy/rj/");
-      await ftpClient.uploadFrom(lxhImage, lxhFtpPath).catch((error) => {
-        lxhFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-      await ftpClient.uploadFrom(rxhImage, rxhFtpPath).catch((error) => {
-        rxhFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-      await ftpClient.uploadFrom(llzImage, llzFtpPath).catch((error) => {
-        llzFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-      await ftpClient.uploadFrom(rlzImage, rlzFtpPath).catch((error) => {
-        rlzFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-      await ftpClient.uploadFrom(lctImage, lctFtpPath).catch((error) => {
-        lctFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-      await ftpClient.uploadFrom(rctImage, rctFtpPath).catch((error) => {
-        rctFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-    } finally {
-      ftpClient.close();
-    }
-
-    return {
-      lxhFtpPath,
-      rxhFtpPath,
-      llzFtpPath,
-      rlzFtpPath,
-      lctFtpPath,
-      rctFtpPath,
-    };
-  }
-  async upload52aImageByFtp(id: string) {
-    const rootPath = await this.mdb.rootFolder();
-    const lxhImage = this.mdb.dataImagePath(rootPath, `${id}.LXH.bmp`);
-    const rxhImage = this.mdb.dataImagePath(rootPath, `${id}.RXH.bmp`);
-    const llzImage = this.mdb.dataImagePath(rootPath, `${id}.LLZ.bmp`);
-    const rlzImage = this.mdb.dataImagePath(rootPath, `${id}.RLZ.bmp`);
-    const lctImage = this.mdb.dataImagePath(rootPath, `${id}.LCT.bmp`);
-    const rctImage = this.mdb.dataImagePath(rootPath, `${id}.RCT.bmp`);
-
-    let lxhFtpPath = `/csbts/左轴颈根部扫描图.bmp`;
-    let rxhFtpPath = `/csbts/右轴颈根部扫描图.bmp`;
-    let llzFtpPath = `/csbts/左轮座扫描图.bmp`;
-    let rlzFtpPath = `/csbts/右轮座扫描图.bmp`;
-    let lctFtpPath = `/csbts/左穿透扫描图.bmp`;
-    let rctFtpPath = `/csbts/右穿透扫描图.bmp`;
-
-    const ftpClient = new Client();
-
-    try {
-      await ftpClient.access({
-        host: this.state.ftpHost,
-        port: this.state.ftpPort,
-        user: this.state.ftpUser,
-        password: this.state.ftpPassword,
-      });
-
-      await ftpClient.ensureDir("/csbts/");
-      await ftpClient.uploadFrom(lxhImage, lxhFtpPath).catch((error) => {
-        lxhFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-      await ftpClient.uploadFrom(rxhImage, rxhFtpPath).catch((error) => {
-        rxhFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-      await ftpClient.uploadFrom(llzImage, llzFtpPath).catch((error) => {
-        llzFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-      await ftpClient.uploadFrom(rlzImage, rlzFtpPath).catch((error) => {
-        rlzFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-      await ftpClient.uploadFrom(lctImage, lctFtpPath).catch((error) => {
-        lctFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-      await ftpClient.uploadFrom(rctImage, rctFtpPath).catch((error) => {
-        rctFtpPath = "";
-
-        if (error instanceof Error) {
-          this.logger.error({
-            title: error.message,
-            message: error.stack,
-          });
-        }
-      });
-    } finally {
-      ftpClient.close();
-    }
-
-    return {
-      lxhFtpPath,
-      rxhFtpPath,
-      llzFtpPath,
-      rlzFtpPath,
-      lctFtpPath,
-      rctFtpPath,
+      gz: "",
+      zjy: "",
+      ysy: "",
     };
   }
 }

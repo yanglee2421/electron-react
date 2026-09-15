@@ -1,5 +1,6 @@
 import type * as cmd from "#main/features/cmd/types";
 import type * as db from "#main/features/db/types";
+import type * as fuzhoudong from "#main/features/fuzhoudong/types";
 import type * as guangzhoubei from "#main/features/guangzhoubei/types";
 import type * as guangzhoucheliang from "#main/features/guangzhoucheliang/types";
 import type * as guangzhoujibaoduan from "#main/features/guangzhoujibaoduan/types";
@@ -34,4 +35,5 @@ export interface IPCContract
     plc.IPCContract,
     printer.IPCContract,
     qt.IPC,
-    xml.IPCContract {}
+    xml.IPCContract,
+    fuzhoudong.IPCContract {}

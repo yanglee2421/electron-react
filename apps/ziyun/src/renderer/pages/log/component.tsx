@@ -14,10 +14,12 @@ import {
   Card,
   CardContent,
   CardHeader,
+  FormControlLabel,
   Grid,
   IconButton,
   MenuItem,
   Pagination,
+  Switch,
   TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -106,6 +108,7 @@ export const Component = () => {
   const [level, setLevel] = React.useState("all");
   const [startDate, setStartDate] = React.useState(initDayjs);
   const [endDate, setEndDate] = React.useState(initDayjs);
+  const [showCode, setShowCode] = React.useState(true);
 
   const clearLogs = useClearLog();
   const logQuery = useQuery(
@@ -147,23 +150,27 @@ export const Component = () => {
 
     return (
       <>
-        {logQuery.data.rows.map((log) => (
-          <Grid size={12} key={log.id}>
-            <Card variant="outlined">
-              <CardHeader
-                title={log.title}
-                subheader={log.date?.toLocaleString()}
-                action={<DeleteButton id={log.id} />}
-              />
-              <CardContent
-                sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
-              >
-                {log.message}
-              </CardContent>
-              {log.json && <CodeBlock code={log.json} />}
-            </Card>
-          </Grid>
-        ))}
+        {logQuery.data.rows.map((log) => {
+          return (
+            <Grid size={12} key={log.id}>
+              <Card variant="outlined">
+                <CardHeader
+                  title={log.title}
+                  subheader={log.date?.toLocaleString()}
+                  action={<DeleteButton id={log.id} />}
+                />
+                <CardContent
+                  sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                >
+                  {log.message}
+                </CardContent>
+                <React.Activity mode={showCode ? "visible" : "hidden"}>
+                  {log.json && <CodeBlock code={log.json} />}
+                </React.Activity>
+              </Card>
+            </Grid>
+          );
+        })}
       </>
     );
   };
@@ -239,6 +246,19 @@ export const Component = () => {
               <MenuItem value="log">信息</MenuItem>
               <MenuItem value="error">错误</MenuItem>
             </TextField>
+          </Grid>
+          <Grid size={12}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showCode}
+                  onChange={(_, c) => {
+                    setShowCode(c);
+                  }}
+                />
+              }
+              label="是否显示代码块"
+            />
           </Grid>
           <Grid size={12}>
             <Pagination

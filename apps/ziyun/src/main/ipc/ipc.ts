@@ -37,9 +37,15 @@ export const ipcHandle = <TKey extends keyof IPCContract>(
       return result;
     } catch (error) {
       if (error instanceof Error) {
-        void logger.error({
+        logger.error({
           title: error.message,
           message: error.stack,
+        });
+      }
+
+      if (typeof error === "string") {
+        logger.error({
+          title: error,
         });
       }
 

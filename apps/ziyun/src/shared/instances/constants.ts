@@ -7,3 +7,4 @@ export const JTV_HMIS_XUZHOUBEI_STORAGE_KEY = "jtv_hmis_xuzhoubei";
 export const JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY = "jtv_hmis_guangzhoubei";
 export const GUANGZHOU_JIBAODUAN_STORAGE_KEY = "guangzhoujibaoduan";
 export const GUANGZHOU_CHELIANG_STORAGE_KEY = "guangzhoucheliang";
+export const FUZHOUDONG_STORAGE_KEY = "fuzhoudong";

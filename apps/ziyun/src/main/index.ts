@@ -32,6 +32,7 @@ import {
 import { container } from "./features";
 import * as cmdIPC from "./features/cmd/ipc";
 import * as dbIPC from "./features/db/ipc";
+import * as fuzhoudongIPC from "./features/fuzhoudong/ipc";
 import * as guangzhoubeiIPC from "./features/guangzhoubei/ipc";
 import * as guangzhoucheliangIPC from "./features/guangzhoucheliang/ipc";
 import * as guangzhoujibaoduanIPC from "./features/guangzhoujibaoduan/ipc";
@@ -89,7 +90,7 @@ const resource$ = new Observable((sub) => {
     guangzhoubei,
     guangzhoucheliang,
     guangzhoujibaoduan,
-
+    fuzhoudong,
     hxzy,
     image,
     jtv,
@@ -124,6 +125,7 @@ const resource$ = new Observable((sub) => {
   const printerUnIPC = printerIPC.registerIPCHandlers(printer);
   const qtUnIPC = qtIPC.registerIPCHandlers(qt);
   const xmlUnIPC = xmlIPC.registerIPCHandlers();
+  const fuzhoudongUnIPC = fuzhoudongIPC.registerIPCHandlers(fuzhoudong);
 
   appProtocol.handle();
   void appTheme;
@@ -152,6 +154,7 @@ const resource$ = new Observable((sub) => {
     plcUnIPC();
     printerUnIPC();
     xmlUnIPC();
+    fuzhoudongUnIPC();
   };
 }).pipe(
   catchError((error) => {

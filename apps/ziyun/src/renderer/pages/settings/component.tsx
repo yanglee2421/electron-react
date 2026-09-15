@@ -122,6 +122,7 @@ export const Component = () => {
     (s) => s.showGuangzhoucheliangMenu,
   );
   const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
+  const showFuzhoudong = useProfileStore((s) => s.showFuzhoudong);
   const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
 
   const handleOpenDevTools = () => {
@@ -544,6 +545,20 @@ export const Component = () => {
             }
           >
             <ListItemText primary={"显示康华HMIS菜单"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showFuzhoudong}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showFuzhoudong = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示福州东HMIS菜单"} />
           </ListItem>
           <ListItem
             secondaryAction={

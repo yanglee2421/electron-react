@@ -1,6 +1,7 @@
 import type { DB } from "#main/features/db";
 import type { AppProtocol, AppTheme, AppTray, AppWindow } from "#main/infra";
 import type { Cmd } from "./cmd";
+import type { Fuzhoudong } from "./fuzhoudong";
 import type { Guangzhoubei } from "./guangzhoubei";
 import type { Guangzhoucheliang } from "./guangzhoucheliang";
 import type { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
@@ -35,6 +36,7 @@ export interface AppCradle {
   printer: Printer;
   profile: Profile;
   qt: QT;
+  fuzhoudong: Fuzhoudong;
 
   appProtocol: AppProtocol;
   appTheme: AppTheme;

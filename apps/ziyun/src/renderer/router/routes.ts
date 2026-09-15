@@ -251,6 +251,31 @@ export const routes: RouteObject[] = [
             ],
           },
           {
+            path: "fuzhoudong",
+            children: [
+              {
+                path: "verify",
+                lazy: () =>
+                  import("#renderer/pages/fuzhoudong_verify/component"),
+              },
+              {
+                path: "quartor",
+                lazy: () =>
+                  import("#renderer/pages/fuzhoudong_quartor/component"),
+              },
+              {
+                path: "annual",
+                lazy: () =>
+                  import("#renderer/pages/fuzhoudong_annual/component"),
+              },
+              {
+                path: "setting",
+                lazy: () =>
+                  import("#renderer/pages/fuzhoudong_setting/component"),
+              },
+            ],
+          },
+          {
             path: "qt",
             children: [
               {

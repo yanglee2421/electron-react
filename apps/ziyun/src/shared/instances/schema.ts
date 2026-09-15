@@ -8,8 +8,6 @@ const portSchema = z.number().int().min(1).max(65535).default(80);
 
 export const themeMode = z.enum(["system", "light", "dark"]).default("system");
 
-export type ThemeMode = z.infer<typeof themeMode>;
-
 export const profile = z.object({
   // Basic settings
   alwaysOnTop: z.boolean().default(false),
@@ -28,6 +26,7 @@ export const profile = z.object({
   showGuangzhoujibaoduanHmisMenu: z.boolean().default(false),
   showGuangzhoucheliangMenu: z.boolean().default(false),
   showKhHmisMenu: z.boolean().default(false),
+  showFuzhoudong: z.boolean().default(false),
   showPLCMenu: z.boolean().default(false),
 
   // For QT App
@@ -37,7 +36,10 @@ export const profile = z.object({
   showUserInQtCHR501: z.boolean().default(false),
 });
 
-export type Profile = z.infer<typeof profile>;
+export const fuzhoudong = z.object({
+  ip: ipv4Schema,
+  port: portSchema,
+});
 
 export const kh_hmis = z.object({
   ip: ipv4Schema,
@@ -62,8 +64,6 @@ export const kh_hmis = z.object({
   ftpPassword: z.string().default("tech@963852"),
 });
 
-export type KH_HMIS = z.infer<typeof kh_hmis>;
-
 export const hxzy_hmis = z.object({
   ip: ipv4Schema,
   port: portSchema,
@@ -75,8 +75,6 @@ export const hxzy_hmis = z.object({
 
   gd: z.string().default(""),
 });
-
-export type HXZY_HMIS = z.infer<typeof hxzy_hmis>;
 
 export const jtv_hmis = z.object({
   ip: ipv4Schema,
@@ -91,8 +89,6 @@ export const jtv_hmis = z.object({
   signature_prefix: z.string().default("W"),
   isZhMode: z.boolean().default(true),
 });
-
-export type JTV_HMIS = z.infer<typeof jtv_hmis>;
 
 export const guangzhoubei = z.object({
   get_ip: ipv4Schema,
@@ -110,8 +106,6 @@ export const guangzhoubei = z.object({
   isZhMode: z.boolean().default(true),
 });
 
-export type JTV_HMIS_Guangzhoubei = z.infer<typeof guangzhoubei>;
-
 export const guangzhoujibaoduan = z.object({
   get_ip: ipv4Schema,
   get_port: portSchema,
@@ -126,8 +120,6 @@ export const guangzhoujibaoduan = z.object({
   unitCode: z.string().default(""),
   signature_prefix: z.string().default("W"),
 });
-
-export type Guangzhoujibaoduan = z.infer<typeof guangzhoujibaoduan>;
 
 export const guangzhoucheliang = z.object({
   scanner_ip: ipv4Schema,
@@ -144,8 +136,6 @@ export const guangzhoucheliang = z.object({
   signature_prefix: z.string().default("W"),
   gd: z.string().default(""),
 });
-
-export type GuangzhoucheliangType = z.infer<typeof guangzhoucheliang>;
 
 const bitsSchema = z
   .array(z.object({ address: z.number().int(), description: z.string() }))
@@ -174,4 +164,13 @@ export const plcSchema = z.object({
   d: bitsSchema,
 });
 
+export type HXZY_HMIS = z.infer<typeof hxzy_hmis>;
+export type ThemeMode = z.infer<typeof themeMode>;
+export type KH_HMIS = z.infer<typeof kh_hmis>;
+export type JTV_HMIS = z.infer<typeof jtv_hmis>;
+export type JTV_HMIS_Guangzhoubei = z.infer<typeof guangzhoubei>;
+export type Profile = z.infer<typeof profile>;
+export type GuangzhoucheliangType = z.infer<typeof guangzhoucheliang>;
+export type Guangzhoujibaoduan = z.infer<typeof guangzhoujibaoduan>;
 export type PLCSchema = z.infer<typeof plcSchema>;
+export type FUZHOUDONG = z.infer<typeof fuzhoudong>;

@@ -80,6 +80,7 @@ export const Sidebar = (props: SidebarProps) => {
   const [guangzhoucheliangOpen, setGuangzhoucheliangOpen] =
     React.useState(true);
   const [khOpen, setKhOpen] = React.useState(true);
+  const [fuzhoudongOpen, setFuzhoudongOpen] = React.useState(true);
 
   const [isIntersecting, scrollRef] = useIntersection();
   const theme = useTheme();
@@ -96,6 +97,7 @@ export const Sidebar = (props: SidebarProps) => {
     (s) => s.showGuangzhoucheliangMenu,
   );
   const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
+  const showFuzhoudong = useProfileStore((s) => s.showFuzhoudong);
   const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
   const showHmis =
     showHxzyHmisMenu ||
@@ -103,7 +105,8 @@ export const Sidebar = (props: SidebarProps) => {
     showGuangzhoubeiHmisMenu ||
     showGuangzhoujibaoduanHmisMenu ||
     showGuangzhoucheliangMenu ||
-    showKhHmisMenu;
+    showKhHmisMenu ||
+    showFuzhoudong;
 
   return (
     <>
@@ -419,7 +422,7 @@ export const Sidebar = (props: SidebarProps) => {
               </>
             )}
             {showKhHmisMenu && (
-              <>
+              <React.ViewTransition>
                 <ListItemButton
                   onClick={() => {
                     setKhOpen((p) => !p);
@@ -524,7 +527,87 @@ export const Sidebar = (props: SidebarProps) => {
                     </ListItemButton>
                   </List>
                 </Collapse>
-              </>
+              </React.ViewTransition>
+            )}
+            {showFuzhoudong && (
+              <React.ViewTransition>
+                <ListItemButton
+                  onClick={() => {
+                    setFuzhoudongOpen((p) => !p);
+                  }}
+                >
+                  <ListItemIcon>
+                    <PrecisionManufacturing />
+                  </ListItemIcon>
+                  <ListItemText primary={"福州车辆段"} />
+                  <ExpandMore
+                    sx={{
+                      rotate: fuzhoudongOpen ? 0 : "-90deg",
+                      transition: theme.transitions.create("rotate"),
+                    }}
+                  />
+                </ListItemButton>
+                <Collapse in={fuzhoudongOpen} unmountOnExit>
+                  <List disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/fuzhoudong/verify" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/fuzhoudong/verify",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <CalendarTodayRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"日常校验"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/fuzhoudong/quartor" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/fuzhoudong/quartor",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <CalendarMonthRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"季度校验"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/fuzhoudong/annual" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/fuzhoudong/annual",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <CalendarTodayRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"年度校验"} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={Link}
+                      to={{ pathname: "/fuzhoudong/setting" }}
+                      selected={Object.is(
+                        normalizePathname(location.pathname),
+                        "/fuzhoudong/setting",
+                      )}
+                      sx={{ paddingInlineStart: 4 }}
+                    >
+                      <ListItemIcon>
+                        <TuneRounded />
+                      </ListItemIcon>
+                      <ListItemText primary={"设置"} />
+                    </ListItemButton>
+                  </List>
+                </Collapse>
+              </React.ViewTransition>
             )}
           </List>
         )}
