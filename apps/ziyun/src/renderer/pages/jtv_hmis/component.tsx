@@ -24,6 +24,7 @@ import {
 } from "@mui/icons-material";
 import {
   Button,
+  ButtonBase,
   Card,
   CardContent,
   CardHeader,
@@ -70,6 +71,16 @@ const schema = z.object({
 const columnHelper = createColumnHelper<JTVBarcode>();
 const rowSelectColumnHelper = createColumnHelper<JTVNormalizeResponse>();
 
+interface TableContextValue {
+  onRowRetch: (barcode: string) => void;
+  disabled: boolean;
+}
+
+const TableContext = React.createContext<TableContextValue>({
+  onRowRetch() {},
+  disabled: false,
+});
+
 const columns = [
   columnHelper.accessor("id", {
     header: "ID",
@@ -79,6 +90,21 @@ const columns = [
   columnHelper.accessor("barCode", {
     header: "单号",
     footer: "单号",
+    cell: ({ getValue }) => {
+      const value = getValue();
+      const ctx = React.use(TableContext);
+
+      return (
+        <ButtonBase
+          onClick={() => {
+            ctx.onRowRetch(value || "");
+          }}
+          disabled={ctx.disabled}
+        >
+          {value}
+        </ButtonBase>
+      );
+    },
   }),
   columnHelper.accessor("zh", {
     header: "轴号",
@@ -153,9 +179,9 @@ const rowSelectColumns = [
   }),
 ];
 
-type ActionCellProps = {
+interface ActionCellProps {
   id: number;
-};
+}
 
 const ActionCell = (props: ActionCellProps) => {
   const dialog = useDialogs();
@@ -203,14 +229,14 @@ const ActionCell = (props: ActionCellProps) => {
   );
 };
 
-type DataGridProps = {
+interface DataGridProps {
   rows?: JTVBarcode[];
   count?: number;
   pageIndex: number;
   pageSize: number;
   setPageIndex: (page: number) => void;
   setPageSize: (size: number) => void;
-};
+}
 
 const DataGrid = (props: DataGridProps) => {
   "use no memo";
@@ -311,10 +337,10 @@ const DataGrid = (props: DataGridProps) => {
   );
 };
 
-type RowSelectGridProps = {
+interface RowSelectGridProps {
   data?: JTVNormalizeResponse[];
   onRowSelect?: (record: JTVNormalizeResponse) => void;
-};
+}
 
 const RowSelectGrid = (props: RowSelectGridProps) => {
   "use no memo";
@@ -531,8 +557,13 @@ export const Component = () => {
     });
   };
 
-  const handleRowSelect = async (dataItem: JTVNormalizeResponse) => {
-    await inserDataItemToDB(dataItem);
+  const handleRowSelect = async (
+    dataItem: JTVNormalizeResponse,
+    insert = true,
+  ) => {
+    if (insert) {
+      await inserDataItemToDB(dataItem);
+    }
     await sendDataItemToWindow(dataItem);
   };
 
@@ -669,14 +700,40 @@ export const Component = () => {
           {renderFilter()}
           <Divider />
           {barcode.isFetching && <LinearProgress />}
-          <DataGrid
-            rows={barcode.data?.rows}
-            count={barcode.data?.count}
-            pageIndex={pageIndex}
-            pageSize={pageSize}
-            setPageIndex={setPageIndex}
-            setPageSize={setPageSize}
-          />
+          <TableContext
+            value={{
+              onRowRetch: async (barcode) => {
+                const data = await getData.mutateAsync(
+                  { barcode: barcode, isZhMode: false },
+                  {
+                    onError: (error) => {
+                      toast.error(error.message);
+                    },
+                  },
+                );
+
+                setSelectOptions(data);
+
+                const isSingleElement = Object.is(data.length, 1);
+                if (!isSingleElement) return;
+
+                const record = data.at(0);
+                if (!record) return;
+
+                await handleRowSelect(record, false);
+              },
+              disabled: getData.isPending,
+            }}
+          >
+            <DataGrid
+              rows={barcode.data?.rows}
+              count={barcode.data?.count}
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              setPageIndex={setPageIndex}
+              setPageSize={setPageSize}
+            />
+          </TableContext>
         </Card>
       </Stack>
     </>

@@ -101,7 +101,7 @@ export const registerIPCHandlers = (mdb: MDB) => {
   });
 
   ipcHandle("mdb/anniversary", async (_, { pageIndex, pageSize }) => {
-    const data = await mdb.root().Quartor();
+    const data = await mdb.root().Quartor().orderBy("tmNow", "desc");
     const map = mapGroupBy(data.rows, (item) => item.szIDs);
     const count = map.size;
     const rows = Array.from(map, ([id, rows]) => {
