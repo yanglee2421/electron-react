@@ -1,17 +1,15 @@
 {
   "name": "@yanglee2421/external-db",
+  "type": "module",
+  "exports": {
+    "import": "./src/main.ts"
+  },
   "scripts": {
     "pull": "drizzle-kit pull",
     "push": "drizzle-kit push",
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
     "studio": "drizzle-kit studio"
-  },
-  "files": [
-    "src"
-  ],
-  "exports": {
-    "import": "./src/main.ts"
   },
   "peerDependencies": {
     "drizzle-orm": "1.0.0-beta.22"

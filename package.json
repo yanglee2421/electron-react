@@ -11,27 +11,19 @@
     "react",
     "typescript"
   ],
+  "author": "yanglee2421",
+  "license": "MIT",
   "homepage": "https://github.com/yanglee2421/electron-react/blob/main/README.md",
   "bugs": {
     "url": "https://github.com/yanglee2421/electron-react/issues",
     "email": "yanglee2421@outlook.com"
   },
-  "license": "MIT",
-  "author": "yanglee2421",
   "repository": {
     "type": "git",
     "url": "https://github.com/yanglee2421/electron-react.git",
     "directory": "/"
   },
-  "files": [
-    "dist"
-  ],
   "type": "module",
-  "exports": {
-    "types": "./dist/index.d.ts",
-    "import": "./dist/index.mjs",
-    "require": "./dist/index.cjs"
-  },
   "scripts": {
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
@@ -43,9 +35,9 @@
     "@electron/rebuild": "^4.0.3",
     "@types/node": "^25.3.0",
     "drizzle-kit": "1.0.0-beta.22",
-    "tsdown": "0.22.14",
+    "tsdown": "0.23.0",
     "typescript": "^7.0.2",
-    "vite-plus": "^0.2.8"
+    "vite-plus": "^0.3.3"
   },
   "packageManager": "pnpm@11.21.0+sha512.521705bce689924eac72f5a3587122f362689ef6571e55ba80076fd637c11132ecffada26fad4ea79c485bfddbfd3d5a2a5b05805a77e893de71ec8a6cca3bb1"
 }

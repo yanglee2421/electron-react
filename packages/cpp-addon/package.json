@@ -1,31 +1,5 @@
 {
   "name": "@yanglee2421/cpp-addon",
-  "version": "0.0.2",
-  "description": "Example projects based on node-addon-api and node-gyp",
-  "keywords": [
-    "node-addon-api",
-    "node-gyp",
-    "electron-rebuild",
-    "cpp-addon"
-  ],
-  "license": "MIT",
-  "author": "yanglee2421",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yanglee2421/electron-react.git",
-    "directory": "/packages/cpp-addon"
-  },
-  "bugs": {
-    "url": "https://github.com/yanglee2421/electron-react/issues",
-    "email": "yanglee2421@outlook.com"
-  },
-  "homepage": "https://github.com/yanglee2421/electron-react/blob/main/README.md",
-  "private": false,
-  "files": [
-    "build/Release/cpp_addon.node",
-    "dist",
-    "binding.gyp"
-  ],
   "type": "module",
   "exports": {
     "types": {
