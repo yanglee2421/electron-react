@@ -290,16 +290,38 @@ export class Guangzhoucheliang {
 
     return result;
   }
-  async handleBarcodeInsert(params: InsertRecordParams) {
+  async handleBarcodeInsert(data: InsertRecordParams) {
+    const [exited] = await this.db
+      .select()
+      .from(schema.guangzhoucheliangBarcodeTable)
+      .where(sql.eq(schema.guangzhoucheliangBarcodeTable.barCode, data.DH));
+
+    if (exited) {
+      const result = await this.db
+        .update(schema.guangzhoucheliangBarcodeTable)
+        .set({
+          barCode: data.DH,
+          zh: data.ZH,
+          date: new Date(),
+          isUploaded: false,
+          CZZZDW: data.CZZZDW,
+          CZZZRQ: data.CZZZRQ,
+        })
+        .where(sql.eq(schema.guangzhoucheliangBarcodeTable.barCode, data.DH))
+        .returning();
+
+      return result;
+    }
+
     const result = await this.db
       .insert(schema.guangzhoucheliangBarcodeTable)
       .values({
-        barCode: params.DH,
-        zh: params.ZH,
+        barCode: data.DH,
+        zh: data.ZH,
         date: new Date(),
         isUploaded: false,
-        CZZZDW: params.CZZZDW,
-        CZZZRQ: params.CZZZRQ,
+        CZZZDW: data.CZZZDW,
+        CZZZRQ: data.CZZZRQ,
       })
       .returning();
 

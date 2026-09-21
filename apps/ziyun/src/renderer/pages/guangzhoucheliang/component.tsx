@@ -151,9 +151,9 @@ const rowSelectColumns = [
   }),
 ];
 
-type ActionCellProps = {
+interface ActionCellProps {
   id: number;
-};
+}
 
 const ActionCell = (props: ActionCellProps) => {
   const dialog = useDialogs();
@@ -200,14 +200,15 @@ const ActionCell = (props: ActionCellProps) => {
   );
 };
 
-type DataGridProps = {
+interface DataGridProps {
   rows?: JTVBarcode[];
   count?: number;
   pageIndex: number;
   pageSize: number;
   setPageIndex: (page: number) => void;
   setPageSize: (size: number) => void;
-};
+  onRowRefetch: (barcode: string) => void;
+}
 
 const DataGrid = (props: DataGridProps) => {
   "use no memo";
@@ -238,7 +239,14 @@ const DataGrid = (props: DataGridProps) => {
     }
 
     return table.getRowModel().rows.map((row) => (
-      <TableRow key={row.id}>
+      <TableRow
+        key={row.id}
+        hover
+        onClick={() => {
+          props.onRowRefetch(row.original.barCode || "");
+        }}
+        sx={{ cursor: "pointer" }}
+      >
         {row.getVisibleCells().map((cell) => (
           <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -453,25 +461,8 @@ export const Component = () => {
     validators: {
       onChange: schema,
     },
-    onSubmit: async ({ value, formApi }) => {
-      const data = await getData.mutateAsync(value.barCode, {
-        onError: (error) => {
-          toast.error(error.message);
-        },
-        onSuccess: () => {
-          formApi.reset();
-        },
-      });
-
-      setSelectOptions(data.data);
-
-      const isSingleElement = Object.is(data.data.length, 1);
-      if (!isSingleElement) return;
-
-      const record = data.data.at(0)!;
-      if (!record) return;
-
-      await handleRowSelect(record);
+    onSubmit: async ({ value }) => {
+      await handleSubmit(value.barCode);
     },
   });
 
@@ -521,6 +512,27 @@ export const Component = () => {
   const handleRowSelect = async (dataItem: JTVNormalizeResponse) => {
     await inserDataItemToDB(dataItem);
     await sendDataItemToWindow(dataItem);
+  };
+
+  const handleSubmit = async (barcode: string) => {
+    const data = await getData.mutateAsync(barcode, {
+      onError: (error) => {
+        toast.error(error.message);
+      },
+      onSuccess: () => {
+        form.reset();
+      },
+    });
+
+    setSelectOptions(data.data);
+
+    const isSingleElement = Object.is(data.data.length, 1);
+    if (!isSingleElement) return;
+
+    const record = data.data.at(0)!;
+    if (!record) return;
+
+    await handleRowSelect(record);
   };
 
   const renderFilter = () => {
@@ -650,6 +662,7 @@ export const Component = () => {
             pageSize={pageSize}
             setPageIndex={setPageIndex}
             setPageSize={setPageSize}
+            onRowRefetch={(barcode) => handleSubmit(barcode)}
           />
         </Card>
       </Stack>

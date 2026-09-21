@@ -539,16 +539,38 @@ export class KH {
       .where(sql.eq(schema.khBarcodeTable.id, id))
       .returning();
   }
-  handleInsertRecord(params: InsertRecordParams) {
-    return this.db
+  async handleInsertRecord(data: InsertRecordParams) {
+    const [exited] = await this.db
+      .select()
+      .from(schema.khBarcodeTable)
+      .where(sql.eq(schema.khBarcodeTable.barCode, data.DH));
+
+    if (exited) {
+      const result = await this.db
+        .update(schema.khBarcodeTable)
+        .set({
+          barCode: data.DH,
+          zh: data.ZH,
+          date: new Date(),
+          isUploaded: false,
+        })
+        .where(sql.eq(schema.khBarcodeTable.barCode, data.DH))
+        .returning();
+
+      return result;
+    }
+
+    const result = await this.db
       .insert(schema.khBarcodeTable)
       .values({
-        barCode: params.DH,
-        zh: params.ZH,
+        barCode: data.DH,
+        zh: data.ZH,
         date: new Date(),
         isUploaded: false,
       })
       .returning();
+
+    return result;
   }
   async handleUploadCHR501(id: string) {
     const chr501Params = await this.resolveCHR501InputParams(id);

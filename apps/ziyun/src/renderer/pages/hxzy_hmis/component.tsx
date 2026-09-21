@@ -98,9 +98,9 @@ const columns = [
   }),
 ];
 
-type ActionCellProps = {
+interface ActionCellProps {
   id: number;
-};
+}
 
 const ActionCell = (props: ActionCellProps) => {
   const saveData = useUploadDetecion();
@@ -179,31 +179,7 @@ export const Component = () => {
     },
     validators: { onChange: schema },
     onSubmit: async ({ value }) => {
-      const data = await getData.mutateAsync(value.barCode, {
-        onError: (error) => {
-          toast.error(error.message);
-        },
-        onSuccess: () => {
-          form.reset();
-        },
-      });
-
-      const [record] = data.data;
-      if (!record) {
-        toast.warn("未查询到相关轴承信息");
-        return;
-      }
-
-      await insertRecordToDB.mutateAsync({
-        DH: record.DH,
-        ZH: record.ZH,
-        CZZZDW: record.CZZZDW,
-        CZZZRQ: record.CZZZRQ,
-      });
-
-      if (!isAutoInput) return;
-
-      void sendDataToWindow(data);
+      await handleSubmit(value.barCode);
     },
   });
   const barcodeField = useField({ form, name: "barCode" });
@@ -248,6 +224,34 @@ export const Component = () => {
     );
   };
 
+  const handleSubmit = async (barcode: string) => {
+    const data = await getData.mutateAsync(barcode, {
+      onError: (error) => {
+        toast.error(error.message);
+      },
+      onSuccess: () => {
+        form.reset();
+      },
+    });
+
+    const [record] = data.data;
+    if (!record) {
+      toast.warn("未查询到相关轴承信息");
+      return;
+    }
+
+    await insertRecordToDB.mutateAsync({
+      DH: record.DH,
+      ZH: record.ZH,
+      CZZZDW: record.CZZZDW,
+      CZZZRQ: record.CZZZRQ,
+    });
+
+    if (!isAutoInput) return;
+
+    sendDataToWindow(data);
+  };
+
   const renderRow = () => {
     if (!table.getRowCount()) {
       return (
@@ -260,7 +264,14 @@ export const Component = () => {
     }
 
     return table.getRowModel().rows.map((row) => (
-      <TableRow key={row.id}>
+      <TableRow
+        key={row.id}
+        hover
+        onClick={() => {
+          handleSubmit(row.original.barCode || "");
+        }}
+        sx={{ cursor: "pointer" }}
+      >
         {row.getVisibleCells().map((cell) => (
           <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}

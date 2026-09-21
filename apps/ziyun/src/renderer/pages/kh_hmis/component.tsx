@@ -99,9 +99,9 @@ const schema = z.object({
   barCode: z.string().min(1),
 });
 
-type ActionCellProps = {
+interface ActionCellProps {
   id: number;
-};
+}
 
 const ActionCell = (props: ActionCellProps) => {
   const saveData = useUploadAxleInfo();
@@ -178,26 +178,8 @@ export const Component = () => {
       barCode: "",
     },
     validators: { onChange: schema },
-    onSubmit: async ({ value, formApi }) => {
-      const data = await getData.mutateAsync(value.barCode, {
-        onError: (error) => {
-          toast.error(error.message);
-        },
-        onSuccess: () => {
-          formApi.reset();
-        },
-      });
-
-      if (isAutoInput) {
-        void sendDataToWindow(data);
-      }
-
-      await insertRecord.mutateAsync({
-        DH: data.data.mesureId,
-        ZH: data.data.zh,
-        CZZZDW: data.data.czzzdw,
-        CZZZRQ: data.data.czzzrq,
-      });
+    onSubmit: async ({ value }) => {
+      await handleSubmit(value.barCode);
     },
   });
   const barcodeField = useField({ form, name: "barCode" });
@@ -245,6 +227,28 @@ export const Component = () => {
     );
   };
 
+  const handleSubmit = async (barCode: string) => {
+    const data = await getData.mutateAsync(barCode, {
+      onError: (error) => {
+        toast.error(error.message);
+      },
+      onSuccess: () => {
+        form.reset();
+      },
+    });
+
+    if (isAutoInput) {
+      void sendDataToWindow(data);
+    }
+
+    await insertRecord.mutateAsync({
+      DH: data.data.mesureId,
+      ZH: data.data.zh,
+      CZZZDW: data.data.czzzdw,
+      CZZZRQ: data.data.czzzrq,
+    });
+  };
+
   const renderRow = () => {
     if (!table.getRowCount()) {
       return (
@@ -257,7 +261,14 @@ export const Component = () => {
     }
 
     return table.getRowModel().rows.map((row) => (
-      <TableRow key={row.id}>
+      <TableRow
+        key={row.id}
+        onClick={() => {
+          handleSubmit(row.original.barCode || "");
+        }}
+        hover
+        sx={{ cursor: "pointer" }}
+      >
         {row.getVisibleCells().map((cell) => (
           <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -327,7 +338,7 @@ export const Component = () => {
               autoComplete="off"
               onSubmit={(e) => {
                 e.preventDefault();
-                void form.handleSubmit();
+                form.handleSubmit();
               }}
               onReset={() => form.reset()}
             >

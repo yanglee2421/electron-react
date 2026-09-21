@@ -172,9 +172,9 @@ const useSessionStore = create<ReturnType<typeof storeInitializer>>()(
   }),
 );
 
-type ActionCellProps = {
+interface ActionCellProps {
   id: number;
-};
+}
 
 const ActionCell = (props: ActionCellProps) => {
   const dialog = useDialogs();
@@ -222,14 +222,15 @@ const ActionCell = (props: ActionCellProps) => {
   );
 };
 
-type DataGridProps = {
+interface DataGridProps {
   rows?: JTVGuangzhoubeiBarcode[];
   count?: number;
   pageIndex: number;
   pageSize: number;
   setPageIndex: (page: number) => void;
   setPageSize: (size: number) => void;
-};
+  onRowRefetch: (b: string) => void;
+}
 
 const DataGrid = (props: DataGridProps) => {
   "use no memo";
@@ -260,7 +261,14 @@ const DataGrid = (props: DataGridProps) => {
     }
 
     return table.getRowModel().rows.map((row) => (
-      <TableRow key={row.id}>
+      <TableRow
+        key={row.id}
+        onClick={() => {
+          props.onRowRefetch(row.original.barCode || "");
+        }}
+        hover
+        sx={{ cursor: "pointer" }}
+      >
         {row.getVisibleCells().map((cell) => (
           <TableCell key={cell.id} padding={cellPaddingMap.get(cell.column.id)}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -330,10 +338,10 @@ const DataGrid = (props: DataGridProps) => {
   );
 };
 
-type RowSelectGridProps = {
+interface RowSelectGridProps {
   data?: NormalizeResponse[];
   onRowSelect?: (record: NormalizeResponse) => void;
-};
+}
 
 const RowSelectGrid = (props: RowSelectGridProps) => {
   "use no memo";
@@ -469,29 +477,7 @@ export const Component = () => {
     },
     validators: { onChange: schema },
     onSubmit: async ({ value }) => {
-      const data = await getData.mutateAsync(
-        { barcode: value.barCode },
-        {
-          onError: (error) => {
-            toast.error(error.message);
-          },
-          onSuccess: () => {
-            form.reset();
-          },
-        },
-      );
-
-      useSessionStore.setState((draft) => {
-        draft.selectOptions = data;
-      });
-
-      const isSingleElement = Object.is(data.length, 1);
-      if (!isSingleElement) return;
-
-      const record = data.at(0)!;
-      if (!record) return;
-
-      await handleRowSelect(record);
+      await handleSubmit(value.barCode);
     },
   });
   const barcodeField = useField({ form, name: "barCode" });
@@ -554,6 +540,32 @@ export const Component = () => {
   const handleRowSelect = async (dataItem: NormalizeResponse) => {
     await inserDataItemToDB(dataItem);
     await sendDataItemToWindow(dataItem);
+  };
+
+  const handleSubmit = async (barcode: string) => {
+    const data = await getData.mutateAsync(
+      { barcode },
+      {
+        onError: (error) => {
+          toast.error(error.message);
+        },
+        onSuccess: () => {
+          form.reset();
+        },
+      },
+    );
+
+    useSessionStore.setState((draft) => {
+      draft.selectOptions = data;
+    });
+
+    const isSingleElement = Object.is(data.length, 1);
+    if (!isSingleElement) return;
+
+    const record = data.at(0)!;
+    if (!record) return;
+
+    await handleRowSelect(record);
   };
 
   return (
@@ -682,6 +694,7 @@ export const Component = () => {
             pageSize={pageSize}
             setPageIndex={setPageIndex}
             setPageSize={setPageSize}
+            onRowRefetch={(b) => handleSubmit(b)}
           />
         </Card>
       </Stack>

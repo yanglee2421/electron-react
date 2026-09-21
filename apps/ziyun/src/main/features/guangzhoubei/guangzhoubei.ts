@@ -498,8 +498,30 @@ export class Guangzhoubei {
       .where(sql.eq(schema.guangzhoubeiBarcodeTable.id, id))
       .returning();
   }
-  handleInsertRecord(params: InsertRecordParams) {
-    return this.db
+  async handleInsertRecord(params: InsertRecordParams) {
+    const [exited] = await this.db
+      .select()
+      .from(schema.guangzhoubeiBarcodeTable)
+      .where(sql.eq(schema.guangzhoubeiBarcodeTable.barCode, params.DH));
+
+    if (exited) {
+      const result = await this.db
+        .update(schema.guangzhoubeiBarcodeTable)
+        .set({
+          barCode: params.DH,
+          zh: params.ZH,
+          date: new Date(),
+          isUploaded: false,
+          CZZZDW: params.CZZZDW,
+          CZZZRQ: params.CZZZRQ,
+        })
+        .where(sql.eq(schema.guangzhoubeiBarcodeTable.barCode, params.DH))
+        .returning();
+
+      return result;
+    }
+
+    const result = await this.db
       .insert(schema.guangzhoubeiBarcodeTable)
       .values({
         barCode: params.DH,
@@ -510,5 +532,7 @@ export class Guangzhoubei {
         CZZZRQ: params.CZZZRQ,
       })
       .returning();
+
+    return result;
   }
 }

@@ -429,16 +429,38 @@ export class JTV_HMIS_Guangzhoujibaoduan {
 
     return result;
   }
-  async handleRecordInsert(params: InsertRecordParams) {
+  async handleRecordInsert(data: InsertRecordParams) {
+    const [exited] = await this.db
+      .select()
+      .from(schema.guangzhoujibaoduanBarcodeTable)
+      .where(sql.eq(schema.guangzhoujibaoduanBarcodeTable.barCode, data.DH));
+
+    if (exited) {
+      const result = await this.db
+        .update(schema.guangzhoujibaoduanBarcodeTable)
+        .set({
+          barCode: data.DH,
+          zh: data.ZH,
+          date: new Date(),
+          isUploaded: false,
+          CZZZDW: data.CZZZDW,
+          CZZZRQ: data.CZZZRQ,
+        })
+        .where(sql.eq(schema.guangzhoujibaoduanBarcodeTable.barCode, data.DH))
+        .returning();
+
+      return result;
+    }
+
     const result = await this.db
       .insert(schema.guangzhoujibaoduanBarcodeTable)
       .values({
-        barCode: params.DH,
-        zh: params.ZH,
+        barCode: data.DH,
+        zh: data.ZH,
         date: new Date(),
         isUploaded: false,
-        CZZZDW: params.CZZZDW,
-        CZZZRQ: params.CZZZRQ,
+        CZZZDW: data.CZZZDW,
+        CZZZRQ: data.CZZZRQ,
       })
       .returning();
 

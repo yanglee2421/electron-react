@@ -385,8 +385,28 @@ export class Hxzy {
       .where(sql.eq(schema.hxzyBarcodeTable.id, id))
       .returning();
   }
-  handleRecordInsert(_: InsertRecordParams) {
-    return this.db
+  async handleRecordInsert(_: InsertRecordParams) {
+    const [exited] = await this.db
+      .select()
+      .from(schema.hxzyBarcodeTable)
+      .where(sql.eq(schema.hxzyBarcodeTable.barCode, _.DH));
+
+    if (exited) {
+      const result = await this.db
+        .update(schema.hxzyBarcodeTable)
+        .set({
+          barCode: _.DH,
+          zh: _.ZH,
+          date: new Date(),
+          isUploaded: false,
+        })
+        .where(sql.eq(schema.hxzyBarcodeTable.barCode, _.DH))
+        .returning();
+
+      return result;
+    }
+
+    const result = await this.db
       .insert(schema.hxzyBarcodeTable)
       .values({
         barCode: _.DH,
@@ -395,6 +415,8 @@ export class Hxzy {
         isUploaded: false,
       })
       .returning();
+
+    return result;
   }
   async handleFetch(dh: string) {
     const url = new URL(

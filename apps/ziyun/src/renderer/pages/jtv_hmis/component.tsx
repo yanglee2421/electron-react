@@ -477,28 +477,8 @@ export const Component = () => {
     validators: {
       onChange: schema,
     },
-    onSubmit: async ({ value, formApi }) => {
-      const data = await getData.mutateAsync(
-        { barcode: value.barCode, isZhMode: zhMode },
-        {
-          onError: (error) => {
-            toast.error(error.message);
-          },
-          onSuccess: () => {
-            formApi.reset();
-          },
-        },
-      );
-
-      setSelectOptions(data);
-
-      const isSingleElement = Object.is(data.length, 1);
-      if (!isSingleElement) return;
-
-      const record = data.at(0)!;
-      if (!record) return;
-
-      await handleRowSelect(record);
+    onSubmit: async ({ value }) => {
+      await handleSubmit(value.barCode, zhMode);
     },
   });
 
@@ -551,14 +531,33 @@ export const Component = () => {
     });
   };
 
-  const handleRowSelect = async (
-    dataItem: JTVNormalizeResponse,
-    insert = true,
-  ) => {
-    if (insert) {
-      await inserDataItemToDB(dataItem);
-    }
+  const handleRowSelect = async (dataItem: JTVNormalizeResponse) => {
+    await inserDataItemToDB(dataItem);
     await sendDataItemToWindow(dataItem);
+  };
+
+  const handleSubmit = async (barcode: string, isZhMode: boolean) => {
+    const data = await getData.mutateAsync(
+      { barcode: barcode, isZhMode },
+      {
+        onError: (error) => {
+          toast.error(error.message);
+        },
+        onSuccess: () => {
+          form.reset();
+        },
+      },
+    );
+
+    setSelectOptions(data);
+
+    const isSingleElement = Object.is(data.length, 1);
+    if (!isSingleElement) return;
+
+    const record = data.at(0);
+    if (!record) return;
+
+    await handleRowSelect(record);
   };
 
   const renderFilter = () => {
@@ -701,26 +700,7 @@ export const Component = () => {
             pageSize={pageSize}
             setPageIndex={setPageIndex}
             setPageSize={setPageSize}
-            onRowRefetch={async (barcode) => {
-              const data = await getData.mutateAsync(
-                { barcode: barcode, isZhMode: false },
-                {
-                  onError: (error) => {
-                    toast.error(error.message);
-                  },
-                },
-              );
-
-              setSelectOptions(data);
-
-              const isSingleElement = Object.is(data.length, 1);
-              if (!isSingleElement) return;
-
-              const record = data.at(0);
-              if (!record) return;
-
-              await handleRowSelect(record, false);
-            }}
+            onRowRefetch={(barcode) => handleSubmit(barcode, false)}
           />
         </Card>
       </Stack>

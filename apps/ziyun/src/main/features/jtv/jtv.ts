@@ -501,8 +501,30 @@ export class JTV {
       .where(sql.eq(schema.jtvBarcodeTable.id, id))
       .returning();
   }
-  handleInsertRecord(data: InsertRecordParams) {
-    return this.db
+  async handleInsertRecord(data: InsertRecordParams) {
+    const [exited] = await this.db
+      .select()
+      .from(schema.jtvBarcodeTable)
+      .where(sql.eq(schema.jtvBarcodeTable.barCode, data.DH));
+
+    if (exited) {
+      const result = await this.db
+        .update(schema.jtvBarcodeTable)
+        .set({
+          barCode: data.DH,
+          zh: data.ZH,
+          date: new Date(),
+          isUploaded: false,
+          CZZZDW: data.CZZZDW,
+          CZZZRQ: data.CZZZRQ,
+        })
+        .where(sql.eq(schema.jtvBarcodeTable.barCode, data.DH))
+        .returning();
+
+      return result;
+    }
+
+    const result = await this.db
       .insert(schema.jtvBarcodeTable)
       .values({
         barCode: data.DH,
@@ -513,5 +535,7 @@ export class JTV {
         CZZZRQ: data.CZZZRQ,
       })
       .returning();
+
+    return result;
   }
 }
