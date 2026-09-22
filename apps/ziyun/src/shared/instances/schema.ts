@@ -110,6 +110,7 @@ export const guangzhoubei = z.object({
   deviceUploadInterval: z.number().default(1000),
   deviceIp: ipv4Schema,
   devicePort: portSchema,
+  deviceAccessToken: z.string().default(""),
 });
 
 export const guangzhoujibaoduan = z.object({

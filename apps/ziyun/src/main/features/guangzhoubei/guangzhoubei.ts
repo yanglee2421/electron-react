@@ -226,11 +226,12 @@ export class Guangzhoubei {
     const sub3 = this.state$
       .pipe(
         distinctUntilChanged(
-          (previous, current) =>
-            previous.enableDeviceUpload === current.enableDeviceUpload &&
-            previous.deviceUploadInterval === current.deviceUploadInterval &&
-            previous.deviceIp === current.deviceIp &&
-            previous.devicePort === current.devicePort,
+          (prev, curr) =>
+            prev.enableDeviceUpload === curr.enableDeviceUpload &&
+            prev.deviceUploadInterval === curr.deviceUploadInterval &&
+            prev.deviceIp === curr.deviceIp &&
+            prev.devicePort === curr.devicePort &&
+            prev.deviceAccessToken === curr.deviceAccessToken,
         ),
         switchMap((s) => {
           if (!s.enableDeviceUpload) {
@@ -238,7 +239,7 @@ export class Guangzhoubei {
           }
 
           const url = new URL(
-            `http://${s.deviceIp}:${s.devicePort}/api/v1/$}/telemetry`,
+            `http://${s.deviceIp}:${s.devicePort}/api/v1/${s.deviceAccessToken}/telemetry`,
           );
 
           return interval(s.deviceUploadInterval).pipe(
@@ -258,11 +259,12 @@ export class Guangzhoubei {
             distinctUntilChanged(),
             concatMap((running) => {
               const fn = async () => {
-                const body = { running };
+                const body = { status: running ? "运行" : "停机" };
 
                 this.logger.log({
                   title: `上传设备信息:`,
-                  json: JSON.stringify({ url: url.href, body }),
+                  message: url.href,
+                  json: JSON.stringify(body),
                 });
 
                 const res = await net.fetch(url.href, {
@@ -350,7 +352,7 @@ export class Guangzhoubei {
     const url = this.makeDataRequestURL(zh);
 
     url.searchParams.set("type", "csbtszh");
-    this.logger.log({ title: `请求轴号数据:${url.href}` });
+    this.logger.log({ title: `请求轴号数据:`, message: url.href });
 
     const res = await net.fetch(url.href, { method: "GET" });
 
@@ -399,7 +401,8 @@ export class Guangzhoubei {
     url.searchParams.set("type", "csbts");
     this.logger.log({
       title: `请求数据:`,
-      json: JSON.stringify({ url: url.href, body }),
+      message: url.href,
+      json: JSON.stringify(body),
     });
 
     const res = await net.fetch(url.href, {

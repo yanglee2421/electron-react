@@ -1,4 +1,5 @@
 import { NumberField } from "#renderer/components/number";
+import { ScrollToTopButton } from "#renderer/components/scroll";
 import { useGuangzhoubei } from "#renderer/hooks/stores/useGuangzhoubei";
 import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
 import { guangzhoubei } from "#shared/instances/schema";
@@ -92,289 +93,313 @@ export const Component = () => {
   });
 
   return (
-    <Card>
-      <CardHeader title="京天威HMIS设置" subheader="广州北" />
-      <CardContent>
-        <form
-          id={formId}
-          noValidate
-          autoComplete="off"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void form.handleSubmit();
-          }}
-        >
-          <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="get_ip">
-                {(field) => (
-                  <TextField
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    label="GET IP地址"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="get_port">
-                {(field) => (
-                  <NumberField
-                    field={{
-                      value: field.state.value,
-                      onChange: (value) => field.handleChange(value),
-                      onBlur: field.handleBlur,
-                    }}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    label="GET 端口号"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="post_ip">
-                {(field) => (
-                  <TextField
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    label="POST IP地址"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="post_port">
-                {(field) => (
-                  <NumberField
-                    field={{
-                      value: field.state.value,
-                      onChange: (value) => field.handleChange(value),
-                      onBlur: field.handleBlur,
-                    }}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    label="POST 端口号"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="unitCode">
-                {(field) => (
-                  <TextField
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    label="单位代码"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="signature_prefix">
-                {(field) => (
-                  <TextField
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    name={field.name}
-                    label="签章前缀"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <FormGroup row>
-                <form.Field name="autoInput">
+    <>
+      <ScrollToTopButton />
+      <Card>
+        <CardHeader title="京天威HMIS设置" subheader="广州北" />
+        <CardContent>
+          <form
+            id={formId}
+            noValidate
+            autoComplete="off"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void form.handleSubmit();
+            }}
+          >
+            <Grid container spacing={1.5}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.Field name="get_ip">
                   {(field) => (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.checked)}
-                        />
-                      }
-                      label="自动录入"
+                    <TextField
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      label="GET IP地址"
+                      fullWidth
                     />
                   )}
                 </form.Field>
-                <form.Field name="autoUpload">
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.Field name="get_port">
                   {(field) => (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.checked)}
-                        />
-                      }
-                      label="自动上传"
+                    <NumberField
+                      field={{
+                        value: field.state.value,
+                        onChange: (value) => field.handleChange(value),
+                        onBlur: field.handleBlur,
+                      }}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      label="GET 端口号"
+                      fullWidth
                     />
                   )}
                 </form.Field>
-                <form.Field name="enableAutoSubmit">
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.Field name="post_ip">
                   {(field) => (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.checked)}
-                        />
-                      }
-                      label="自动提交"
+                    <TextField
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      label="POST IP地址"
+                      fullWidth
                     />
                   )}
                 </form.Field>
-              </FormGroup>
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <form.Field name="autoUploadInterval">
-                {(field) => (
-                  <NumberField
-                    field={{
-                      value: field.state.value,
-                      onChange: (value) => field.handleChange(value),
-                      onBlur: field.handleBlur,
-                    }}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    label="自动上传间隔"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <form.Field name="autoSubmitDelay">
-                {(field) => (
-                  <NumberField
-                    field={{
-                      value: field.state.value,
-                      onChange: (value) => field.handleChange(value),
-                      onBlur: () => field.handleBlur(),
-                    }}
-                    error={!!field.state.meta.errors.length}
-                    helperText={
-                      field.state.meta.errors[0]?.message ||
-                      "条形输入一段时间后自动提交查询, 适用于扫码枪不支持自动回车的情况"
-                    }
-                    label="自动提交延迟 ( 毫秒 )"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={12}>
-              <form.Field name="enableDeviceUpload">
-                {(field) => {
-                  return (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={field.state.value}
-                          onChange={(_, c) => {
-                            field.handleChange(c);
-                          }}
-                        />
-                      }
-                      label="启用设备信息上传"
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.Field name="post_port">
+                  {(field) => (
+                    <NumberField
+                      field={{
+                        value: field.state.value,
+                        onChange: (value) => field.handleChange(value),
+                        onBlur: field.handleBlur,
+                      }}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      label="POST 端口号"
+                      fullWidth
                     />
-                  );
-                }}
-              </form.Field>
+                  )}
+                </form.Field>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.Field name="unitCode">
+                  {(field) => (
+                    <TextField
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      label="单位代码"
+                      fullWidth
+                    />
+                  )}
+                </form.Field>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.Field name="signature_prefix">
+                  {(field) => (
+                    <TextField
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      name={field.name}
+                      label="签章前缀"
+                      fullWidth
+                    />
+                  )}
+                </form.Field>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <FormGroup row>
+                  <form.Field name="autoInput">
+                    {(field) => (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={field.state.value}
+                            onChange={(e) =>
+                              field.handleChange(e.target.checked)
+                            }
+                          />
+                        }
+                        label="自动录入"
+                      />
+                    )}
+                  </form.Field>
+                  <form.Field name="autoUpload">
+                    {(field) => (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={field.state.value}
+                            onChange={(e) =>
+                              field.handleChange(e.target.checked)
+                            }
+                          />
+                        }
+                        label="自动上传"
+                      />
+                    )}
+                  </form.Field>
+                  <form.Field name="enableAutoSubmit">
+                    {(field) => (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={field.state.value}
+                            onChange={(e) =>
+                              field.handleChange(e.target.checked)
+                            }
+                          />
+                        }
+                        label="自动提交"
+                      />
+                    )}
+                  </form.Field>
+                </FormGroup>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <form.Field name="autoUploadInterval">
+                  {(field) => (
+                    <NumberField
+                      field={{
+                        value: field.state.value,
+                        onChange: (value) => field.handleChange(value),
+                        onBlur: field.handleBlur,
+                      }}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      label="自动上传间隔"
+                      fullWidth
+                    />
+                  )}
+                </form.Field>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <form.Field name="autoSubmitDelay">
+                  {(field) => (
+                    <NumberField
+                      field={{
+                        value: field.state.value,
+                        onChange: (value) => field.handleChange(value),
+                        onBlur: () => field.handleBlur(),
+                      }}
+                      error={!!field.state.meta.errors.length}
+                      helperText={
+                        field.state.meta.errors[0]?.message ||
+                        "条形输入一段时间后自动提交查询, 适用于扫码枪不支持自动回车的情况"
+                      }
+                      label="自动提交延迟 ( 毫秒 )"
+                      fullWidth
+                    />
+                  )}
+                </form.Field>
+              </Grid>
+              <Grid size={12}>
+                <form.Field name="enableDeviceUpload">
+                  {(field) => {
+                    return (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={field.state.value}
+                            onChange={(_, c) => {
+                              field.handleChange(c);
+                            }}
+                          />
+                        }
+                        label="启用设备信息上传"
+                      />
+                    );
+                  }}
+                </form.Field>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.Field name="deviceIp">
+                  {(field) => (
+                    <TextField
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      label="设备信息上传IP"
+                      fullWidth
+                    />
+                  )}
+                </form.Field>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.Field name="devicePort">
+                  {(field) => (
+                    <NumberField
+                      field={{
+                        value: field.state.value,
+                        onChange: (value) => field.handleChange(value),
+                        onBlur: field.handleBlur,
+                      }}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      label="设备信息上传端口"
+                      fullWidth
+                    />
+                  )}
+                </form.Field>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.Field name="deviceUploadInterval">
+                  {(field) => (
+                    <NumberField
+                      field={{
+                        value: field.state.value,
+                        onChange: (value) => field.handleChange(value),
+                        onBlur: () => field.handleBlur(),
+                      }}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      label="设备信息轮询延迟 ( 毫秒 )"
+                      fullWidth
+                    />
+                  )}
+                </form.Field>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.Field name="deviceAccessToken">
+                  {(field) => (
+                    <TextField
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={!!field.state.meta.errors.length}
+                      helperText={field.state.meta.errors[0]?.message}
+                      label="设备信息上传凭证"
+                      fullWidth
+                    />
+                  )}
+                </form.Field>
+              </Grid>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="deviceIp">
-                {(field) => (
-                  <TextField
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    label="设备信息上传IP"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.Field name="devicePort">
-                {(field) => (
-                  <NumberField
-                    field={{
-                      value: field.state.value,
-                      onChange: (value) => field.handleChange(value),
-                      onBlur: field.handleBlur,
-                    }}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    label="设备信息上传端口"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <form.Field name="deviceUploadInterval">
-                {(field) => (
-                  <NumberField
-                    field={{
-                      value: field.state.value,
-                      onChange: (value) => field.handleChange(value),
-                      onBlur: () => field.handleBlur(),
-                    }}
-                    error={!!field.state.meta.errors.length}
-                    helperText={field.state.meta.errors[0]?.message}
-                    label="设备信息轮询延迟 ( 毫秒 )"
-                    fullWidth
-                  />
-                )}
-              </form.Field>
-            </Grid>
-          </Grid>
-        </form>
-      </CardContent>
-      <CardActions>
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
-          {([canSubmit, isSubmitting]) => {
-            return (
-              <Button
-                form={formId}
-                type="submit"
-                disabled={!canSubmit}
-                startIcon={
-                  isSubmitting ? (
-                    <CircularProgress size={16} color="inherit" />
-                  ) : (
-                    <SaveOutlined />
-                  )
-                }
-              >
-                保存
-              </Button>
-            );
-          }}
-        </form.Subscribe>
-      </CardActions>
-    </Card>
+          </form>
+        </CardContent>
+        <CardActions>
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => {
+              return (
+                <Button
+                  form={formId}
+                  type="submit"
+                  disabled={!canSubmit}
+                  startIcon={
+                    isSubmitting ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : (
+                      <SaveOutlined />
+                    )
+                  }
+                >
+                  保存
+                </Button>
+              );
+            }}
+          </form.Subscribe>
+        </CardActions>
+      </Card>
+    </>
   );
 };
