@@ -222,6 +222,9 @@ importers:
       basic-ftp:
         specifier: ^6.0.1
         version: 6.0.1
+      csv:
+        specifier: ^6.6.3
+        version: 6.6.3
       dayjs:
         specifier: ^1.11.20
         version: 1.11.20
@@ -2550,9 +2553,6 @@ packages:
   '@types/node@25.9.0':
     resolution: {integrity: sha512-AOQwYUNolgy3VosiRqXrACUXTN8nJUtPl7FJXMqZVyxiiCLhQuG3jXKvCS1ALr+Y2OmZhzzLVlYPEqJaiqkaJQ==}
 
-  '@types/node@25.9.5':
-    resolution: {integrity: sha512-OScDchr2fwuUmWdf4kZ9h7PcJiYDVInhJizG/biAq3cAvqwYktuy/TYGGdZNMtNTFUP7rnb0NU4TUdm82kt4Rg==}
-
   '@types/node@25.9.8':
     resolution: {integrity: sha512-VfMrScDmMhUJQmd5hArdQnFvK0OIeD36uN2Va1FcpYaLB/BgkgM8Ulc50XtYISPMz7APJ30+N0T5EM0jlcdfRw==}
 
@@ -3538,6 +3538,19 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  csv-generate@4.6.1:
+    resolution: {integrity: sha512-eELl9K716LSSeP2/YcCjch525JztnnERe3jEARWw2v1FN9ukUYfZTNYZ4Rq2Jj/MFKMauffOy9VCaqQTpFThDQ==}
+
+  csv-parse@7.0.2:
+    resolution: {integrity: sha512-uKZghv9UmPkMVLYy//KZ9HFAIJsl7wkhoEdIL0+rhuSY9pZQlhaeGEDPIe+/w7eh81MOql8Q/9+inAGWG6ZHYA==}
+
+  csv-stringify@6.8.3:
+    resolution: {integrity: sha512-gIeSCvq5F4VtXV3naV3VAewLhBkiZBz+PPhTOA8H3Y8h/ELa+R1ml0GZck/4/Nzo9ep2lvOluilJ6MJlbZsKMA==}
+
+  csv@6.6.3:
+    resolution: {integrity: sha512-X2AnOgcxqV+OdLm1M2FOl+bPQrM1LK1jwo4FhEoq8hi8JTR0tQ8ZWv3x3N2gVMIuUmpb4CLrV08rTP49IdFQ8w==}
+    engines: {node: '>= 0.1.90'}
 
   dayjs@1.11.13:
     resolution: {integrity: sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==}
@@ -5212,6 +5225,9 @@ packages:
 
   std-env@4.2.0:
     resolution: {integrity: sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw==}
+
+  stream-transform@3.5.1:
+    resolution: {integrity: sha512-TTDX+qKFr7GGRXATn66rprmlFPx08W0UBIccE/rMPgW2sT7GovduZYP4xcdJ7Nu2YigF17U+CNFxYY11+W1oPw==}
 
   string-width@4.1.0:
     resolution: {integrity: sha512-NrX+1dVVh+6Y9dnQ19pR0pP4FiEIlUvdTGn8pw6CKTNq5sgib2nIhmUNT5TAmhWmvKr3WcxBcP3E8nWezuipuQ==}
@@ -7770,7 +7786,7 @@ snapshots:
     dependencies:
       '@types/http-cache-semantics': 4.2.0
       '@types/keyv': 3.1.4
-      '@types/node': 25.9.5
+      '@types/node': 25.9.8
       '@types/responselike': 1.0.3
 
   '@types/chai@5.2.3':
@@ -7790,7 +7806,7 @@ snapshots:
 
   '@types/fs-extra@9.0.13':
     dependencies:
-      '@types/node': 25.9.5
+      '@types/node': 25.9.8
 
   '@types/hast@3.0.4':
     dependencies:
@@ -7812,7 +7828,7 @@ snapshots:
 
   '@types/keyv@3.1.4':
     dependencies:
-      '@types/node': 25.9.5
+      '@types/node': 25.9.8
 
   '@types/mdast@4.0.4':
     dependencies:
@@ -7827,10 +7843,6 @@ snapshots:
       undici-types: 7.18.2
 
   '@types/node@25.9.0':
-    dependencies:
-      undici-types: 7.24.6
-
-  '@types/node@25.9.5':
     dependencies:
       undici-types: 7.24.6
 
@@ -7866,7 +7878,7 @@ snapshots:
 
   '@types/responselike@1.0.3':
     dependencies:
-      '@types/node': 25.9.5
+      '@types/node': 25.9.8
 
   '@types/unist@3.0.3': {}
 
@@ -8614,6 +8626,19 @@ snapshots:
       which: 2.0.2
 
   csstype@3.2.3: {}
+
+  csv-generate@4.6.1: {}
+
+  csv-parse@7.0.2: {}
+
+  csv-stringify@6.8.3: {}
+
+  csv@6.6.3:
+    dependencies:
+      csv-generate: 4.6.1
+      csv-parse: 7.0.2
+      csv-stringify: 6.8.3
+      stream-transform: 3.5.1
 
   dayjs@1.11.13: {}
 
@@ -10306,6 +10331,8 @@ snapshots:
   stat-mode@1.0.0: {}
 
   std-env@4.2.0: {}
+
+  stream-transform@3.5.1: {}
 
   string-width@4.1.0:
     dependencies:

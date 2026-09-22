@@ -85,6 +85,7 @@
     "awilix": "^13.0.3",
     "babel-plugin-react-compiler": "^1.0.0",
     "basic-ftp": "^6.0.1",
+    "csv": "^6.6.3",
     "dayjs": "^1.11.20",
     "drizzle-orm": "1.0.0-beta.22",
     "electron": "^40.10.6",

@@ -35,6 +35,10 @@ export const Component = () => {
   const unitCode = useGuangzhoubei((s) => s.unitCode);
   const signature_prefix = useGuangzhoubei((s) => s.signature_prefix);
   const isZhMode = useGuangzhoubei((s) => s.isZhMode);
+  const enableDeviceUpload = useGuangzhoubei((s) => s.enableDeviceUpload);
+  const deviceUploadInterval = useGuangzhoubei((s) => s.deviceUploadInterval);
+  const deviceIp = useGuangzhoubei((s) => s.deviceIp);
+  const devicePort = useGuangzhoubei((s) => s.devicePort);
 
   const form = useForm({
     defaultValues: {
@@ -53,6 +57,11 @@ export const Component = () => {
       unitCode,
       signature_prefix,
       isZhMode,
+
+      enableDeviceUpload,
+      deviceUploadInterval,
+      deviceIp,
+      devicePort,
     } as JTV_HMIS_Guangzhoubei,
     validators: {
       onChange: guangzhoubei.required(),
@@ -72,6 +81,11 @@ export const Component = () => {
 
         draft.unitCode = value.unitCode;
         draft.signature_prefix = value.signature_prefix;
+
+        draft.enableDeviceUpload = value.enableDeviceUpload;
+        draft.deviceUploadInterval = value.deviceUploadInterval;
+        draft.deviceIp = value.deviceIp;
+        draft.devicePort = value.devicePort;
       });
       toast.success("保存成功");
     },
@@ -229,7 +243,7 @@ export const Component = () => {
                 </form.Field>
               </FormGroup>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size={{ xs: 12 }}>
               <form.Field name="autoUploadInterval">
                 {(field) => (
                   <NumberField
@@ -246,7 +260,7 @@ export const Component = () => {
                 )}
               </form.Field>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size={{ xs: 12 }}>
               <form.Field name="autoSubmitDelay">
                 {(field) => (
                   <NumberField
@@ -261,6 +275,74 @@ export const Component = () => {
                       "条形输入一段时间后自动提交查询, 适用于扫码枪不支持自动回车的情况"
                     }
                     label="自动提交延迟 ( 毫秒 )"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={12}>
+              <form.Field name="enableDeviceUpload">
+                {(field) => {
+                  return (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={field.state.value}
+                          onChange={(_, c) => {
+                            field.handleChange(c);
+                          }}
+                        />
+                      }
+                      label="启用设备信息上传"
+                    />
+                  );
+                }}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="deviceIp">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors[0]?.message}
+                    label="设备信息上传IP"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="devicePort">
+                {(field) => (
+                  <NumberField
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: field.handleBlur,
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors[0]?.message}
+                    label="设备信息上传端口"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <form.Field name="deviceUploadInterval">
+                {(field) => (
+                  <NumberField
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: () => field.handleBlur(),
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors[0]?.message}
+                    label="设备信息轮询延迟 ( 毫秒 )"
                     fullWidth
                   />
                 )}

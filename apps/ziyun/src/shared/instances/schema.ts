@@ -105,6 +105,11 @@ export const guangzhoubei = z.object({
   unitCode: z.string().default(""),
   signature_prefix: z.string().default("W"),
   isZhMode: z.boolean().default(true),
+
+  enableDeviceUpload: z.boolean().default(false),
+  deviceUploadInterval: z.number().default(1000),
+  deviceIp: ipv4Schema,
+  devicePort: portSchema,
 });
 
 export const guangzhoujibaoduan = z.object({

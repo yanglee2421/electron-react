@@ -181,13 +181,12 @@ export const routes: RouteObject[] = [
             children: [
               {
                 index: true,
-                lazy: () =>
-                  import("#renderer/pages/jtv_hmis_guangzhoubei/component"),
+                lazy: () => import("#renderer/pages/guangzhoubei/component"),
               },
               {
                 path: "setting",
                 lazy: () =>
-                  import("#renderer/pages/jtv_hmis_guangzhoubei_setting/component"),
+                  import("#renderer/pages/guangzhoubei_setting/component"),
               },
             ],
           },

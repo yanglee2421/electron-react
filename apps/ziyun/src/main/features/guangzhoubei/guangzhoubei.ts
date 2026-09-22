@@ -8,16 +8,23 @@ import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
 import { guangzhoubei } from "#shared/instances/schema";
 import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
 import { chunk } from "@yotulee/run";
+import { parse } from "csv/sync";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
+import iconv from "iconv-lite";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 import pLimit from "p-limit";
 import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
+  catchError,
+  concatMap,
   distinctUntilChanged,
   EMPTY,
   filter,
+  from,
   interval,
   map,
   switchMap,
@@ -158,6 +165,7 @@ const normalizeDHResponse = (data: DH_Response) => {
 };
 
 const emit = createEmit("api_set");
+const execAsync = promisify(exec);
 
 export class Guangzhoubei {
   readonly state$: BehaviorSubject<JTV_HMIS_Guangzhoubei>;
@@ -215,7 +223,86 @@ export class Guangzhoubei {
       )
       .subscribe();
 
-    this.subscriptions = [sub1, sub2];
+    const sub3 = this.state$
+      .pipe(
+        distinctUntilChanged(
+          (previous, current) =>
+            previous.enableDeviceUpload === current.enableDeviceUpload &&
+            previous.deviceUploadInterval === current.deviceUploadInterval &&
+            previous.deviceIp === current.deviceIp &&
+            previous.devicePort === current.devicePort,
+        ),
+        switchMap((s) => {
+          if (!s.enableDeviceUpload) {
+            return EMPTY;
+          }
+
+          const url = new URL(
+            `http://${s.deviceIp}:${s.devicePort}/api/v1/$}/telemetry`,
+          );
+
+          return interval(s.deviceUploadInterval).pipe(
+            switchMap(() => {
+              const cmd = `tasklist /FI "IMAGENAME eq 货车轮轴超声波自动探伤系统.exe" /FO CSV`;
+
+              return from(execAsync(cmd, { encoding: "buffer" })).pipe(
+                map((r) => {
+                  const str = iconv.decode(r.stdout, "gbk").toString();
+
+                  return parse(str)
+                    .flat(Infinity)
+                    .includes("货车轮轴超声波自动探伤系统.exe");
+                }),
+              );
+            }),
+            distinctUntilChanged(),
+            concatMap((running) => {
+              const fn = async () => {
+                const body = { running };
+
+                this.logger.log({
+                  title: `上传设备信息:`,
+                  json: JSON.stringify({ url: url.href, body }),
+                });
+
+                const res = await net.fetch(url.href, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(body),
+                });
+                const data = await res.json();
+
+                this.logger.log({
+                  title: `上传设备信息返回:`,
+                  json: JSON.stringify(data),
+                });
+
+                return data;
+              };
+
+              const promise = fn();
+
+              return from(promise).pipe(
+                catchError((error) => {
+                  if (error instanceof Error) {
+                    this.logger.error({
+                      title: error.message,
+                      message: url.href,
+                    });
+                  }
+
+                  return EMPTY;
+                }),
+              );
+            }),
+          );
+        }),
+      )
+      .subscribe();
+
+    this.subscriptions = [sub1, sub2, sub3];
   }
 
   dispose() {
