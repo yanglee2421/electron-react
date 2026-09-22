@@ -23,7 +23,7 @@ export const registerIPCHandlers = (qt: QT) => {
   ipcHandle("qt/quartors", (_, p) => qt.fetchQuartors(p));
   ipcHandle("qt/anniversary", (_, p) => qt.anniversary(p));
   ipcHandle("qt/anniversary-detail", (_, id) => qt.anniversaryDetail(id));
-  ipcHandle("qt/users", (_) => qt.fetchUsers());
+  ipcHandle("qt/users", () => qt.fetchUsers());
   ipcHandle("qt/upsert_users", (_, p) => qt.upsertUsers(p));
   ipcHandle("qt/delete_users", (_, p) => qt.deleteUsers(p));
   ipcHandle("qt/get_config", () => qt.getConfig());

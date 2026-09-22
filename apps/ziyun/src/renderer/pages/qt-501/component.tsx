@@ -506,8 +506,9 @@ export const Component = () => {
     const flawMap = new Map<string, string[]>();
     const flawGroup = mapGroupBy(flaws, (r) => `${r.nBoard}-${r.nChannel}`);
 
-    for (const [key, list] of flawGroup) {
-      const item = list.at(0);
+    for (const [key, arr] of flawGroup) {
+      const item = arr.at(0);
+      const list = import.meta.env.DEV ? arr : arr.filter((i) => !i.bDeleted);
 
       if (!item) {
         continue;
@@ -709,8 +710,10 @@ const findFlawsByFirst = (originalFlaws: number[], flaw1: number) => {
 
   return [flaw1, flaw2, flaw3];
 };
-const resolveXHCFlaws = (list: number[]) => {
-  const flaws = resolveFlaws(list);
+const resolveXHCFlaws = (inputs: number[]) => {
+  const flaws = resolveFlaws(inputs);
+
+  console.log("flaws", flaws);
 
   if (flaws.length < 4) {
     return flaws;
@@ -719,9 +722,12 @@ const resolveXHCFlaws = (list: number[]) => {
   let result: number[] = [];
 
   for (const flaw of flaws) {
-    const flaws = findFlawsByFirst(list, flaw);
+    const flaws = findFlawsByFirst(inputs, flaw);
+    console.log("list", inputs);
 
     if (flaws.length === 3) {
+      console.log("flaws", flaws);
+
       return flaws;
     }
 
@@ -729,6 +735,8 @@ const resolveXHCFlaws = (list: number[]) => {
       result = flaws;
     }
   }
+
+  console.log("result", result);
 
   return result;
 };

@@ -414,6 +414,10 @@ const SetupForm = (props: YiqiListProps) => {
       qtDataDirectory: currentLocal.data || "",
     },
     onSubmit: async ({ value }) => {
+      useProfileStore.setState((d) => {
+        d.qtAppPath = value.qtAppPath;
+      });
+
       const result = await setLocalDB.mutateAsync(value.qtDataDirectory, {
         onError: (error) => {
           toast.error(error.message);
@@ -422,10 +426,6 @@ const SetupForm = (props: YiqiListProps) => {
           await reconnectDB.mutateAsync();
           toast.success("保存成功");
         },
-      });
-
-      useProfileStore.setState((d) => {
-        d.qtAppPath = value.qtAppPath;
       });
 
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
