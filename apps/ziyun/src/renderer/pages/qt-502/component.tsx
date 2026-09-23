@@ -403,7 +403,7 @@ export const Component = () => {
               {metas.map(({ row, meta }, index) => {
                 return (
                   <Col key={row.szIds}>
-                    <Cell>第{index + 1}次</Cell>
+                    <Cell>{`第${index + 1}次`}</Cell>
                     <Row>
                       <Col>
                         <Cell>左</Cell>

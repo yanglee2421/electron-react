@@ -300,7 +300,7 @@ export const Component = () => {
               {opids.map((opid, index) => {
                 return (
                   <Col key={opid}>
-                    <Cell>第{index + 1}次</Cell>
+                    <Cell>{`第${index + 1}次`}</Cell>
                     <Row>
                       <Col>
                         <Cell>左</Cell>
