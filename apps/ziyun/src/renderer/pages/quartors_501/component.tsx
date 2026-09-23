@@ -116,7 +116,7 @@ const LZInfoTable = (props: LZInfoTableProps) => {
 
   return (
     <>
-      <Cell>{direction}轮座探头晶片编号及灵敏度</Cell>
+      <Cell>{direction + "轮座探头晶片编号及灵敏度"}</Cell>
       <Row>
         <Col width={SECOND_WIDTH}>
           <Cell>通道编号</Cell>

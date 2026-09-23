@@ -118,7 +118,7 @@ const LZInfoTable = (props: LZInfoTableProps) => {
 
   return (
     <>
-      <Cell>{direction}轮座探头晶片编号及灵敏度</Cell>
+      <Cell>{direction + "轮座探头晶片编号及灵敏度"}</Cell>
       <Row>
         <Col width={SECOND_WIDTH}>
           <Cell>通道编号</Cell>
@@ -504,23 +504,27 @@ export const Component = () => {
     }
 
     const flawMap = new Map<string, string[]>();
-    const flawGroup = mapGroupBy(flaws, (r) => `${r.nBoard}-${r.nChannel}`);
+    const flawGroup = mapGroupBy(
+      flaws.filter((i) => !i.bDeleted),
+      (r) => `${r.nBoard}-${r.nChannel}`,
+    );
 
-    for (const [key, arr] of flawGroup) {
-      const item = arr.at(0);
-      const list = import.meta.env.DEV ? arr : arr.filter((i) => !i.bDeleted);
+    for (const [key, flaws] of flawGroup) {
+      const flaw = flaws.at(0);
 
-      if (!item) {
+      if (!flaw) {
         continue;
       }
 
-      const channel = item.nChannel;
+      const channel = flaw.nChannel;
       switch (channel) {
         case 0:
           flawMap.set(
             key,
             resolveFlaws(
-              list.map((i) => i.fltValueX).filter((i) => typeof i === "number"),
+              flaws
+                .map((i) => i.fltValueX)
+                .filter((i) => typeof i === "number"),
             ).map((i) => i.toString(10)),
           );
           break;
@@ -528,7 +532,9 @@ export const Component = () => {
           flawMap.set(
             key,
             resolveXHCFlaws(
-              list.map((i) => i.fltValueX).filter((i) => typeof i === "number"),
+              flaws
+                .map((i) => i.fltValueX)
+                .filter((i) => typeof i === "number"),
             ).map((i) => i.toString(10)),
           );
           break;
@@ -537,7 +543,9 @@ export const Component = () => {
           flawMap.set(
             key,
             resolveFlaws(
-              list.map((i) => i.fltValueX).filter((i) => typeof i === "number"),
+              flaws
+                .map((i) => i.fltValueX)
+                .filter((i) => typeof i === "number"),
             ).map((i) => i.toString(10)),
           );
           break;
@@ -545,7 +553,9 @@ export const Component = () => {
           flawMap.set(
             key,
             resolve44Flaws(
-              list.map((i) => i.fltValueX).filter((i) => typeof i === "number"),
+              flaws
+                .map((i) => i.fltValueX)
+                .filter((i) => typeof i === "number"),
             ).map((i) => i.toString(10)),
           );
           break;
@@ -711,32 +721,25 @@ const findFlawsByFirst = (originalFlaws: number[], flaw1: number) => {
   return [flaw1, flaw2, flaw3];
 };
 const resolveXHCFlaws = (inputs: number[]) => {
-  const flaws = resolveFlaws(inputs);
+  const resolvedFlaws = resolveFlaws(inputs);
 
-  console.log("flaws", flaws);
-
-  if (flaws.length < 4) {
-    return flaws;
+  if (resolvedFlaws.length < 4) {
+    return resolvedFlaws;
   }
 
   let result: number[] = [];
 
-  for (const flaw of flaws) {
-    const flaws = findFlawsByFirst(inputs, flaw);
-    console.log("list", inputs);
+  for (const flaw of resolvedFlaws) {
+    const xhcFlaws = findFlawsByFirst(resolvedFlaws, flaw);
 
-    if (flaws.length === 3) {
-      console.log("flaws", flaws);
-
-      return flaws;
+    if (xhcFlaws.length === 3) {
+      return xhcFlaws;
     }
 
-    if (flaws.length > result.length) {
-      result = flaws;
+    if (xhcFlaws.length > result.length) {
+      result = xhcFlaws;
     }
   }
-
-  console.log("result", result);
 
   return result;
 };
