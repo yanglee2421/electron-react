@@ -1,11 +1,11 @@
 import type { QuartorYearlyData } from "#main/features/mdb/types";
-
+import type { Row } from "#renderer/components/pdf/503";
 import { divideBy10, mathFormat } from "./math";
 
 export const resolveCHR503 = (
   datas: QuartorYearlyData[],
   is24Channel = false,
-) => {
+): { rows: Row[] } => {
   const rows = datas
     .filter((data) => {
       const nChannel = data.nChannel;

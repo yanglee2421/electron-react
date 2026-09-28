@@ -1,10 +1,11 @@
+import type { Row } from "#renderer/components/pdf/503";
 import type { schema } from "@yanglee2421/external-db";
 import * as mathjs from "mathjs";
 import { divideBy10, mathFormat } from "./math";
 
 type AnniversaryItem = typeof schema.quartorRecordInfo.$inferSelect;
 
-export const resolveQT503 = (rows: AnniversaryItem[]) => {
+export const resolveQT503 = (rows: AnniversaryItem[]): { rows: Row[] } => {
   const r = rows.map((item) => {
     const list = [
       mathjs.bignumber(item.fVerTgMaxB0),
