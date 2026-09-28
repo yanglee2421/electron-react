@@ -134,18 +134,14 @@ const ChannelFlaws = (props: ChannelFlawsProps) => {
   const { board, channel } = props;
   const memoInfo = React.use(MemoInfoContext);
   const flawGroup = React.use(FlawGroupContext);
-
   const typeNumber = memoInfo.get(`${board}-${channel}`);
   const flawType = calcFlawType(typeNumber);
-
-  console.log(flawType);
+  const flaws = flawGroup.get(`${board}-${channel}`) || [];
+  const db = flaws?.at(0)?.nAtten || 0;
 
   if (flawType !== "裂纹") {
     return null;
   }
-
-  const flaws = flawGroup.get(`${board}-${channel}`) || [];
-  const db = flaws?.at(0)?.nAtten || 0;
 
   return (
     <Text>
@@ -286,37 +282,37 @@ export const Component = () => {
                   <Col width={96}>
                     <Cell>探头编号</Cell>
                     <Cell center={false} pl>
-                      {chNameMap.get(`0-0`)}: {renderFlawCount(0, 0)}
+                      {chNameMap.get(`0-0`) + `: ` + renderFlawCount(0, 0)}
                     </Cell>
                     <Cell center={false} pl>
-                      {chNameMap.get(`0-1`)}: {renderFlawCount(0, 1)}
+                      {chNameMap.get(`0-1`) + `: ` + renderFlawCount(0, 1)}
                     </Cell>
                     <Cell center={false} pl>
-                      {chNameMap.get(`0-2`)}: {renderFlawCount(0, 2)}
+                      {chNameMap.get(`0-2`) + `: ` + renderFlawCount(0, 2)}
                     </Cell>
                     <Cell center={false} pl>
-                      {chNameMap.get(`0-3`)}: {renderFlawCount(0, 3)}
+                      {chNameMap.get(`0-3`) + `: ` + renderFlawCount(0, 3)}
                     </Cell>
                     <Cell center={false} pl>
-                      {chNameMap.get(`0-4`)}: {renderFlawCount(0, 4)}
+                      {chNameMap.get(`0-4`) + `: ` + renderFlawCount(0, 4)}
                     </Cell>
                     {of(4).map((_) => {
                       return <Cell key={_}></Cell>;
                     })}
                     <Cell center={false} pl>
-                      {chNameMap.get(`1-0`)}: {renderFlawCount(1, 0)}
+                      {chNameMap.get(`1-0`) + `: ` + renderFlawCount(1, 0)}
                     </Cell>
                     <Cell center={false} pl>
-                      {chNameMap.get(`1-1`)}: {renderFlawCount(1, 1)}
+                      {chNameMap.get(`1-1`) + `: ` + renderFlawCount(1, 1)}
                     </Cell>
                     <Cell center={false} pl>
-                      {chNameMap.get(`1-2`)}: {renderFlawCount(1, 2)}
+                      {chNameMap.get(`1-2`) + `: ` + renderFlawCount(1, 2)}
                     </Cell>
                     <Cell center={false} pl>
-                      {chNameMap.get(`1-3`)}: {renderFlawCount(1, 3)}
+                      {chNameMap.get(`1-3`) + `: ` + renderFlawCount(1, 3)}
                     </Cell>
                     <Cell center={false} pl>
-                      {chNameMap.get(`1-4`)}: {renderFlawCount(1, 4)}
+                      {chNameMap.get(`1-4`) + `: ` + renderFlawCount(1, 4)}
                     </Cell>
                     {of(4).map((_) => {
                       return <Cell key={_}></Cell>;
