@@ -1,234 +1,157 @@
-import type { Detecotor, VerifyData } from "#main/features/mdb/types";
+import type { Detecotor } from "#main/features/mdb/types";
+import { of } from "#shared/functions/array";
 import { mapGroupBy } from "@yotulee/run";
 import * as mathjs from "mathjs";
-import { of } from "./array";
-import { calculateXHCFlaws } from "./flawDetection";
-import { divideBy10 } from "./math";
 
-const LZ_FLAW_SPACE = 7;
+interface FlawLike {
+  nBoard: number;
+  nChannel: number;
+  nAtten: number;
+  fltValueX: number;
+}
 
-const resolveLZFlaws = (flaws: VerifyData[]) => {
-  let latestX = Number.NEGATIVE_INFINITY;
-
-  const resolvedFlaws = flaws
-    .toSorted((a, b) => a.fltValueX - b.fltValueX)
-    .reduce<VerifyData[]>((group, flaw) => {
-      if (flaw.fltValueX > latestX + LZ_FLAW_SPACE) {
-        latestX = flaw.fltValueX;
-        group.push(flaw);
-      }
-
-      return group;
-    }, []);
-
-  return resolvedFlaws;
-};
-
-const listToMap = <TItem>(flaws: TItem[], start = 1): Map<number, TItem> => {
-  return flaws.reduce((map, flaw, index) => {
-    map.set(index + start, flaw);
-    return map;
-  }, new Map<number, TItem>());
-};
-
-const channelKey = (nBoard: number, nChannel: number) => {
-  return `${nBoard}-${nChannel}`;
-};
-
-const mathFormat = (value: number) => {
-  return mathjs.format(value, {
-    notation: "fixed",
-    precision: 0,
-  });
-};
-
-const mathTs = (dbSub: number, atten?: number) => {
-  if (!atten) {
-    return "";
-  }
-
-  return mathjs.format(
-    mathjs.divide(
-      mathjs.add(mathjs.bignumber(dbSub), mathjs.bignumber(atten)),
-      mathjs.bignumber(10),
-    ),
-    {
-      notation: "fixed",
-      precision: 1,
-    },
-  );
-};
-
-interface DetectorInfo {
+export interface ChannelData {
+  name: string;
   zsj: string;
   bc: string;
   jy: string;
   ts: string;
-  chName: string;
-  direction: string;
+  flaws: string[];
 }
 
-interface FlawInfo {
-  value: string;
-}
-
-export const resolveCHR501 = (flaws: VerifyData[], detectors: Detecotor[]) => {
-  const detectorGroup = mapGroupBy(detectors, (detector) =>
-    channelKey(detector.nBoard, detector.nChannel),
+export const divide10 = (value: number, precision = 0) => {
+  return mathjs.format(
+    mathjs.divide(mathjs.bignumber(value), mathjs.bignumber(10)),
+    { precision, notation: "fixed" },
   );
-  const flawGroup = mapGroupBy(flaws, (flaw) => {
-    return channelKey(flaw.nBoard, flaw.nChannel);
-  });
+};
 
-  const detectorInfo = new Map<string, DetectorInfo>();
-
-  for (const [key, [detector]] of detectorGroup) {
-    if (!detector) continue;
-
-    const flaw = flawGroup.get(key)?.at(0) || null;
-    const flawAtten = flaw ? divideBy10(flaw.nAtten) : "";
-
-    detectorInfo.set(key, {
-      zsj: divideBy10(detector.nWAngle),
-      bc: divideBy10(detector.nDBSub),
-      jy: flawAtten,
-      ts: mathTs(detector.nDBSub, flaw?.nAtten),
-      chName: detector.szName,
-      direction: detector.nBoard === 0 ? "左" : "右",
-    });
+export const calcTs = (bc: string, jy: string) => {
+  if (!bc) {
+    return "";
   }
 
-  const l01Flaws = resolveLZFlaws(flawGroup.get("0-3") || []);
-  const l02Flaws = resolveLZFlaws(flawGroup.get("0-4") || []);
-  const lA3Flaws = resolveLZFlaws(flawGroup.get("0-2") || []);
-  const r01Flaws = resolveLZFlaws(flawGroup.get("1-3") || []);
-  const r02Flaws = resolveLZFlaws(flawGroup.get("1-4") || []);
-  const rA3Flaws = resolveLZFlaws(flawGroup.get("1-2") || []);
+  if (!jy) {
+    return "";
+  }
 
-  const l01Group = listToMap(l01Flaws);
-  const l02Group = listToMap(l02Flaws, 12 - l02Flaws.length);
-  const lA3Group = listToMap(lA3Flaws, 12 - lA3Flaws.length);
-  const r01Group = listToMap(r01Flaws);
-  const r02Group = listToMap(r02Flaws, 12 - r02Flaws.length);
-  const rA3Group = listToMap(rA3Flaws, 12 - rA3Flaws.length);
+  return mathjs.format(mathjs.add(mathjs.bignumber(bc), mathjs.bignumber(jy)), {
+    precision: 1,
+    notation: "fixed",
+  });
+};
 
-  const flawInfo = new Map<string, FlawInfo[]>();
-  const of13 = of(13);
+const findFlawsByFirst = (originalFlaws: number[], flaw1: number) => {
+  const flaws1 = [flaw1];
+  const excepted2 = flaw1 + 10;
+  const flaw2 = originalFlaws
+    .filter((i) => !flaws1.includes(i))
+    .toSorted((a, b) => Math.abs(a - excepted2) - Math.abs(b - excepted2))
+    .at(0);
 
-  for (const [key, flaws] of flawGroup) {
-    switch (key) {
-      // CT
-      case "0-0":
-      case "1-0":
-        flawInfo.set(
-          key,
-          flaws.map((flaw) => {
-            return {
-              value: mathjs.format(flaw.fltValueX, {
-                notation: "fixed",
-                precision: 0,
-              }),
-            };
-          }),
-        );
-        break;
-      // A01
-      case "0-1":
-      case "1-1":
-        flawInfo.set(
-          key,
-          calculateXHCFlaws(flaws).map((flaw) => {
-            return {
-              value: mathjs.format(flaw.fltValueX, {
-                notation: "fixed",
-                precision: 0,
-              }),
-            };
-          }),
-        );
-        break;
-      // A03
-      case "0-2":
-        flawInfo.set(
-          key,
-          of13.map((no) => {
-            const flaw = lA3Group.get(no);
+  if (!flaw2) {
+    return flaws1;
+  }
 
-            return {
-              value: flaw ? mathFormat(flaw.fltValueX) : "",
-            };
-          }),
-        );
-        break;
-      case "1-2":
-        flawInfo.set(
-          key,
-          of13.map((no) => {
-            const flaw = rA3Group.get(no);
+  const flaws2 = [flaw1, flaw2];
+  const excepted3 = flaw2 + 5;
+  const flaw3 = originalFlaws
+    .filter((i) => !flaws2.includes(i))
+    .toSorted((a, b) => Math.abs(a - excepted3) - Math.abs(b - excepted3))
+    .at(0);
 
-            return {
-              value: flaw ? mathFormat(flaw.fltValueX) : "",
-            };
-          }),
-        );
-        break;
-      // 01
-      case "0-3":
-        flawInfo.set(
-          key,
-          of13.map((no) => {
-            const flaw = l01Group.get(no);
+  if (!flaw3) {
+    return flaws2;
+  }
 
-            return {
-              value: flaw ? mathFormat(flaw.fltValueX) : "",
-            };
-          }),
-        );
-        break;
-      case "1-3":
-        flawInfo.set(
-          key,
-          of13.map((no) => {
-            const flaw = r01Group.get(no);
+  return [flaw1, flaw2, flaw3];
+};
 
-            return {
-              value: flaw ? mathFormat(flaw.fltValueX) : "",
-            };
-          }),
-        );
-        break;
-      // 02
-      case "0-4":
-        flawInfo.set(
-          key,
-          of13.map((no) => {
-            const flaw = l02Group.get(no);
+const calcXhcFlaws = (flaws: number[]) => {
+  if (flaws.length < 4) {
+    return flaws;
+  }
 
-            return {
-              value: flaw ? mathFormat(flaw.fltValueX) : "",
-            };
-          }),
-        );
-        break;
-      case "1-4":
-        flawInfo.set(
-          key,
-          of13.map((no) => {
-            const flaw = r02Group.get(no);
+  let result: number[] = [];
 
-            return {
-              value: flaw ? mathFormat(flaw.fltValueX) : "",
-            };
-          }),
-        );
-        break;
-      default:
-        continue;
+  for (const flaw of flaws) {
+    const xhcFlaws = findFlawsByFirst(flaws, flaw);
+
+    if (xhcFlaws.length === 3) {
+      return xhcFlaws;
+    }
+
+    if (xhcFlaws.length > result.length) {
+      result = xhcFlaws;
     }
   }
 
-  return {
-    detectorInfo,
-    flawInfo,
-  };
+  return result;
+};
+
+const fixed = (value: number) => {
+  return mathjs.format(value, { notation: "fixed", precision: 0 });
+};
+
+export const calcFlaws = (datas: FlawLike[], channel: number): string[] => {
+  const numberifyDatas = datas.map((i) => Number.parseInt(fixed(i.fltValueX)));
+  const flaws = [...new Set(numberifyDatas)].toSorted((a, b) => a - b);
+
+  switch (channel) {
+    case 0:
+      return flaws.map((i) => i.toString());
+    case 1:
+      return calcXhcFlaws(flaws).map((i) => i.toString());
+    case 2:
+      return flaws.map((i) => i.toString());
+    case 3:
+      return flaws.map((i) => i.toString());
+    case 4:
+      return [
+        ...of(11 - flaws.length).map(() => ""),
+        ...flaws.map((i) => i.toString()),
+      ];
+    default:
+      return [];
+  }
+};
+
+export const resolvedFlaws = (datas: FlawLike[], detectors: Detecotor[]) => {
+  const flawGroup = mapGroupBy(datas, (d) => `${d.nBoard}-${d.nChannel}`);
+  const detectorGroup = mapGroupBy(
+    detectors,
+    (d) => `${d.nBoard}-${d.nChannel}`,
+  );
+  const result = new Map<string, ChannelData>();
+
+  for (let board = 0; board < 2; board++) {
+    for (let channel = 0; channel < 5; channel++) {
+      const flaws = flawGroup.get(`${board}-${channel}`) || [];
+      const flaw = flaws?.at(0);
+      const detector = detectorGroup.get(`${board}-${channel}`)?.at(0);
+      const name = detector?.szName || "";
+      const zsj =
+        typeof detector?.nWAngle === "number"
+          ? divide10(detector.nWAngle, 1)
+          : "";
+      const bc =
+        typeof detector?.nDBSub === "number"
+          ? divide10(detector.nDBSub, 1)
+          : "";
+      const jy =
+        typeof flaw?.nAtten === "number" ? divide10(flaw.nAtten, 1) : "";
+      const ts = calcTs(bc, jy);
+
+      result.set(`${board}-${channel}`, {
+        name,
+        zsj,
+        bc,
+        jy,
+        ts,
+        flaws: calcFlaws(flaws, channel),
+      });
+    }
+  }
+
+  return result;
 };

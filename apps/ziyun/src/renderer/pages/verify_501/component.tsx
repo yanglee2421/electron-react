@@ -1,6 +1,7 @@
 import { fetchCHR501Data } from "#renderer/api/printer";
 import { Loading } from "#renderer/components/Loading";
-import { CHR501, resolvedFlaws } from "#renderer/components/pdf/501";
+import { CHR501 } from "#renderer/components/pdf/501";
+import { resolvedFlaws } from "#shared/functions/chr501";
 import { Alert, AlertTitle } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";

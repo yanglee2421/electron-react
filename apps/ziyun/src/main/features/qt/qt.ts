@@ -594,7 +594,12 @@ export class QT {
     const flaws = await this.db
       .select()
       .from(schema.verifiesData)
-      .where(eq(schema.verifiesData.precId, record.recId));
+      .where(
+        and(
+          eq(schema.verifiesData.precId, record.recId),
+          ne(schema.verifiesData.bDeleted, 1),
+        ),
+      );
 
     const [FACTORY_CLD] = await this.db
       .select({ value: schema.sysConfig.configValue })
@@ -715,9 +720,12 @@ export class QT {
       .select()
       .from(schema.quartorsData)
       .where(
-        inArray(
-          schema.quartorsData.precId,
-          rows.map((r) => r.recId),
+        and(
+          inArray(
+            schema.quartorsData.precId,
+            rows.map((r) => r.recId),
+          ),
+          ne(schema.quartorsData.bDeleted, 1),
         ),
       );
 

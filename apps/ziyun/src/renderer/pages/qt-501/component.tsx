@@ -1,432 +1,72 @@
 import { fetchQT501 } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
+import { CHR501 } from "#renderer/components/pdf/501";
 import {
-  Cell,
-  CheckOK,
-  Col,
-  PageFooter,
-  PageHeader,
-  ReportImage,
-  ReportTitle,
-  Row,
-} from "#renderer/components/pdf";
-import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
-import { of } from "#shared/functions/array";
-import { divideBy10, mathFormat } from "#shared/functions/math";
-import { CellHeightContext, styles } from "#shared/instances/styles";
+  calcFlaws,
+  calcTs,
+  divide10,
+  type ChannelData,
+} from "#shared/functions/chr501";
 import { Home } from "@mui/icons-material";
 import { Alert, AlertTitle, Button } from "@mui/material";
-import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
+import type { schema } from "@yanglee2421/external-db";
 import { mapGroupBy } from "@yotulee/run";
-import dayjs from "dayjs";
-import React from "react";
 import { Link, useParams } from "react-router";
 
-const ASIDE_COL_WIDTH = 24;
-const SECOND_WIDTH = 80;
-const SIGNATURE_COL_WIDTH = 104;
-const XHC_DIRECTION_COL_WIDTH = 20;
-const XHC_CHANNEL_COL_WIDTH = 32;
-const XHC_ZSJ_COL_WIDTH = 28;
-const XHC_FLAW_NO_COL_WIDTH = 80;
+type Flaw = typeof schema.verifiesData.$inferSelect;
+type Channel = typeof schema.channels.$inferSelect;
 
-interface TableHeaderProps {
-  labelL: string;
-  valueL: string;
-  labelR: string;
-  valueR: string;
-}
+const resolveFlaws = (
+  flaws: Flaw[],
+  channels: Channel[],
+): Map<string, ChannelData> => {
+  const map = new Map<string, ChannelData>();
+  const chNameMap = channels.reduce((map, item) => {
+    const board = item.nBoardIndex || 0;
+    const nChannelIndex = item.nChannelIndex || 0;
+    const channel = nChannelIndex - board * 6;
 
-const TableHeader = ({ labelL, valueL, labelR, valueR }: TableHeaderProps) => (
-  <View style={[styles.paddingB2, styles.font12]}>
-    <Row>
-      <Col width={"33.33%"}>
-        <Text style={[styles.fontBold]}>{labelL}</Text>
-      </Col>
-      <Col width={"66.67%"}>
-        <Text>{valueL}</Text>
-      </Col>
-      <Col width={"33.33%"}>
-        <Text style={[styles.fontBold]}>{labelR}</Text>
-      </Col>
-      <Col width={"66.67%"}>
-        <Text>{valueR}</Text>
-      </Col>
-    </Row>
-  </View>
-);
+    map.set(`${board}-${channel}`, item.szName);
 
-interface EquipmentTableProps {
-  deviceModel?: string;
-  deviceNo?: string;
-  blockModel?: string;
-}
+    return map;
+  }, new Map<string, string | null>());
+  const flawMap = mapGroupBy(flaws, (f) => `${f.nBoard}-${f.nChannel}`);
 
-const EquipmentTable = (props: EquipmentTableProps) => {
-  return (
-    <CellHeightContext value={30}>
-      <Row>
-        <Col>
-          <Cell font12>设备型号</Cell>
-        </Col>
-        <Col>
-          <Cell font12>{props.deviceModel}</Cell>
-        </Col>
-        <Col>
-          <Cell font12>设备编号</Cell>
-        </Col>
-        <Col>
-          <Cell font12>{props.deviceNo}</Cell>
-        </Col>
-        <Col>
-          <Cell font12>{"对比试样\n轮对型号"}</Cell>
-        </Col>
-        <Col>
-          <Cell font12>{props.blockModel}</Cell>
-        </Col>
-      </Row>
-    </CellHeightContext>
-  );
-};
+  for (const [key, chFlaws] of flawMap) {
+    const flaw = chFlaws.at(0);
 
-interface LZInfoTableProps {
-  board: number;
+    if (!flaw) {
+      continue;
+    }
 
-  channelName2?: React.ReactNode;
-  zsj2?: string;
-  jy2?: string;
-  bc2?: string;
-  ts2?: string;
+    const zsj =
+      typeof flaw.nWangle === "number" ? divide10(flaw.nWangle, 1) : "";
+    const bc = typeof flaw.nDbSub === "number" ? divide10(flaw.nDbSub, 1) : "";
+    const jy = typeof flaw.nAtten === "number" ? divide10(flaw.nAtten, 1) : "";
 
-  channelName3?: React.ReactNode;
-  zsj3?: string;
-  jy3?: string;
-  bc3?: string;
-  ts3?: string;
+    const data: ChannelData = {
+      name: chNameMap.get(key) || "",
+      zsj,
+      bc,
+      jy,
+      ts: calcTs(bc, jy),
+      flaws: calcFlaws(
+        chFlaws.map((flaw) => ({
+          ...flaw,
+          nBoard: flaw.nBoard || 0,
+          nChannel: flaw.nChannel || 0,
+          fltValueX: flaw.fltValueX || 0,
+          nAtten: flaw.nAtten || 0,
+        })),
+        flaw.nChannel || 0,
+      ),
+    };
 
-  channelName4?: React.ReactNode;
-  zsj4?: string;
-  jy4?: string;
-  bc4?: string;
-  ts4?: string;
-}
+    map.set(key, data);
+  }
 
-const LZInfoTable = (props: LZInfoTableProps) => {
-  const BASIC_ROW_HEIGHT = React.use(CellHeightContext);
-  const direction = props.board ? "右" : "左";
-
-  return (
-    <>
-      <Cell>{direction + "轮座探头晶片编号及灵敏度"}</Cell>
-      <Row>
-        <Col width={SECOND_WIDTH}>
-          <Cell>通道编号</Cell>
-          <Cell>折射角（度）</Cell>
-          <Row>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 3.5}>灵敏度{"\n"}（dB）</Cell>
-            </Col>
-            <Col>
-              <Cell height={BASIC_ROW_HEIGHT * 1.5}>校验{"\n"}（80%）</Cell>
-              <Cell>补偿</Cell>
-              <Cell>探伤</Cell>
-            </Col>
-          </Row>
-        </Col>
-        <Col>
-          <Cell>{props.jy3 ? props.channelName3 : null}</Cell>
-          <Cell>{props.jy3 ? props.zsj3 : null}</Cell>
-          <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy3}</Cell>
-          <Cell>{props.jy3 ? props.bc3 : null}</Cell>
-          <Cell>{props.jy3 ? props.ts3 : null}</Cell>
-        </Col>
-        <Col>
-          <Cell>{props.jy4 ? props.channelName4 : null}</Cell>
-          <Cell>{props.jy4 ? props.zsj4 : null}</Cell>
-          <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy4}</Cell>
-          <Cell>{props.jy4 ? props.bc4 : null}</Cell>
-          <Cell>{props.jy4 ? props.ts4 : null}</Cell>
-        </Col>
-        <Col>
-          <Cell>{props.jy2 ? props.channelName2 : null}</Cell>
-          <Cell>{props.jy2 ? props.zsj2 : null}</Cell>
-          <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.jy2}</Cell>
-          <Cell>{props.jy2 ? props.bc2 : null}</Cell>
-          <Cell>{props.jy2 ? props.ts2 : null}</Cell>
-        </Col>
-      </Row>
-    </>
-  );
-};
-
-interface XHCTableProps {
-  board: number;
-
-  ctName?: React.ReactNode;
-  ctZsj?: string;
-  ctJy?: string;
-  ctBc?: string;
-  ctTs?: string;
-  ctValue?: string;
-
-  xhChannelName?: React.ReactNode;
-  xhZsj?: string;
-  xhJy?: string;
-  xhBc?: string;
-  xhTs?: string;
-  xhValue1?: string;
-  xhValue2?: string;
-  xhValue3?: string;
-}
-
-const XHCTable = (props: XHCTableProps) => {
-  const { board } = props;
-
-  const BASIC_ROW_HEIGHT = React.use(CellHeightContext);
-
-  const direction = board ? "右" : "左";
-
-  return (
-    <Row>
-      <Col width={XHC_DIRECTION_COL_WIDTH}>
-        <Cell height={BASIC_ROW_HEIGHT * 2.5}>{direction}</Cell>
-        <Cell height={BASIC_ROW_HEIGHT * 2}>{"轴\n颈"}</Cell>
-        <Cell height={BASIC_ROW_HEIGHT * 1.5}>{"穿\n透"}</Cell>
-      </Col>
-      <Col width={XHC_CHANNEL_COL_WIDTH}>
-        <Cell height={BASIC_ROW_HEIGHT * 2.5}>通道{"\n"}编号</Cell>
-        <Cell>{props.xhJy ? props.xhChannelName : null}</Cell>
-        <Cell></Cell>
-        <Cell height={BASIC_ROW_HEIGHT * 1.5}>
-          {props.ctJy ? props.ctName : null}
-        </Cell>
-      </Col>
-      <Col width={XHC_ZSJ_COL_WIDTH}>
-        <Cell height={BASIC_ROW_HEIGHT * 2.5}>拆射{"\n"}角度</Cell>
-        <Cell>{props.xhJy ? props.xhZsj : null}</Cell>
-        <Cell></Cell>
-        <Cell height={BASIC_ROW_HEIGHT * 1.5}>
-          {props.ctJy ? props.ctZsj : null}
-        </Cell>
-      </Col>
-      <Col>
-        <Cell>灵敏度(dB)</Cell>
-        <Row>
-          <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>{"校验\n(80%)"}</Cell>
-            <Cell>{props.xhJy}</Cell>
-            <Cell></Cell>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctJy}</Cell>
-          </Col>
-          <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>补偿</Cell>
-            <Cell>{props.xhJy ? props.xhBc : null}</Cell>
-            <Cell></Cell>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>
-              {props.ctJy ? props.ctBc : null}
-            </Cell>
-          </Col>
-          <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>探伤</Cell>
-            <Cell>{props.xhJy ? props.xhTs : null}</Cell>
-            <Cell></Cell>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>
-              {props.ctJy ? props.ctTs : null}
-            </Cell>
-          </Col>
-        </Row>
-      </Col>
-      <Col width={XHC_FLAW_NO_COL_WIDTH}>
-        <Cell>缺陷编号</Cell>
-        <Row>
-          <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>1</Cell>
-          </Col>
-          <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>2</Cell>
-          </Col>
-          <Col>
-            <Cell height={BASIC_ROW_HEIGHT * 1.5}>3</Cell>
-          </Col>
-        </Row>
-        <Row>
-          <Col>
-            <Cell>{props.xhValue1}</Cell>
-            <Cell></Cell>
-          </Col>
-          <Col>
-            <Cell>{props.xhValue2}</Cell>
-            <Cell></Cell>
-          </Col>
-          <Col>
-            <Cell>{props.xhValue3}</Cell>
-            <Cell></Cell>
-          </Col>
-        </Row>
-        <Cell height={BASIC_ROW_HEIGHT * 1.5}>{props.ctValue}</Cell>
-      </Col>
-    </Row>
-  );
-};
-
-interface SignatureTableProps {
-  tsg?: string;
-}
-
-const SignatureTable = (props: SignatureTableProps) => {
-  const { tsg } = props;
-  const BASIC_ROW_HEIGHT = React.use(CellHeightContext);
-
-  const showUserInQtCHR501 = useProfileStore(
-    (state) => state.showUserInQtCHR501,
-  );
-
-  return (
-    <>
-      <Row>
-        <Col width={SIGNATURE_COL_WIDTH}>
-          <Cell height={BASIC_ROW_HEIGHT * 2} font12>
-            签字签章
-          </Cell>
-          <Cell font12>备注</Cell>
-        </Col>
-        <Col>
-          <Row>
-            <Col>
-              <Cell font12>探伤工</Cell>
-              <Cell font12>质检员</Cell>
-            </Col>
-            <Col>
-              <Cell font12>{showUserInQtCHR501 ? tsg : null}</Cell>
-              <Cell font12></Cell>
-            </Col>
-            <Col>
-              <Cell font12>探伤工长</Cell>
-              <Cell font12>验收员</Cell>
-            </Col>
-            <Col>
-              <Cell font12></Cell>
-              <Cell font12></Cell>
-            </Col>
-            <Col>
-              <Cell font12>维修工</Cell>
-              <Cell font12></Cell>
-            </Col>
-            <Col>
-              <Cell font12></Cell>
-              <Cell font12></Cell>
-            </Col>
-          </Row>
-          <Cell></Cell>
-        </Col>
-      </Row>
-    </>
-  );
-};
-
-interface ReportDocProps {
-  tableHeader1: TableHeaderProps;
-  tableHeader2: TableHeaderProps;
-  equipmentTableProps: EquipmentTableProps;
-  signatureTableProps?: SignatureTableProps;
-  children?: React.ReactNode;
-  imageLCT?: string;
-  imageRCT?: string;
-  imageLXH?: string;
-  imageRXH?: string;
-  imageLLZ?: string;
-  imageRLZ?: string;
-  asideTip: string;
-}
-
-const ReportDoc = (props: ReportDocProps) => {
-  const {
-    tableHeader1,
-    tableHeader2,
-    equipmentTableProps,
-    signatureTableProps,
-    asideTip,
-  } = props;
-  const IMAGE_HEIGHT = 150;
-
-  const ROW_HEIGHT = React.use(CellHeightContext);
-
-  return (
-    <Document
-      title="CHR501"
-      creator="超声波自动探伤机"
-      producer="武铁紫云接口面板"
-    >
-      <Page size="A4" style={[styles.page, styles.font10, styles.textCenter]}>
-        <PageHeader>辆货统-501</PageHeader>
-        <View>
-          <ReportTitle>
-            铁路货车轮轴B/C型显示超声波自动探伤系统日常性能校验记录
-          </ReportTitle>
-          <TableHeader {...tableHeader1} />
-          <View style={[styles.borderBL]}>
-            <EquipmentTable {...equipmentTableProps} />
-            <Row>
-              <Col width={ASIDE_COL_WIDTH}>
-                <Cell height={ROW_HEIGHT * 25.5}>{asideTip}</Cell>
-              </Col>
-              {props.children}
-            </Row>
-            <CellHeightContext value={26}>
-              <SignatureTable {...signatureTableProps} />
-            </CellHeightContext>
-          </View>
-        </View>
-        <PageFooter>第 1 页</PageFooter>
-      </Page>
-
-      <CellHeightContext value={18}>
-        <Page size="A4" style={styles.page}>
-          <PageHeader>辆货统-501</PageHeader>
-          <View>
-            <ReportTitle>
-              铁路货车轮轴B/C型显示超声波自动探伤系统日常性能校验记录（第2页）
-            </ReportTitle>
-            <TableHeader {...tableHeader2} />
-            <View style={[styles.borderBL, styles.fontBold]}>
-              <Row>
-                <Col>
-                  <Cell font12>左轴颈根部扫描图</Cell>
-                  <View style={[styles.borderTR]}>
-                    <ReportImage height={IMAGE_HEIGHT} src={props.imageLXH} />
-                  </View>
-                  <Cell font12>左轮座扫描图</Cell>
-                  <View style={[styles.borderTR]}>
-                    <ReportImage height={IMAGE_HEIGHT} src={props.imageLLZ} />
-                  </View>
-                </Col>
-                <Col>
-                  <Cell font12>右轴颈根部扫描图</Cell>
-                  <View style={[styles.borderTR]}>
-                    <ReportImage height={IMAGE_HEIGHT} src={props.imageRXH} />
-                  </View>
-                  <Cell font12>右轮座扫描图</Cell>
-                  <View style={[styles.flex1, styles.borderTR]}>
-                    <ReportImage height={IMAGE_HEIGHT} src={props.imageRLZ} />
-                  </View>
-                </Col>
-              </Row>
-              <Cell font12>左穿透扫描图</Cell>
-              <View style={[styles.borderTR]}>
-                <ReportImage height={IMAGE_HEIGHT} src={props.imageLCT} />
-              </View>
-              <Cell font12>右穿透扫描图</Cell>
-              <View style={[styles.borderTR]}>
-                <ReportImage height={IMAGE_HEIGHT} src={props.imageRCT} />
-              </View>
-            </View>
-          </View>
-          <PageFooter>第 2 页</PageFooter>
-        </Page>
-      </CellHeightContext>
-    </Document>
-  );
+  return map;
 };
 
 export const Component = () => {
@@ -467,294 +107,28 @@ export const Component = () => {
       jpegs,
       channels,
     } = query.data;
-    const of13 = of(13);
-    const asideTip = record.szWhModel?.split("").join("\n");
-    const chNameMap = channels.reduce((map, item) => {
-      const board = item.nBoardIndex || 0;
-      const nChannelIndex = item.nChannelIndex || 0;
-      const channel = nChannelIndex - board * 6;
 
-      map.set(`${board}-${channel}`, item.szName);
-
-      return map;
-    }, new Map<string, string | null>());
-
-    const metaMap = new Map<
-      string,
-      {
-        zsj: string;
-        bc: string;
-        jy: string;
-        ts: string;
-      }
-    >();
-
-    for (const item of flaws) {
-      const key = `${item.nBoard}-${item.nChannel}`;
-
-      metaMap.set(key, {
-        zsj: typeof item.nWangle === "number" ? divideBy10(item.nWangle) : "",
-        bc: typeof item.nDbSub === "number" ? divideBy10(item.nDbSub) : "",
-        jy: typeof item.nAtten === "number" ? divideBy10(item.nAtten) : "",
-        ts:
-          typeof item.nDbSub === "number" && typeof item.nAtten === "number"
-            ? divideBy10(item.nDbSub + item.nAtten)
-            : "",
-      });
-    }
-
-    const flawMap = new Map<string, string[]>();
-    const flawGroup = mapGroupBy(
-      flaws.filter((i) => !i.bDeleted),
-      (r) => `${r.nBoard}-${r.nChannel}`,
-    );
-
-    for (const [key, flaws] of flawGroup) {
-      const flaw = flaws.at(0);
-
-      if (!flaw) {
-        continue;
-      }
-
-      const channel = flaw.nChannel;
-      switch (channel) {
-        case 0:
-          flawMap.set(
-            key,
-            resolveFlaws(
-              flaws
-                .map((i) => i.fltValueX)
-                .filter((i) => typeof i === "number"),
-            ).map((i) => i.toString(10)),
-          );
-          break;
-        case 1:
-          flawMap.set(
-            key,
-            resolveXHCFlaws(
-              flaws
-                .map((i) => i.fltValueX)
-                .filter((i) => typeof i === "number"),
-            ).map((i) => i.toString(10)),
-          );
-          break;
-        case 2:
-        case 3:
-          flawMap.set(
-            key,
-            resolveFlaws(
-              flaws
-                .map((i) => i.fltValueX)
-                .filter((i) => typeof i === "number"),
-            ).map((i) => i.toString(10)),
-          );
-          break;
-        case 4:
-          flawMap.set(
-            key,
-            resolve44Flaws(
-              flaws
-                .map((i) => i.fltValueX)
-                .filter((i) => typeof i === "number"),
-            ).map((i) => i.toString(10)),
-          );
-          break;
-        default:
-          flawMap.set(key, []);
-          break;
-      }
-    }
+    const map = resolveFlaws(flaws, channels);
 
     return (
-      <PDFViewer
-        showToolbar
-        style={{ width: "100%", height: "100%", border: 0, flex: 1 }}
-      >
-        <ReportDoc
-          asideTip={asideTip + "\n试\n样\n轴\n轮\n座\n人\n工\n缺\n陷\n编\n号"}
-          tableHeader1={{
-            labelL: "单位名称",
-            valueL: FACTORY_CLD || "",
-            labelR: "校验时间",
-            valueR: dayjs(record.tmNow).format("YYYY年MM月DD日 HH:mm:ss"),
-          }}
-          tableHeader2={{
-            labelL: "单位名称",
-            valueL: FACTORY_CLD || "",
-            labelR: "校验时间",
-            valueR: dayjs(record.tmNow).format("YYYY年MM月DD日 HH:mm:ss"),
-          }}
-          equipmentTableProps={{
-            deviceModel: FACTORY_SBXH || "",
-            deviceNo: FACTORY_SBBH || "",
-            blockModel: [record.szZh, record.szWhModel].join("-"),
-          }}
-          signatureTableProps={{
-            tsg: record.szUsername || "",
-          }}
-          imageLXH={jpegs.lxh}
-          imageRXH={jpegs.rxh}
-          imageLLZ={jpegs.llz}
-          imageRLZ={jpegs.rlz}
-          imageLCT={jpegs.lct}
-          imageRCT={jpegs.rct}
-        >
-          {of(2).map((_, board) => {
-            return (
-              <View key={board} style={[styles.flex1]}>
-                <LZInfoTable
-                  board={board}
-                  channelName2={chNameMap.get(`${board}-2`)}
-                  jy2={metaMap.get(`${board}-2`)?.jy}
-                  bc2={metaMap.get(`${board}-2`)?.bc}
-                  ts2={metaMap.get(`${board}-2`)?.ts}
-                  zsj2={metaMap.get(`${board}-2`)?.zsj}
-
-                  channelName3={chNameMap.get(`${board}-3`)}
-                  jy3={metaMap.get(`${board}-3`)?.jy}
-                  bc3={metaMap.get(`${board}-3`)?.bc}
-                  ts3={metaMap.get(`${board}-3`)?.ts}
-                  zsj3={metaMap.get(`${board}-3`)?.zsj}
-
-                  channelName4={chNameMap.get(`${board}-4`)}
-                  jy4={metaMap.get(`${board}-4`)?.jy}
-                  bc4={metaMap.get(`${board}-4`)?.bc}
-                  ts4={metaMap.get(`${board}-4`)?.ts}
-                  zsj4={metaMap.get(`${board}-4`)?.zsj}
-                />
-                {of13.map((_, index) => {
-                  return (
-                    <Row key={index}>
-                      <Col width={SECOND_WIDTH}>
-                        <Cell>{_}</Cell>
-                      </Col>
-                      <Col>
-                        <Cell>
-                          {flawMap.get(`${board}-3`)?.at(index) ? (
-                            <CheckOK />
-                          ) : null}
-                        </Cell>
-                      </Col>
-                      <Col>
-                        <Cell>
-                          {flawMap.get(`${board}-4`)?.at(index) ? (
-                            <CheckOK />
-                          ) : null}
-                        </Cell>
-                      </Col>
-                      <Col>
-                        <Cell>
-                          {flawMap.get(`${board}-2`)?.at(index) ? (
-                            <CheckOK />
-                          ) : null}
-                        </Cell>
-                      </Col>
-                    </Row>
-                  );
-                })}
-                <XHCTable
-                  board={board}
-                  ctName={chNameMap.get(`${board}-0`)?.replace(/[左右0]/g, "")}
-                  ctZsj={metaMap.get(`${board}-0`)?.zsj}
-                  ctBc={metaMap.get(`${board}-0`)?.bc}
-                  ctJy={metaMap.get(`${board}-0`)?.jy}
-                  ctTs={metaMap.get(`${board}-0`)?.ts}
-                  ctValue={flawMap.get(`${board}-0`)?.at(0)}
-
-                  xhChannelName={chNameMap
-                    .get(`${board}-1`)
-                    ?.replace(/[左右0]/g, "")}
-                  xhZsj={metaMap.get(`${board}-1`)?.zsj}
-                  xhBc={metaMap.get(`${board}-1`)?.bc}
-                  xhJy={metaMap.get(`${board}-1`)?.jy}
-                  xhTs={metaMap.get(`${board}-1`)?.ts}
-                  xhValue1={flawMap.get(`${board}-1`)?.at(0)}
-                  xhValue2={flawMap.get(`${board}-1`)?.at(1)}
-                  xhValue3={flawMap.get(`${board}-1`)?.at(2)}
-                />
-              </View>
-            );
-          })}
-        </ReportDoc>
-      </PDFViewer>
+      <CHR501
+        zh={record.szZh || ""}
+        zx={record.szWhModel || ""}
+        factoryName={FACTORY_CLD || ""}
+        validateAt={record.tmNow || ""}
+        equipmentModel={FACTORY_SBXH || ""}
+        equipmentNo={FACTORY_SBBH || ""}
+        imageLXH={jpegs.lxh}
+        imageRXH={jpegs.rxh}
+        imageLLZ={jpegs.llz}
+        imageRLZ={jpegs.rlz}
+        imageLCT={jpegs.lct}
+        imageRCT={jpegs.rct}
+        user={record.szUsername || ""}
+        boardDatas={map}
+      />
     );
   };
 
   return renderQuery();
-};
-
-const formatNumbers = (numbers: number[]) => {
-  return numbers.map((i) => mathFormat(i, { precision: 0, notation: "fixed" }));
-};
-const deduplicate = (texts: string[]) => {
-  return [...new Set(texts)];
-};
-const sortInAsc = (numbers: number[]) => {
-  return numbers.toSorted((a, b) => a - b);
-};
-const texts2Ints = (texts: string[]) => {
-  return texts.map((text) => Number.parseInt(text));
-};
-const findFlawsByFirst = (originalFlaws: number[], flaw1: number) => {
-  const flaws1 = [flaw1];
-  const excepted2 = flaw1 + 10;
-  const flaw2 = originalFlaws
-    .filter((i) => !flaws1.includes(i))
-    .toSorted((a, b) => Math.abs(a - excepted2) - Math.abs(b - excepted2))
-    .at(0);
-
-  if (!flaw2) {
-    return flaws1;
-  }
-
-  const flaws2 = [flaw1, flaw2];
-  const excepted3 = flaw2 + 5;
-  const flaw3 = originalFlaws
-    .filter((i) => !flaws2.includes(i))
-    .toSorted((a, b) => Math.abs(a - excepted3) - Math.abs(b - excepted3))
-    .at(0);
-
-  if (!flaw3) {
-    return flaws2;
-  }
-
-  return [flaw1, flaw2, flaw3];
-};
-const resolveXHCFlaws = (inputs: number[]) => {
-  const resolvedFlaws = resolveFlaws(inputs);
-
-  if (resolvedFlaws.length < 4) {
-    return resolvedFlaws;
-  }
-
-  let result: number[] = [];
-
-  for (const flaw of resolvedFlaws) {
-    const xhcFlaws = findFlawsByFirst(resolvedFlaws, flaw);
-
-    if (xhcFlaws.length === 3) {
-      return xhcFlaws;
-    }
-
-    if (xhcFlaws.length > result.length) {
-      result = xhcFlaws;
-    }
-  }
-
-  return result;
-};
-
-const resolveFlaws = (numbers: number[]) => {
-  const formated = formatNumbers(numbers);
-  const deduplicated = deduplicate(formated);
-  const ints = texts2Ints(deduplicated);
-  const sorted = sortInAsc(ints);
-
-  return sorted;
-};
-
-const resolve44Flaws = (numbers: number[]) => {
-  const flaws = resolveFlaws(numbers);
-
-  return [...of(11 - flaws.length).map(() => ""), ...flaws];
 };

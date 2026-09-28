@@ -383,11 +383,7 @@ export const routes: RouteObject[] = [
 
       if (has) return;
 
-      await new Promise<void>((resolve) => {
-        useProfileStore.persist.onFinishHydration(() => {
-          resolve();
-        });
-      });
+      await new Promise<unknown>(useProfileStore.persist.onFinishHydration);
     },
   },
 ];
