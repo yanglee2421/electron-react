@@ -238,6 +238,10 @@ export class Guangzhoubei {
             return EMPTY;
           }
 
+          if (!s.deviceAccessToken) {
+            return EMPTY;
+          }
+
           const url = new URL(
             `http://${s.deviceIp}:${s.devicePort}/api/v1/${s.deviceAccessToken}/telemetry`,
           );

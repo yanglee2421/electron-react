@@ -40,6 +40,7 @@ export const Component = () => {
   const deviceUploadInterval = useGuangzhoubei((s) => s.deviceUploadInterval);
   const deviceIp = useGuangzhoubei((s) => s.deviceIp);
   const devicePort = useGuangzhoubei((s) => s.devicePort);
+  const deviceAccessToken = useGuangzhoubei((s) => s.deviceAccessToken);
 
   const form = useForm({
     defaultValues: {
@@ -63,6 +64,7 @@ export const Component = () => {
       deviceUploadInterval,
       deviceIp,
       devicePort,
+      deviceAccessToken,
     } as JTV_HMIS_Guangzhoubei,
     validators: {
       onChange: guangzhoubei.required(),
@@ -87,6 +89,7 @@ export const Component = () => {
         draft.deviceUploadInterval = value.deviceUploadInterval;
         draft.deviceIp = value.deviceIp;
         draft.devicePort = value.devicePort;
+        draft.deviceAccessToken = value.deviceAccessToken;
       });
       toast.success("保存成功");
     },
