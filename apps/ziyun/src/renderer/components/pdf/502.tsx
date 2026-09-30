@@ -10,6 +10,7 @@ import { of } from "#shared/functions/array";
 import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import dayjs from "dayjs";
+import * as mathjs from "mathjs";
 import React from "react";
 
 export interface RowData {
@@ -232,6 +233,7 @@ interface CHR502Props {
   validateAt: string | Date;
   equipmentNo: string;
   manufactureDate: string | Date | null;
+  lastManufactureDate: string | Date | null;
   chName0: string;
   chName1: string;
   chName2: string;
@@ -252,12 +254,18 @@ export const CHR502 = (props: CHR502Props) => {
         tableHeader={{
           factoryName: props.factory,
           zx: props.zx,
-          date: dayjs(props.validateAt).format("YYYY-MM-DD HH:mm:ss"),
+          date: props.validateAt
+            ? dayjs(props.validateAt).format("YYYY-MM-DD HH:mm:ss")
+            : "",
         }}
         equipmentTable={{
           deviceNo: props.equipmentNo,
-          createDate: dayjs(props.manufactureDate).format("YYYY-MM-DD") || "",
-          previousCheckDate: "",
+          createDate: props.manufactureDate
+            ? dayjs(props.manufactureDate).format("YYYY-MM-DD")
+            : "",
+          previousCheckDate: props.lastManufactureDate
+            ? dayjs(props.lastManufactureDate).format("YYYY-MM-DD")
+            : "",
         }}
         chName0={props.chName0}
         chName1={props.chName1}
@@ -373,17 +381,17 @@ export const CHR502 = (props: CHR502Props) => {
 
 const calcMaxDiff = (strings: string[]) => {
   const numbers = strings.map((str) => Number.parseFloat(str));
-  const hasNan = numbers.some((num) => Number.isNaN(num));
 
-  if (!numbers.length) {
+  if (numbers.every((num) => Number.isNaN(num))) {
     return "";
   }
 
-  if (hasNan) {
-    return "";
-  }
+  const result = mathjs.subtract(
+    mathjs.max(...numbers.map((n) => mathjs.bignumber(n))),
+    mathjs.min(...numbers.map((n) => mathjs.bignumber(n))),
+  );
 
-  return Math.max(...numbers) - Math.min(...numbers);
+  return result.toString();
 };
 
 const calcResult = (left: number | string, right: number | string) => {
@@ -395,11 +403,11 @@ const calcResult = (left: number | string, right: number | string) => {
     return "不合格";
   }
 
-  if (left > 6) {
+  if (mathjs.larger(mathjs.bignumber(left), mathjs.bignumber(6))) {
     return "不合格";
   }
 
-  if (right > 6) {
+  if (mathjs.larger(mathjs.bignumber(right), mathjs.bignumber(6))) {
     return "不合格";
   }
 

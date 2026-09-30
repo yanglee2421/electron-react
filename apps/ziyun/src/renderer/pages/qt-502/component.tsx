@@ -104,8 +104,15 @@ export const Component = () => {
       );
     }
 
-    const { FACTORY_CLD, FACTORY_SBBH, FACTORY_SYRQ, rows, datas, channels } =
-      query.data;
+    const {
+      FACTORY_CLD,
+      FACTORY_SBBH,
+      FACTORY_SYRQ,
+      rows,
+      datas,
+      channels,
+      previousRow,
+    } = query.data;
     const firstRow = rows.at(0);
     const chNameMap = channels.reduce((map, item) => {
       const board = item.nBoardIndex || 0;
@@ -143,6 +150,7 @@ export const Component = () => {
         validateAt={firstRow?.tmNow || ""}
         equipmentNo={FACTORY_SBBH || ""}
         manufactureDate={FACTORY_SYRQ || ""}
+        lastManufactureDate={previousRow ? previousRow.tmNow : ""}
         chName0={calcChName(0, flawsMap, chNameMap) || ""}
         chName1={calcChName(1, flawsMap, chNameMap) || ""}
         chName2={calcChName(2, flawsMap, chNameMap) || ""}

@@ -704,7 +704,7 @@ export class QT {
 
     const szWhModel = firstRow.szWhModel || "";
 
-    const [previousRow] = await this.db
+    const previousRows = await this.db
       .select()
       .from(schema.quartors)
       .where(
@@ -715,6 +715,8 @@ export class QT {
       )
       .orderBy(desc(schema.quartors.tmNow))
       .limit(1);
+
+    const previousRow = previousRows.at(0);
 
     const datas = await this.db
       .select()
