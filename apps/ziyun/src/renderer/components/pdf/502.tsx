@@ -7,10 +7,10 @@ import {
   Row,
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
+import { calculateMaxDiff, calculateResult } from "#shared/functions/chr502";
 import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import dayjs from "dayjs";
-import * as mathjs from "mathjs";
 import React from "react";
 
 export interface RowData {
@@ -312,25 +312,45 @@ export const CHR502 = (props: CHR502Props) => {
               <Row>
                 <Col>
                   <Cell>左</Cell>
-                  <Cell>{calcMaxDiff(rows.map((row) => row.lch1))}</Cell>
-                  <Cell>{calcMaxDiff(rows.map((row) => row.lch2))}</Cell>
-                  <Cell>{calcMaxDiff(rows.map((row) => row.lch3))}</Cell>
-                  <Cell>{calcMaxDiff(rows.map((row) => row.lch4))}</Cell>
+                  <Cell>
+                    {calculateMaxDiff(...rows.map((row) => row.lch1))}
+                  </Cell>
+                  <Cell>
+                    {calculateMaxDiff(...rows.map((row) => row.lch2))}
+                  </Cell>
+                  <Cell>
+                    {calculateMaxDiff(...rows.map((row) => row.lch3))}
+                  </Cell>
+                  <Cell>
+                    {calculateMaxDiff(...rows.map((row) => row.lch4))}
+                  </Cell>
                   {of10.map((_) => (
                     <Cell key={_}></Cell>
                   ))}
-                  <Cell>{calcMaxDiff(rows.map((row) => row.lch0))}</Cell>
+                  <Cell>
+                    {calculateMaxDiff(...rows.map((row) => row.lch0))}
+                  </Cell>
                 </Col>
                 <Col>
                   <Cell>右</Cell>
-                  <Cell>{calcMaxDiff(rows.map((row) => row.rch1))}</Cell>
-                  <Cell>{calcMaxDiff(rows.map((row) => row.rch2))}</Cell>
-                  <Cell>{calcMaxDiff(rows.map((row) => row.rch3))}</Cell>
-                  <Cell>{calcMaxDiff(rows.map((row) => row.rch4))}</Cell>
+                  <Cell>
+                    {calculateMaxDiff(...rows.map((row) => row.rch1))}
+                  </Cell>
+                  <Cell>
+                    {calculateMaxDiff(...rows.map((row) => row.rch2))}
+                  </Cell>
+                  <Cell>
+                    {calculateMaxDiff(...rows.map((row) => row.rch3))}
+                  </Cell>
+                  <Cell>
+                    {calculateMaxDiff(...rows.map((row) => row.rch4))}
+                  </Cell>
                   {of10.map((_) => (
                     <Cell key={_}></Cell>
                   ))}
-                  <Cell>{calcMaxDiff(rows.map((row) => row.rch0))}</Cell>
+                  <Cell>
+                    {calculateMaxDiff(...rows.map((row) => row.rch0))}
+                  </Cell>
                 </Col>
               </Row>
             </Col>
@@ -341,75 +361,40 @@ export const CHR502 = (props: CHR502Props) => {
           <Cell>结果评定</Cell>
           <Cell></Cell>
           <Cell>
-            {calcResult(
-              calcMaxDiff(rows.map((row) => row.lch1)),
-              calcMaxDiff(rows.map((row) => row.rch1)),
+            {calculateResult(
+              calculateMaxDiff(...rows.map((row) => row.lch1)),
+              calculateMaxDiff(...rows.map((row) => row.rch1)),
             )}
           </Cell>
           <Cell>
-            {calcResult(
-              calcMaxDiff(rows.map((row) => row.lch2)),
-              calcMaxDiff(rows.map((row) => row.rch2)),
+            {calculateResult(
+              calculateMaxDiff(...rows.map((row) => row.lch2)),
+              calculateMaxDiff(...rows.map((row) => row.rch2)),
             )}
           </Cell>
           <Cell>
-            {calcResult(
-              calcMaxDiff(rows.map((row) => row.lch3)),
-              calcMaxDiff(rows.map((row) => row.rch3)),
+            {calculateResult(
+              calculateMaxDiff(...rows.map((row) => row.lch3)),
+              calculateMaxDiff(...rows.map((row) => row.rch3)),
             )}
           </Cell>
           <Cell>
-            {calcResult(
-              calcMaxDiff(rows.map((row) => row.lch4)),
-              calcMaxDiff(rows.map((row) => row.rch4)),
+            {calculateResult(
+              calculateMaxDiff(...rows.map((row) => row.lch4)),
+              calculateMaxDiff(...rows.map((row) => row.rch4)),
             )}
           </Cell>
           {of10.map((count) => {
             return <Cell key={count}></Cell>;
           })}
           <Cell>
-            {calcResult(
-              calcMaxDiff(rows.map((row) => row.lch0)),
-              calcMaxDiff(rows.map((row) => row.rch0)),
+            {calculateResult(
+              calculateMaxDiff(...rows.map((row) => row.lch0)),
+              calculateMaxDiff(...rows.map((row) => row.rch0)),
             )}
           </Cell>
         </Col>
       </ReportDoc>
     </PDFViewer>
   );
-};
-
-const calcMaxDiff = (strings: string[]) => {
-  const numbers = strings.map((str) => Number.parseFloat(str));
-
-  if (numbers.every((num) => Number.isNaN(num))) {
-    return "";
-  }
-
-  const result = mathjs.subtract(
-    mathjs.max(...numbers.map((n) => mathjs.bignumber(n))),
-    mathjs.min(...numbers.map((n) => mathjs.bignumber(n))),
-  );
-
-  return result.toString();
-};
-
-const calcResult = (left: number | string, right: number | string) => {
-  if (typeof left === "string") {
-    return typeof right === "string" ? "" : "不合格";
-  }
-
-  if (typeof right === "string") {
-    return "不合格";
-  }
-
-  if (mathjs.larger(mathjs.bignumber(left), mathjs.bignumber(6))) {
-    return "不合格";
-  }
-
-  if (mathjs.larger(mathjs.bignumber(right), mathjs.bignumber(6))) {
-    return "不合格";
-  }
-
-  return "合格";
 };

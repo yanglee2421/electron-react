@@ -7,11 +7,58 @@ import {
   ReportTitle,
   Row,
 } from "#renderer/components/pdf";
+import { of } from "#shared/functions/array";
 import { CellHeightContext, styles } from "#shared/instances/styles";
 import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
 import dayjs from "dayjs";
+import React from "react";
 
-export const CHR502 = () => {
+const IMAGE_HEIGHT = 128;
+
+export interface ChannelRow {
+  name: string;
+  type: string;
+  flaws: string[];
+}
+
+const renderDescription = (row: ChannelRow) => {
+  if (row.type !== "裂纹") {
+    return "";
+  }
+
+  return `${row.flaws.length}; ${row.flaws.join(" ")}`;
+};
+
+interface CHR52AProps {
+  factory: string;
+  validateAt: string | Date;
+  zh: string;
+  zx: string;
+  imageLXH: string;
+  imageRXH: string;
+  imageLLZ: string;
+  imageRLZ: string;
+  imageLCT: string;
+  imageRCT: string;
+
+  szTmMake: string;
+  szIdsMake: string;
+  szTmFirst: string;
+  szIdsFirst: string;
+  szTmLast: string;
+  szIdsLast: string;
+
+  leftChannels: ChannelRow[];
+  rightChannels: ChannelRow[];
+  note: string;
+}
+
+export const CHR52A = (props: CHR52AProps) => {
+  const { leftChannels, rightChannels } = props;
+
+  const CELL_HEIGHT = React.use(CellHeightContext);
+  const of4 = of(4);
+
   return (
     <PDFViewer
       showToolbar
@@ -30,12 +77,15 @@ export const CHR502 = () => {
               <Row>
                 <Col>
                   <Text style={[styles.font12, styles.textLeft]}>
-                    单位名称: {FACTORY_CLD}
+                    单位名称: {props.factory}
                   </Text>
                 </Col>
                 <Col>
                   <Text style={[styles.font12, styles.textRight]}>
-                    日期: {dayjs(record.tmNow).format("YYYY-MM-DD HH:mm:ss")}
+                    日期:
+                    {props.validateAt
+                      ? dayjs(props.validateAt).format("YYYY-MM-DD HH:mm:ss")
+                      : ""}
                   </Text>
                 </Col>
               </Row>
@@ -46,25 +96,25 @@ export const CHR502 = () => {
                   <Cell>轴型</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szWhModel}</Cell>
+                  <Cell>{props.zx}</Cell>
                 </Col>
                 <Col>
                   <Cell>轴号</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szZh}</Cell>
+                  <Cell>{props.zh}</Cell>
                 </Col>
                 <Col>
                   <Cell>车轴制造日期</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szTmMake}</Cell>
+                  <Cell>{props.szTmMake}</Cell>
                 </Col>
                 <Col>
                   <Cell>车轴制造单位</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szIdsMake}</Cell>
+                  <Cell>{props.szIdsMake}</Cell>
                 </Col>
               </Row>
               <Row>
@@ -73,16 +123,16 @@ export const CHR502 = () => {
                   <Cell>轮对末次组装日期</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szTmFirst}</Cell>
-                  <Cell>{record.szTmLast}</Cell>
+                  <Cell>{props.szTmFirst}</Cell>
+                  <Cell>{props.szTmLast}</Cell>
                 </Col>
                 <Col>
                   <Cell>轮对首次组装单位</Cell>
                   <Cell>轮对末次组装单位</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szIdsFirst}</Cell>
-                  <Cell>{record.szIdsLast}</Cell>
+                  <Cell>{props.szIdsFirst}</Cell>
+                  <Cell>{props.szIdsLast}</Cell>
                 </Col>
               </Row>
               <Cell>缺陷描述</Cell>
@@ -94,101 +144,69 @@ export const CHR502 = () => {
                 </Col>
                 <Col width={96}>
                   <Cell>探头编号</Cell>
-                  <Cell center={false} pl>
-                    {chNameMap.get(`0-0`) + `: ` + renderFlawCount(0, 0)}
-                  </Cell>
-                  <Cell center={false} pl>
-                    {chNameMap.get(`0-1`) + `: ` + renderFlawCount(0, 1)}
-                  </Cell>
-                  <Cell center={false} pl>
-                    {chNameMap.get(`0-2`) + `: ` + renderFlawCount(0, 2)}
-                  </Cell>
-                  <Cell center={false} pl>
-                    {chNameMap.get(`0-3`) + `: ` + renderFlawCount(0, 3)}
-                  </Cell>
-                  <Cell center={false} pl>
-                    {chNameMap.get(`0-4`) + `: ` + renderFlawCount(0, 4)}
-                  </Cell>
-                  {of(4).map((_) => {
+                  {leftChannels.map((i, index) => {
+                    return (
+                      <Cell key={index} center={false} pl>
+                        {i.name}
+                      </Cell>
+                    );
+                  })}
+                  {of4.map((_) => {
                     return <Cell key={_}></Cell>;
                   })}
-                  <Cell center={false} pl>
-                    {chNameMap.get(`1-0`) + `: ` + renderFlawCount(1, 0)}
-                  </Cell>
-                  <Cell center={false} pl>
-                    {chNameMap.get(`1-1`) + `: ` + renderFlawCount(1, 1)}
-                  </Cell>
-                  <Cell center={false} pl>
-                    {chNameMap.get(`1-2`) + `: ` + renderFlawCount(1, 2)}
-                  </Cell>
-                  <Cell center={false} pl>
-                    {chNameMap.get(`1-3`) + `: ` + renderFlawCount(1, 3)}
-                  </Cell>
-                  <Cell center={false} pl>
-                    {chNameMap.get(`1-4`) + `: ` + renderFlawCount(1, 4)}
-                  </Cell>
-                  {of(4).map((_) => {
+                  {rightChannels.map((i, index) => {
+                    return (
+                      <Cell key={index} center={false} pl>
+                        {i.name}
+                      </Cell>
+                    );
+                  })}
+                  {of4.map((_) => {
                     return <Cell key={_}></Cell>;
                   })}
                 </Col>
-                <FlawGroupContext value={flawGroup}>
-                  <MemoInfoContext value={memoInfo}>
-                    <Col>
-                      <Cell>缺陷数量及位置</Cell>
-                      <Cell center={false} pl>
-                        <ChannelFlaws board={0} channel={0} />
+                <Col>
+                  <Cell>缺陷数量及位置</Cell>
+                  {leftChannels.map((i, index) => {
+                    return (
+                      <Cell key={index} center={false} pl>
+                        {renderDescription(i)}
                       </Cell>
-                      <Cell center={false} pl>
-                        <ChannelFlaws board={0} channel={1} />
+                    );
+                  })}
+                  {of4.map((_) => {
+                    return <Cell key={_}></Cell>;
+                  })}
+                  {rightChannels.map((i, index) => {
+                    return (
+                      <Cell key={index} center={false} pl>
+                        {renderDescription(i)}
                       </Cell>
-                      <Cell center={false} pl>
-                        <ChannelFlaws board={0} channel={2} />
-                      </Cell>
-                      <Cell center={false} pl>
-                        <ChannelFlaws board={0} channel={3} />
-                      </Cell>
-                      <Cell center={false} pl>
-                        <ChannelFlaws board={0} channel={4} />
-                      </Cell>
-                      {of(4).map((_) => {
-                        return <Cell key={_}></Cell>;
-                      })}
-                      <Cell center={false} pl>
-                        <ChannelFlaws board={1} channel={0} />
-                      </Cell>
-                      <Cell center={false} pl>
-                        <ChannelFlaws board={1} channel={1} />
-                      </Cell>
-                      <Cell center={false} pl>
-                        <ChannelFlaws board={1} channel={2} />
-                      </Cell>
-                      <Cell center={false} pl>
-                        <ChannelFlaws board={1} channel={3} />
-                      </Cell>
-                      <Cell center={false} pl>
-                        <ChannelFlaws board={1} channel={4} />
-                      </Cell>
-                      {of(4).map((_) => {
-                        return <Cell key={_}></Cell>;
-                      })}
-                    </Col>
-                  </MemoInfoContext>
-                </FlawGroupContext>
+                    );
+                  })}
+                  {of4.map((_) => {
+                    return <Cell key={_}></Cell>;
+                  })}
+                </Col>
                 <Col width={64}>
                   <Cell>缺陷类型</Cell>
-                  <Cell>{calcFlawType(memoInfo.get("0-0"))}</Cell>
-                  <Cell>{calcFlawType(memoInfo.get("0-1"))}</Cell>
-                  <Cell>{calcFlawType(memoInfo.get("0-2"))}</Cell>
-                  <Cell>{calcFlawType(memoInfo.get("0-3"))}</Cell>
-                  <Cell>{calcFlawType(memoInfo.get("0-4"))}</Cell>
+                  {leftChannels.map((i, index) => {
+                    return (
+                      <Cell key={index} center={false} pl>
+                        {i.type}
+                      </Cell>
+                    );
+                  })}
                   {of(4).map((_) => {
                     return <Cell key={_}></Cell>;
                   })}
-                  <Cell>{calcFlawType(memoInfo.get("1-0"))}</Cell>
-                  <Cell>{calcFlawType(memoInfo.get("1-1"))}</Cell>
-                  <Cell>{calcFlawType(memoInfo.get("1-2"))}</Cell>
-                  <Cell>{calcFlawType(memoInfo.get("1-3"))}</Cell>
-                  <Cell>{calcFlawType(memoInfo.get("1-4"))}</Cell>
+                  {rightChannels.map((i, index) => {
+                    return (
+                      <Cell key={index} center={false} pl>
+                        {i.type}
+                      </Cell>
+                    );
+                  })}
                   {of(4).map((_) => {
                     return <Cell key={_}></Cell>;
                   })}
@@ -201,7 +219,7 @@ export const CHR502 = () => {
                 </Col>
                 <Col>
                   <Cell height={100} center={false} pl pr>
-                    <NoteCell record={record} datas={datas} />
+                    {props.note}
                   </Cell>
                   <CellHeightContext value={40}>
                     <Row>
@@ -243,7 +261,7 @@ export const CHR502 = () => {
             <View style={[styles.paddingB4]}>
               <Row>
                 <Col>
-                  <Text style={[styles.font12]}>单位名称: {FACTORY_CLD}</Text>
+                  <Text style={[styles.font12]}>单位名称: {props.factory}</Text>
                 </Col>
                 <Col>
                   <Text style={[styles.font12]}>
@@ -258,25 +276,25 @@ export const CHR502 = () => {
                   <Cell>轴型</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szWhModel}</Cell>
+                  <Cell>{props.zx}</Cell>
                 </Col>
                 <Col>
                   <Cell>轴号</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szZh}</Cell>
+                  <Cell>{props.zh}</Cell>
                 </Col>
                 <Col>
                   <Cell>车轴制造日期</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szTmMake}</Cell>
+                  <Cell>{props.szTmMake}</Cell>
                 </Col>
                 <Col>
                   <Cell>车轴制造单位</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szIdsMake}</Cell>
+                  <Cell>{props.szIdsMake}</Cell>
                 </Col>
               </Row>
               <Row>
@@ -285,47 +303,47 @@ export const CHR502 = () => {
                   <Cell>轮对末次组装日期</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szTmFirst}</Cell>
-                  <Cell>{record.szTmLast}</Cell>
+                  <Cell>{props.szTmFirst}</Cell>
+                  <Cell>{props.szTmLast}</Cell>
                 </Col>
                 <Col>
                   <Cell>轮对首次组装单位</Cell>
                   <Cell>轮对末次组装单位</Cell>
                 </Col>
                 <Col>
-                  <Cell>{record.szIdsFirst}</Cell>
-                  <Cell>{record.szIdsLast}</Cell>
+                  <Cell>{props.szIdsFirst}</Cell>
+                  <Cell>{props.szIdsLast}</Cell>
                 </Col>
               </Row>
               <Row>
                 <Col>
                   <Cell font12>左轴颈根部扫描图</Cell>
                   <View style={[styles.borderTR]}>
-                    <ReportImage src={jpegs.lxh} height={IMAGE_HEIGHT} />
+                    <ReportImage src={props.imageLXH} height={IMAGE_HEIGHT} />
                   </View>
                   <Cell font12>左轮座扫描图</Cell>
                   <View style={[styles.borderTR]}>
-                    <ReportImage src={jpegs.llz} height={IMAGE_HEIGHT} />
+                    <ReportImage src={props.imageLLZ} height={IMAGE_HEIGHT} />
                   </View>
                 </Col>
                 <Col>
                   <Cell font12>右轴颈根部扫描图</Cell>
                   <View style={[styles.borderTR]}>
-                    <ReportImage src={jpegs.rxh} height={IMAGE_HEIGHT} />
+                    <ReportImage src={props.imageRXH} height={IMAGE_HEIGHT} />
                   </View>
                   <Cell font12>右轮座扫描图</Cell>
                   <View style={[styles.flex1, styles.borderTR]}>
-                    <ReportImage src={jpegs.rlz} height={IMAGE_HEIGHT} />
+                    <ReportImage src={props.imageRLZ} height={IMAGE_HEIGHT} />
                   </View>
                 </Col>
               </Row>
               <Cell font12>左穿透扫描图</Cell>
               <View style={[styles.borderTR]}>
-                <ReportImage src={jpegs.lct} height={IMAGE_HEIGHT} />
+                <ReportImage src={props.imageLCT} height={IMAGE_HEIGHT} />
               </View>
               <Cell font12>右穿透扫描图</Cell>
               <View style={[styles.borderTR]}>
-                <ReportImage src={jpegs.rct} height={IMAGE_HEIGHT} />
+                <ReportImage src={props.imageRCT} height={IMAGE_HEIGHT} />
               </View>
             </View>
           </View>
