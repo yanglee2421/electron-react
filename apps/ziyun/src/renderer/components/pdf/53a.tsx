@@ -50,7 +50,7 @@ const CheckCell = (props: CheckCellProps) => {
   }
 };
 
-const MAX_ROWS_PER_PAGE = 28;
+const MAX_ROWS_PER_PAGE = 29;
 const CELL_HEIGHT = 18;
 
 interface CHR53AProps {
