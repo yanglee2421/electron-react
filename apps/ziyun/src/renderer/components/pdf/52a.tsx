@@ -26,7 +26,7 @@ const renderDescription = (row: ChannelRow) => {
     return "";
   }
 
-  return `${row.flaws.length}; ${row.flaws.join(" ")}`;
+  return `${row.flaws.length}裂纹; ${row.flaws.join(" ")}`;
 };
 
 interface CHR52AProps {

@@ -18,6 +18,7 @@ const resolveMemoInfo = (params: string | null): MemoInfo => {
   if (!params) {
     return result;
   }
+
   // 001 011 031 041 901 911 931 941
   return chunk(params.split(""), 3).reduce((map, item) => {
     const originBoard = item.at(0) || "0";
