@@ -3,6 +3,7 @@ import { fetchDetections, fetchUser } from "#renderer/api/mdb";
 import { Loading } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { CheckBoxCell } from "#renderer/components/table";
+import { useSessionStore } from "#renderer/hooks/use-session-store";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { Print, RefreshOutlined } from "@mui/icons-material";
 import {
@@ -356,13 +357,13 @@ export const Component = () => {
             disabled={disabledCH53A}
             variant="outlined"
             onClick={() => {
-              navigate("/detection/chr53a", {
-                state: {
-                  ids: table
-                    .getSelectedRowModel()
-                    .flatRows.map((row) => row.original.szIDs),
-                },
+              useSessionStore.setState((draft) => {
+                draft.mdb53aIds = table
+                  .getSelectedRowModel()
+                  .flatRows.map((row) => row.original.szIDs);
               });
+
+              navigate("/detection/chr53a");
             }}
           >
             打印

@@ -871,7 +871,7 @@ export class QT {
       .limit(1);
 
     if (ids.length) {
-      const idList = ids.map((i) => Number.parseInt(i));
+      const idList = ids;
 
       const rows = await this.db
         .select()

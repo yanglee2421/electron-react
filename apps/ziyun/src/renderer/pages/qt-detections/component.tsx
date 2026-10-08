@@ -3,6 +3,7 @@ import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { CheckBoxCell } from "#renderer/components/table";
 import { useDayjs } from "#renderer/hooks/use-dayjs";
+import { useSessionStore } from "#renderer/hooks/use-session-store";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
 import { Print, Refresh } from "@mui/icons-material";
 import {
@@ -342,13 +343,13 @@ export const Component = () => {
             disabled={disabledCH53A}
             variant="outlined"
             onClick={() => {
-              navigate("/qt/detections/53a", {
-                state: {
-                  ids: table
-                    .getSelectedRowModel()
-                    .flatRows.map((row) => row.original.recId),
-                },
+              useSessionStore.setState((draft) => {
+                draft.qt53aIds = table
+                  .getSelectedRowModel()
+                  .flatRows.map((row) => row.original.recId);
               });
+
+              navigate("/qt/detections/53a");
             }}
           >
             打印

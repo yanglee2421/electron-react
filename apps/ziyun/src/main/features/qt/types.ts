@@ -21,7 +21,7 @@ export interface Fetch502DateInput {
 export interface QTCHR53AInput {
   user: string;
   date: string;
-  ids: string[];
+  ids: number[];
 }
 
 export interface FetchDetectionsInput {

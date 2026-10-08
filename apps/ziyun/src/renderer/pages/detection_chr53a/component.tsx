@@ -1,13 +1,12 @@
 import { fetchCHR53AData } from "#renderer/api/printer";
 import { Loading } from "#renderer/components/Loading";
 import { CHR53A } from "#renderer/components/pdf/53a";
+import { useSessionStore } from "#renderer/hooks/use-session-store";
 import { Alert, AlertTitle } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "react-router";
 
 export const Component = () => {
-  const location = useLocation();
-  const ids = location.state.ids;
+  const ids = useSessionStore((s) => s.mdb53aIds);
   const query = useQuery(fetchCHR53AData({ ids }));
 
   const renderQuery = () => {

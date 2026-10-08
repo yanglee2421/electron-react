@@ -1,16 +1,16 @@
 import { fetchQT53A } from "#renderer/api/qt";
 import { Loading } from "#renderer/components/Loading";
 import { CHR53A } from "#renderer/components/pdf/53a";
+import { useSessionStore } from "#renderer/hooks/use-session-store";
 import { Alert, AlertTitle } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 
 export const Component = () => {
-  const location = useLocation();
   const [searchParams] = useSearchParams();
   const date = searchParams.get("date") || "";
   const user = searchParams.get("user") || "";
-  const ids = location.state?.ids || [];
+  const ids = useSessionStore((s) => s.qt53aIds);
   const query = useQuery(fetchQT53A({ ids, date, user }));
 
   const renderQuery = () => {
