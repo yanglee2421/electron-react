@@ -4,6 +4,7 @@ import {
   CalendarTodayRounded,
   Commit,
   ExpandMore,
+  Gesture,
   Info,
   KeyboardCommandKey,
   MemoryRounded,
@@ -800,16 +801,34 @@ export const Sidebar = (props: SidebarProps) => {
             </ListItemButton>
           )}
           {import.meta.env.DEV && (
-            <ListItemButton
-              component={Link}
-              to={{ pathname: "/lab" }}
-              selected={Object.is(normalizePathname(location.pathname), "/plc")}
-            >
-              <ListItemIcon>
-                <Science />
-              </ListItemIcon>
-              <ListItemText primary={"实验室"} />
-            </ListItemButton>
+            <>
+              <ListItemButton
+                component={Link}
+                to={{ pathname: "/lab" }}
+                selected={Object.is(
+                  normalizePathname(location.pathname),
+                  "/lab",
+                )}
+              >
+                <ListItemIcon>
+                  <Science />
+                </ListItemIcon>
+                <ListItemText primary={"实验室"} />
+              </ListItemButton>
+              <ListItemButton
+                component={Link}
+                to={{ pathname: "/canvas" }}
+                selected={Object.is(
+                  normalizePathname(location.pathname),
+                  "/canvas",
+                )}
+              >
+                <ListItemIcon>
+                  <Gesture />
+                </ListItemIcon>
+                <ListItemText primary={"波形"} />
+              </ListItemButton>
+            </>
           )}
         </List>
       </Box>

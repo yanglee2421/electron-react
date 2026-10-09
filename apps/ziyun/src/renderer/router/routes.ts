@@ -40,6 +40,10 @@ export const routes: RouteObject[] = [
             lazy: () => import("#renderer/pages/lab/component"),
           },
           {
+            path: "canvas",
+            lazy: () => import("#renderer/pages/canvas/component"),
+          },
+          {
             path: "minesweeper",
             lazy: () => import("#renderer/pages/minesweeper/component"),
           },
