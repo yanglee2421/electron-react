@@ -7,10 +7,12 @@ import {
   Card,
   CardActions,
   CardContent,
+  CardHeader,
   Grid,
+  useTheme,
 } from "@mui/material";
 import React from "react";
-import { BehaviorSubject, Observable, tap } from "rxjs";
+import { BehaviorSubject, Observable, animationFrames, tap } from "rxjs";
 
 const list$ = new BehaviorSubject<number[]>([]);
 const buffer$ = new Observable<number[]>((sub) => {
@@ -35,6 +37,7 @@ export const Component = () => {
 
   const open = useCMDOpen();
   const close = useCMDClose();
+  const theme = useTheme();
 
   React.useEffect(() => {
     const el = ref.current;
@@ -49,66 +52,63 @@ export const Component = () => {
       return;
     }
 
-    const subscription = buffer$
+    const subscription = buffer$.subscribe(list$);
+    const sub2 = animationFrames()
       .pipe(
-        tap((value) => {
-          console.log(value);
+        tap(() => {
+          ctx.clearRect(0, 0, 1024, 255);
+
+          const rect = el.getBoundingClientRect();
+          const list = list$.getValue();
+
+          ctx.beginPath();
+          ctx.strokeStyle = theme.palette.primary.main;
+          ctx.moveTo(0, 0);
+          list.forEach((height, index) => {
+            ctx.lineTo(index, 255 - height);
+          });
+          ctx.setLineDash([]);
+          ctx.stroke();
+          ctx.closePath();
+
+          if (enabledRef.current) {
+            const x = pointRef.current.x - rect.x;
+
+            ctx.beginPath();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = theme.palette.divider;
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, 255);
+            ctx.setLineDash([10, 5]);
+            ctx.stroke();
+            ctx.closePath();
+            ctx.fillStyle = theme.palette.text.primary;
+            ctx.font = "14px serif";
+            ctx.fillText(x.toString(), x, 255);
+
+            const y = pointRef.current.y - rect.y;
+            const height = 255 - y;
+            ctx.beginPath();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = theme.palette.divider;
+            ctx.moveTo(0, y);
+            ctx.lineTo(1024, y);
+            ctx.setLineDash([10, 5]);
+            ctx.stroke();
+            ctx.closePath();
+            ctx.fillStyle = theme.palette.text.primary;
+            ctx.font = "14px serif";
+            ctx.fillText(height.toString(), 0, y);
+          }
         }),
       )
-      .subscribe(list$);
-
-    let raf: number;
-    const fn = () => {
-      ctx.clearRect(0, 0, 1024, 255);
-
-      const rect = el.getBoundingClientRect();
-      const list = list$.getValue();
-
-      ctx.beginPath();
-      ctx.strokeStyle = "blue";
-      ctx.moveTo(0, 0);
-      list.forEach((height, index) => {
-        ctx.lineTo(index, 255 - height);
-      });
-      ctx.stroke();
-      ctx.closePath();
-
-      if (enabledRef.current) {
-        const x = pointRef.current.x - rect.x;
-
-        ctx.beginPath();
-        ctx.strokeStyle = "red";
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, 255);
-        ctx.stroke();
-        ctx.closePath();
-
-        ctx.font = "14px serif";
-        ctx.fillText(x.toString(), x, 255);
-
-        const y = pointRef.current.y - rect.y;
-        const height = 255 - y;
-        ctx.beginPath();
-        ctx.strokeStyle = "red";
-        ctx.moveTo(0, y);
-        ctx.lineTo(1024, y);
-        ctx.stroke();
-        ctx.closePath();
-
-        ctx.font = "14px serif";
-        ctx.fillText(height.toString(), 0, y);
-      }
-
-      raf = requestAnimationFrame(fn);
-    };
-
-    fn();
+      .subscribe();
 
     return () => {
       subscription.unsubscribe();
-      cancelAnimationFrame(raf);
+      sub2.unsubscribe();
     };
-  }, []);
+  }, [theme.palette.divider, theme.palette.text.primary]);
 
   React.useEffect(() => {
     if (db) {
@@ -118,27 +118,29 @@ export const Component = () => {
 
   return (
     <Box>
-      <canvas
-        ref={ref}
-        width={1024}
-        height={255}
-        style={{
-          border: "1px dashed red",
-        }}
-        onMouseMove={(e) => {
-          pointRef.current = {
-            x: e.clientX,
-            y: e.clientY,
-          };
-        }}
-        onMouseEnter={() => {
-          enabledRef.current = true;
-        }}
-        onMouseLeave={() => {
-          enabledRef.current = false;
-        }}
-      />
       <Card>
+        <CardHeader title="A" />
+        <canvas
+          ref={ref}
+          width={1024}
+          height={255}
+          style={{
+            // width: 500,
+            // height: 400,
+          }}
+          onMouseMove={(e) => {
+            pointRef.current = {
+              x: e.clientX,
+              y: e.clientY,
+            };
+          }}
+          onMouseEnter={() => {
+            enabledRef.current = true;
+          }}
+          onMouseLeave={() => {
+            enabledRef.current = false;
+          }}
+        />
         <CardContent>
           <Grid container spacing={1.5}>
             <Grid size={12}>
