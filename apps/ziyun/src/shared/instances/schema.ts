@@ -171,6 +171,34 @@ export const plcSchema = z.object({
   d: bitsSchema,
 });
 
+export const channelInputSchema = z.object({
+  open: z.boolean().default(false),
+  inputs: z
+    .object({
+      channel: z.string(),
+      db: z.number(),
+      enabled: z.boolean(),
+    })
+    .array()
+    .default([
+      {
+        channel: "1-0",
+        db: 0,
+        enabled: true,
+      },
+      {
+        channel: "2-0",
+        db: 0,
+        enabled: false,
+      },
+      {
+        channel: "0-1",
+        db: 0,
+        enabled: false,
+      },
+    ]),
+});
+
 export type HXZY_HMIS = z.infer<typeof hxzy_hmis>;
 export type ThemeMode = z.infer<typeof themeMode>;
 export type KH_HMIS = z.infer<typeof kh_hmis>;
@@ -181,3 +209,4 @@ export type GuangzhoucheliangType = z.infer<typeof guangzhoucheliang>;
 export type Guangzhoujibaoduan = z.infer<typeof guangzhoujibaoduan>;
 export type PLCSchema = z.infer<typeof plcSchema>;
 export type FUZHOUDONG = z.infer<typeof fuzhoudong>;
+export type CHANNEL_INPUTS = z.infer<typeof channelInputSchema>;

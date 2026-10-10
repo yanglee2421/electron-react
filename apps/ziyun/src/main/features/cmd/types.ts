@@ -1,5 +1,3 @@
-import type { Cmd } from "./cmd";
-
 export interface AutoInputToVCParams {
   zx: string;
   zh: string;
@@ -21,18 +19,5 @@ export interface IPCContract {
   "WIN/isRunAsAdmin": {
     args: [];
     return: boolean;
-  };
-
-  "CMD/open": {
-    args: [];
-    return: ReturnType<Cmd["openDevice"]>;
-  };
-  "CMD/close": {
-    args: [];
-    return: ReturnType<Cmd["closeDevice"]>;
-  };
-  "CMD/set-db": {
-    args: [number, number];
-    return: ReturnType<Cmd["itsSetDB"]>;
   };
 }

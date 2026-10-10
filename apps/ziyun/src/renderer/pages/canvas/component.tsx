@@ -1,5 +1,6 @@
 import { useCMDClose, useCMDOpen } from "#renderer/api/cmd";
 import { NumberField } from "#renderer/components/number";
+import { useChannelInputs } from "#renderer/hooks/stores/use-channel-inputs";
 import { ipc } from "#renderer/lib/ipc";
 import {
   Box,
@@ -29,7 +30,10 @@ interface Point {
 }
 
 export const Component = () => {
-  const [db, setDB] = React.useState(0);
+  const [channel, setChannel] = React.useState("1-0");
+
+  const inputs = useChannelInputs((s) => s.inputs);
+  const db = inputs.find((input) => input.channel === channel)?.db || 0;
 
   const ref = React.useRef<HTMLCanvasElement>(null);
   const pointRef = React.useRef<Point>({ x: 0, y: 0 });
@@ -110,12 +114,6 @@ export const Component = () => {
     };
   }, [theme.palette.divider, theme.palette.text.primary]);
 
-  React.useEffect(() => {
-    if (db) {
-      ipc.invoke("CMD/set-db", db, 0);
-    }
-  }, [db]);
-
   return (
     <Box>
       <Card>
@@ -147,7 +145,19 @@ export const Component = () => {
               <NumberField
                 field={{
                   value: db,
-                  onChange: setDB,
+                  onChange: (value) => {
+                    useChannelInputs.setState((draft) => {
+                      const item = draft.inputs.find(
+                        (input) => input.channel === channel,
+                      );
+
+                      if (!item) {
+                        return;
+                      }
+
+                      item.db = value;
+                    });
+                  },
                   onBlur: () => {},
                 }}
                 fullWidth

@@ -1,35 +1,85 @@
+import { CHANNEL_INPUTS_STORAGE_KEY } from "#shared/instances/constants";
+import type { CHANNEL_INPUTS } from "#shared/instances/schema";
+import { channelInputSchema } from "#shared/instances/schema";
 import addon from "@yanglee2421/cpp-addon";
 import dayjs from "dayjs";
 import { BrowserWindow } from "electron";
 import type { Subscription } from "rxjs";
-import { EMPTY, interval, map, Subject, switchMap, tap } from "rxjs";
+import {
+  BehaviorSubject,
+  EMPTY,
+  filter,
+  interval,
+  map,
+  switchMap,
+  tap,
+} from "rxjs";
+import type { AppCradle } from "../types";
 import type { AutoInputToVCParams } from "./types";
 
 export class Cmd {
-  private readonly open$ = new Subject<boolean>();
-  private subscription: Subscription;
+  readonly state$: BehaviorSubject<CHANNEL_INPUTS>;
+  private subscriptions: Subscription[];
 
-  constructor() {
-    this.subscription = this.open$
+  constructor({ kv }: AppCradle) {
+    const stateJSON = kv.getItem(CHANNEL_INPUTS_STORAGE_KEY);
+    const data = stateJSON ? JSON.parse(stateJSON).state : {};
+    const state = channelInputSchema.parse(data);
+    this.state$ = new BehaviorSubject(state);
+
+    const subscription1 = kv.events$
       .pipe(
-        tap((open) => {
-          if (open) {
-            addon.TOFD_PORT_OpenDevice();
-            addon.ITS_init();
-            addon.TOFD_PORT_SetFrequency(5000);
-            addon.ITS_SetCh(1, 1, 0, 0);
-            addon.ITS_SetdB(900, 0);
-            addon.ITS_SetDis(68000, 68000);
-          } else {
-            addon.TOFD_PORT_CloseDevice();
+        filter((e) => e.key === CHANNEL_INPUTS_STORAGE_KEY),
+        map((e) => {
+          switch (e.action) {
+            case "set":
+              return channelInputSchema.parse(
+                e.value ? JSON.parse(e.value).state : {},
+              );
+            case "remove":
+            case "clear":
+              return channelInputSchema.parse({});
           }
         }),
-        switchMap((open) => {
+      )
+      .subscribe(this.state$);
+
+    const subscription2 = this.state$
+      .pipe(
+        tap((state) => {
+          const { open } = state;
+
+          if (open) {
+            console.log("open");
+
+            addon.TOFD_PORT_OpenDevice();
+            addon.ITS_init();
+          } else {
+            // addon.TOFD_PORT_CloseDevice();
+          }
+        }),
+        switchMap((state) => {
+          const { open, inputs } = state;
+
           if (!open) {
             return EMPTY;
           }
 
+          const input = inputs.find((input) => input.enabled);
+
+          if (!input) {
+            return EMPTY;
+          }
+
+          const [left, right] = input.channel.split("-").map((i) => +i);
+
           return interval(64).pipe(
+            tap(() => {
+              addon.TOFD_PORT_SetFrequency(5000);
+              addon.ITS_SetDis(68000, 68000);
+              addon.ITS_SetCh(left, left, right, right);
+              addon.ITS_SetdB(input.db, 0);
+            }),
             map(() => this.itsStart().left),
             tap((value) => {
               BrowserWindow.getAllWindows().forEach((win) => {
@@ -40,11 +90,15 @@ export class Cmd {
         }),
       )
       .subscribe();
+
+    this.subscriptions = [subscription1, subscription2];
   }
 
   dispose() {
-    this.subscription.unsubscribe();
-    this.open$.complete();
+    this.subscriptions.forEach((sub) => {
+      sub.unsubscribe();
+    });
+    this.state$.complete();
   }
 
   autoInputToVCNaive(data: AutoInputToVCParams) {
@@ -65,24 +119,6 @@ export class Cmd {
     return addon.isRunAsAdmin();
   }
 
-  openDevice() {
-    this.open$.next(true);
-  }
-  closeDevice() {
-    this.open$.next(false);
-  }
-  itsInit() {
-    return addon.ITS_init();
-  }
-  itsSetChannel() {
-    return addon.ITS_SetCh(1, 1, 0, 0);
-  }
-  itsSetDB(left: number, right: number) {
-    return addon.ITS_SetdB(left, right);
-  }
-  itsSetDis() {
-    return addon.ITS_SetDis(68000, 68000);
-  }
   itsStart() {
     const leftBuffer = Buffer.alloc(1024);
     const rightBuffer = Buffer.alloc(1024);

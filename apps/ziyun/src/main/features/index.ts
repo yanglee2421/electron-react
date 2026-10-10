@@ -22,7 +22,9 @@ import type { AppCradle } from "./types";
 export const container = createContainer<AppCradle>();
 
 container.register({
-  cmd: asClass(Cmd).singleton(),
+  cmd: asClass(Cmd)
+    .singleton()
+    .disposer((i) => i.dispose()),
   db: asClass(DB)
     .singleton()
     .disposer((i) => i.dispose()),
