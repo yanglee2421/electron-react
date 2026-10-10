@@ -1,4 +1,3 @@
-import { useCMDClose, useCMDOpen } from "#renderer/api/cmd";
 import { NumberField } from "#renderer/components/number";
 import { useChannelInputs } from "#renderer/hooks/stores/use-channel-inputs";
 import { ipc } from "#renderer/lib/ipc";
@@ -39,8 +38,6 @@ export const Component = () => {
   const pointRef = React.useRef<Point>({ x: 0, y: 0 });
   const enabledRef = React.useRef(false);
 
-  const open = useCMDOpen();
-  const close = useCMDClose();
   const theme = useTheme();
 
   React.useEffect(() => {
@@ -168,14 +165,18 @@ export const Component = () => {
         <CardActions>
           <Button
             onClick={() => {
-              open.mutate();
+              useChannelInputs.setState((draft) => {
+                draft.open = true;
+              });
             }}
           >
             open
           </Button>
           <Button
             onClick={() => {
-              close.mutate();
+              useChannelInputs.setState((draft) => {
+                draft.open = false;
+              });
             }}
           >
             close

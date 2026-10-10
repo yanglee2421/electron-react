@@ -13,6 +13,7 @@ import {
   map,
   switchMap,
   tap,
+  using,
 } from "rxjs";
 import type { AppCradle } from "../types";
 import type { AutoInputToVCParams } from "./types";
@@ -46,18 +47,6 @@ export class Cmd {
 
     const subscription2 = this.state$
       .pipe(
-        tap((state) => {
-          const { open } = state;
-
-          if (open) {
-            console.log("open");
-
-            addon.TOFD_PORT_OpenDevice();
-            addon.ITS_init();
-          } else {
-            // addon.TOFD_PORT_CloseDevice();
-          }
-        }),
         switchMap((state) => {
           const { open, inputs } = state;
 
@@ -71,21 +60,35 @@ export class Cmd {
             return EMPTY;
           }
 
-          const [left, right] = input.channel.split("-").map((i) => +i);
+          return using(
+            () => {
+              addon.TOFD_PORT_OpenDevice();
+              addon.ITS_init();
 
-          return interval(64).pipe(
-            tap(() => {
-              addon.TOFD_PORT_SetFrequency(5000);
-              addon.ITS_SetDis(68000, 68000);
-              addon.ITS_SetCh(left, left, right, right);
-              addon.ITS_SetdB(input.db, 0);
-            }),
-            map(() => this.itsStart().left),
-            tap((value) => {
-              BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send("buffer", value);
-              });
-            }),
+              return {
+                unsubscribe: () => {
+                  addon.TOFD_PORT_CloseDevice();
+                },
+              };
+            },
+            () => {
+              const [left, right] = input.channel.split("-").map((i) => +i);
+
+              return interval(64).pipe(
+                tap(() => {
+                  addon.TOFD_PORT_SetFrequency(5000);
+                  addon.ITS_SetDis(68000, 68000);
+                  addon.ITS_SetCh(left, left, right, right);
+                  addon.ITS_SetdB(input.db, 0);
+                }),
+                map(() => this.itsStart().left),
+                tap((value) => {
+                  BrowserWindow.getAllWindows().forEach((win) => {
+                    win.webContents.send("buffer", value);
+                  });
+                }),
+              );
+            },
           );
         }),
       )
