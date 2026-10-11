@@ -81,7 +81,14 @@ export class Cmd {
                   addon.ITS_SetCh(left, left, right, right);
                   addon.ITS_SetdB(input.db, 0);
                 }),
-                map(() => this.itsStart().left),
+                map(() => {
+                  const leftBuffer = Buffer.alloc(1024);
+                  const rightBuffer = Buffer.alloc(1024);
+
+                  addon.ITS_Start(leftBuffer, rightBuffer);
+
+                  return leftBuffer.buffer;
+                }),
                 tap((value) => {
                   BrowserWindow.getAllWindows().forEach((win) => {
                     win.webContents.send("buffer", value);
@@ -120,17 +127,5 @@ export class Cmd {
   }
   isRunAsAdmin() {
     return addon.isRunAsAdmin();
-  }
-
-  itsStart() {
-    const leftBuffer = Buffer.alloc(1024);
-    const rightBuffer = Buffer.alloc(1024);
-
-    addon.ITS_Start(leftBuffer, rightBuffer);
-
-    return {
-      left: [...leftBuffer],
-      right: [...rightBuffer],
-    };
   }
 }
