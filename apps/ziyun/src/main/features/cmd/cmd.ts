@@ -7,6 +7,7 @@ import { BrowserWindow } from "electron";
 import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
+  distinctUntilChanged,
   EMPTY,
   filter,
   interval,
@@ -47,16 +48,14 @@ export class Cmd {
 
     const subscription2 = this.state$
       .pipe(
+        distinctUntilChanged(
+          (prev, current) =>
+            prev.open === current.open && prev.interval === current.interval,
+        ),
         switchMap((state) => {
-          const { open, inputs } = state;
+          const { open } = state;
 
           if (!open) {
-            return EMPTY;
-          }
-
-          const input = inputs.find((input) => input.enabled);
-
-          if (!input) {
             return EMPTY;
           }
 
@@ -72,26 +71,37 @@ export class Cmd {
               };
             },
             () => {
-              const [left, right] = input.channel.split("-").map((i) => +i);
+              let index = 0;
 
-              return interval(64).pipe(
+              return interval(state.interval).pipe(
                 tap(() => {
-                  addon.TOFD_PORT_SetFrequency(5000);
-                  addon.ITS_SetDis(68000, 68000);
-                  addon.ITS_SetCh(left, left, right, right);
-                  addon.ITS_SetdB(input.db, 0);
-                }),
-                map(() => {
+                  const inputs = this.state$
+                    .getValue()
+                    .inputs.filter((input) => input.enabled);
+                  const input = inputs[index];
+                  index = (index + 1) % inputs.length;
+                  const [left, right] = input.channel.split("-").map((i) => +i);
                   const leftBuffer = Buffer.alloc(1024);
                   const rightBuffer = Buffer.alloc(1024);
 
+                  addon.TOFD_PORT_SetFrequency(5000);
+                  addon.ITS_SetDis(68000, 68000);
+                  addon.ITS_SetCh(left, left, right, right);
+                  addon.ITS_SetdB(left ? input.db : 0, right ? input.db : 0);
                   addon.ITS_Start(leftBuffer, rightBuffer);
 
-                  return leftBuffer.buffer;
-                }),
-                tap((value) => {
+                  let value: number[] = [];
+
+                  if (left) {
+                    value = [...leftBuffer];
+                  }
+
+                  if (right) {
+                    value = [...rightBuffer];
+                  }
+
                   BrowserWindow.getAllWindows().forEach((win) => {
-                    win.webContents.send("buffer", value);
+                    win.webContents.send(`buffer:${input.channel}`, value);
                   });
                 }),
               );

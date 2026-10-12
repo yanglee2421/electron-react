@@ -154,10 +154,12 @@ export const Layout = (props: React.PropsWithChildren) => {
                 );
               } else {
                 setSearchParams((searchParams) => {
-                  const previous = searchParams.get(SIDEBAR_SEARCH_KEY);
                   const search = new URLSearchParams(searchParams);
 
-                  search.set(SIDEBAR_SEARCH_KEY, previous === "1" ? "0" : "1");
+                  search.set(
+                    SIDEBAR_SEARCH_KEY,
+                    showSidebarUpSmall ? "0" : "1",
+                  );
 
                   return search;
                 });

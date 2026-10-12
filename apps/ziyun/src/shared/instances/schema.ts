@@ -173,6 +173,7 @@ export const plcSchema = z.object({
 
 export const channelInputSchema = z.object({
   open: z.boolean().default(false),
+  interval: z.int().default(64),
   inputs: z
     .object({
       channel: z.string(),

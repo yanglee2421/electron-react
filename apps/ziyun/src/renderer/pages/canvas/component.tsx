@@ -2,41 +2,37 @@ import { NumberField } from "#renderer/components/number";
 import { useChannelInputs } from "#renderer/hooks/stores/use-channel-inputs";
 import { ipc } from "#renderer/lib/ipc";
 import {
-  Box,
   Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
   Grid,
+  Stack,
+  Switch,
   useTheme,
 } from "@mui/material";
 import React from "react";
-import { BehaviorSubject, Observable, animationFrames, tap } from "rxjs";
-
-const list$ = new BehaviorSubject<number[]>([]);
-const buffer$ = new Observable<number[]>((sub) => {
-  const cleanup = ipc.on("buffer", (_, value: number[]) => {
-    sub.next(value);
-  });
-
-  return cleanup;
-});
+import {
+  BehaviorSubject,
+  EMPTY,
+  Observable,
+  animationFrameScheduler,
+  animationFrames,
+  auditTime,
+  fromEvent,
+  map,
+  merge,
+  switchMap,
+} from "rxjs";
 
 interface Point {
   x: number;
   y: number;
 }
 
-export const Component = () => {
-  const [channel, setChannel] = React.useState("1-0");
-
-  const inputs = useChannelInputs((s) => s.inputs);
-  const db = inputs.find((input) => input.channel === channel)?.db || 0;
-
+const useBufferChartRef = (channel: string) => {
   const ref = React.useRef<HTMLCanvasElement>(null);
-  const pointRef = React.useRef<Point>({ x: 0, y: 0 });
-  const enabledRef = React.useRef(false);
 
   const theme = useTheme();
 
@@ -53,136 +49,193 @@ export const Component = () => {
       return;
     }
 
-    const subscription = buffer$.subscribe(list$);
-    const sub2 = animationFrames()
+    const ipc$ = new Observable<number[]>((sub) => {
+      const cleanup = ipc.on(`buffer:${channel}`, (_, value: number[]) => {
+        sub.next(value);
+      });
+
+      return cleanup;
+    });
+    const mouseMove$ = fromEvent<MouseEvent>(el, "mousemove");
+    const mouseEnter$ = fromEvent<MouseEvent>(el, "mouseenter");
+    const mouseLeave$ = fromEvent<MouseEvent>(el, "mouseleave");
+    const showAxis$ = new BehaviorSubject<boolean>(false);
+    const buffer$ = new BehaviorSubject<number[]>([]);
+    const point$ = new BehaviorSubject<Point>({ x: 0, y: 0 });
+
+    const sub = merge(
+      mouseEnter$.pipe(map(() => true)),
+      mouseLeave$.pipe(map(() => false)),
+    ).subscribe(showAxis$);
+
+    const sub0 = showAxis$
       .pipe(
-        tap(() => {
-          ctx.clearRect(0, 0, 1024, 255);
-
-          const rect = el.getBoundingClientRect();
-          const list = list$.getValue();
-
-          ctx.beginPath();
-          ctx.strokeStyle = theme.palette.primary.main;
-          ctx.moveTo(0, 0);
-          list.forEach((height, index) => {
-            ctx.lineTo(index, 255 - height);
-          });
-          ctx.setLineDash([]);
-          ctx.stroke();
-          ctx.closePath();
-
-          if (enabledRef.current) {
-            const x = pointRef.current.x - rect.x;
-
-            ctx.beginPath();
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = theme.palette.divider;
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, 255);
-            ctx.setLineDash([10, 5]);
-            ctx.stroke();
-            ctx.closePath();
-            ctx.fillStyle = theme.palette.text.primary;
-            ctx.font = "14px serif";
-            ctx.fillText(x.toString(), x, 255);
-
-            const y = pointRef.current.y - rect.y;
-            const height = 255 - y;
-            ctx.beginPath();
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = theme.palette.divider;
-            ctx.moveTo(0, y);
-            ctx.lineTo(1024, y);
-            ctx.setLineDash([10, 5]);
-            ctx.stroke();
-            ctx.closePath();
-            ctx.fillStyle = theme.palette.text.primary;
-            ctx.font = "14px serif";
-            ctx.fillText(height.toString(), 0, y);
+        switchMap((enter) => {
+          if (!enter) {
+            return EMPTY;
           }
+
+          return mouseMove$;
         }),
+        auditTime(0, animationFrameScheduler),
+        map((e) => ({ x: e.clientX, y: e.clientY })),
       )
-      .subscribe();
+      .subscribe(point$);
+
+    const sub1 = ipc$.subscribe(buffer$);
+
+    const sub2 = animationFrames().subscribe(() => {
+      ctx.clearRect(0, 0, 1024, 255);
+
+      const rect = el.getBoundingClientRect();
+      const list = buffer$.getValue();
+
+      ctx.beginPath();
+      ctx.strokeStyle = theme.palette.primary.main;
+      ctx.moveTo(0, 0);
+      list.forEach((height, index) => {
+        ctx.lineTo(index, 255 - height);
+      });
+      ctx.stroke();
+
+      if (showAxis$.getValue()) {
+        const point = point$.getValue();
+        const x = Math.floor(point.x - rect.x);
+        const y = Math.floor(point.y - rect.y);
+        const height = 255 - y;
+
+        ctx.strokeStyle = theme.palette.error.main;
+        ctx.fillStyle = theme.palette.text.primary;
+        ctx.font = "14px serif";
+
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, 255);
+        ctx.stroke();
+        ctx.fillText(x.toString(), x, 255);
+
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(1024, y);
+        ctx.stroke();
+        ctx.fillText(height.toString(), 0, y);
+      }
+    });
+
+    const subscritions = [sub, sub0, sub1, sub2];
 
     return () => {
-      subscription.unsubscribe();
-      sub2.unsubscribe();
+      subscritions.forEach((sub) => {
+        sub.unsubscribe();
+      });
     };
-  }, [theme.palette.divider, theme.palette.text.primary]);
+  }, [
+    theme.palette.primary.main,
+    theme.palette.error.main,
+    theme.palette.text.primary,
+  ]);
+
+  return ref;
+};
+
+interface BufferChartProps {
+  channel: string;
+}
+
+const BufferChart = (props: BufferChartProps) => {
+  const ref = useBufferChartRef(props.channel);
+
+  const inputs = useChannelInputs((s) => s.inputs);
+  const input = inputs.find((input) => Object.is(input.channel, props.channel));
+  const db = input?.db || 0;
+  const enabled = input?.enabled || false;
 
   return (
-    <Box>
-      <Card>
-        <CardHeader title="A" />
-        <canvas
-          ref={ref}
-          width={1024}
-          height={255}
-          style={{
-            // width: 500,
-            // height: 400,
-          }}
-          onMouseMove={(e) => {
-            pointRef.current = {
-              x: e.clientX,
-              y: e.clientY,
-            };
-          }}
-          onMouseEnter={() => {
-            enabledRef.current = true;
-          }}
-          onMouseLeave={() => {
-            enabledRef.current = false;
-          }}
-        />
-        <CardContent>
-          <Grid container spacing={1.5}>
-            <Grid size={12}>
-              <NumberField
-                field={{
-                  value: db,
-                  onChange: (value) => {
-                    useChannelInputs.setState((draft) => {
-                      const item = draft.inputs.find(
-                        (input) => input.channel === channel,
-                      );
+    <Card>
+      <CardHeader
+        title={input?.channel}
+        action={
+          <Switch
+            checked={enabled}
+            onChange={(_, checked) => {
+              useChannelInputs.setState((draft) => {
+                const input = draft.inputs.find((input) =>
+                  Object.is(input.channel, props.channel),
+                );
 
-                      if (!item) {
-                        return;
-                      }
+                if (input) {
+                  input.enabled = checked;
+                }
+              });
+            }}
+          />
+        }
+      />
+      <canvas
+        ref={ref}
+        width={1024}
+        height={255}
+        style={{
+          // width: 500,
+          // height: 400,
+        }}
+      />
+      <CardContent>
+        <Grid container spacing={1.5}>
+          <Grid size={12}>
+            <NumberField
+              field={{
+                value: db,
+                onChange: (value) => {
+                  useChannelInputs.setState((draft) => {
+                    const input = draft.inputs.find((input) =>
+                      Object.is(input.channel, props.channel),
+                    );
 
-                      item.db = value;
-                    });
-                  },
-                  onBlur: () => {},
-                }}
-                fullWidth
-              />
-            </Grid>
+                    if (input) {
+                      input.db = value;
+                    }
+                  });
+                },
+                onBlur: () => {},
+              }}
+              fullWidth
+            />
           </Grid>
-        </CardContent>
-        <CardActions>
-          <Button
-            onClick={() => {
-              useChannelInputs.setState((draft) => {
-                draft.open = true;
-              });
-            }}
-          >
-            open
-          </Button>
-          <Button
-            onClick={() => {
-              useChannelInputs.setState((draft) => {
-                draft.open = false;
-              });
-            }}
-          >
-            close
-          </Button>
-        </CardActions>
-      </Card>
-    </Box>
+        </Grid>
+      </CardContent>
+      <CardActions>
+        <Button
+          onClick={() => {
+            useChannelInputs.setState((draft) => {
+              draft.open = true;
+            });
+          }}
+        >
+          open
+        </Button>
+        <Button
+          onClick={() => {
+            useChannelInputs.setState((draft) => {
+              draft.open = false;
+            });
+          }}
+        >
+          close
+        </Button>
+      </CardActions>
+    </Card>
+  );
+};
+
+export const Component = () => {
+  const inputs = useChannelInputs((s) => s.inputs);
+
+  return (
+    <Stack spacing={1.5}>
+      {inputs.map((input) => {
+        return <BufferChart channel={input.channel} key={input.channel} />;
+      })}
+    </Stack>
   );
 };
