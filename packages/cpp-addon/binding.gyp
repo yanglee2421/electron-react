@@ -5,23 +5,6 @@
       "sources": [
         "<!@(node get-source-file.cjs)"
       ],
-      "copies": [
-        {
-          "destination": "<(PRODUCT_DIR)",
-          "files": [
-            "<(module_root_dir)/lib/TOFDPort.dll",
-            "<(module_root_dir)/lib/ftd2xx.dll",
-            "<(module_root_dir)/lib/GainTable.ini",
-          ]
-        }
-      ],
-      "include_dirs": [
-        "<!@(node -p \"require('node-addon-api').include\")",
-        "<(module_root_dir)/lib"
-      ],
-      "libraries": [
-        "<(module_root_dir)/lib/TOFDPort.lib"
-      ],
       "dependencies": [
         "<!(node -p \"require('node-addon-api').gyp\")"
       ],
@@ -29,6 +12,9 @@
         [
           "OS=='linux'",
           {
+            "include_dirs": [
+              "<!@(node -p \"require('node-addon-api').include\")"
+            ],
             "cflags": [
               "-fpermissive",
               "-fexceptions"
@@ -54,7 +40,24 @@
                   "user32.lib"
                 ]
               }
-            }
+            },
+            "include_dirs": [
+              "<!@(node -p \"require('node-addon-api').include\")",
+              "<(module_root_dir)/lib/win"
+            ],
+            "libraries": [
+              "<(module_root_dir)/lib/win/TOFDPort.lib"
+            ],
+            "copies": [
+              {
+                "destination": "<(PRODUCT_DIR)",
+                "files": [
+                  "<(module_root_dir)/lib/win/TOFDPort.dll",
+                  "<(module_root_dir)/lib/win/ftd2xx.dll",
+                  "<(module_root_dir)/lib/win/GainTable.ini"
+                ]
+              }
+            ]
           }
         ]
       ]
