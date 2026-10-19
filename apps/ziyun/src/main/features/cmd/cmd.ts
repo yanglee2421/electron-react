@@ -54,6 +54,7 @@ export class Cmd {
         ),
         switchMap((state) => {
           const { open } = state;
+          console.log(state.open);
 
           if (!open) {
             return EMPTY;
@@ -90,18 +91,21 @@ export class Cmd {
                   addon.ITS_SetdB(left ? input.db : 0, right ? input.db : 0);
                   addon.ITS_Start(leftBuffer, rightBuffer);
 
-                  let value: number[] = [];
+                  let value: Uint8Array;
 
                   if (left) {
-                    value = [...leftBuffer];
+                    value = new Uint8Array(leftBuffer);
                   }
 
                   if (right) {
-                    value = [...rightBuffer];
+                    value = new Uint8Array(rightBuffer);
                   }
 
                   BrowserWindow.getAllWindows().forEach((win) => {
-                    win.webContents.send(`buffer:${input.channel}`, value);
+                    win.webContents.send(`buffer`, {
+                      channel: input.channel,
+                      buffer: value,
+                    });
                   });
                 }),
               );

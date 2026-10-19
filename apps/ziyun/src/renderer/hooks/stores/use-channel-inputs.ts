@@ -12,5 +12,6 @@ export const useChannelInputs = create<CHANNEL_INPUTS>()(
   persist(immer(initializeState), {
     name: CHANNEL_INPUTS_STORAGE_KEY,
     storage: createJSONStorage(() => ipc),
+    version: 0,
   }),
 );

@@ -171,6 +171,30 @@ export const plcSchema = z.object({
   d: bitsSchema,
 });
 
+const defaultValue = () => {
+  const value = [];
+
+  for (let i = 1; i < 32; i++) {
+    if (i < 19) {
+      value.push({
+        channel: `${i}-0`,
+        db: 100,
+        enabled: true,
+        gates: [],
+      });
+    } else {
+      value.push({
+        channel: `0-${i - 18}`,
+        db: 100,
+        enabled: true,
+        gates: [],
+      });
+    }
+  }
+
+  return value;
+};
+
 export const channelInputSchema = z.object({
   open: z.boolean().default(false),
   interval: z.int().default(64),
@@ -179,25 +203,17 @@ export const channelInputSchema = z.object({
       channel: z.string(),
       db: z.number(),
       enabled: z.boolean(),
+      gates: z
+        .object({
+          width: z.number(),
+          x: z.number(),
+          y: z.number(),
+        })
+        .array()
+        .default([]),
     })
     .array()
-    .default([
-      {
-        channel: "1-0",
-        db: 0,
-        enabled: true,
-      },
-      {
-        channel: "2-0",
-        db: 0,
-        enabled: false,
-      },
-      {
-        channel: "0-1",
-        db: 0,
-        enabled: false,
-      },
-    ]),
+    .default([]),
 });
 
 export type HXZY_HMIS = z.infer<typeof hxzy_hmis>;

@@ -9,11 +9,7 @@
   },
   "scripts": {
     "dev": "tsdown",
-    "build": "tsdown",
-    "build:electron": "electron-rebuild",
-    "gyp:configure": "node-gyp configure",
-    "gyp:build": "node-gyp build",
-    "gyp:rebuild": "node-gyp rebuild"
+    "build": "node-gyp rebuild && tsdown"
   },
   "devDependencies": {
     "node-addon-api": "^8.8.0",

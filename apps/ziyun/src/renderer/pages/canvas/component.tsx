@@ -1,240 +1,258 @@
-import { NumberField } from "#renderer/components/number";
 import { useChannelInputs } from "#renderer/hooks/stores/use-channel-inputs";
 import { ipc } from "#renderer/lib/ipc";
 import {
-  Button,
   Card,
-  CardActions,
   CardContent,
   CardHeader,
+  Divider,
+  FormControlLabel,
   Grid,
   Stack,
+  styled,
   Switch,
-  useTheme,
 } from "@mui/material";
 import React from "react";
-import {
-  BehaviorSubject,
-  EMPTY,
-  Observable,
-  animationFrameScheduler,
-  animationFrames,
-  auditTime,
-  fromEvent,
-  map,
-  merge,
-  switchMap,
-} from "rxjs";
+import type { Subscription } from "rxjs";
+import { Observable } from "rxjs";
+import { useShallow } from "zustand/shallow";
+import type { MessageAction } from "./worker";
+import workerPath from "./worker?worker&url";
 
-interface Point {
-  x: number;
-  y: number;
+const Input = styled("input")({
+  display: "block",
+  width: "100%",
+});
+
+interface FrameMessage {
+  channel: string;
+  buffer: Uint8Array;
 }
 
-const useBufferChartRef = (channel: string) => {
-  const ref = React.useRef<HTMLCanvasElement>(null);
+const frame$ = new Observable<FrameMessage>((sub) => {
+  const cleanup = ipc.on(`buffer`, (_, value: FrameMessage) => {
+    sub.next(value);
+  });
 
-  const theme = useTheme();
+  return cleanup;
+});
+
+class WorkerCanvas {
+  private readonly worker = new Worker(workerPath, { type: "module" });
+  private readonly canvas = new Map<string, HTMLCanvasElement>();
+  private readonly subscriptions: Subscription[];
+
+  constructor() {
+    const sub1 = frame$.subscribe((frame) => {
+      this.sendMessage({
+        type: "set-buffer",
+        payload: { channel: frame.channel, buffer: frame.buffer },
+      });
+    });
+
+    this.subscriptions = [sub1];
+  }
+
+  dispose() {
+    this.subscriptions.forEach((sub) => {
+      sub.unsubscribe();
+    });
+    this.canvas.forEach((c) => {
+      c.remove();
+    });
+    this.canvas.clear();
+    this.worker.terminate();
+  }
+
+  sendMessage(
+    action: MessageAction,
+    transferable?: StructuredSerializeOptions,
+  ) {
+    this.worker.postMessage(action, transferable);
+  }
+
+  createCanvas(channel: string, parent: Node) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1024;
+    canvas.height = 255;
+    const offscreen = canvas.transferControlToOffscreen();
+    this.sendMessage(
+      { type: "set-canvas", payload: { channel, canvas: offscreen } },
+      { transfer: [offscreen] },
+    );
+    parent.appendChild(canvas);
+    this.canvas.set(channel, canvas);
+  }
+
+  removeCanvas(channel: string) {
+    this.sendMessage({ type: "remove-canvas", payload: { channel } });
+    this.getCanvas(channel)?.remove();
+    this.canvas.delete(channel);
+  }
+
+  getCanvas(channel: string) {
+    return this.canvas.get(channel);
+  }
+}
+
+export const Component = () => {
+  const canvasRef = React.useRef<Map<string, HTMLDivElement>>(null);
+  const workerRef = React.useRef<WorkerCanvas>(null);
+
+  const inputs = useChannelInputs((s) => s.inputs);
+  const interval = useChannelInputs((s) => s.interval);
+  const open = useChannelInputs((s) => s.open);
+  const channels = useChannelInputs(
+    useShallow((s) => s.inputs.map((i) => i.channel)),
+  );
 
   React.useEffect(() => {
-    const el = ref.current;
+    workerRef.current = new WorkerCanvas();
 
-    if (!el) {
-      return;
-    }
+    return () => {
+      workerRef.current?.dispose();
+    };
+  }, []);
 
-    const ctx = el.getContext("2d");
+  React.useEffect(() => {
+    channels.forEach((c) => {
+      const canvas = canvasRef.current?.get(c);
 
-    if (!ctx) {
-      return;
-    }
-
-    const ipc$ = new Observable<number[]>((sub) => {
-      const cleanup = ipc.on(`buffer:${channel}`, (_, value: number[]) => {
-        sub.next(value);
-      });
-
-      return cleanup;
-    });
-    const mouseMove$ = fromEvent<MouseEvent>(el, "mousemove");
-    const mouseEnter$ = fromEvent<MouseEvent>(el, "mouseenter");
-    const mouseLeave$ = fromEvent<MouseEvent>(el, "mouseleave");
-    const showAxis$ = new BehaviorSubject<boolean>(false);
-    const buffer$ = new BehaviorSubject<number[]>([]);
-    const point$ = new BehaviorSubject<Point>({ x: 0, y: 0 });
-
-    const sub = merge(
-      mouseEnter$.pipe(map(() => true)),
-      mouseLeave$.pipe(map(() => false)),
-    ).subscribe(showAxis$);
-
-    const sub0 = showAxis$
-      .pipe(
-        switchMap((enter) => {
-          if (!enter) {
-            return EMPTY;
-          }
-
-          return mouseMove$;
-        }),
-        auditTime(0, animationFrameScheduler),
-        map((e) => ({ x: e.clientX, y: e.clientY })),
-      )
-      .subscribe(point$);
-
-    const sub1 = ipc$.subscribe(buffer$);
-
-    const sub2 = animationFrames().subscribe(() => {
-      ctx.clearRect(0, 0, 1024, 255);
-
-      const rect = el.getBoundingClientRect();
-      const list = buffer$.getValue();
-
-      ctx.beginPath();
-      ctx.strokeStyle = theme.palette.primary.main;
-      ctx.moveTo(0, 0);
-      list.forEach((height, index) => {
-        ctx.lineTo(index, 255 - height);
-      });
-      ctx.stroke();
-
-      if (showAxis$.getValue()) {
-        const point = point$.getValue();
-        const x = Math.floor(point.x - rect.x);
-        const y = Math.floor(point.y - rect.y);
-        const height = 255 - y;
-
-        ctx.strokeStyle = theme.palette.error.main;
-        ctx.fillStyle = theme.palette.text.primary;
-        ctx.font = "14px serif";
-
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, 255);
-        ctx.stroke();
-        ctx.fillText(x.toString(), x, 255);
-
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(1024, y);
-        ctx.stroke();
-        ctx.fillText(height.toString(), 0, y);
+      if (canvas) {
+        workerRef.current?.createCanvas(c, canvas);
       }
     });
 
-    const subscritions = [sub, sub0, sub1, sub2];
-
     return () => {
-      subscritions.forEach((sub) => {
-        sub.unsubscribe();
+      channels.forEach((c) => {
+        workerRef.current?.removeCanvas(c);
       });
     };
-  }, [
-    theme.palette.primary.main,
-    theme.palette.error.main,
-    theme.palette.text.primary,
-  ]);
+  }, [channels]);
 
-  return ref;
-};
-
-interface BufferChartProps {
-  channel: string;
-}
-
-const BufferChart = (props: BufferChartProps) => {
-  const ref = useBufferChartRef(props.channel);
-
-  const inputs = useChannelInputs((s) => s.inputs);
-  const input = inputs.find((input) => Object.is(input.channel, props.channel));
-  const db = input?.db || 0;
-  const enabled = input?.enabled || false;
-
-  return (
-    <Card>
-      <CardHeader
-        title={input?.channel}
-        action={
-          <Switch
-            checked={enabled}
-            onChange={(_, checked) => {
-              useChannelInputs.setState((draft) => {
-                const input = draft.inputs.find((input) =>
-                  Object.is(input.channel, props.channel),
-                );
-
-                if (input) {
-                  input.enabled = checked;
-                }
-              });
-            }}
-          />
-        }
-      />
-      <canvas
-        ref={ref}
-        width={1024}
-        height={255}
-        style={{
-          // width: 500,
-          // height: 400,
-        }}
-      />
-      <CardContent>
-        <Grid container spacing={1.5}>
-          <Grid size={12}>
-            <NumberField
-              field={{
-                value: db,
-                onChange: (value) => {
-                  useChannelInputs.setState((draft) => {
-                    const input = draft.inputs.find((input) =>
-                      Object.is(input.channel, props.channel),
-                    );
-
-                    if (input) {
-                      input.db = value;
-                    }
-                  });
-                },
-                onBlur: () => {},
-              }}
-              fullWidth
-            />
-          </Grid>
-        </Grid>
-      </CardContent>
-      <CardActions>
-        <Button
-          onClick={() => {
-            useChannelInputs.setState((draft) => {
-              draft.open = true;
-            });
-          }}
-        >
-          open
-        </Button>
-        <Button
-          onClick={() => {
-            useChannelInputs.setState((draft) => {
-              draft.open = false;
-            });
-          }}
-        >
-          close
-        </Button>
-      </CardActions>
-    </Card>
-  );
-};
-
-export const Component = () => {
-  const inputs = useChannelInputs((s) => s.inputs);
+  React.useEffect(() => {
+    inputs.forEach((input) => {
+      workerRef.current?.sendMessage({
+        type: "set-gate",
+        payload: {
+          channel: input.channel,
+          gates: input.gates,
+        },
+      });
+    });
+  }, [inputs]);
 
   return (
     <Stack spacing={1.5}>
-      {inputs.map((input) => {
-        return <BufferChart channel={input.channel} key={input.channel} />;
+      <Card>
+        <CardHeader title="Header" />
+        <CardContent>
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={open}
+                    onChange={(_, checked) => {
+                      useChannelInputs.setState((draft) => {
+                        draft.open = checked;
+                      });
+                    }}
+                  />
+                }
+                label="启用"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Input
+                type="number"
+                value={interval}
+                onChange={(e) => {
+                  useChannelInputs.setState((draft) => {
+                    draft.interval = e.target.valueAsNumber;
+                  });
+                }}
+                min={0}
+                max={1024}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+      {inputs.map((channel, chIndex) => {
+        return (
+          <Card key={channel.channel}>
+            <CardContent>
+              <div
+                data-channel={channel}
+                ref={(el) => {
+                  if (!el) {
+                    return;
+                  }
+
+                  canvasRef.current ??= new Map();
+                  const eles = canvasRef.current;
+                  eles.set(channel.channel, el);
+
+                  return () => {
+                    eles.delete(channel.channel);
+                  };
+                }}
+              ></div>
+            </CardContent>
+            <Divider />
+            <CardContent>
+              <Grid container spacing={1.5}>
+                <Grid size={12}>
+                  <Input
+                    type="number"
+                    value={channel.db}
+                    onChange={(e) => {
+                      useChannelInputs.setState((draft) => {
+                        draft.inputs[chIndex].db = e.target.valueAsNumber;
+                      });
+                    }}
+                  />
+                </Grid>
+                {channel.gates.map((gate, index) => {
+                  return (
+                    <Grid size={12} key={index}>
+                      <Input
+                        type="number"
+                        value={gate.x}
+                        onChange={(e) => {
+                          useChannelInputs.setState((draft) => {
+                            draft.inputs[chIndex].gates[index].x =
+                              e.target.valueAsNumber;
+                          });
+                        }}
+                      />
+                      <Input
+                        type="number"
+                        value={gate.y}
+                        onChange={(e) => {
+                          useChannelInputs.setState((draft) => {
+                            draft.inputs[chIndex].gates[index].y =
+                              e.target.valueAsNumber;
+                          });
+                        }}
+                      />
+                      <Input
+                        type="number"
+                        value={gate.width}
+                        onChange={(e) => {
+                          useChannelInputs.setState((draft) => {
+                            draft.inputs[chIndex].gates[index].width =
+                              e.target.valueAsNumber;
+                          });
+                        }}
+                      />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </CardContent>
+          </Card>
+        );
       })}
     </Stack>
   );
