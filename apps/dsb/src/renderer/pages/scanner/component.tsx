@@ -1,3 +1,5 @@
+import { NavLink } from "react-router";
+
 export const Component = () => {
   return (
     <>
@@ -10,6 +12,7 @@ export const Component = () => {
           <button>submit</button>
         </div>
       </form>
+      <NavLink to={"/canvas"}>canvas</NavLink>
     </>
   );
 };

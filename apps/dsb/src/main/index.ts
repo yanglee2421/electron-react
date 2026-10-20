@@ -92,7 +92,8 @@ const app$ = defer(() => {
       const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
       container.register({ DB_PATH: asValue(DB_PATH) });
 
-      const { kv } = container.cradle;
+      const { kv, cmd } = container.cradle;
+      void cmd;
 
       return zip([kvIpc(kv)]);
     }),
@@ -108,7 +109,7 @@ const app$ = defer(() => {
   takeUntil(willQuit$),
   finalize(() => {
     container.dispose();
-    app.quit();
+    // app.quit();
   }),
 );
 
@@ -138,5 +139,3 @@ windowAllClosed$
     tap(() => app.quit()),
   )
   .subscribe();
-
-console.log(app.getName());

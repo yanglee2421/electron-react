@@ -1,8 +1,4 @@
-import { CHANNEL_INPUTS_STORAGE_KEY } from "#shared/instances/constants";
-import type { CHANNEL_INPUTS } from "#shared/instances/schema";
-import { channelInputSchema } from "#shared/instances/schema";
-import addon from "@yanglee2421/cpp-addon";
-import dayjs from "dayjs";
+import addon from "@yanglee2421/union-addon";
 import { BrowserWindow } from "electron";
 import type { Subscription } from "rxjs";
 import {
@@ -16,8 +12,55 @@ import {
   tap,
   using,
 } from "rxjs";
+import { z } from "zod";
 import type { AppCradle } from "../types";
-import type { AutoInputToVCParams } from "./types";
+
+const defaultValue = () => {
+  const value = [];
+
+  for (let i = 1; i < 32; i++) {
+    if (i < 19) {
+      value.push({
+        channel: `${i}-0`,
+        db: 100,
+        enabled: true,
+        gates: [],
+      });
+    } else {
+      value.push({
+        channel: `0-${i - 18}`,
+        db: 100,
+        enabled: true,
+        gates: [],
+      });
+    }
+  }
+
+  return value;
+};
+
+const CHANNEL_INPUTS_STORAGE_KEY = "channel_inputs";
+const channelInputSchema = z.object({
+  open: z.boolean().default(false),
+  interval: z.int().default(64),
+  inputs: z
+    .object({
+      channel: z.string(),
+      db: z.number(),
+      enabled: z.boolean(),
+      gates: z
+        .object({
+          width: z.number(),
+          x: z.number(),
+          y: z.number(),
+        })
+        .array()
+        .default([]),
+    })
+    .array()
+    .default(defaultValue()),
+});
+type CHANNEL_INPUTS = z.infer<typeof channelInputSchema>;
 
 export class Cmd {
   readonly state$: BehaviorSubject<CHANNEL_INPUTS>;
@@ -29,7 +72,7 @@ export class Cmd {
     const state = channelInputSchema.parse(data);
     this.state$ = new BehaviorSubject(state);
 
-    const subscription1 = kv.events$
+    const subscription1 = kv.event$
       .pipe(
         filter((e) => e.key === CHANNEL_INPUTS_STORAGE_KEY),
         map((e) => {
@@ -54,7 +97,6 @@ export class Cmd {
         ),
         switchMap((state) => {
           const { open } = state;
-          console.log(state.open);
 
           if (!open) {
             return EMPTY;
@@ -123,23 +165,5 @@ export class Cmd {
       sub.unsubscribe();
     });
     this.state$.complete();
-  }
-
-  autoInputToVCNaive(data: AutoInputToVCParams) {
-    return addon.autoInputToVC(
-      data.zx,
-      data.zh,
-      data.czzzdw,
-      data.sczzdw,
-      data.mczzdw,
-      dayjs(data.czzzrq).format("YYYYMM"),
-      dayjs(data.sczzrq).format("YYYYMMDD"),
-      dayjs(data.mczzrq).format("YYYYMMDD"),
-      +data.ztx,
-      +data.ytx,
-    );
-  }
-  isRunAsAdmin() {
-    return addon.isRunAsAdmin();
   }
 }

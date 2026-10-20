@@ -1,6 +1,7 @@
 import { asClass, createContainer } from "awilix";
 import { AppDB } from "./app-db/app-db";
 import { AppProfile } from "./app-profile/app-profile";
+import { Cmd } from "./cmd";
 import { KV } from "./kv/kv";
 import type { AppCradle } from "./types";
 
@@ -18,4 +19,8 @@ container.register({
     .singleton()
     .disposer((i) => i.dispose()),
   appProfile: asClass(AppProfile).singleton(),
+
+  cmd: asClass(Cmd)
+    .singleton()
+    .disposer((i) => i.dispose()),
 });

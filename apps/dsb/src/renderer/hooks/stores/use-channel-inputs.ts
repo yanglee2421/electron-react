@@ -30,7 +30,6 @@ const defaultValue = () => {
   return value;
 };
 
-export type CHANNEL_INPUTS = z.infer<typeof channelInputSchema>;
 export const channelInputSchema = z.object({
   open: z.boolean().default(false),
   interval: z.int().default(64),
@@ -51,6 +50,7 @@ export const channelInputSchema = z.object({
     .array()
     .default(defaultValue()),
 });
+export type CHANNEL_INPUTS = z.infer<typeof channelInputSchema>;
 
 const initializeState = () => channelInputSchema.parse({});
 
@@ -58,6 +58,6 @@ export const useChannelInputs = create<CHANNEL_INPUTS>()(
   persist(immer(initializeState), {
     name: CHANNEL_INPUTS_STORAGE_KEY,
     storage: createJSONStorage(() => ipc),
-    version: 0,
+    version: 2,
   }),
 );

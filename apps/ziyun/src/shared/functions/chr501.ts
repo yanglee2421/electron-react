@@ -99,7 +99,7 @@ export const calcFlaws = (datas: FlawLike[], channel: number): string[] => {
 
   switch (channel) {
     case 0:
-      return flaws.map((i) => i.toString());
+      return flaws.toReversed().map((i) => i.toString());
     case 1:
       return calcXhcFlaws(flaws).map((i) => i.toString());
     case 2:

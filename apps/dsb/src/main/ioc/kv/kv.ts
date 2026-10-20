@@ -3,10 +3,10 @@ import { eq } from "drizzle-orm";
 import { Subject } from "rxjs";
 import type { DBClient } from "../app-db/app-db";
 import type { AppCradle } from "../types";
+import type { KVEvent } from "./types";
 
 export class KV {
-  private event$ = new Subject();
-
+  readonly event$ = new Subject<KVEvent>();
   private db: DBClient;
 
   constructor({ appDB }: AppCradle) {
@@ -39,11 +39,11 @@ export class KV {
         set: { value },
       })
       .run();
-    this.event$.next({ action: "setItem", key, value });
+    this.event$.next({ action: "set", key, value });
   }
   removeItem(key: string) {
     this.db.delete(schema.kvTable).where(eq(schema.kvTable.key, key)).run();
-    this.event$.next({ action: "removeItem", key });
+    this.event$.next({ action: "remove", key });
   }
   clear() {
     this.db.delete(schema.kvTable).run();

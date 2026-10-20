@@ -18,3 +18,9 @@ export interface IPC {
     return: ReturnType<KV["clear"]>;
   };
 }
+
+export interface KVEvent {
+  action: "set" | "remove" | "clear";
+  key?: string;
+  value?: string;
+}
