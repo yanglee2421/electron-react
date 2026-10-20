@@ -1,4 +1,3 @@
-import { ipc as kvIpc } from "#main/ioc/kv/ipc";
 import { is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import { app, BrowserWindow } from "electron";
@@ -16,11 +15,13 @@ import {
   ignoreElements,
   map,
   mergeMap,
+  Observable,
   of,
+  partition,
+  switchMap,
   take,
   takeUntil,
   tap,
-  zip,
 } from "rxjs";
 import { container } from "./ioc";
 
@@ -55,6 +56,15 @@ const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
   }
 };
 
+const hasLocked$ = defer(() => {
+  const hasLocked = app.requestSingleInstanceLock();
+
+  return of(hasLocked);
+});
+const [lockedSuccess$, lockFailed$] = partition(
+  hasLocked$,
+  (hasLock) => hasLock,
+);
 const whenReady$ = from(app.whenReady());
 const willQuit$ = fromEventPattern(
   (f) => app.on("will-quit", f),
@@ -72,32 +82,29 @@ const secondInstance$ = fromEventPattern(
   (f) => app.on("second-instance", f),
   (f) => app.off("second-instance", f),
 );
+const ioc$ = new Observable((sub) => {
+  const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
+  container.register({ DB_PATH: asValue(DB_PATH) });
+
+  const { kv, cmd } = container.cradle;
+
+  return () => {
+    container.dispose();
+  };
+});
+const startup$ = concat(whenReady$);
+
+lockFailed$.subscribe(() => {
+  console.warn(
+    "Another instance of the app is already running. This instance will be closed.",
+  );
+  app.quit();
+});
+
+lockedSuccess$.pipe(switchMap(() => whenReady$)).subscribe();
 
 const app$ = defer(() => {
-  const hasLocked = app.requestSingleInstanceLock();
-
-  if (!hasLocked) {
-    return of(null).pipe(
-      tap(() => {
-        console.warn(
-          "Another instance of the app is already running. This instance will be closed.",
-        );
-      }),
-    );
-  }
-
-  return concat(
-    whenReady$.pipe(ignoreElements()),
-    defer(() => {
-      const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
-      container.register({ DB_PATH: asValue(DB_PATH) });
-
-      const { kv, cmd } = container.cradle;
-      void cmd;
-
-      return zip([kvIpc(kv)]);
-    }),
-  ).pipe(
+  return concat(whenReady$.pipe(ignoreElements())).pipe(
     tap(() => createWindow()),
     catchError((error) => {
       console.error(error);
@@ -107,10 +114,7 @@ const app$ = defer(() => {
   );
 }).pipe(
   takeUntil(willQuit$),
-  finalize(() => {
-    container.dispose();
-    // app.quit();
-  }),
+  finalize(() => {}),
 );
 
 app$.subscribe();
