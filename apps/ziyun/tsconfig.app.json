@@ -32,5 +32,5 @@
       "#shared/*": ["./src/shared/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "../dsb/src/renderer/hooks/store/use-channel-inputs.ts"]
 }

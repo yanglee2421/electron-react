@@ -171,51 +171,6 @@ export const plcSchema = z.object({
   d: bitsSchema,
 });
 
-const defaultValue = () => {
-  const value = [];
-
-  for (let i = 1; i < 32; i++) {
-    if (i < 19) {
-      value.push({
-        channel: `${i}-0`,
-        db: 100,
-        enabled: true,
-        gates: [],
-      });
-    } else {
-      value.push({
-        channel: `0-${i - 18}`,
-        db: 100,
-        enabled: true,
-        gates: [],
-      });
-    }
-  }
-
-  return value;
-};
-
-export const channelInputSchema = z.object({
-  open: z.boolean().default(false),
-  interval: z.int().default(64),
-  inputs: z
-    .object({
-      channel: z.string(),
-      db: z.number(),
-      enabled: z.boolean(),
-      gates: z
-        .object({
-          width: z.number(),
-          x: z.number(),
-          y: z.number(),
-        })
-        .array()
-        .default([]),
-    })
-    .array()
-    .default([]),
-});
-
 export type HXZY_HMIS = z.infer<typeof hxzy_hmis>;
 export type ThemeMode = z.infer<typeof themeMode>;
 export type KH_HMIS = z.infer<typeof kh_hmis>;
@@ -226,4 +181,3 @@ export type GuangzhoucheliangType = z.infer<typeof guangzhoucheliang>;
 export type Guangzhoujibaoduan = z.infer<typeof guangzhoujibaoduan>;
 export type PLCSchema = z.infer<typeof plcSchema>;
 export type FUZHOUDONG = z.infer<typeof fuzhoudong>;
-export type CHANNEL_INPUTS = z.infer<typeof channelInputSchema>;

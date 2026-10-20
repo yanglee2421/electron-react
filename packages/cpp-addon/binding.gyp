@@ -42,22 +42,9 @@
               }
             },
             "include_dirs": [
-              "<!@(node -p \"require('node-addon-api').include\")",
-              "<(module_root_dir)/lib/win"
+              "<!@(node -p \"require('node-addon-api').include\")"
             ],
-            "libraries": [
-              "<(module_root_dir)/lib/win/TOFDPort.lib"
-            ],
-            "copies": [
-              {
-                "destination": "<(PRODUCT_DIR)",
-                "files": [
-                  "<(module_root_dir)/lib/win/TOFDPort.dll",
-                  "<(module_root_dir)/lib/win/ftd2xx.dll",
-                  "<(module_root_dir)/lib/win/GainTable.ini"
-                ]
-              }
-            ]
+            "libraries": []
           }
         ]
       ]

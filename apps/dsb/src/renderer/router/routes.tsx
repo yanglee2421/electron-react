@@ -13,6 +13,10 @@ export const createRoutes = (): RouteObject[] => {
           path: "scanner",
           lazy: () => import("#renderer/pages/scanner/component"),
         },
+        {
+          path: "canvas",
+          lazy: () => import("#renderer/pages/canvas/component"),
+        },
       ],
       HydrateFallback: RootHydrateFallback,
     },

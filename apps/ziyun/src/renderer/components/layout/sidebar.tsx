@@ -4,7 +4,6 @@ import {
   CalendarTodayRounded,
   Commit,
   ExpandMore,
-  Gesture,
   Info,
   KeyboardCommandKey,
   MemoryRounded,
@@ -814,19 +813,6 @@ export const Sidebar = (props: SidebarProps) => {
                   <Science />
                 </ListItemIcon>
                 <ListItemText primary={"实验室"} />
-              </ListItemButton>
-              <ListItemButton
-                component={Link}
-                to={{ pathname: "/canvas" }}
-                selected={Object.is(
-                  normalizePathname(location.pathname),
-                  "/canvas",
-                )}
-              >
-                <ListItemIcon>
-                  <Gesture />
-                </ListItemIcon>
-                <ListItemText primary={"波形"} />
               </ListItemButton>
             </>
           )}
