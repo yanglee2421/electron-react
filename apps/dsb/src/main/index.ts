@@ -93,7 +93,7 @@ const ioc$ = new Observable((sub) => {
     container.dispose();
   };
 });
-const startup$ = concat(whenReady$);
+const startup$ = concat(whenReady$, ioc$).pipe(takeUntil(willQuit$));
 
 lockFailed$.subscribe(() => {
   console.warn(
@@ -102,7 +102,7 @@ lockFailed$.subscribe(() => {
   app.quit();
 });
 
-lockedSuccess$.pipe(switchMap(() => whenReady$)).subscribe();
+lockedSuccess$.pipe(switchMap(() => startup$)).subscribe();
 
 const app$ = defer(() => {
   return concat(whenReady$.pipe(ignoreElements()), ioc$).pipe(
