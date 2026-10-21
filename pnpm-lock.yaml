@@ -11,18 +11,6 @@ importers:
       '@types/node':
         specifier: ^25.3.0
         version: 25.9.0
-      node-addon-api:
-        specifier: ^8.9.2
-        version: 8.9.2
-      node-api-headers:
-        specifier: ^1.9.0
-        version: 1.9.0
-      node-gyp:
-        specifier: ^12.3.0
-        version: 12.3.0
-      tsdown:
-        specifier: 0.23.0
-        version: 0.23.0(typescript@7.0.2)
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -323,7 +311,20 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0(@types/emscripten@1.41.5)
 
-  packages/cpp-addon: {}
+  packages/cpp-addon:
+    devDependencies:
+      node-addon-api:
+        specifier: ^8.8.0
+        version: 8.8.0
+      node-api-headers:
+        specifier: ^1.9.0
+        version: 1.9.0
+      node-gyp:
+        specifier: ^12.2.0
+        version: 12.3.0
+      tsdown:
+        specifier: 0.23.0
+        version: 0.23.0(typescript@7.0.2)
 
   packages/external-db:
     devDependencies:
@@ -334,7 +335,20 @@ importers:
         specifier: 1.0.0-beta.22
         version: 1.0.0-beta.22(zod@4.4.3)
 
-  packages/union-addon: {}
+  packages/union-addon:
+    devDependencies:
+      node-addon-api:
+        specifier: ^8.8.0
+        version: 8.8.0
+      node-api-headers:
+        specifier: ^1.9.0
+        version: 1.9.0
+      node-gyp:
+        specifier: ^12.2.0
+        version: 12.3.0
+      tsdown:
+        specifier: 0.23.0
+        version: 0.23.0(typescript@7.0.2)
 
   packages/vite-plugin:
     devDependencies:
@@ -4258,8 +4272,8 @@ packages:
   html-void-elements@3.0.0:
     resolution: {integrity: sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg==}
 
-  http-cache-semantics@4.3.0:
-    resolution: {integrity: sha512-M5t5LlJpS1UHMjvwRQVdFHvPISGeLAxNcrWuJkeGh0KxsqCHZ1O3NXZU/8x7cD0BDcGW8kapxMKTvwlqrNkHkA==}
+  http-cache-semantics@4.2.0:
+    resolution: {integrity: sha512-dTxcvPXqPvXBQpq5dUr6mEMJX4oIEFv6bwom3FDwKRDsuIjjJGANqhBuoAn9c1RQJIdAKav33ED65E2ys+87QQ==}
 
   http-proxy-agent@7.0.2:
     resolution: {integrity: sha512-T1gkAiYYDWYx3V5Bmyu7HcfcvL7mUrTWiM6yOfa3PIphViJ/gFPbvidQ+veqSOHci/PxBcDabeUNCzpOODJZig==}
@@ -4792,8 +4806,8 @@ packages:
     resolution: {integrity: sha512-8VOpLHFrOQlAH+qA0ZzuGRlALRA6/LVh8QJldbrC4DY0hXoMP0l4Acq8TzFC018HztWiRqyCEj2aTWY2UvnJUg==}
     engines: {node: ^18 || ^20 || >= 21}
 
-  node-addon-api@8.9.2:
-    resolution: {integrity: sha512-VijLXbi3UACN69I0JVXJsX4tjACjNoQDgv2gTF6sx2wWEi8tkSg2eX8p5gSIFi8z2+DL3oHmY6OyKce38SDolg==}
+  node-addon-api@8.8.0:
+    resolution: {integrity: sha512-c5Ko1fZJIJmzhFIkhRN76WTq+fC6tWnGy9CXA0fA+XygsWZmEwG8vmbkNqxMyoaa0Tin4djul49NzdVcJJcjeA==}
     engines: {node: ^18 || ^20 || >= 21}
 
   node-api-headers@1.9.0:
@@ -8754,7 +8768,7 @@ snapshots:
     dependencies:
       clone-response: 1.0.3
       get-stream: 5.2.0
-      http-cache-semantics: 4.3.0
+      http-cache-semantics: 4.2.0
       keyv: 4.5.4
       lowercase-keys: 2.0.0
       normalize-url: 6.1.0
@@ -9520,7 +9534,7 @@ snapshots:
 
   html-void-elements@3.0.0: {}
 
-  http-cache-semantics@4.3.0: {}
+  http-cache-semantics@4.2.0: {}
 
   http-proxy-agent@7.0.2(supports-color@7.2.0):
     dependencies:
@@ -9985,7 +9999,7 @@ snapshots:
 
   node-addon-api@8.3.0: {}
 
-  node-addon-api@8.9.2: {}
+  node-addon-api@8.8.0: {}
 
   node-api-headers@1.9.0: {}
 
