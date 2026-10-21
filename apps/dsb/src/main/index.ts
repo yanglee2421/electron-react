@@ -87,6 +87,7 @@ const ioc$ = new Observable((sub) => {
   container.register({ DB_PATH: asValue(DB_PATH) });
 
   const { kv, cmd } = container.cradle;
+  sub.next({ kv, cmd });
 
   return () => {
     container.dispose();
@@ -104,7 +105,7 @@ lockFailed$.subscribe(() => {
 lockedSuccess$.pipe(switchMap(() => whenReady$)).subscribe();
 
 const app$ = defer(() => {
-  return concat(whenReady$.pipe(ignoreElements())).pipe(
+  return concat(whenReady$.pipe(ignoreElements()), ioc$).pipe(
     tap(() => createWindow()),
     catchError((error) => {
       console.error(error);

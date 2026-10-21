@@ -1,4 +1,5 @@
 import * as schema from "#main/ioc/app-db/schema";
+import { ipcHandle, ipcRemoveHandle } from "#main/ipc";
 import { eq } from "drizzle-orm";
 import { Subject } from "rxjs";
 import type { DBClient } from "../app-db/app-db";
@@ -11,10 +12,18 @@ export class KV {
 
   constructor({ appDB }: AppCradle) {
     this.db = appDB.client;
+    ipcHandle("kv/clear", () => this.clear());
+    ipcHandle("kv/get-item", (_, p) => this.getItem(p));
+    ipcHandle("kv/remove-item", (_, p) => this.removeItem(p));
+    ipcHandle("kv/set-item", (_, p, v) => this.setItem(p, v));
   }
 
   dispose() {
     this.event$.complete();
+    ipcRemoveHandle("kv/clear");
+    ipcRemoveHandle("kv/get-item");
+    ipcRemoveHandle("kv/remove-item");
+    ipcRemoveHandle("kv/set-item");
   }
 
   getItem(key: string) {

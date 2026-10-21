@@ -10,6 +10,8 @@ import workerPath from "./worker?worker&url";
 interface FrameMessage {
   channel: string;
   buffer: Uint8Array;
+  right: number;
+  left: number;
 }
 
 const frame$ = new Observable<FrameMessage>((sub) => {
@@ -31,6 +33,7 @@ class WorkerCanvas {
         type: "set-buffer",
         payload: { channel: frame.channel, buffer: frame.buffer },
       });
+      console.log(frame);
     });
 
     this.subscriptions = [sub1];
