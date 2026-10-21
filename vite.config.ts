@@ -1,7 +1,7 @@
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-  fmt: {},
+  fmt: { sortTailwindcss: true },
   lint: {
     plugins: ["eslint", "oxc", "typescript"],
     rules: {
