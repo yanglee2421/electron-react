@@ -423,7 +423,7 @@ export const Sidebar = (props: SidebarProps) => {
               </>
             )}
             {showKhHmisMenu && (
-              <React.ViewTransition>
+              <>
                 <ListItemButton
                   onClick={() => {
                     setKhOpen((p) => !p);
@@ -528,10 +528,10 @@ export const Sidebar = (props: SidebarProps) => {
                     </ListItemButton>
                   </List>
                 </Collapse>
-              </React.ViewTransition>
+              </>
             )}
             {showFuzhoudong && (
-              <React.ViewTransition>
+              <>
                 <ListItemButton
                   onClick={() => {
                     setFuzhoudongOpen((p) => !p);
@@ -608,7 +608,7 @@ export const Sidebar = (props: SidebarProps) => {
                     </ListItemButton>
                   </List>
                 </Collapse>
-              </React.ViewTransition>
+              </>
             )}
           </List>
         )}

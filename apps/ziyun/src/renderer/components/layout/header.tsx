@@ -28,6 +28,7 @@ const createSegmentAlias = () => {
     ["annual", "年度校验"],
     ["setting", "设置"],
     ["detection", "现车作业"],
+    ["detections", "现车作业"],
     ["verify", "日常校验"],
     ["quartors", "季度校验"],
     ["settings", "设置"],
@@ -43,6 +44,7 @@ const createSegmentAlias = () => {
     ["chr501", "日常性能校验表"],
     ["plc", "PLC助手"],
     ["qt", "信创版软件"],
+    ["fuzhoudong", "福州东车辆段"],
   ]);
 
   return segmentAlias;
