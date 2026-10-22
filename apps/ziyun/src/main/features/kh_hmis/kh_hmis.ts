@@ -3,6 +3,7 @@ import * as schema from "#main/features/db/schema";
 import type { Logger } from "#main/features/logger";
 import type { QuartorData } from "#main/features/mdb/types";
 import { createEmit } from "#main/lib";
+import { resolvedFlaws as resolveCHR501Flaws } from "#shared/functions/chr501";
 import { calculateMaxDiff, calculateResult } from "#shared/functions/chr502";
 import { resolveCHR503 } from "#shared/functions/chr503";
 import {
@@ -11,7 +12,6 @@ import {
   calcPlace,
   resolveMemoInfo,
 } from "#shared/functions/chr52a";
-import { calculateXHCFlaws } from "#shared/functions/flawDetection";
 import { divideBy10, mathFormat } from "#shared/functions/math";
 import { KH_HMIS_STORAGE_KEY } from "#shared/instances/constants";
 import type { KH_HMIS } from "#shared/instances/schema";
@@ -612,31 +612,18 @@ export class KH {
       .equal("opid", firstRecord.szIDs);
 
     const corporation = await this.mdb.app().corporation();
-    const chMap = mapGroupBy(detectors, (i) => `${i.nBoard}-${i.nChannel}`);
-    const flawMap = mapGroupBy(datas, (i) => `${i.nBoard}-${i.nChannel}`);
     const images = await this.upload501ImagesByFtp(firstRecord.szIDs);
-    const l01Datas = flawMap.get(`0-3`) || [];
-    const l01Detector = chMap.get(`0-3`) || [];
-    const l02Datas = flawMap.get("0-4") || [];
-    const l02Detector = chMap.get("0-4") || [];
-    const la3Datas = flawMap.get(`0-2`) || [];
-    const la3Detector = chMap.get("0-2") || [];
-    const r01Datas = flawMap.get("1-3") || [];
-    const r01Detector = chMap.get("1-3") || [];
-    const r02Datas = flawMap.get("1-4") || [];
-    const r02Detector = chMap.get("1-4") || [];
-    const ra3Datas = flawMap.get("1-2") || [];
-    const ra3Detector = chMap.get("1-2") || [];
-
-    const la1Datas = flawMap.get("0-1") || [];
-    const la1Detector = chMap.get("0-1") || [];
-    const ra1Datas = flawMap.get("1-1") || [];
-    const ra1Detector = chMap.get("1-1") || [];
-
-    const lctDatas = flawMap.get("0-0") || [];
-    const lctDetector = chMap.get("0-0") || [];
-    const rctDatas = flawMap.get("1-0") || [];
-    const rctDetector = chMap.get("1-0") || [];
+    const channelHelper = resolveCHR501Flaws(datas, detectors);
+    const lct = channelHelper.get("0-0");
+    const la1 = channelHelper.get("0-1");
+    const la3 = channelHelper.get("0-2");
+    const l01 = channelHelper.get("0-3");
+    const l02 = channelHelper.get("0-4");
+    const rct = channelHelper.get("1-0");
+    const ra1 = channelHelper.get("1-1");
+    const ra3 = channelHelper.get("1-2");
+    const r01 = channelHelper.get("1-3");
+    const r02 = channelHelper.get("1-4");
 
     return {
       xrsj: dayjs().format("YYYY-MM-DD HH:mm:ss"),
@@ -649,400 +636,176 @@ export class KH {
       swmkxh: firstRecord.szWHModel || "",
 
       // 左01
-      ztdbh1: l01Detector?.at(0)?.szName || "",
-      zzsj1: divideBy10(l01Detector?.at(0)?.nWAngle || 0),
-      zjy1: divideBy10(l01Datas?.at(0)?.nAtten || 0),
-      zbc1: divideBy10(l01Detector?.at(0)?.nDBSub || 0),
-      zts1: divideBy10(
-        (l01Datas?.at(0)?.nAtten || 0) + (l01Detector?.at(0)?.nDBSub || 0),
-      ),
-      zqx1_1: mathFormat(l01Datas?.at(0)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_2: mathFormat(l01Datas?.at(1)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_3: mathFormat(l01Datas?.at(2)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_4: mathFormat(l01Datas?.at(3)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_5: mathFormat(l01Datas?.at(4)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_6: mathFormat(l01Datas?.at(5)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_7: mathFormat(l01Datas?.at(6)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_8: mathFormat(l01Datas?.at(7)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_9: mathFormat(l01Datas?.at(8)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_10: mathFormat(l01Datas?.at(9)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_11: mathFormat(l01Datas?.at(10)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_12: mathFormat(l01Datas?.at(11)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_13: mathFormat(l01Datas?.at(12)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_14: mathFormat(l01Datas?.at(13)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx1_15: mathFormat(l01Datas?.at(14)?.fltValueX, {
-        precision: 0,
-      }),
+      ztdbh1: l01?.name || "",
+      zzsj1: l01?.zsj || "",
+      zjy1: l01?.jy || "",
+      zbc1: l01?.bc || "",
+      zts1: l01?.ts || "",
+      zqx1_1: l01?.flaws.at(0) || "",
+      zqx1_2: l01?.flaws.at(1) || "",
+      zqx1_3: l01?.flaws.at(2) || "",
+      zqx1_4: l01?.flaws.at(3) || "",
+      zqx1_5: l01?.flaws.at(4) || "",
+      zqx1_6: l01?.flaws.at(5) || "",
+      zqx1_7: l01?.flaws.at(6) || "",
+      zqx1_8: l01?.flaws.at(7) || "",
+      zqx1_9: l01?.flaws.at(8) || "",
+      zqx1_10: l01?.flaws.at(9) || "",
+      zqx1_11: l01?.flaws.at(10) || "",
+      zqx1_12: l01?.flaws.at(11) || "",
+      zqx1_13: l01?.flaws.at(12) || "",
+      zqx1_14: l01?.flaws.at(13) || "",
+      zqx1_15: l01?.flaws.at(14) || "",
 
       // 左02
-      ztdbh2: l02Detector?.at(0)?.szName || "",
-      zzsj2: divideBy10(l02Detector?.at(0)?.nWAngle || 0),
-      zjy2: divideBy10(l02Datas?.at(0)?.nAtten || 0),
-      zbc2: divideBy10(l02Detector?.at(0)?.nDBSub || 0),
-      zts2: divideBy10(
-        (l02Datas?.at(0)?.nAtten || 0) + (l02Detector?.at(0)?.nDBSub || 0),
-      ),
-      zqx2_1: mathFormat(l02Datas?.at(0)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_2: mathFormat(l02Datas?.at(1)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_3: mathFormat(l02Datas?.at(2)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_4: mathFormat(l02Datas?.at(3)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_5: mathFormat(l02Datas?.at(4)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_6: mathFormat(l02Datas?.at(5)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_7: mathFormat(l02Datas?.at(6)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_8: mathFormat(l02Datas?.at(7)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_9: mathFormat(l02Datas?.at(8)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_10: mathFormat(l02Datas?.at(9)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_11: mathFormat(l02Datas?.at(10)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_12: mathFormat(l02Datas?.at(11)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_13: mathFormat(l02Datas?.at(12)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_14: mathFormat(l02Datas?.at(13)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx2_15: mathFormat(l02Datas?.at(14)?.fltValueX, {
-        precision: 0,
-      }),
+      ztdbh2: l02?.name || "",
+      zzsj2: l02?.zsj || "",
+      zjy2: l02?.jy || "",
+      zbc2: l02?.bc || "",
+      zts2: l02?.ts || "",
+      zqx2_1: l02?.flaws.at(0) || "",
+      zqx2_2: l02?.flaws.at(1) || "",
+      zqx2_3: l02?.flaws.at(2) || "",
+      zqx2_4: l02?.flaws.at(3) || "",
+      zqx2_5: l02?.flaws.at(4) || "",
+      zqx2_6: l02?.flaws.at(5) || "",
+      zqx2_7: l02?.flaws.at(6) || "",
+      zqx2_8: l02?.flaws.at(7) || "",
+      zqx2_9: l02?.flaws.at(8) || "",
+      zqx2_10: l02?.flaws.at(9) || "",
+      zqx2_11: l02?.flaws.at(10) || "",
+      zqx2_12: l02?.flaws.at(11) || "",
+      zqx2_13: l02?.flaws.at(12) || "",
+      zqx2_14: l02?.flaws.at(13) || "",
+      zqx2_15: l02?.flaws.at(14) || "",
 
       // 左A3
-      ztdbh3: la3Detector.at(0)?.szName || "",
-      zzsj3: divideBy10(la3Detector?.at(0)?.nWAngle || 0),
-      zjy3: divideBy10(la3Datas?.at(0)?.nAtten || 0),
-      zbc3: divideBy10(la3Detector?.at(0)?.nDBSub || 0),
-      zts3: divideBy10(
-        (la3Datas?.at(0)?.nAtten || 0) + (la3Detector?.at(0)?.nDBSub || 0),
-      ),
-      zqx3_1: mathFormat(la3Datas?.at(0)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_2: mathFormat(la3Datas?.at(1)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_3: mathFormat(la3Datas?.at(2)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_4: mathFormat(la3Datas?.at(3)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_5: mathFormat(la3Datas?.at(4)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_6: mathFormat(la3Datas?.at(5)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_7: mathFormat(la3Datas?.at(6)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_8: mathFormat(la3Datas?.at(7)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_9: mathFormat(la3Datas?.at(8)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_10: mathFormat(la3Datas?.at(9)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_11: mathFormat(la3Datas?.at(10)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_12: mathFormat(la3Datas?.at(11)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_13: mathFormat(la3Datas?.at(12)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_14: mathFormat(la3Datas?.at(13)?.fltValueX, {
-        precision: 0,
-      }),
-      zqx3_15: mathFormat(la3Datas?.at(14)?.fltValueX, {
-        precision: 0,
-      }),
+      ztdbh3: la3?.name || "",
+      zzsj3: la3?.zsj || "",
+      zjy3: la3?.jy || "",
+      zbc3: la3?.bc || "",
+      zts3: la3?.ts || "",
+      zqx3_1: la3?.flaws.at(0) || "",
+      zqx3_2: la3?.flaws.at(1) || "",
+      zqx3_3: la3?.flaws.at(2) || "",
+      zqx3_4: la3?.flaws.at(3) || "",
+      zqx3_5: la3?.flaws.at(4) || "",
+      zqx3_6: la3?.flaws.at(5) || "",
+      zqx3_7: la3?.flaws.at(6) || "",
+      zqx3_8: la3?.flaws.at(7) || "",
+      zqx3_9: la3?.flaws.at(8) || "",
+      zqx3_10: la3?.flaws.at(9) || "",
+      zqx3_11: la3?.flaws.at(10) || "",
+      zqx3_12: la3?.flaws.at(11) || "",
+      zqx3_13: la3?.flaws.at(12) || "",
+      zqx3_14: la3?.flaws.at(13) || "",
+      zqx3_15: la3?.flaws.at(14) || "",
 
       // 右01
-      ytdbh1: r01Detector?.at(0)?.szName || "",
-      yzsj1: divideBy10(r01Detector?.at(0)?.nWAngle || 0),
-      yjy1: divideBy10(r01Datas?.at(0)?.nAtten || 0),
-      ybc1: divideBy10(r01Detector?.at(0)?.nDBSub || 0),
-      yts1: divideBy10(
-        (r01Datas?.at(0)?.nAtten || 0) + (r01Detector?.at(0)?.nDBSub || 0),
-      ),
-      yqx1_1: mathFormat(r01Datas?.at(0)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_2: mathFormat(r01Datas?.at(1)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_3: mathFormat(r01Datas?.at(2)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_4: mathFormat(r01Datas?.at(3)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_5: mathFormat(r01Datas?.at(4)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_6: mathFormat(r01Datas?.at(5)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_7: mathFormat(r01Datas?.at(6)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_8: mathFormat(r01Datas?.at(7)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_9: mathFormat(r01Datas?.at(8)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_10: mathFormat(r01Datas?.at(9)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_11: mathFormat(r01Datas?.at(10)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_12: mathFormat(r01Datas?.at(11)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_13: mathFormat(r01Datas?.at(12)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_14: mathFormat(r01Datas?.at(13)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx1_15: mathFormat(r01Datas?.at(14)?.fltValueX, {
-        precision: 0,
-      }),
+      ytdbh1: r01?.name || "",
+      yzsj1: r01?.zsj || "",
+      yjy1: r01?.jy || "",
+      ybc1: r01?.bc || "",
+      yts1: r01?.ts || "",
+      yqx1_1: r01?.flaws.at(0) || "",
+      yqx1_2: r01?.flaws.at(1) || "",
+      yqx1_3: r01?.flaws.at(2) || "",
+      yqx1_4: r01?.flaws.at(3) || "",
+      yqx1_5: r01?.flaws.at(4) || "",
+      yqx1_6: r01?.flaws.at(5) || "",
+      yqx1_7: r01?.flaws.at(6) || "",
+      yqx1_8: r01?.flaws.at(7) || "",
+      yqx1_9: r01?.flaws.at(8) || "",
+      yqx1_10: r01?.flaws.at(9) || "",
+      yqx1_11: r01?.flaws.at(10) || "",
+      yqx1_12: r01?.flaws.at(11) || "",
+      yqx1_13: r01?.flaws.at(12) || "",
+      yqx1_14: r01?.flaws.at(13) || "",
+      yqx1_15: r01?.flaws.at(14) || "",
 
       // 右02
-      ytdbh2: r02Detector?.at(0)?.szName || "",
-      yzsj2: divideBy10(r02Detector?.at(0)?.nWAngle || 0),
-      yjy2: divideBy10(r02Datas?.at(0)?.nAtten || 0),
-      ybc2: divideBy10(r02Detector?.at(0)?.nDBSub || 0),
-      yts2: divideBy10(
-        (r02Datas?.at(0)?.nAtten || 0) + (r02Detector?.at(0)?.nDBSub || 0),
-      ),
-      yqx2_1: mathFormat(r02Datas?.at(0)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_2: mathFormat(r02Datas?.at(1)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_3: mathFormat(r02Datas?.at(2)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_4: mathFormat(r02Datas?.at(3)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_5: mathFormat(r02Datas?.at(4)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_6: mathFormat(r02Datas?.at(5)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_7: mathFormat(r02Datas?.at(6)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_8: mathFormat(r02Datas?.at(7)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_9: mathFormat(r02Datas?.at(8)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_10: mathFormat(r02Datas?.at(9)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_11: mathFormat(r02Datas?.at(10)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_12: mathFormat(r02Datas?.at(11)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_13: mathFormat(r02Datas?.at(12)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_14: mathFormat(r02Datas?.at(13)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx2_15: mathFormat(r02Datas?.at(14)?.fltValueX, {
-        precision: 0,
-      }),
+      ytdbh2: r02?.name || "",
+      yzsj2: r02?.zsj || "",
+      yjy2: r02?.jy || "",
+      ybc2: r02?.bc || "",
+      yts2: r02?.ts || "",
+      yqx2_1: r02?.flaws.at(0) || "",
+      yqx2_2: r02?.flaws.at(1) || "",
+      yqx2_3: r02?.flaws.at(2) || "",
+      yqx2_4: r02?.flaws.at(3) || "",
+      yqx2_5: r02?.flaws.at(4) || "",
+      yqx2_6: r02?.flaws.at(5) || "",
+      yqx2_7: r02?.flaws.at(6) || "",
+      yqx2_8: r02?.flaws.at(7) || "",
+      yqx2_9: r02?.flaws.at(8) || "",
+      yqx2_10: r02?.flaws.at(9) || "",
+      yqx2_11: r02?.flaws.at(10) || "",
+      yqx2_12: r02?.flaws.at(11) || "",
+      yqx2_13: r02?.flaws.at(12) || "",
+      yqx2_14: r02?.flaws.at(13) || "",
+      yqx2_15: r02?.flaws.at(14) || "",
 
       // 右A3
-      ytdbh3: ra3Detector.at(0)?.szName || "",
-      yzsj3: divideBy10(ra3Detector?.at(0)?.nWAngle || 0),
-      yjy3: divideBy10(ra3Datas?.at(0)?.nAtten || 0),
-      ybc3: divideBy10(ra3Detector?.at(0)?.nDBSub || 0),
-      yts3: divideBy10(
-        (ra3Datas?.at(0)?.nAtten || 0) + (ra3Detector?.at(0)?.nDBSub || 0),
-      ),
-      yqx3_1: mathFormat(ra3Datas?.at(0)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_2: mathFormat(ra3Datas?.at(1)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_3: mathFormat(ra3Datas?.at(2)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_4: mathFormat(ra3Datas?.at(3)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_5: mathFormat(ra3Datas?.at(4)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_6: mathFormat(ra3Datas?.at(5)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_7: mathFormat(ra3Datas?.at(6)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_8: mathFormat(ra3Datas?.at(7)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_9: mathFormat(ra3Datas?.at(8)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_10: mathFormat(ra3Datas?.at(9)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_11: mathFormat(ra3Datas?.at(10)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_12: mathFormat(ra3Datas?.at(11)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_13: mathFormat(ra3Datas?.at(12)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_14: mathFormat(ra3Datas?.at(13)?.fltValueX, {
-        precision: 0,
-      }),
-      yqx3_15: mathFormat(ra3Datas?.at(14)?.fltValueX, {
-        precision: 0,
-      }),
+      ytdbh3: ra3?.name || "",
+      yzsj3: ra3?.zsj || "",
+      yjy3: ra3?.jy || "",
+      ybc3: ra3?.bc || "",
+      yts3: ra3?.ts || "",
+      yqx3_1: ra3?.flaws.at(0) || "",
+      yqx3_2: ra3?.flaws.at(1) || "",
+      yqx3_3: ra3?.flaws.at(2) || "",
+      yqx3_4: ra3?.flaws.at(3) || "",
+      yqx3_5: ra3?.flaws.at(4) || "",
+      yqx3_6: ra3?.flaws.at(5) || "",
+      yqx3_7: ra3?.flaws.at(6) || "",
+      yqx3_8: ra3?.flaws.at(7) || "",
+      yqx3_9: ra3?.flaws.at(8) || "",
+      yqx3_10: ra3?.flaws.at(9) || "",
+      yqx3_11: ra3?.flaws.at(10) || "",
+      yqx3_12: ra3?.flaws.at(11) || "",
+      yqx3_13: ra3?.flaws.at(12) || "",
+      yqx3_14: ra3?.flaws.at(13) || "",
+      yqx3_15: ra3?.flaws.at(14) || "",
 
       // 左A1或A2
-      zzj_tdbh1: la1Detector.at(0)?.szName || "",
-      zzj_zsj1: divideBy10(la1Detector?.at(0)?.nWAngle || 0),
-      zzj_jy1: divideBy10(la1Datas?.at(0)?.nAtten || 0),
-      zzj_bc1: divideBy10(la1Detector?.at(0)?.nDBSub || 0),
-      zzj_ts1: divideBy10(
-        (la1Datas?.at(0)?.nAtten || 0) + (la1Detector?.at(0)?.nDBSub || 0),
-      ),
-      zzj_qx1_1: mathFormat(calculateXHCFlaws(la1Datas)?.at(0)?.fltValueX, {
-        precision: 0,
-      }),
-      zzj_qx1_2: mathFormat(calculateXHCFlaws(la1Datas)?.at(1)?.fltValueX, {
-        precision: 0,
-      }),
-      zzj_qx1_3: mathFormat(calculateXHCFlaws(la1Datas)?.at(2)?.fltValueX, {
-        precision: 0,
-      }),
+      zzj_tdbh1: la1?.name || "",
+      zzj_zsj1: la1?.zsj || "",
+      zzj_jy1: la1?.jy || "",
+      zzj_bc1: la1?.bc || "",
+      zzj_ts1: la1?.ts || "",
+      zzj_qx1_1: la1?.flaws.at(0) || "",
+      zzj_qx1_2: la1?.flaws.at(1) || "",
+      zzj_qx1_3: la1?.flaws.at(2) || "",
 
       // 右A1或A2
-      yzj_tdbh1: ra1Detector.at(0)?.szName || "",
-      yzj_zsj1: divideBy10(ra1Detector?.at(0)?.nWAngle || 0),
-      yzj_jy1: divideBy10(ra1Datas?.at(0)?.nAtten || 0),
-      yzj_bc1: divideBy10(ra1Detector?.at(0)?.nDBSub || 0),
-      yzj_ts1: divideBy10(
-        (ra1Datas?.at(0)?.nAtten || 0) + (ra1Detector?.at(0)?.nDBSub || 0),
-      ),
-      yzj_qx1_1: mathFormat(calculateXHCFlaws(ra1Datas)?.at(0)?.fltValueX, {
-        precision: 0,
-      }),
-      yzj_qx1_2: mathFormat(calculateXHCFlaws(ra1Datas)?.at(1)?.fltValueX, {
-        precision: 0,
-      }),
-      yzj_qx1_3: mathFormat(calculateXHCFlaws(ra1Datas)?.at(2)?.fltValueX, {
-        precision: 0,
-      }),
+      yzj_tdbh1: ra1?.name || "",
+      yzj_zsj1: ra1?.zsj || "",
+      yzj_jy1: ra1?.jy || "",
+      yzj_bc1: ra1?.bc || "",
+      yzj_ts1: ra1?.ts || "",
+      yzj_qx1_1: ra1?.flaws.at(0) || "",
+      yzj_qx1_2: ra1?.flaws.at(1) || "",
+      yzj_qx1_3: ra1?.flaws.at(2) || "",
 
       // 左穿透
-      zct_tdbh1: lctDetector.at(0)?.szName || "",
-      zct_zsj1: divideBy10(lctDetector?.at(0)?.nWAngle || 0),
-      zct_jy1: divideBy10(lctDatas?.at(0)?.nAtten || 0),
-      zct_bc1: divideBy10(lctDetector?.at(0)?.nDBSub || 0),
-      zct_ts1: divideBy10(
-        (lctDatas?.at(0)?.nAtten || 0) + (lctDetector?.at(0)?.nDBSub || 0),
-      ),
-      zct_qx1_1: mathFormat(lctDatas?.at(0)?.fltValueX, {
-        precision: 0,
-      }),
-      zct_qx1_2: mathFormat(lctDatas?.at(1)?.fltValueX, {
-        precision: 0,
-      }),
-      zct_qx1_3: mathFormat(lctDatas?.at(2)?.fltValueX, {
-        precision: 0,
-      }),
+      zct_tdbh1: lct?.name || "",
+      zct_zsj1: lct?.zsj || "",
+      zct_jy1: lct?.jy || "",
+      zct_bc1: lct?.bc || "",
+      zct_ts1: lct?.ts || "",
+      zct_qx1_1: lct?.flaws.at(0) || "",
+      zct_qx1_2: "",
+      zct_qx1_3: "",
 
       // 右穿透
-      yct_tdbh1: rctDetector.at(0)?.szName || "",
-      yct_zsj1: divideBy10(rctDetector?.at(0)?.nWAngle || 0),
-      yct_jy1: divideBy10(rctDatas?.at(0)?.nAtten || 0),
-      yct_bc1: divideBy10(rctDetector?.at(0)?.nDBSub || 0),
-      yct_ts1: divideBy10(
-        (rctDatas?.at(0)?.nAtten || 0) + (rctDetector?.at(0)?.nDBSub || 0),
-      ),
-      yct_qx1_1: mathFormat(rctDatas?.at(0)?.fltValueX, {
-        precision: 0,
-      }),
-      yct_qx1_2: mathFormat(rctDatas?.at(1)?.fltValueX, {
-        precision: 0,
-      }),
-      yct_qx1_3: mathFormat(rctDatas?.at(2)?.fltValueX, {
-        precision: 0,
-      }),
+      yct_tdbh1: rct?.name || "",
+      yct_zsj1: rct?.zsj || "",
+      yct_jy1: rct?.jy || "",
+      yct_bc1: rct?.bc || "",
+      yct_ts1: rct?.ts || "",
+      yct_qx1_1: rct?.flaws.at(0) || "",
+      yct_qx1_2: "",
+      yct_qx1_3: "",
 
       // 12通道机设备无以下通道，直接传空
       zzj_tdbh2: "",

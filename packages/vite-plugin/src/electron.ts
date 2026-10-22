@@ -19,7 +19,7 @@ import {
   takeUntil,
   tap,
 } from "rxjs";
-import type { Plugin, ViteDevServer } from "vite";
+import type { Logger, Plugin, ViteDevServer } from "vite";
 import { resources } from "./resources.ts";
 
 const require = module.createRequire(import.meta.url);
@@ -150,7 +150,7 @@ const startElectron = (server: ViteDevServer) => {
   const ELECTRON_RENDERER_URL = server.resolvedUrls?.local.at(0) || "";
 
   return new Observable((sub) => {
-    console.log("Starting Electron...");
+    logger?.info("[electron] Starting Electron...");
     const ps = spawn(require("electron"), ["."], {
       stdio: "pipe",
       env: { ELECTRON_RENDERER_URL },
@@ -167,14 +167,14 @@ const startElectron = (server: ViteDevServer) => {
     });
 
     ps.stdout.addListener("data", (data) => {
-      console.log(String(data).trim());
+      logger?.info(`[electron] ` + String(data).trim());
     });
     ps.stderr.addListener("data", (data) => {
-      console.error(String(data).trim());
+      logger?.error(`[electron] ` + String(data).trim());
     });
 
     return () => {
-      console.log("Stopping Electron...");
+      logger?.info("[electron] Stopping Electron...");
       ps.stdout.removeAllListeners();
       ps.stderr.removeAllListeners();
       ps.removeAllListeners();
@@ -237,6 +237,7 @@ const dev$ = server$.pipe(switchMap((server) => startDev(server)));
  * Store the previous subscription to avoid creating duplicate subscriptions.
  */
 let subscribtion: Subscription | null = null;
+let logger: Logger | null = null;
 
 export const electron = (): Plugin[] => {
   subscribtion?.unsubscribe();
@@ -259,6 +260,9 @@ export const electron = (): Plugin[] => {
             },
           },
         };
+      },
+      configResolved(config) {
+        logger = config.logger;
       },
       configureServer(server) {
         server$.next(server);

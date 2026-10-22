@@ -4,7 +4,7 @@ import { fetchUser, fetchVerifies } from "#renderer/api/mdb";
 import { Loading, PendingIcon } from "#renderer/components/Loading";
 import { ScrollToTopButton } from "#renderer/components/scroll";
 import { cellPaddingMap, rowsPerPageOptions } from "#renderer/lib/constants";
-import { RefreshOutlined, UploadRounded } from "@mui/icons-material";
+import { Print, RefreshOutlined, UploadRounded } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -36,6 +36,7 @@ import {
 } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import React from "react";
+import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
 interface Upload501Props {
@@ -66,6 +67,24 @@ const Upload501 = (props: Upload501Props) => {
   );
 };
 
+interface PrintButtonProps {
+  id: string;
+}
+
+const PrintButton = (props: PrintButtonProps) => {
+  const navigate = useNavigate();
+
+  return (
+    <IconButton
+      onClick={() => {
+        navigate(`/verify/${props.id}/chr501`);
+      }}
+    >
+      <Print />
+    </IconButton>
+  );
+};
+
 const columnHelper = createColumnHelper<Verify>();
 const columns = [
   columnHelper.accessor("szIDs", {
@@ -74,7 +93,12 @@ const columns = [
     cell: ({ getValue }) => {
       const szID = getValue();
 
-      return <Upload501 id={szID} />;
+      return (
+        <>
+          <Upload501 id={szID} />
+          <PrintButton id={szID} />
+        </>
+      );
     },
   }),
   columnHelper.accessor("szWHModel", { header: "轴型", footer: "轴型" }),
