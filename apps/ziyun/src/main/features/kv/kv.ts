@@ -6,16 +6,18 @@ import type { AppCradle } from "../types";
 import type { KVEvent } from "./types";
 
 export class KV {
-  readonly events$ = new Subject<KVEvent>();
-
+  private events$ = new Subject<KVEvent>();
   private db: DBClient;
 
   constructor({ db }: AppCradle) {
     this.db = db.client;
   }
-
   dispose() {
     this.events$.complete();
+  }
+
+  when() {
+    return this.events$.asObservable();
   }
 
   getItem(key: string): string | null {

@@ -1,5 +1,6 @@
 import * as schema from "#main/features/db/schema";
 import { createEmit, getIP } from "#main/lib";
+import { hydrateSubject } from "#main/utils/hydrate-subject";
 import { calcFlawType, calcPlace } from "#shared/functions/chr52a";
 import { tmnowToTSSJ } from "#shared/functions/flawDetection";
 import { GUANGZHOU_CHELIANG_STORAGE_KEY } from "#shared/instances/constants";
@@ -11,17 +12,8 @@ import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
 import pLimit from "p-limit";
-import type { Subscription } from "rxjs";
-import {
-  BehaviorSubject,
-  distinctUntilChanged,
-  EMPTY,
-  filter,
-  interval,
-  map,
-  switchMap,
-  tap,
-} from "rxjs";
+import type { BehaviorSubject, Subscription } from "rxjs";
+import { distinctUntilChanged, EMPTY, interval, switchMap, tap } from "rxjs";
 import type { DBClient } from "../db/types";
 import type { Logger } from "../logger";
 import type { MDB } from "../mdb";
@@ -37,9 +29,8 @@ interface FetchResult {
 }
 
 export class Guangzhoucheliang {
-  readonly state$: BehaviorSubject<GuangzhoucheliangType>;
+  private state$: BehaviorSubject<GuangzhoucheliangType>;
   private subscriptions: Subscription[];
-
   private db: DBClient;
   private logger: Logger;
   private mdb: MDB;
@@ -49,27 +40,12 @@ export class Guangzhoucheliang {
     this.mdb = mdb;
     this.logger = logger;
 
-    const stateJSON = kv.getItem(GUANGZHOU_CHELIANG_STORAGE_KEY);
-    const data = stateJSON ? JSON.parse(stateJSON).state : {};
-    const state = guangzhoucheliang.parse(data);
-    this.state$ = new BehaviorSubject(state);
-
-    const sub1 = kv.events$
-      .pipe(
-        filter((e) => e.key === GUANGZHOU_CHELIANG_STORAGE_KEY),
-        map((e) => {
-          switch (e.action) {
-            case "set":
-              return guangzhoucheliang.parse(
-                e.value ? JSON.parse(e.value).state : {},
-              );
-            case "remove":
-            case "clear":
-              return guangzhoucheliang.parse({});
-          }
-        }),
-      )
-      .subscribe(this.state$);
+    const [state$, sub1] = hydrateSubject(
+      kv,
+      GUANGZHOU_CHELIANG_STORAGE_KEY,
+      guangzhoucheliang,
+    );
+    this.state$ = state$;
 
     const sub2 = this.state$
       .pipe(
@@ -96,6 +72,10 @@ export class Guangzhoucheliang {
   dispose() {
     this.state$.complete();
     this.subscriptions.forEach((sub) => sub.unsubscribe());
+  }
+
+  when() {
+    return this.state$.asObservable();
   }
   get state() {
     return this.state$.getValue();

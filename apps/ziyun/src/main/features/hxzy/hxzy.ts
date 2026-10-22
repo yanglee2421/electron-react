@@ -3,6 +3,7 @@ import * as schema from "#main/features/db/schema";
 import type { Logger } from "#main/features/logger";
 import type { Detecotor, VerifyData } from "#main/features/mdb/types";
 import { createEmit, getIP } from "#main/lib";
+import { hydrateSubject } from "#main/utils/hydrate-subject";
 import { calcFlawType, calcPlace } from "#shared/functions/chr52a";
 import {
   calculateXHCFlaws,
@@ -18,17 +19,8 @@ import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
 import pLimit from "p-limit";
-import type { Subscription } from "rxjs";
-import {
-  BehaviorSubject,
-  distinctUntilChanged,
-  EMPTY,
-  filter,
-  interval,
-  map,
-  switchMap,
-  tap,
-} from "rxjs";
+import type { BehaviorSubject, Subscription } from "rxjs";
+import { distinctUntilChanged, EMPTY, interval, switchMap, tap } from "rxjs";
 import type { DBClient } from "../db/types";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
@@ -135,9 +127,8 @@ const calcDetectorMap = (
 };
 
 export class Hxzy {
-  readonly state$: BehaviorSubject<HXZY_HMIS>;
+  private state$: BehaviorSubject<HXZY_HMIS>;
   private subscriptions: Subscription[];
-
   private db: DBClient;
   private logger: Logger;
   private mdb: MDB;
@@ -147,26 +138,8 @@ export class Hxzy {
     this.mdb = mdb;
     this.logger = logger;
 
-    const stateJSON = kv.getItem(HXZY_HMIS_STORAGE_KEY);
-    const data = stateJSON ? JSON.parse(stateJSON).state : {};
-    const state = hxzy_hmis.parse(data);
-    this.state$ = new BehaviorSubject(state);
-
-    const sub1 = kv.events$
-      .pipe(
-        filter((e) => e.key === HXZY_HMIS_STORAGE_KEY),
-        map((e) => {
-          switch (e.action) {
-            case "set":
-              return hxzy_hmis.parse(e.value ? JSON.parse(e.value).state : {});
-            case "remove":
-            case "clear":
-            default:
-              return hxzy_hmis.parse({});
-          }
-        }),
-      )
-      .subscribe(this.state$);
+    const [state$, sub1] = hydrateSubject(kv, HXZY_HMIS_STORAGE_KEY, hxzy_hmis);
+    this.state$ = state$;
 
     const sub2 = this.state$
       .pipe(
@@ -190,12 +163,14 @@ export class Hxzy {
 
     this.subscriptions = [sub1, sub2];
   }
-
   dispose() {
     this.state$.complete();
     this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
+  when() {
+    return this.state$.asObservable();
+  }
   get state() {
     return this.state$.getValue();
   }

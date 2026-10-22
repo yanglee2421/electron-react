@@ -1,6 +1,7 @@
 // 京天威 广州北
 import * as schema from "#main/features/db/schema";
 import { createEmit, getIP } from "#main/lib";
+import { hydrateSubject } from "#main/utils/hydrate-subject";
 import { calcFlawType, calcPlace } from "#shared/functions/chr52a";
 import { tmnowToTSSJ } from "#shared/functions/flawDetection";
 import { JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY } from "#shared/instances/constants";
@@ -16,14 +17,12 @@ import iconv from "iconv-lite";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import pLimit from "p-limit";
-import type { Subscription } from "rxjs";
+import type { BehaviorSubject, Subscription } from "rxjs";
 import {
-  BehaviorSubject,
   catchError,
   concatMap,
   distinctUntilChanged,
   EMPTY,
-  filter,
   from,
   interval,
   map,
@@ -168,9 +167,8 @@ const emit = createEmit("api_set");
 const execAsync = promisify(exec);
 
 export class Guangzhoubei {
-  readonly state$: BehaviorSubject<JTV_HMIS_Guangzhoubei>;
+  private state$: BehaviorSubject<JTV_HMIS_Guangzhoubei>;
   private subscriptions: Subscription[];
-
   private db: DBClient;
   private logger: Logger;
   private mdb: MDB;
@@ -180,28 +178,12 @@ export class Guangzhoubei {
     this.mdb = mdb;
     this.logger = logger;
 
-    const stateJson = kv.getItem(JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY);
-    const state = guangzhoubei.parse(
-      stateJson ? JSON.parse(stateJson).state : {},
+    const [state$, sub1] = hydrateSubject(
+      kv,
+      JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY,
+      guangzhoubei,
     );
-    this.state$ = new BehaviorSubject<JTV_HMIS_Guangzhoubei>(state);
-
-    const sub1 = kv.events$
-      .pipe(
-        filter((e) => e.key === JTV_HMIS_GUANGZHOUBEI_STORAGE_KEY),
-        map((e) => {
-          switch (e.action) {
-            case "set":
-              return guangzhoubei.parse(
-                e.value ? JSON.parse(e.value).state : {},
-              );
-            case "remove":
-            case "clear":
-              return guangzhoubei.parse({});
-          }
-        }),
-      )
-      .subscribe(this.state$);
+    this.state$ = state$;
 
     const sub2 = this.state$
       .pipe(
@@ -310,12 +292,14 @@ export class Guangzhoubei {
 
     this.subscriptions = [sub1, sub2, sub3];
   }
-
   dispose() {
     this.state$.complete();
     this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
+  when() {
+    return this.state$.asObservable();
+  }
   get state() {
     return this.state$.getValue();
   }

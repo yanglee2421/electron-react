@@ -3,6 +3,7 @@ import * as schema from "#main/features/db/schema";
 import type { Logger } from "#main/features/logger";
 import type { QuartorData } from "#main/features/mdb/types";
 import { createEmit } from "#main/lib";
+import { hydrateSubject } from "#main/utils/hydrate-subject";
 import { resolvedFlaws as resolveCHR501Flaws } from "#shared/functions/chr501";
 import { calculateMaxDiff, calculateResult } from "#shared/functions/chr502";
 import { resolveCHR503 } from "#shared/functions/chr503";
@@ -24,17 +25,8 @@ import * as sql from "drizzle-orm";
 import { net } from "electron";
 import path from "node:path";
 import pLimit from "p-limit";
-import type { Subscription } from "rxjs";
-import {
-  BehaviorSubject,
-  distinctUntilChanged,
-  EMPTY,
-  filter,
-  interval,
-  map,
-  switchMap,
-  tap,
-} from "rxjs";
+import type { BehaviorSubject, Subscription } from "rxjs";
+import { distinctUntilChanged, EMPTY, interval, switchMap, tap } from "rxjs";
 import type { DBClient } from "../db/types";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
@@ -52,9 +44,8 @@ import type {
 const emit = createEmit("api_set");
 
 export class KH {
-  readonly state$: BehaviorSubject<KH_HMIS>;
+  private state$: BehaviorSubject<KH_HMIS>;
   private subscriptions: Subscription[];
-
   private db: DBClient;
   private logger: Logger;
   private mdb: MDB;
@@ -64,25 +55,12 @@ export class KH {
     this.mdb = mdb;
     this.logger = logger;
 
-    const stateJSON = kv.getItem(KH_HMIS_STORAGE_KEY);
-    const data = stateJSON ? JSON.parse(stateJSON).state : {};
-    const state = kh_hmis.parse(data);
-    this.state$ = new BehaviorSubject(state);
-
-    const subscription1 = kv.events$
-      .pipe(
-        filter((e) => e.key === KH_HMIS_STORAGE_KEY),
-        map((e) => {
-          switch (e.action) {
-            case "set":
-              return kh_hmis.parse(e.value ? JSON.parse(e.value).state : {});
-            case "remove":
-            case "clear":
-              return kh_hmis.parse({});
-          }
-        }),
-      )
-      .subscribe(this.state$);
+    const [state$, subscription1] = hydrateSubject(
+      kv,
+      KH_HMIS_STORAGE_KEY,
+      kh_hmis,
+    );
+    this.state$ = state$;
 
     const subscription2 = this.state$
       .pipe(
@@ -106,12 +84,14 @@ export class KH {
 
     this.subscriptions = [subscription1, subscription2];
   }
-
   dispose() {
     this.state$.complete();
     this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
+  when() {
+    return this.state$.asObservable();
+  }
   get state() {
     return this.state$.getValue();
   }

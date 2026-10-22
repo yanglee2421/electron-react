@@ -1,43 +1,19 @@
+import { hydrateSubject } from "#main/utils/hydrate-subject";
 import { PROFILE_STORAGE_KEY } from "#shared/instances/constants";
 import type { Profile as AppProfile } from "#shared/instances/schema";
 import { profile } from "#shared/instances/schema";
 import { BrowserWindow, globalShortcut } from "electron";
-import type { Subscription } from "rxjs";
-import {
-  BehaviorSubject,
-  distinctUntilChanged,
-  EMPTY,
-  filter,
-  map,
-  Observable,
-  switchMap,
-} from "rxjs";
+import type { BehaviorSubject, Subscription } from "rxjs";
+import { distinctUntilChanged, EMPTY, Observable, switchMap } from "rxjs";
 import type { AppCradle } from "../types";
 
 export class Profile {
-  readonly state$: BehaviorSubject<AppProfile>;
+  private state$: BehaviorSubject<AppProfile>;
   private subscriptions: Subscription[];
 
   constructor({ kv }: AppCradle) {
-    const stateJson = kv.getItem(PROFILE_STORAGE_KEY);
-    const data = stateJson ? JSON.parse(stateJson).state : {};
-    const initialState = profile.parse(data);
-    this.state$ = new BehaviorSubject<AppProfile>(initialState);
-
-    const sub = kv.events$
-      .pipe(
-        filter((e) => e.key === PROFILE_STORAGE_KEY),
-        map((e) => {
-          switch (e.action) {
-            case "set":
-              return profile.parse(e.value ? JSON.parse(e.value).state : {});
-            case "remove":
-            case "clear":
-              return profile.parse({});
-          }
-        }),
-      )
-      .subscribe(this.state$);
+    const [state$, sub] = hydrateSubject(kv, PROFILE_STORAGE_KEY, profile);
+    this.state$ = state$;
 
     const sub2 = this.state$
       .pipe(
@@ -74,12 +50,14 @@ export class Profile {
 
     this.subscriptions = [sub, sub2];
   }
-
   dispose() {
     this.state$.complete();
     this.subscriptions.forEach((s) => s.unsubscribe());
   }
 
+  when() {
+    return this.state$.asObservable();
+  }
   get state(): AppProfile {
     return this.state$.getValue();
   }

@@ -22,31 +22,7 @@ import type { AppCradle } from "./types";
 export const container = createContainer<AppCradle>();
 
 container.register({
-  cmd: asClass(Cmd)
-    .singleton()
-    .disposer((i) => i.dispose()),
   db: asClass(DB)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  guangzhoubei: asClass(Guangzhoubei)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  guangzhoucheliang: asClass(Guangzhoucheliang)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  guangzhoujibaoduan: asClass(JTV_HMIS_Guangzhoujibaoduan)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  hxzy: asClass(Hxzy)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  image: asClass(ImageModule)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  jtv: asClass(JTV)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  kh: asClass(KH)
     .singleton()
     .disposer((i) => i.dispose()),
   kv: asClass(KV)
@@ -55,35 +31,60 @@ container.register({
   logger: asClass(Logger)
     .singleton()
     .disposer((i) => i.dispose()),
-  mdb: asClass(MDB)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  plc: asClass(PLC)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  printer: asClass(Printer)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  profile: asClass(Profile)
-    .singleton()
-    .disposer((i) => i.dispose()),
-  qt: asClass(QT)
-    .singleton()
-    .disposer((i) => i.dispose()),
+
   fuzhoudong: asClass(Fuzhoudong)
-    .singleton()
+    .scoped()
+    .disposer((i) => i.dispose()),
+  guangzhoubei: asClass(Guangzhoubei)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  guangzhoucheliang: asClass(Guangzhoucheliang)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  guangzhoujibaoduan: asClass(JTV_HMIS_Guangzhoujibaoduan)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  hxzy: asClass(Hxzy)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  jtv: asClass(JTV)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  kh: asClass(KH)
+    .scoped()
     .disposer((i) => i.dispose()),
 
+  qt: asClass(QT)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  image: asClass(ImageModule)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  mdb: asClass(MDB)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  plc: asClass(PLC)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  printer: asClass(Printer)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  profile: asClass(Profile)
+    .scoped()
+    .disposer((i) => i.dispose()),
+  cmd: asClass(Cmd)
+    .scoped()
+    .disposer((i) => i.dispose()),
   appProtocol: asClass(AppProtocol)
-    .singleton()
+    .scoped()
     .disposer((i) => i.dispose()),
   appTheme: asClass(AppTheme)
-    .singleton()
+    .scoped()
     .disposer((i) => i.dispose()),
   appTray: asClass(AppTray)
-    .singleton()
+    .scoped()
     .disposer((i) => i.dispose()),
   appWindow: asClass(AppWindow)
-    .singleton()
+    .scoped()
     .disposer((i) => i.dispose()),
 });

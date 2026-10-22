@@ -55,7 +55,7 @@ import type {
 } from "./types";
 
 export class QT {
-  readonly db$ = new BehaviorSubject<DBClient | null>(null);
+  private db$ = new BehaviorSubject<DBClient | null>(null);
   private dbFlow$: Observable<DBClient | null>;
   private hmisFlow$: Observable<null>;
   private qtProcess$ =
@@ -73,7 +73,7 @@ export class QT {
     this.profile = profile;
     this.logger = logger;
 
-    this.dbFlow$ = this.profile.state$.pipe(
+    this.dbFlow$ = this.profile.when().pipe(
       distinctUntilChanged((p, c) => p.qtAppPath === c.qtAppPath),
       switchMap((s) => {
         if (!s.qtAppPath) {
@@ -109,7 +109,7 @@ export class QT {
       }),
     );
 
-    this.hmisFlow$ = this.profile.state$.pipe(
+    this.hmisFlow$ = this.profile.when().pipe(
       distinctUntilChanged(
         (p, c) =>
           p.qtHMISEnabled === c.qtHMISEnabled && p.qtHMISPort === c.qtHMISPort,

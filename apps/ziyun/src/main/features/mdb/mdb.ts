@@ -6,8 +6,8 @@ import path from "node:path";
 import { Piscina } from "piscina";
 import workerPath from "../../workers/mdb?worker&url";
 import type { Profile } from "../profile";
-import { QueryPromise } from "../query-promise/query-promise";
 import type { AppCradle } from "../types";
+import { QueryPromise } from "./query-promise";
 import type {
   Corporation,
   DatabaseType,

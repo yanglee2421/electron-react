@@ -23,7 +23,6 @@ export class Printer {
       maxThreads: os.cpus().length,
     });
   }
-
   async dispose() {
     this.piscina.destroy();
     const tmpPath = path.resolve(app.getPath("temp"), app.getName());

@@ -16,7 +16,7 @@ export class AppWindow {
   constructor({ profile }: AppCradle) {
     this.profile = profile;
 
-    const modeChanged$ = this.profile.state$.pipe(
+    const modeChanged$ = this.profile.when().pipe(
       distinctUntilChanged((previous, current) => {
         return previous.alwaysOnTop === current.alwaysOnTop;
       }),

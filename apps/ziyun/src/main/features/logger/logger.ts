@@ -15,9 +15,8 @@ interface LoggerOptions {
 }
 
 export class Logger {
-  readonly event$ = new Subject<void>();
+  private event$ = new Subject<void>();
   private subscription: Subscription;
-
   private db: DBClient;
 
   constructor({ db }: AppCradle) {
@@ -33,10 +32,13 @@ export class Logger {
       )
       .subscribe();
   }
-
   dispose() {
     this.event$.complete();
     this.subscription.unsubscribe();
+  }
+
+  when() {
+    return this.event$.asObservable();
   }
 
   private emit() {

@@ -1,6 +1,7 @@
 // 福州东车辆段
 import type { Logger } from "#main/features/logger";
 import type { QuartorData } from "#main/features/mdb/types";
+import { hydrateSubject } from "#main/utils/hydrate-subject";
 import { resolvedFlaws as resolveCHR501Flaws } from "#shared/functions/chr501";
 import { calculateMaxDiff, calculateResult } from "#shared/functions/chr502";
 import { resolveCHR503 } from "#shared/functions/chr503";
@@ -16,8 +17,7 @@ import { fuzhoudong } from "#shared/instances/schema";
 import { mapGroupBy } from "@yotulee/run";
 import dayjs from "dayjs";
 import { net } from "electron";
-import type { Subscription } from "rxjs";
-import { BehaviorSubject, filter, map } from "rxjs";
+import type { BehaviorSubject, Subscription } from "rxjs";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
 import type { I501Record } from "./501";
@@ -26,9 +26,8 @@ import type { I503 } from "./503";
 import type { I52a } from "./52a";
 
 export class Fuzhoudong {
-  readonly state$: BehaviorSubject<FUZHOUDONG>;
+  private state$: BehaviorSubject<FUZHOUDONG>;
   private subscriptions: Subscription[];
-
   private logger: Logger;
   private mdb: MDB;
 
@@ -36,34 +35,23 @@ export class Fuzhoudong {
     this.mdb = mdb;
     this.logger = logger;
 
-    const stateJSON = kv.getItem(FUZHOUDONG_STORAGE_KEY);
-    const data = stateJSON ? JSON.parse(stateJSON).state : {};
-    const state = fuzhoudong.parse(data);
-    this.state$ = new BehaviorSubject(state);
+    const [state$, subscription1] = hydrateSubject(
+      kv,
+      FUZHOUDONG_STORAGE_KEY,
+      fuzhoudong,
+    );
 
-    const subscription1 = kv.events$
-      .pipe(
-        filter((e) => e.key === FUZHOUDONG_STORAGE_KEY),
-        map((e) => {
-          switch (e.action) {
-            case "set":
-              return fuzhoudong.parse(e.value ? JSON.parse(e.value).state : {});
-            case "remove":
-            case "clear":
-              return fuzhoudong.parse({});
-          }
-        }),
-      )
-      .subscribe(this.state$);
-
+    this.state$ = state$;
     this.subscriptions = [subscription1];
   }
-
   dispose() {
     this.state$.complete();
     this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
+  when() {
+    return this.state$.asObservable();
+  }
   get state() {
     return this.state$.getValue();
   }

@@ -7,7 +7,8 @@ export class AppTheme {
   private subscription: Subscription;
 
   constructor({ profile }: AppCradle) {
-    this.subscription = profile.state$
+    this.subscription = profile
+      .when()
       .pipe(
         distinctUntilChanged(
           (previous, current) => previous.mode === current.mode,

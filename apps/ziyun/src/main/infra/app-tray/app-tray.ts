@@ -15,7 +15,8 @@ export class AppTray {
   private subscription: Subscription;
 
   constructor({ profile, appWindow }: AppCradle) {
-    this.subscription = profile.state$
+    this.subscription = profile
+      .when()
       .pipe(
         distinctUntilChanged(
           (previous, current) => previous.trayEnabled === current.trayEnabled,
