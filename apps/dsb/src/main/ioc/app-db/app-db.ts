@@ -16,7 +16,7 @@ export type DBClient = NodeSQLiteDatabase<typeof schema, typeof relations> & {
 };
 
 export class AppDB {
-  client: DBClient;
+  private client: DBClient;
 
   constructor({ DB_PATH }: AppCradle) {
     const client = new DatabaseSync(DB_PATH);
@@ -28,5 +28,9 @@ export class AppDB {
 
   dispose() {
     this.client.$client.close();
+  }
+
+  db() {
+    return this.client;
   }
 }

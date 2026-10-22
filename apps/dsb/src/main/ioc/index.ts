@@ -14,13 +14,14 @@ container.register({
   kv: asClass(KV)
     .singleton()
     .disposer((i) => i.dispose()),
-
   appDB: asClass(AppDB)
     .singleton()
     .disposer((i) => i.dispose()),
-  appProfile: asClass(AppProfile).singleton(),
 
+  appProfile: asClass(AppProfile)
+    .scoped()
+    .disposer((i) => i.dispose()),
   cmd: asClass(Cmd)
-    .singleton()
+    .scoped()
     .disposer((i) => i.dispose()),
 });

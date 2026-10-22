@@ -14,6 +14,7 @@ import innerImage7 from "#renderer/assets/images/7-inner.jpg";
 import outImage7 from "#renderer/assets/images/7-outter.jpg";
 import customer from "#renderer/assets/images/customer.jpg";
 import saleNetwork from "#renderer/assets/images/sale-network.jpg";
+import { useAppProfile } from "#renderer/hooks/stores/use-app-profile";
 import React from "react";
 import { filter, fromEventPattern } from "rxjs";
 import "swiper/css";
@@ -38,11 +39,7 @@ const inner7 = new URL(innerImage7, import.meta.url).href;
 const saleNet = new URL(saleNetwork, import.meta.url).href;
 const customerHref = new URL(customer, import.meta.url).href;
 
-interface PageProps {
-  children?: React.ReactNode;
-}
-
-const Page = (props: PageProps) => {
+const Page = () => {
   return (
     <div className="box-border flex size-full flex-col">
       <div className="flex h-14 items-center justify-center bg-blue-800">
@@ -200,36 +197,10 @@ const PageThree = () => {
   );
 };
 
-const PageFour = () => {
-  return (
-    <div className="box-border flex size-full flex-col">
-      <div className="flex h-14 items-center justify-center bg-blue-800">
-        <h1 className="flex h-full items-center text-4xl font-bold text-white">
-          <span>信息公示栏</span>
-        </h1>
-      </div>
-      <div className="grid flex-1 grid-flow-col grid-cols-1 grid-rows-1 flex-col gap-3 overflow-hidden bg-linear-to-b from-blue-50 to-blue-200 p-3">
-        <div className="flex flex-col gap-3">
-          <h2 className="rounded bg-blue-400 text-center text-2xl text-white">
-            紫云公司产品销售网络
-          </h2>
-          <div className="flex flex-1 flex-col overflow-hidden rounded bg-white">
-            <article>
-              <p>
-                紫云公司研发的轮轴超声波自动探伤机系列产品，在线检测、监控系统，轮轴、钩缓、轴承、制动阀检修工艺线等产品，销往全路车辆检修市场，得到了用户广泛好评。特别是轮轴超声波自动探伤机作为铁路客、货车辆检修的必备工装，覆盖了全路所有的客、货车车辆段，并在车辆工厂、地方铁路、城市轨道交通领域也得到了广泛应用紫云公司研发的轮轴超声波自动探伤机系列产品，在线检测、监控系统，轮轴、钩缓、轴承、制动阀检修工艺线等产品，销往全路车辆检修市场，得到了用户广泛好评。特别是轮轴超声波自动探伤机作为铁路客、货车辆检修的必备工装，覆盖了全路所有的客、货车车辆段，并在车辆工厂、地方铁路、城市轨道交通领域也得到了广泛应用。
-              </p>
-              <img src={saleNet} alt="" className="aspect-video" />
-              <img src={customerHref} alt="" className="aspect-video" />
-            </article>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export const Component = () => {
   const ref = React.useRef<SwiperRef>(null);
+
+  const enableCmd = useAppProfile((s) => s.enableCmd);
 
   React.useEffect(() => {
     const windowKeydown$ = fromEventPattern<KeyboardEvent>(
@@ -267,12 +238,7 @@ export const Component = () => {
       className="fixed inset-0 h-dvh w-dvw"
     >
       <SwiperSlide>
-        <Page>
-          Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quas rerum
-          consequatur eius harum a odit tempore voluptatem veniam accusantium
-          est maxime tempora quae nesciunt, eaque sit, nostrum impedit
-          doloremque cupiditate.
-        </Page>
+        <Page></Page>
       </SwiperSlide>
       <SwiperSlide>
         <PageTwo></PageTwo>
@@ -281,7 +247,17 @@ export const Component = () => {
         <PageThree></PageThree>
       </SwiperSlide>
       <SwiperSlide>
-        <PageFour></PageFour>
+        <div>
+          <input
+            type="checkbox"
+            checked={enableCmd}
+            onChange={(e) => {
+              useAppProfile.setState((draft) => {
+                draft.enableCmd = e.target.checked;
+              });
+            }}
+          />
+        </div>
       </SwiperSlide>
     </Swiper>
   );

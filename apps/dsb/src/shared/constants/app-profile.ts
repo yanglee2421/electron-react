@@ -1,0 +1,1 @@
+export const APP_PROFILE_STORAGE_KEY = "APP_PROFILE";

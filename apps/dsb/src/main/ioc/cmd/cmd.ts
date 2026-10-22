@@ -1,13 +1,11 @@
+import { hydrateSubject } from "#main/utils/hydrate-subject";
 import addon from "@yanglee2421/union-addon";
 import { BrowserWindow } from "electron";
-import type { Subscription } from "rxjs";
+import type { BehaviorSubject, Subscription } from "rxjs";
 import {
-  BehaviorSubject,
   distinctUntilChanged,
   EMPTY,
-  filter,
   interval,
-  map,
   switchMap,
   tap,
   using,
@@ -18,22 +16,19 @@ import type { AppCradle } from "../types";
 const defaultValue = () => {
   const value = [];
 
-  for (let i = 1; i < 32; i++) {
-    if (i < 19) {
-      value.push({
-        channel: `${i}-0`,
-        db: 100,
-        enabled: true,
-        gates: [],
-      });
-    } else {
-      value.push({
-        channel: `0-${i - 18}`,
-        db: 100,
-        enabled: true,
-        gates: [],
-      });
-    }
+  for (let i = 1; i < 7; i++) {
+    value.push({
+      channel: `${i}-0`,
+      db: 100,
+      enabled: true,
+      gates: [],
+    });
+    value.push({
+      channel: `0-${i}`,
+      db: 100,
+      enabled: true,
+      gates: [],
+    });
   }
 
   return value;
@@ -63,31 +58,16 @@ const channelInputSchema = z.object({
 type CHANNEL_INPUTS = z.infer<typeof channelInputSchema>;
 
 export class Cmd {
-  readonly state$: BehaviorSubject<CHANNEL_INPUTS>;
+  private state$: BehaviorSubject<CHANNEL_INPUTS>;
   private subscriptions: Subscription[];
 
   constructor({ kv }: AppCradle) {
-    const stateJSON = kv.getItem(CHANNEL_INPUTS_STORAGE_KEY);
-    const data = stateJSON ? JSON.parse(stateJSON).state : {};
-    const state = channelInputSchema.parse(data);
-    this.state$ = new BehaviorSubject(state);
-
-    const subscription1 = kv.event$
-      .pipe(
-        filter((e) => e.key === CHANNEL_INPUTS_STORAGE_KEY),
-        map((e) => {
-          switch (e.action) {
-            case "set":
-              return channelInputSchema.parse(
-                e.value ? JSON.parse(e.value).state : {},
-              );
-            case "remove":
-            case "clear":
-              return channelInputSchema.parse({});
-          }
-        }),
-      )
-      .subscribe(this.state$);
+    const [state$, subscription1] = hydrateSubject(
+      kv,
+      CHANNEL_INPUTS_STORAGE_KEY,
+      channelInputSchema,
+    );
+    this.state$ = state$;
 
     const subscription2 = this.state$
       .pipe(
@@ -161,9 +141,13 @@ export class Cmd {
   }
 
   dispose() {
+    this.state$.complete();
     this.subscriptions.forEach((sub) => {
       sub.unsubscribe();
     });
-    this.state$.complete();
+  }
+
+  when() {
+    return this.state$.asObservable();
   }
 }

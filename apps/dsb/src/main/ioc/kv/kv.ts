@@ -7,11 +7,11 @@ import type { AppCradle } from "../types";
 import type { KVEvent } from "./types";
 
 export class KV {
-  readonly event$ = new Subject<KVEvent>();
+  private event$ = new Subject<KVEvent>();
   private db: DBClient;
 
   constructor({ appDB }: AppCradle) {
-    this.db = appDB.client;
+    this.db = appDB.db();
     ipcHandle("kv/clear", () => this.clear());
     ipcHandle("kv/get-item", (_, p) => this.getItem(p));
     ipcHandle("kv/remove-item", (_, p) => this.removeItem(p));
@@ -24,6 +24,10 @@ export class KV {
     ipcRemoveHandle("kv/get-item");
     ipcRemoveHandle("kv/remove-item");
     ipcRemoveHandle("kv/set-item");
+  }
+
+  when() {
+    return this.event$.asObservable();
   }
 
   getItem(key: string) {

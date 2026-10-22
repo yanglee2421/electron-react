@@ -9,10 +9,8 @@ import {
   defer,
   EMPTY,
   filter,
-  finalize,
   from,
   fromEventPattern,
-  ignoreElements,
   map,
   mergeMap,
   Observable,
@@ -86,14 +84,24 @@ const ioc$ = new Observable((sub) => {
   const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
   container.register({ DB_PATH: asValue(DB_PATH) });
 
-  const { kv, cmd } = container.cradle;
-  sub.next({ kv, cmd });
+  const { appProfile } = container.cradle;
+  sub.next({ appProfile });
 
   return () => {
     container.dispose();
   };
 });
-const startup$ = concat(whenReady$, ioc$).pipe(takeUntil(willQuit$));
+const startup$ = concat(
+  whenReady$,
+  ioc$.pipe(
+    tap(() => createWindow()),
+    catchError((error) => {
+      console.error(error);
+
+      return EMPTY;
+    }),
+  ),
+).pipe(takeUntil(willQuit$));
 
 lockFailed$.subscribe(() => {
   console.warn(
@@ -103,23 +111,6 @@ lockFailed$.subscribe(() => {
 });
 
 lockedSuccess$.pipe(switchMap(() => startup$)).subscribe();
-
-const app$ = defer(() => {
-  return concat(whenReady$.pipe(ignoreElements()), ioc$).pipe(
-    tap(() => createWindow()),
-    catchError((error) => {
-      console.error(error);
-
-      return EMPTY;
-    }),
-  );
-}).pipe(
-  takeUntil(willQuit$),
-  finalize(() => {}),
-);
-
-app$.subscribe();
-
 secondInstance$.pipe(tap(() => createWindow())).subscribe();
 
 browserWindowCreated$
