@@ -58,7 +58,11 @@ const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
   beforeInputEvent$
     .pipe(
       filter(([, input]) => {
-        return input.type === "keyDown" && input.control && input.key === "f";
+        return (
+          input.type === "keyDown" &&
+          input.control &&
+          input.key.toLowerCase() === "f"
+        );
       }),
       tap(() => {
         win.setFullScreen(!win.isFullScreen());

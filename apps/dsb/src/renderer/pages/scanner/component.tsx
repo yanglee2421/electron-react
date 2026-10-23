@@ -16,11 +16,39 @@ import customer from "#renderer/assets/images/customer.jpg";
 import officeInner from "#renderer/assets/images/office-inner.jpg";
 import officeOutter from "#renderer/assets/images/office-outter.jpg";
 import saleNetwork from "#renderer/assets/images/sale-network.jpg";
+import pdf from "#renderer/assets/pdf/test.pdf";
 import React from "react";
+import { ErrorBoundary } from "react-error-boundary";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 import "swiper/css";
 import { Autoplay } from "swiper/modules";
-import type { SwiperRef } from "swiper/react";
 import { Swiper, SwiperSlide } from "swiper/react";
+
+// @ts-ignore
+if (typeof Map.prototype.getOrInsertComputed === "undefined") {
+  Object.defineProperty(Map.prototype, "getOrInsertComputed", {
+    // @ts-ignore
+    value(key, callbackFn) {
+      if (this.has(key)) {
+        return this.get(key);
+      }
+      const value = callbackFn(key);
+      this.set(key, value);
+      return value;
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "/pdf.worker.mjs",
+  import.meta.url,
+).href;
+
+// pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const out1 = new URL(outImage1, import.meta.url).href;
 const inner1 = new URL(innerImage1, import.meta.url).href;
@@ -40,40 +68,84 @@ const saleNet = new URL(saleNetwork, import.meta.url).href;
 const customerHref = new URL(customer, import.meta.url).href;
 const officeOutterHref = new URL(officeOutter, import.meta.url).href;
 const officeInnerHref = new URL(officeInner, import.meta.url).href;
+const pdfHref = new URL(pdf, import.meta.url).href;
 
-const Page = () => {
+const Title = (props: React.PropsWithChildren) => {
+  return (
+    <h2 className="rounded bg-blue-400 p-1 text-center text-2xl text-white">
+      {props.children}
+    </h2>
+  );
+};
+
+const PageOne = () => {
+  const [boxHeight, setBoxHeight] = React.useState(0);
+
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const el = ref.current;
+
+    if (!el) {
+      return;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const [{ blockSize: height }] = entry.borderBoxSize;
+        setBoxHeight(height);
+      }
+    });
+
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <div className="box-border flex size-full flex-col">
-      <div className="flex h-14 items-center justify-center bg-blue-800">
-        <h1 className="flex h-full items-center text-4xl font-bold text-white">
-          <span>信息公示栏</span>
-        </h1>
-      </div>
       <div className="grid flex-1 grid-flow-col grid-cols-3 grid-rows-1 flex-col gap-3 overflow-hidden bg-linear-to-b from-blue-50 to-blue-200 p-3">
         <div className="flex flex-col gap-3">
-          <h2 className="rounded bg-blue-400 text-center text-2xl text-white">
-            生产计划
-          </h2>
+          <Title>生产计划</Title>
           <div className="flex-1 overflow-hidden rounded bg-white"></div>
-          <h2 className="rounded bg-blue-400 text-center text-2xl text-white">
-            制度文件
-          </h2>
+          <Title>制度文件</Title>
+          <div className="flex-1 overflow-hidden rounded bg-white">
+            <div className="grid h-full grid-cols-2 grid-rows-1">
+              <div ref={ref}>
+                <ErrorBoundary fallback={<p>Failed to load PDF.</p>}>
+                  <React.Suspense fallback={<p>Loading document…</p>}>
+                    <Document file={pdfHref} onLoadSuccess={() => {}}>
+                      <React.Suspense fallback={<p>Loading page…</p>}>
+                        <Page pageNumber={1} height={boxHeight} />
+                      </React.Suspense>
+                    </Document>
+                  </React.Suspense>
+                </ErrorBoundary>
+              </div>
+              <div className="">
+                <ErrorBoundary fallback={<p>Failed to load PDF.</p>}>
+                  <React.Suspense fallback={<p>Loading document…</p>}>
+                    <Document file={pdfHref} onLoadSuccess={() => {}}>
+                      <React.Suspense fallback={<p>Loading page…</p>}>
+                        <Page pageNumber={1} height={boxHeight} />
+                      </React.Suspense>
+                    </Document>
+                  </React.Suspense>
+                </ErrorBoundary>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col gap-3">
+          <Title>工作安排</Title>
           <div className="flex-1 overflow-hidden rounded bg-white"></div>
         </div>
         <div className="flex flex-col gap-3">
-          <h2 className="rounded bg-blue-400 text-center text-2xl text-white">
-            工作安排
-          </h2>
+          <Title>信息公开</Title>
           <div className="flex-1 overflow-hidden rounded bg-white"></div>
-        </div>
-        <div className="flex flex-col gap-3">
-          <h2 className="rounded bg-blue-400 text-center text-2xl text-white">
-            信息公开
-          </h2>
-          <div className="flex-1 overflow-hidden rounded bg-white"></div>
-          <h2 className="rounded bg-blue-400 text-center text-2xl text-white">
-            其它
-          </h2>
+          <Title>其它</Title>
           <div className="flex-1 overflow-hidden rounded bg-white"></div>
         </div>
       </div>
@@ -84,16 +156,9 @@ const Page = () => {
 const PageTwo = () => {
   return (
     <div className="box-border flex size-full flex-col">
-      <div className="flex h-14 items-center justify-center bg-blue-800">
-        <h1 className="flex h-full items-center text-4xl font-bold text-white">
-          <span>信息公示栏</span>
-        </h1>
-      </div>
       <div className="grid flex-1 grid-flow-col grid-cols-2 grid-rows-1 flex-col gap-3 overflow-hidden bg-linear-to-b from-blue-50 to-blue-200 p-3">
         <div className="flex flex-col gap-3">
-          <h2 className="rounded bg-blue-400 text-center text-2xl text-white">
-            公司简介
-          </h2>
+          <Title>公司简介</Title>
           <div className="flex-1 overflow-hidden rounded bg-white p-3">
             <article className="text-base">
               <p className="indent-[2em]">
@@ -123,9 +188,7 @@ const PageTwo = () => {
           </div>
         </div>
         <div className="flex flex-col gap-3">
-          <h2 className="rounded bg-blue-400 text-center text-2xl text-white">
-            区域示意图
-          </h2>
+          <Title>区域示意图</Title>
           <div className="flex-1 overflow-hidden rounded bg-white p-3">
             <p className="indent-[2em]">
               紫云公司研发的轮轴超声波自动探伤机系列产品，在线检测、监控系统，轮轴、钩缓、轴承、制动阀检修工艺线等产品，销往全路车辆检修市场，得到了用户广泛好评。特别是轮轴超声波自动探伤机作为铁路客、货车辆检修的必备工装，覆盖了全路所有的客、货车车辆段，并在车辆工厂、地方铁路、城市轨道交通领域也得到了广泛应用紫云公司研发的轮轴超声波自动探伤机系列产品，在线检测、监控系统，轮轴、钩缓、轴承、制动阀检修工艺线等产品，销往全路车辆检修市场，得到了用户广泛好评。特别是轮轴超声波自动探伤机作为铁路客、货车辆检修的必备工装，覆盖了全路所有的客、货车车辆段，并在车辆工厂、地方铁路、城市轨道交通领域也得到了广泛应用。
@@ -169,31 +232,24 @@ const PageThree = () => {
 
   return (
     <div className="box-border flex size-full flex-col">
-      <div className="flex h-14 items-center justify-center bg-blue-800">
-        <h1 className="flex h-full items-center text-4xl font-bold text-white">
-          <span>信息公示栏</span>
-        </h1>
-      </div>
       <div className="grid flex-1 grid-flow-col grid-cols-1 grid-rows-1 flex-col gap-3 overflow-hidden bg-linear-to-b from-blue-50 to-blue-200 p-3">
         <div className="flex flex-col gap-3">
-          <h2 className="rounded bg-blue-400 text-center text-2xl text-white">
+          <h2 className="rounded bg-blue-400 text-center text-3xl text-white">
             紫云公司生产基地
           </h2>
-          <div className="flex flex-1 flex-col overflow-hidden rounded bg-white px-24">
-            <div className="my-auto grid grid-cols-4 grid-rows-4 gap-x-3">
+          <div className="flex flex-1 flex-col overflow-hidden rounded">
+            <div className="my-auto grid h-full grid-cols-4 grid-rows-4 gap-x-3.5">
               {list.map((item, i) => {
                 return (
-                  <div key={i} className="">
-                    <figure>
+                  <div key={i} className="flex flex-col">
+                    <div className="flex-1 overflow-hidden rounded">
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="aspect-video"
+                        className="size-full object-cover"
                       />
-                      <figcaption className="text-center text-sm">
-                        {item.name}
-                      </figcaption>
-                    </figure>
+                    </div>
+                    <span className="text-center text-sm">{item.name}</span>
                   </div>
                 );
               })}
@@ -206,21 +262,19 @@ const PageThree = () => {
 };
 
 export const Component = () => {
-  const ref = React.useRef<SwiperRef>(null);
-
   return (
     <Swiper
-      ref={ref}
       spaceBetween={0}
       slidesPerView={1}
       onSlideChange={() => console.log("slide change")}
       onSwiper={(swiper) => console.log(swiper)}
       modules={[Autoplay]}
-      autoplay={{ delay: 1000 * 30 }}
+      autoplay={{ delay: 1000 * 3 }}
       className="fixed inset-0 h-dvh w-dvw"
+      loop
     >
       <SwiperSlide>
-        <Page></Page>
+        <PageOne></PageOne>
       </SwiperSlide>
       <SwiperSlide>
         <PageTwo></PageTwo>

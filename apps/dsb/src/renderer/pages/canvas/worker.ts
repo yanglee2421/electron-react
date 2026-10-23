@@ -57,10 +57,10 @@ const message$ = fromEventPattern<MessageEvent<any>>(
   (h) => self.addEventListener("message", h),
   (h) => self.removeEventListener("message", h),
 );
-const messageerror$ = fromEventPattern<MessageEvent<any>>(
-  (h) => self.addEventListener("messageerror", h),
-  (h) => self.removeEventListener("messageerror", h),
-);
+// const messageerror$ = fromEventPattern<MessageEvent<any>>(
+//   (h) => self.addEventListener("messageerror", h),
+//   (h) => self.removeEventListener("messageerror", h),
+// );
 
 const animate$ = animationFrames();
 const chartState = new Map<string, ChartState>();
