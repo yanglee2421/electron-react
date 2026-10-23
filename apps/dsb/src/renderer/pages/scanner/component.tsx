@@ -13,10 +13,10 @@ import outImage6 from "#renderer/assets/images/6-outter.jpg";
 import innerImage7 from "#renderer/assets/images/7-inner.jpg";
 import outImage7 from "#renderer/assets/images/7-outter.jpg";
 import customer from "#renderer/assets/images/customer.jpg";
+import officeInner from "#renderer/assets/images/office-inner.jpg";
+import officeOutter from "#renderer/assets/images/office-outter.jpg";
 import saleNetwork from "#renderer/assets/images/sale-network.jpg";
-import { useAppProfile } from "#renderer/hooks/stores/use-app-profile";
 import React from "react";
-import { filter, fromEventPattern } from "rxjs";
 import "swiper/css";
 import { Autoplay } from "swiper/modules";
 import type { SwiperRef } from "swiper/react";
@@ -38,6 +38,8 @@ const out7 = new URL(outImage7, import.meta.url).href;
 const inner7 = new URL(innerImage7, import.meta.url).href;
 const saleNet = new URL(saleNetwork, import.meta.url).href;
 const customerHref = new URL(customer, import.meta.url).href;
+const officeOutterHref = new URL(officeOutter, import.meta.url).href;
+const officeInnerHref = new URL(officeInner, import.meta.url).href;
 
 const Page = () => {
   return (
@@ -147,20 +149,22 @@ const PageTwo = () => {
 
 const PageThree = () => {
   const list = [
-    out1,
-    inner1,
-    out2,
-    inner2,
-    out3,
-    inner3,
-    out4,
-    inner4,
-    out5,
-    inner5,
-    out6,
-    inner6,
-    out7,
-    inner7,
+    { image: out1, name: "一号库外" },
+    { image: inner1, name: "一号库内" },
+    { image: out2, name: "二号库外" },
+    { image: inner2, name: "二号库内" },
+    { image: out3, name: "三号库外" },
+    { image: inner3, name: "三号库内" },
+    { image: out4, name: "四号库外" },
+    { image: inner4, name: "四号库内" },
+    { image: out5, name: "五号库外" },
+    { image: inner5, name: "五号库内" },
+    { image: out6, name: "六号库外" },
+    { image: inner6, name: "六号库内" },
+    { image: out7, name: "七号库外" },
+    { image: inner7, name: "七号库内" },
+    { image: officeOutterHref, name: "办公区外部" },
+    { image: officeInnerHref, name: "办公区内部" },
   ];
 
   return (
@@ -177,13 +181,17 @@ const PageThree = () => {
           </h2>
           <div className="flex flex-1 flex-col overflow-hidden rounded bg-white px-24">
             <div className="my-auto grid grid-cols-4 grid-rows-4 gap-x-3">
-              {list.map((src, i) => {
+              {list.map((item, i) => {
                 return (
                   <div key={i} className="">
                     <figure>
-                      <img src={src} alt="一号库外" className="aspect-video" />
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="aspect-video"
+                      />
                       <figcaption className="text-center text-sm">
-                        一号库外
+                        {item.name}
                       </figcaption>
                     </figure>
                   </div>
@@ -199,32 +207,6 @@ const PageThree = () => {
 
 export const Component = () => {
   const ref = React.useRef<SwiperRef>(null);
-
-  const enableCmd = useAppProfile((s) => s.enableCmd);
-
-  React.useEffect(() => {
-    const windowKeydown$ = fromEventPattern<KeyboardEvent>(
-      (h) => window.addEventListener("keydown", h),
-      (h) => window.removeEventListener("keydown", h),
-    ).pipe(filter((e) => e.ctrlKey));
-
-    const sub = windowKeydown$
-      .pipe(filter((e) => e.key === "k"))
-      .subscribe(() => {
-        document.documentElement.requestFullscreen();
-      });
-
-    const sub2 = windowKeydown$
-      .pipe(filter((e) => e.key === "q"))
-      .subscribe(() => {
-        document.exitFullscreen();
-      });
-
-    return () => {
-      sub.unsubscribe();
-      sub2.unsubscribe();
-    };
-  }, []);
 
   return (
     <Swiper
@@ -245,19 +227,6 @@ export const Component = () => {
       </SwiperSlide>
       <SwiperSlide>
         <PageThree></PageThree>
-      </SwiperSlide>
-      <SwiperSlide>
-        <div>
-          <input
-            type="checkbox"
-            checked={enableCmd}
-            onChange={(e) => {
-              useAppProfile.setState((draft) => {
-                draft.enableCmd = e.target.checked;
-              });
-            }}
-          />
-        </div>
       </SwiperSlide>
     </Swiper>
   );

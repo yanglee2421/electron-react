@@ -6,12 +6,11 @@ import url from "node:url";
 import {
   catchError,
   concat,
-  defer,
   EMPTY,
   filter,
   from,
   fromEventPattern,
-  map,
+  merge,
   mergeMap,
   Observable,
   of,
@@ -45,6 +44,27 @@ const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
     alwaysOnTop,
   });
   win.menuBarVisible = false;
+  win.setMenu(null);
+
+  const beforeInputEvent$ = fromEventPattern<[Electron.Event, Electron.Input]>(
+    (f) => win.webContents.on("before-input-event", f),
+    (f) => win.webContents.off("before-input-event", f),
+  );
+  const webContentsDestroyed$ = fromEventPattern(
+    (f) => win.webContents.on("destroyed", f),
+    (f) => win.webContents.off("destroyed", f),
+  );
+
+  beforeInputEvent$.pipe(
+    filter(([, input]) => {
+      return input.type === "keyDown" && input.control && input.key === "f";
+    }),
+    tap(() => {
+      win.setFullScreen(!win.isFullScreen());
+    }),
+    takeUntil(webContentsDestroyed$),
+  );
+  // .subscribe();
 
   if (is.dev) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL!);
@@ -54,15 +74,8 @@ const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
   }
 };
 
-const hasLocked$ = defer(() => {
-  const hasLocked = app.requestSingleInstanceLock();
-
-  return of(hasLocked);
-});
-const [lockedSuccess$, lockFailed$] = partition(
-  hasLocked$,
-  (hasLock) => hasLock,
-);
+const lock$ = of(app.requestSingleInstanceLock());
+const [lockSuccess$, lockFailed$] = partition(lock$, (locked) => locked);
 const whenReady$ = from(app.whenReady());
 const willQuit$ = fromEventPattern(
   (f) => app.on("will-quit", f),
@@ -71,15 +84,31 @@ const willQuit$ = fromEventPattern(
 const browserWindowCreated$ = fromEventPattern<[Electron.Event, BrowserWindow]>(
   (f) => app.on("browser-window-created", f),
   (f) => app.off("browser-window-created", f),
+).pipe(
+  mergeMap(([, win]) => {
+    return fromEventPattern(
+      (f) => win.on("ready-to-show", f),
+      (f) => win.off("ready-to-show", f),
+    ).pipe(
+      take(1),
+      tap(() => {
+        optimizer.watchWindowShortcuts(win);
+        win.show();
+      }),
+    );
+  }),
 );
 const windowAllClosed$ = fromEventPattern(
   (f) => app.on("window-all-closed", f),
   (f) => app.off("window-all-closed", f),
+).pipe(
+  filter(() => !platform.isMacOS),
+  tap(() => app.quit()),
 );
 const secondInstance$ = fromEventPattern(
   (f) => app.on("second-instance", f),
   (f) => app.off("second-instance", f),
-);
+).pipe(tap(() => createWindow()));
 const ioc$ = new Observable((sub) => {
   const DB_PATH = path.resolve(app.getPath("userData"), "./db.db");
   container.register({ DB_PATH: asValue(DB_PATH) });
@@ -90,18 +119,7 @@ const ioc$ = new Observable((sub) => {
   return () => {
     container.dispose();
   };
-});
-const startup$ = concat(
-  whenReady$,
-  ioc$.pipe(
-    tap(() => createWindow()),
-    catchError((error) => {
-      console.error(error);
-
-      return EMPTY;
-    }),
-  ),
-).pipe(takeUntil(willQuit$));
+}).pipe(tap(() => createWindow()));
 
 lockFailed$.subscribe(() => {
   console.warn(
@@ -110,28 +128,38 @@ lockFailed$.subscribe(() => {
   app.quit();
 });
 
-lockedSuccess$.pipe(switchMap(() => startup$)).subscribe();
-secondInstance$.pipe(tap(() => createWindow())).subscribe();
-
-browserWindowCreated$
+lockSuccess$
   .pipe(
-    map(([, win]) => win),
-    tap((win) => optimizer.watchWindowShortcuts(win)),
-    mergeMap((win) => {
-      return fromEventPattern(
-        (f) => win.on("ready-to-show", f),
-        (f) => win.off("ready-to-show", f),
-      ).pipe(
-        take(1),
-        tap(() => win.show()),
+    tap(() => {
+      if (is.dev) {
+        const USER_DATA_PATH_DEV = path.resolve(
+          app.getPath("appData"),
+          `./${app.getName()}-dev`,
+        );
+        app.setPath("userData", USER_DATA_PATH_DEV);
+      }
+
+      if (is.dev) {
+        app.setAsDefaultProtocolClient("app-dsb", process.execPath, [
+          path.resolve(process.argv[1]),
+        ]);
+      } else {
+        app.setAsDefaultProtocolClient("app-dsb");
+      }
+    }),
+    switchMap(() => {
+      return merge(
+        secondInstance$,
+        browserWindowCreated$,
+        windowAllClosed$,
+        concat(whenReady$, ioc$),
       );
     }),
-  )
-  .subscribe();
+    catchError((error) => {
+      console.error(error);
 
-windowAllClosed$
-  .pipe(
-    filter(() => !platform.isMacOS),
-    tap(() => app.quit()),
+      return EMPTY;
+    }),
+    takeUntil(willQuit$),
   )
   .subscribe();
