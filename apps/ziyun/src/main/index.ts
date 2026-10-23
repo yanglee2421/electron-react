@@ -8,23 +8,24 @@ import {
 import { electronApp, is, optimizer, platform } from "@electron-toolkit/utils";
 import { asValue } from "awilix";
 import dayjs from "dayjs";
-import { app, Menu } from "electron";
+import { app, Menu, protocol } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 import {
   catchError,
   concat,
-  defer,
   EMPTY,
   filter,
-  finalize,
+  from,
   fromEventPattern,
-  ignoreElements,
   map,
+  merge,
   mergeMap,
   Observable,
   of,
+  partition,
+  switchMap,
   take,
   takeUntil,
   tap,
@@ -49,34 +50,8 @@ import * as qtIPC from "./features/qt/ipc";
 import * as xmlIPC from "./features/xml/ipc";
 import * as infraIPC from "./infra/ipc";
 
-/**
- * Avoid single instance in development version & production version
- */
-if (is.dev) {
-  const USER_DATA_PATH_DEV = path.resolve(
-    app.getPath("appData"),
-    `./${app.getName()}-dev`,
-  );
-  app.setPath("userData", USER_DATA_PATH_DEV);
-}
-
-if (is.dev) {
-  app.setAsDefaultProtocolClient("app-ziyun", process.execPath, [
-    path.resolve(process.argv[1]),
-  ]);
-} else {
-  app.setAsDefaultProtocolClient("app-ziyun");
-}
-
-/**
- * Disable GPU & Sandbox to avoid crash
- */
-// if (platform.isLinux) {
-//   app.disableHardwareAcceleration();
-// }
-
-const APP_DB_PATH = path.resolve(app.getPath("userData"), "db.db");
 const resource$ = new Observable((sub) => {
+  const APP_DB_PATH = path.resolve(app.getPath("userData"), "db.db");
   container.register({ dbPath: asValue(APP_DB_PATH) });
 
   const { db } = container.cradle;
@@ -157,106 +132,141 @@ const resource$ = new Observable((sub) => {
     fuzhoudongUnIPC();
   };
 }).pipe(
+  tap(() => {
+    const { appWindow } = container.cradle;
+    const openURL = process.argv.find((arg) => {
+      return arg.startsWith("app-ziyun://");
+    });
+
+    appWindow.show(openURL);
+  }),
   catchError((error) => {
     if (is.dev) {
       console.error(error);
     }
 
-    container.dispose().then(async () => {
-      const BACKUP_DB_PATH = path.resolve(
-        app.getPath("desktop"),
-        `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
-      );
+    const BACKUP_DB_PATH = path.resolve(
+      app.getPath("desktop"),
+      `db-backup-${dayjs().format("YYYY-MM-DD_HH-mm-ss")}.db`,
+    );
+    const APP_DB_PATH = container.cradle.dbPath;
 
-      await fs.promises.cp(APP_DB_PATH, BACKUP_DB_PATH, { recursive: true });
-      await fs.promises.rm(APP_DB_PATH, { recursive: true, force: true });
-    });
-
-    return EMPTY;
+    return concat(
+      from(container.dispose()),
+      from(fs.promises.cp(APP_DB_PATH, BACKUP_DB_PATH, { recursive: true })),
+      from(fs.promises.rm(APP_DB_PATH, { recursive: true, force: true })),
+    );
   }),
 );
 
-/**
- * Main App Subscription
- */
-const app$ = defer(() => {
-  const hasLock = app.requestSingleInstanceLock();
+const showWindowWhenSecondInstance$ = secondInstance$.pipe(
+  tap(([, argv]) => {
+    const url = argv.find((arg) => arg.startsWith("app-ziyun://"));
+    const { appWindow } = container.cradle;
 
-  // If this instance is the second instance, quit immediately
-  if (!hasLock) {
-    return of(null).pipe(
-      tap(() => {
-        console.warn(
-          "Another instance of the app is already running. This instance will be closed.",
-        );
-      }),
+    appWindow.show(url);
+  }),
+);
+
+const showWindowWhenReady$ = browserWindowCreated$.pipe(
+  map(([, win]) => win),
+  tap((win) => {
+    optimizer.watchWindowShortcuts(win);
+
+    win.on("focus", () => {
+      win.webContents.send("windowFocus");
+    });
+    win.on("blur", () => {
+      win.webContents.send("windowBlur");
+    });
+  }),
+  mergeMap((win) => {
+    return fromEventPattern(
+      (f) => win.on("ready-to-show", f),
+      (f) => win.off("ready-to-show", f),
+    ).pipe(
+      take(1),
+      tap(() => win.show()),
     );
-  }
+  }),
+);
 
-  // If this instance is the first instance, proceed with startup
-  return concat(whenReady$.pipe(ignoreElements()), resource$).pipe(
+const closeWindowToQuit$ = windowAllClosed$.pipe(
+  filter(() => !platform.isMacOS),
+  filter(() => !container.cradle.profile.state.trayEnabled),
+  tap(() => app.quit()),
+);
+
+const lock = app.requestSingleInstanceLock();
+const lock$ = of(lock);
+const [lockOk$, lockFailed$] = partition(lock$, (i) => i);
+
+lockFailed$.subscribe(() => {
+  console.warn("Another instance has been existed, this process will quit");
+  app.quit();
+});
+
+lockOk$
+  .pipe(
     tap(() => {
+      /**
+       * Avoid single instance in development version & production version
+       */
+      if (is.dev) {
+        const USER_DATA_PATH_DEV = path.resolve(
+          app.getPath("appData"),
+          `./${app.getName()}-dev`,
+        );
+        app.setPath("userData", USER_DATA_PATH_DEV);
+      }
+
+      if (is.dev) {
+        app.setAsDefaultProtocolClient("app-ziyun", process.execPath, [
+          path.resolve(process.argv[1]),
+        ]);
+      } else {
+        app.setAsDefaultProtocolClient("app-ziyun");
+      }
+
+      /**
+       * Disable GPU & Sandbox to avoid crash
+       */
+      // if (platform.isLinux) {
+      //   app.disableHardwareAcceleration();
+      // }
+
       Menu.setApplicationMenu(null);
 
       if (platform.isWindows) {
         electronApp.setAppUserModelId("com.electron");
       }
 
-      const { appWindow } = container.cradle;
-      const openURL = process.argv.find((arg) => {
-        return arg.startsWith("app-ziyun://");
-      });
-
-      appWindow.show(openURL);
+      protocol.registerSchemesAsPrivileged([
+        {
+          scheme: "ziyun",
+          privileges: {
+            secure: true,
+            standard: true,
+            supportFetchAPI: true,
+            corsEnabled: true,
+            stream: true,
+          },
+        },
+      ]);
     }),
-  );
-}).pipe(
-  takeUntil(willQuit$),
-  finalize(() => app.quit()),
-);
-
-app$.subscribe();
-
-secondInstance$
-  .pipe(
-    tap(([, argv]) => {
-      const url = argv.find((arg) => arg.startsWith("app-ziyun://"));
-      const { appWindow } = container.cradle;
-
-      appWindow.show(url);
-    }),
-  )
-  .subscribe();
-
-browserWindowCreated$
-  .pipe(
-    map(([, win]) => win),
-    tap((win) => {
-      optimizer.watchWindowShortcuts(win);
-
-      win.on("focus", () => {
-        win.webContents.send("windowFocus");
-      });
-      win.on("blur", () => {
-        win.webContents.send("windowBlur");
-      });
-    }),
-    mergeMap((win) => {
-      return fromEventPattern(
-        (f) => win.on("ready-to-show", f),
-        (f) => win.off("ready-to-show", f),
-      ).pipe(
-        take(1),
-        tap(() => win.show()),
+    switchMap(() => {
+      return merge(
+        closeWindowToQuit$,
+        concat(whenReady$, showWindowWhenSecondInstance$),
+        concat(whenReady$, showWindowWhenReady$),
+        concat(whenReady$, resource$),
       );
     }),
-  )
-  .subscribe();
+    catchError((error) => {
+      console.error(error);
 
-windowAllClosed$
-  .pipe(
-    filter(() => !platform.isMacOS),
-    filter(() => !container.cradle.profile.state.trayEnabled),
-    tap(() => app.quit()),
+      return EMPTY;
+    }),
+    takeUntil(willQuit$),
   )
   .subscribe();

@@ -1,10 +1,11 @@
 import { useUploadCHR503 } from "#renderer/api/kh";
 import { fetchAnniversary } from "#renderer/api/mdb";
-import { Loading, PendingIcon } from "#renderer/components/Loading";
+import { PendingIcon } from "#renderer/components/Loading";
 import { Grid3x3, Refresh, Upload } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
+  Box,
   Card,
   CardContent,
   CardHeader,
@@ -15,6 +16,7 @@ import {
   ListItemIcon,
   ListItemText,
   Pagination,
+  Skeleton,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -59,7 +61,13 @@ export const Component = () => {
 
   const renderRow = () => {
     if (query.isPending) {
-      return <Loading slotProps={{ box: { sx: { padding: 0 } } }} />;
+      return (
+        <Box sx={{ mt: 1.5 }}>
+          <Skeleton />
+          <Skeleton animation="wave" />
+          <Skeleton animation={false} />
+        </Box>
+      );
     }
 
     if (query.isError) {

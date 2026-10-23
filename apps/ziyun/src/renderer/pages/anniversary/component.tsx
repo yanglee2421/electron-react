@@ -1,9 +1,9 @@
 import { fetchAnniversary } from "#renderer/api/mdb";
-import { Loading } from "#renderer/components/Loading";
 import { ArrowForward, Grid3x3, Refresh } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
+  Box,
   Card,
   CardContent,
   CardHeader,
@@ -14,6 +14,7 @@ import {
   ListItemIcon,
   ListItemText,
   Pagination,
+  Skeleton,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -28,7 +29,13 @@ export const Component = () => {
 
   const renderRow = () => {
     if (query.isPending) {
-      return <Loading slotProps={{ box: { sx: { padding: 0 } } }} />;
+      return (
+        <Box sx={{ mt: 1.5 }}>
+          <Skeleton />
+          <Skeleton animation="wave" />
+          <Skeleton animation={false} />
+        </Box>
+      );
     }
 
     if (query.isError) {
