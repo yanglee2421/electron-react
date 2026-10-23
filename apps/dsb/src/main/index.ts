@@ -55,16 +55,17 @@ const createWindow = ({ alwaysOnTop }: CreateWindowOptions = {}) => {
     (f) => win.webContents.off("destroyed", f),
   );
 
-  beforeInputEvent$.pipe(
-    filter(([, input]) => {
-      return input.type === "keyDown" && input.control && input.key === "f";
-    }),
-    tap(() => {
-      win.setFullScreen(!win.isFullScreen());
-    }),
-    takeUntil(webContentsDestroyed$),
-  );
-  // .subscribe();
+  beforeInputEvent$
+    .pipe(
+      filter(([, input]) => {
+        return input.type === "keyDown" && input.control && input.key === "f";
+      }),
+      tap(() => {
+        win.setFullScreen(!win.isFullScreen());
+      }),
+      takeUntil(webContentsDestroyed$),
+    )
+    .subscribe();
 
   if (is.dev) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL!);
