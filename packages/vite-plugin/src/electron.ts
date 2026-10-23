@@ -13,7 +13,9 @@ import {
   Subject,
   catchError,
   debounceTime,
+  filter,
   fromEventPattern,
+  map,
   merge,
   switchMap,
   takeUntil,
@@ -166,12 +168,34 @@ const startElectron = (server: ViteDevServer) => {
       sub.complete();
     });
 
-    ps.stdout.addListener("data", (data) => {
-      logger?.info(`[electron] ` + String(data).trim());
-    });
-    ps.stderr.addListener("data", (data) => {
-      logger?.error(`[electron] ` + String(data).trim());
-    });
+    const outData$ = fromEventPattern<Buffer>(
+      (h) => ps.stdout.on("data", h),
+      (h) => ps.stdout.off("data", h),
+    );
+    const errData$ = fromEventPattern<Buffer>(
+      (h) => ps.stderr.on("data", h),
+      (h) => ps.stderr.off("data", h),
+    );
+
+    const subOut = outData$
+      .pipe(
+        map((data) => String(data).trim()),
+        filter((msg) => msg.length > 0),
+      )
+      .subscribe((data) => {
+        console.log(data);
+
+        logger?.info(`[electron] out` + data);
+      });
+
+    const subError = errData$
+      .pipe(
+        map((data) => String(data).trim()),
+        filter((msg) => msg.length > 0),
+      )
+      .subscribe((data) => {
+        logger?.error(`[electron] err` + data);
+      });
 
     return () => {
       logger?.info("[electron] Stopping Electron...");
@@ -179,6 +203,8 @@ const startElectron = (server: ViteDevServer) => {
       ps.stderr.removeAllListeners();
       ps.removeAllListeners();
       ps.kill();
+      subOut.unsubscribe();
+      subError.unsubscribe();
     };
   }).pipe(
     tap({
