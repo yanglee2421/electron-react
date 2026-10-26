@@ -79,7 +79,7 @@ const Title = (props: React.PropsWithChildren) => {
 };
 
 const PageOne = () => {
-  const [boxHeight, setBoxHeight] = React.useState(0);
+  const [boxWidth, setBoxWidth] = React.useState(0);
 
   const ref = React.useRef<HTMLDivElement>(null);
 
@@ -92,8 +92,8 @@ const PageOne = () => {
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const [{ blockSize: height }] = entry.borderBoxSize;
-        setBoxHeight(height);
+        const [{ inlineSize: height }] = entry.contentBoxSize;
+        setBoxWidth(height);
       }
     });
 
@@ -112,13 +112,13 @@ const PageOne = () => {
           <div className="flex-1 overflow-hidden rounded bg-white"></div>
           <Title>制度文件</Title>
           <div className="flex-1 overflow-hidden rounded bg-white">
-            <div className="grid h-full grid-cols-2 grid-rows-1">
+            <div className="grid h-full grid-cols-2 grid-rows-1 place-items-center">
               <div ref={ref}>
                 <ErrorBoundary fallback={<p>Failed to load PDF.</p>}>
                   <React.Suspense fallback={<p>Loading document…</p>}>
-                    <Document file={pdfHref} onLoadSuccess={() => {}}>
+                    <Document file={pdfHref}>
                       <React.Suspense fallback={<p>Loading page…</p>}>
-                        <Page pageNumber={1} height={boxHeight} />
+                        <Page pageNumber={1} width={boxWidth} />
                       </React.Suspense>
                     </Document>
                   </React.Suspense>
@@ -127,9 +127,9 @@ const PageOne = () => {
               <div className="">
                 <ErrorBoundary fallback={<p>Failed to load PDF.</p>}>
                   <React.Suspense fallback={<p>Loading document…</p>}>
-                    <Document file={pdfHref} onLoadSuccess={() => {}}>
+                    <Document file={pdfHref}>
                       <React.Suspense fallback={<p>Loading page…</p>}>
-                        <Page pageNumber={1} height={boxHeight} />
+                        <Page pageNumber={1} width={boxWidth} />
                       </React.Suspense>
                     </Document>
                   </React.Suspense>
@@ -266,8 +266,6 @@ export const Component = () => {
     <Swiper
       spaceBetween={0}
       slidesPerView={1}
-      onSlideChange={() => console.log("slide change")}
-      onSwiper={(swiper) => console.log(swiper)}
       modules={[Autoplay]}
       autoplay={{ delay: 1000 * 3 }}
       className="fixed inset-0 h-dvh w-dvw"
