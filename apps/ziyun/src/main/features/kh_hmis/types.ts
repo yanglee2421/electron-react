@@ -125,3 +125,13 @@ export interface PostResponse {
   code: number;
   msg: string;
 }
+
+export interface DeviceUploadBody {
+  sbllid: string;
+  createtime: string;
+  selftest: string;
+  selftesttime: string;
+  selftestresult: string;
+  devicestatus: string;
+  workstatus: string;
+}

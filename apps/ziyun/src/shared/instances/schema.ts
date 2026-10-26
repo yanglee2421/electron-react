@@ -63,6 +63,11 @@ export const kh_hmis = z.object({
   ftpPort: z.number().int().min(1).max(65535).default(21),
   ftpUser: z.string().default("administrator"),
   ftpPassword: z.string().default("tech@963852"),
+
+  enableDeviceStatusUpload: z.boolean().default(false),
+  deviceUploadIP: ipv4Schema,
+  deviceUploadPort: portSchema,
+  deviceUploadToken: z.string().default(""),
 });
 
 export const hxzy_hmis = z.object({

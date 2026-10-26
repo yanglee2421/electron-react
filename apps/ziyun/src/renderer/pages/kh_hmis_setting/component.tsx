@@ -41,6 +41,12 @@ export const Component = () => {
   const ftpPort = useKhHmisStore((s) => s.ftpPort);
   const ftpUser = useKhHmisStore((s) => s.ftpUser);
   const ftpPassword = useKhHmisStore((s) => s.ftpPassword);
+  const enableDeviceStatusUpload = useKhHmisStore(
+    (s) => s.enableDeviceStatusUpload,
+  );
+  const deviceUploadIP = useKhHmisStore((s) => s.deviceUploadIP);
+  const deviceUploadPort = useKhHmisStore((s) => s.deviceUploadPort);
+  const deviceUploadToken = useKhHmisStore((s) => s.deviceUploadToken);
 
   const form = useForm({
     defaultValues: {
@@ -62,6 +68,10 @@ export const Component = () => {
       ftpPort,
       ftpUser,
       ftpPassword,
+      enableDeviceStatusUpload,
+      deviceUploadIP,
+      deviceUploadPort,
+      deviceUploadToken,
     },
     validators: {
       onChange: kh_hmis.required(),
@@ -86,10 +96,16 @@ export const Component = () => {
         draft.ftpPort = value.ftpPort;
         draft.ftpUser = value.ftpUser;
         draft.ftpPassword = value.ftpPassword;
+        draft.enableDeviceStatusUpload = value.enableDeviceStatusUpload;
+        draft.deviceUploadIP = value.deviceUploadIP;
+        draft.deviceUploadPort = value.deviceUploadPort;
+        draft.deviceUploadToken = value.deviceUploadToken;
       });
       toast.success("保存成功");
     },
   });
+
+  console.log(form.state.errors.at(0));
 
   return (
     <Card>
@@ -391,6 +407,71 @@ export const Component = () => {
                       "条形输入一段时间后自动提交查询, 适用于扫码枪不支持自动回车的情况"
                     }
                     label="自动提交延迟 ( 毫秒 )"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={12}>
+              <FormLabel>设备状态上传</FormLabel>
+            </Grid>
+            <Grid size={12}>
+              <form.Field name="enableDeviceStatusUpload">
+                {(field) => (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.checked)}
+                      />
+                    }
+                    label="设备状态自动上传"
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="deviceUploadIP">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="IP地址"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="deviceUploadPort">
+                {(field) => (
+                  <NumberField
+                    field={{
+                      value: field.state.value,
+                      onChange: (value) => field.handleChange(value),
+                      onBlur: field.handleBlur,
+                    }}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="端口号"
+                    fullWidth
+                  />
+                )}
+              </form.Field>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <form.Field name="deviceUploadToken">
+                {(field) => (
+                  <TextField
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={!!field.state.meta.errors.length}
+                    helperText={field.state.meta.errors.at(0)?.message}
+                    label="Token"
                     fullWidth
                   />
                 )}

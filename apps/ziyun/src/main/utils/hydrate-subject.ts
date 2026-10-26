@@ -1,5 +1,5 @@
 import type { KV } from "#main/features/kv";
-import { BehaviorSubject, map } from "rxjs";
+import { BehaviorSubject, filter, map } from "rxjs";
 import type { z } from "zod";
 
 const safeJsonParse = (storage: string | null | undefined) => {
@@ -25,6 +25,7 @@ export const hydrateSubject = <T extends z.ZodType>(
   const subscription = kv
     .when()
     .pipe(
+      filter((e) => e.key === key),
       map((e) => {
         switch (e.action) {
           case "set":

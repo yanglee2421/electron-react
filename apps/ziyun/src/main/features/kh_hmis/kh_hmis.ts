@@ -26,7 +26,15 @@ import { net } from "electron";
 import path from "node:path";
 import pLimit from "p-limit";
 import type { BehaviorSubject, Subscription } from "rxjs";
-import { distinctUntilChanged, EMPTY, interval, switchMap, tap } from "rxjs";
+import {
+  catchError,
+  distinctUntilChanged,
+  EMPTY,
+  from,
+  interval,
+  switchMap,
+  tap,
+} from "rxjs";
 import type { DBClient } from "../db/types";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
@@ -35,6 +43,7 @@ import type { I502Record } from "./502";
 import type { I503 } from "./503";
 import type { I52a } from "./52a";
 import type {
+  DeviceUploadBody,
   KHGetResponse,
   PostRequestItem,
   PostResponse,
@@ -82,7 +91,39 @@ export class KH {
       )
       .subscribe();
 
-    this.subscriptions = [subscription1, subscription2];
+    const subscription3 = this.state$
+      .pipe(
+        distinctUntilChanged((p, c) => {
+          return p.enableDeviceStatusUpload === c.enableDeviceStatusUpload;
+        }),
+        switchMap((state) => {
+          if (!state.enableDeviceStatusUpload) {
+            return EMPTY;
+          }
+
+          return interval(1000 * 60).pipe(
+            switchMap(() => {
+              const promise = this.uploadDeviceStatus();
+
+              return from(promise).pipe(
+                catchError((error) => {
+                  if (error instanceof Error) {
+                    this.logger.error({
+                      title: error.message,
+                      message: error.stack,
+                    });
+                  }
+
+                  return EMPTY;
+                }),
+              );
+            }),
+          );
+        }),
+      )
+      .subscribe();
+
+    this.subscriptions = [subscription1, subscription2, subscription3];
   }
   dispose() {
     this.state$.complete();
@@ -125,7 +166,8 @@ export class KH {
     );
 
     this.logger.log({
-      title: `请求数据[${url.href}]:`,
+      title: `请求数据:`,
+      message: url.href,
       json: body,
     });
 
@@ -143,7 +185,8 @@ export class KH {
 
     const data: PostResponse = await res.json();
     this.logger.log({
-      title: `返回数据[${url.href}]:`,
+      title: `返回数据:`,
+      message: url.href,
       json: JSON.stringify(data),
     });
 
@@ -2856,5 +2899,55 @@ export class KH {
       lctFtpPath,
       rctFtpPath,
     };
+  }
+
+  async uploadDeviceStatus() {
+    const ip = this.state.deviceUploadIP;
+    const port = this.state.deviceUploadPort;
+    const token = this.state.deviceUploadToken;
+    const url = new URL(
+      `/emis/digitapi/uploadZjyxzt/${token}`,
+      `http://${ip}:${port}`,
+    );
+
+    const corporation = await this.mdb.app().corporation();
+    const sbllid = corporation.DeviceNO || "";
+    const input: DeviceUploadBody = {
+      sbllid,
+      createtime: dayjs().format("YYYY-MM-DD hh:mm:ss"),
+      selftest: "",
+      selftesttime: "",
+      selftestresult: "",
+      devicestatus: "正常",
+      workstatus: "开机",
+    };
+
+    const body = JSON.stringify(input);
+
+    this.logger.log({
+      title: `请求数据:`,
+      message: url.href,
+      json: body,
+    });
+
+    const res = await net.fetch(url.href, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body,
+    });
+
+    if (!res.ok) {
+      throw new Error(`接口异常[${res.status}]:${res.statusText}`);
+    }
+
+    const data = await res.json();
+
+    this.logger.log({
+      title: `返回数据:`,
+      message: url.href,
+      json: JSON.stringify(data),
+    });
   }
 }
