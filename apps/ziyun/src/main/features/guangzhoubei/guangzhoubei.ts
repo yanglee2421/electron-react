@@ -1,6 +1,7 @@
 // 京天威 广州北
 import * as schema from "#main/features/db/schema";
 import { createEmit, getIP } from "#main/lib";
+import { fromTasklist } from "#main/utils/from-tasklist";
 import { hydrateSubject } from "#main/utils/hydrate-subject";
 import { calcFlawType, calcPlace } from "#shared/functions/chr52a";
 import { tmnowToTSSJ } from "#shared/functions/flawDetection";
@@ -9,13 +10,9 @@ import type { JTV_HMIS_Guangzhoubei } from "#shared/instances/schema";
 import { guangzhoubei } from "#shared/instances/schema";
 import type { InsertRecordParams, SQLiteGetParams } from "#shared/types";
 import { chunk } from "@yotulee/run";
-import { parse } from "csv/sync";
 import dayjs from "dayjs";
 import * as sql from "drizzle-orm";
 import { net } from "electron";
-import iconv from "iconv-lite";
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
 import pLimit from "p-limit";
 import type { BehaviorSubject, Subscription } from "rxjs";
 import {
@@ -25,7 +22,6 @@ import {
   EMPTY,
   from,
   interval,
-  map,
   switchMap,
   tap,
 } from "rxjs";
@@ -33,91 +29,7 @@ import type { DBClient } from "../db/types";
 import type { Logger } from "../logger";
 import type { MDB } from "../mdb";
 import type { AppCradle } from "../types";
-
-interface ZH_Item {
-  DH: string;
-  ZH: string;
-  ZX: string;
-  CZZZRQ: string;
-  CZZZDW: string;
-  SCZZRQ: string;
-  SCZZDW: string;
-  MCZZRQ: string;
-  MCZZDW: string;
-  ZTX: boolean;
-  YTX: boolean;
-
-  LBZGZPH: string | null;
-  CLLWKSRZ: number | null;
-  CLLWKSRY: number | null;
-  PJ_ID: string | null;
-  LBYGZPH: string | null;
-  LBYLH: string | null;
-  LBZCDH: string | null;
-  LBYLX: string | null;
-  CLLWHSRY: number | null;
-  CLLWHSRZ: number | null;
-  LBZSXH: string | null;
-  CLZJSRY: number | null;
-  CLZJSRZ: number | null;
-  LBYZZRQ: string | null;
-  LBZLH: string | null;
-  LBZZZRQ: string | null;
-  LBYSXH: string | null;
-  LBZLX: string | null;
-  LBYCDH: string | null;
-}
-
-interface ZH_Response {
-  code: string;
-  msg: string;
-  data: ZH_Item[];
-}
-
-interface PostItem {
-  eq_ip: string; // 设备IP
-  eq_bh: string; // 设备编号
-  dh: string; // 扫码单号
-  zx: string; // RE2B
-  zh: string; // 03684
-  TSFF: string;
-  TSSJ: string;
-  TFLAW_PLACE: string; // 缺陷部位
-  TFLAW_TYPE: string; // 缺陷类型
-  TVIEW: string; // 处理意见
-  CZCTZ: string; // 左穿透签章
-  CZCTY: string; // 右穿透签章
-  LZXRBZ: string; // 左轮座签章
-  LZXRBY: string; // 右轮座签章
-  XHCZ: string; // 左轴颈签章
-  XHCY: string; // 右轴颈签章
-  TSZ: string; // 探伤者左
-  TSZY: string; // 探伤者右
-  CT_RESULT: string; // 合格
-}
-
-interface DH_Item {
-  DH: string;
-  ZH: string;
-  ZX: string;
-  CZZZDW: string;
-  CZZZRQ: string;
-  MCZZDW: string;
-  MCZZRQ: string;
-  SCZZDW: string;
-  SCZZRQ: string;
-  ZTX: boolean;
-  YTX: boolean;
-
-  SRYY?: string | null;
-  SRDW?: string | null;
-}
-
-interface DH_Response {
-  code: string;
-  msg: string;
-  data: DH_Item[];
-}
+import type { DH_Response, PostItem, ZH_Response } from "./types";
 
 const normalizeZHResponse = (data: ZH_Response) => {
   if (data.code !== "200") {
@@ -164,7 +76,6 @@ const normalizeDHResponse = (data: DH_Response) => {
 };
 
 const emit = createEmit("api_set");
-const execAsync = promisify(exec);
 
 export class Guangzhoubei {
   private state$: BehaviorSubject<JTV_HMIS_Guangzhoubei>;
@@ -228,20 +139,7 @@ export class Guangzhoubei {
             `http://${s.deviceIp}:${s.devicePort}/api/v1/${s.deviceAccessToken}/telemetry`,
           );
 
-          return interval(s.deviceUploadInterval).pipe(
-            switchMap(() => {
-              const cmd = `tasklist /FI "IMAGENAME eq 货车轮轴超声波自动探伤系统.exe" /FO CSV`;
-
-              return from(execAsync(cmd, { encoding: "buffer" })).pipe(
-                map((r) => {
-                  const str = iconv.decode(r.stdout, "gbk").toString();
-
-                  return parse(str)
-                    .flat(Infinity)
-                    .includes("货车轮轴超声波自动探伤系统.exe");
-                }),
-              );
-            }),
+          return fromTasklist(s.deviceUploadInterval).pipe(
             distinctUntilChanged(),
             concatMap((running) => {
               const fn = async () => {

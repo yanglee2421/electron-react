@@ -1,10 +1,14 @@
 // 康华 安康
 import * as schema from "#main/features/db/schema";
 import type { Logger } from "#main/features/logger";
-import type { QuartorData } from "#main/features/mdb/types";
+import type { QuartorData, Verify } from "#main/features/mdb/types";
 import { createEmit } from "#main/lib";
+import { tasklist } from "#main/utils/from-tasklist";
 import { hydrateSubject } from "#main/utils/hydrate-subject";
-import { resolvedFlaws as resolveCHR501Flaws } from "#shared/functions/chr501";
+import {
+  resolvedFlaws as resolveCHR501Flaws,
+  type ChannelData,
+} from "#shared/functions/chr501";
 import { calculateMaxDiff, calculateResult } from "#shared/functions/chr502";
 import { resolveCHR503 } from "#shared/functions/chr503";
 import {
@@ -51,6 +55,13 @@ import type {
 } from "./types";
 
 const emit = createEmit("api_set");
+const checkChannel = (flawNumber: number, ch?: ChannelData) => {
+  if (!ch) {
+    return false;
+  }
+
+  return ch.flaws.length >= flawNumber;
+};
 
 export class KH {
   private state$: BehaviorSubject<KH_HMIS>;
@@ -2910,16 +2921,31 @@ export class KH {
       `http://${ip}:${port}`,
     );
 
+    const workstatus = await tasklist();
     const corporation = await this.mdb.app().corporation();
     const sbllid = corporation.DeviceNO || "";
+    const verifies = await this.mdb
+      .root()
+      .verifies()
+      .date(
+        "tmNow",
+        dayjs().startOf("day").toDate(),
+        dayjs().endOf("day").toDate(),
+      )
+      .orderBy("tmNow", "desc");
+    const verifiy = verifies.rows.at(0);
+    const verifyResult = await this.calcVerifyResult(verifiy);
+
     const input: DeviceUploadBody = {
       sbllid,
-      createtime: dayjs().format("YYYY-MM-DD hh:mm:ss"),
-      selftest: "",
-      selftesttime: "",
-      selftestresult: "",
+      createtime: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+      selftest: verifiy ? `日常校验,${verifiy.szWHModel}` : "",
+      selftesttime: verifiy
+        ? dayjs(verifiy.tmNow).format("YYYY-MM-DD HH:mm:ss")
+        : "",
+      selftestresult: verifyResult,
       devicestatus: "正常",
-      workstatus: "开机",
+      workstatus: workstatus ? "开机" : "待机",
     };
 
     const body = JSON.stringify(input);
@@ -2949,5 +2975,28 @@ export class KH {
       message: url.href,
       json: JSON.stringify(data),
     });
+  }
+
+  async calcVerifyResult(verifiy?: Verify) {
+    if (!verifiy) {
+      return "";
+    }
+
+    const datas = await this.mdb
+      .root()
+      .verifies_data()
+      .equal("opid", verifiy.szIDs);
+    const detectors = await this.mdb.app().detectors();
+    const helper = resolveCHR501Flaws(datas.rows, detectors.rows);
+
+    const isOk =
+      checkChannel(1, helper.get("0-0")) &&
+      checkChannel(1, helper.get("1-0")) &&
+      checkChannel(6, helper.get("0-3")) &&
+      checkChannel(6, helper.get("1-3")) &&
+      checkChannel(5, helper.get("0-4")) &&
+      checkChannel(5, helper.get("1-4"));
+
+    return isOk ? "合格" : "不合格";
   }
 }

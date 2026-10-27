@@ -22,6 +22,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
+import { animationFrameScheduler, auditTime, map, Observable } from "rxjs";
 import "swiper/css";
 import { Autoplay } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -70,6 +71,19 @@ const officeOutterHref = new URL(officeOutter, import.meta.url).href;
 const officeInnerHref = new URL(officeInner, import.meta.url).href;
 const pdfHref = new URL(pdf, import.meta.url).href;
 
+const fromResizeObserver = <TEl extends HTMLElement>(el: TEl) => {
+  return new Observable<ResizeObserverEntry[]>((sub) => {
+    const observer = new ResizeObserver((entries) => {
+      sub.next(entries);
+    });
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+    };
+  });
+};
+
 const Title = (props: React.PropsWithChildren) => {
   return (
     <h2 className="rounded bg-blue-400 p-1 text-center text-2xl text-white">
@@ -90,17 +104,17 @@ const PageOne = () => {
       return;
     }
 
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const [{ inlineSize: height }] = entry.contentBoxSize;
-        setBoxWidth(height);
-      }
-    });
-
-    observer.observe(el);
+    const sub1 = fromResizeObserver(el)
+      .pipe(
+        auditTime(0, animationFrameScheduler),
+        map(([entry]) => entry.contentBoxSize.at(0)?.inlineSize || 0),
+      )
+      .subscribe((width) => {
+        setBoxWidth(width);
+      });
 
     return () => {
-      observer.disconnect();
+      sub1.unsubscribe();
     };
   }, []);
 

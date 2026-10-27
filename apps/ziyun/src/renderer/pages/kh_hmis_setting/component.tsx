@@ -425,7 +425,7 @@ export const Component = () => {
                         onChange={(e) => field.handleChange(e.target.checked)}
                       />
                     }
-                    label="设备状态自动上传"
+                    label="启用设备状态自动上传"
                   />
                 )}
               </form.Field>
