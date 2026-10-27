@@ -34,9 +34,7 @@ const { dependencies } = JSON.parse(packageJson);
 const excludes = ["electron", ...Object.keys(dependencies)];
 const includes = ["@yanglee2421/external-db"];
 const calcExternal = (isDev: boolean): ExternalOption => {
-  return (id, parentId, isResolved) => {
-    void parentId;
-
+  return (id, _parentId, isResolved) => {
     if (!isResolved) {
       // Excludes
       if (

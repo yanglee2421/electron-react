@@ -112,7 +112,7 @@ const PageOne = () => {
           <div className="flex-1 overflow-hidden rounded bg-white"></div>
           <Title>制度文件</Title>
           <div className="flex-1 overflow-hidden rounded bg-white">
-            <div className="grid h-full grid-cols-2 grid-rows-1 place-items-center">
+            <div className="grid h-full grid-cols-2 grid-rows-1 items-center">
               <div ref={ref}>
                 <ErrorBoundary fallback={<p>Failed to load PDF.</p>}>
                   <React.Suspense fallback={<p>Loading document…</p>}>
