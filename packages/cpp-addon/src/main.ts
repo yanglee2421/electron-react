@@ -36,6 +36,8 @@ interface NativeAddon {
     lParam: number | string,
     timeoutMs?: number,
   ): number;
+  getWindowLongPtrW(handle: number, index: number): bigint;
+  SendMouseMove(handle: bigint, x: number, y: number): void;
 }
 
 const addon: NativeAddon = require(
@@ -48,12 +50,16 @@ export const WindowsMessages = Object.freeze({
   WM_GETTEXT: 0x000d,
   WM_GETTEXTLENGTH: 0x000e,
   WM_COMMAND: 0x0111,
+  WM_LBUTTONDOWN: 0x0201,
+  WM_LBUTTONUP: 0x0202,
+  WM_CLOSE: 0x0010,
+  WM_MOUSEMOVE: 0x0200,
+
   BM_SETCHECK: 0x00f1,
   BM_GETCHECK: 0x00f0,
   BM_CLICK: 0x00f5,
+
   CB_SELECTSTRING: 0x014d,
   CB_SETCURSEL: 0x014e,
   CB_GETCURSEL: 0x0147,
-  WM_LBUTTONDOWN: 0x0201,
-  WM_LBUTTONUP: 0x0202,
 });

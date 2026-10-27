@@ -346,6 +346,52 @@ Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
   });
 }
 
+Napi::Value GetWindowLongPtrWrapped(const Napi::CallbackInfo& info) {
+  auto env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    double args1 = info[0].As<Napi::Number>().DoubleValue();
+    int32_t args2 = info[1].As<Napi::Number>().Int32Value();
+
+    HWND hwnd = reinterpret_cast<HWND>(static_cast<uintptr_t>(args1));
+    int index = static_cast<int>(args2);
+    LONG_PTR result = GetWindowLongPtrW(hwnd, index);
+
+    return Napi::BigInt::New(env, static_cast<int64_t>(result));
+  });
+}
+
+static HWND HwndFromBigInt(const Napi::Value& val) {
+  if (!val.IsBigInt()) {
+    throw Napi::TypeError::New(val.Env(), "hwnd must be a BigInt");
+  }
+  bool lossless = false;
+  int64_t raw = val.As<Napi::BigInt>().Int64Value(&lossless);
+
+  return reinterpret_cast<HWND>(static_cast<ULONG_PTR>(raw));
+}
+
+static Napi::BigInt HwndToBigInt(Napi::Env env, HWND h) {
+  return Napi::BigInt::New(
+      env, static_cast<uint64_t>(reinterpret_cast<ULONG_PTR>(h)));
+}
+
+Napi::Value SendMouseMove(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    HWND hwnd = HwndFromBigInt(info[0]);
+    int x = info[1].As<Napi::Number>().Int32Value();
+    int y = info[2].As<Napi::Number>().Int32Value();
+
+    // 客户区坐标打包进 lParam：低16位 x，高16位 y
+    LPARAM lParam = MAKELPARAM(x, y);
+    SendMessageW(hwnd, WM_MOUSEMOVE, 0, lParam);
+
+    return env.Undefined();
+  });
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set(
       Napi::String::New(env, "isRunAsAdmin"),
@@ -365,6 +411,12 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set(
       Napi::String::New(env, "sendMessage"),
       Napi::Function::New(env, SendMessageWrapped));
+  exports.Set(
+      Napi::String::New(env, "getWindowLongPtrW"),
+      Napi::Function::New(env, GetWindowLongPtrWrapped));
+  exports.Set(
+      Napi::String::New(env, "SendMouseMove"),
+      Napi::Function::New(env, SendMouseMove));
 
   return exports;
 }

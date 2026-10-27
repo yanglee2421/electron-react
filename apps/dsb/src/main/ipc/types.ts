@@ -1,7 +1,8 @@
+import type { IPCContract as CmdIPC } from "#main/ioc/cmd/types";
 import type { IPC as KVIPC } from "#main/ioc/kv/types";
 import type { IpcMainInvokeEvent } from "electron";
 
-export interface IPC extends KVIPC {
+export interface IPC extends KVIPC, CmdIPC {
   test: {
     args: [];
     return: void;

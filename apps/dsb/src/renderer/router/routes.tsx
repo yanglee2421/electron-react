@@ -7,7 +7,7 @@ export const createRoutes = (): RouteObject[] => {
       children: [
         {
           index: true,
-          element: <Navigate to={{ pathname: "/scanner" }} />,
+          element: <Navigate to={{ pathname: "/lab" }} />,
         },
         {
           path: "scanner",
@@ -16,6 +16,10 @@ export const createRoutes = (): RouteObject[] => {
         {
           path: "canvas",
           lazy: () => import("#renderer/pages/canvas/component"),
+        },
+        {
+          path: "lab",
+          lazy: () => import("#renderer/pages/lab/component"),
         },
       ],
       HydrateFallback: RootHydrateFallback,

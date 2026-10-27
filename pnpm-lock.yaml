@@ -20,6 +20,9 @@ importers:
 
   apps/dsb:
     dependencies:
+      '@yanglee2421/cpp-addon':
+        specifier: workspace:*
+        version: link:../../packages/cpp-addon
       '@yanglee2421/union-addon':
         specifier: workspace:*
         version: link:../../packages/union-addon

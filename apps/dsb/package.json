@@ -47,6 +47,7 @@
     "zustand": "^5.0.13"
   },
   "dependencies": {
+    "@yanglee2421/cpp-addon": "workspace:*",
     "@yanglee2421/union-addon": "workspace:*",
     "swiper": "^14.3.0"
   }
