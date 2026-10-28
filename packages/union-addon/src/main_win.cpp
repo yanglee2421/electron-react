@@ -263,8 +263,9 @@ Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
     }
 
     HWND hwnd = FindWindowW(pClassName, pWindowName);
-    return Napi::Number::New(
-        env, static_cast<double>(reinterpret_cast<uintptr_t>(hwnd)));
+    auto result = HwndToBigInt(env, hwnd);
+
+    return result;
   });
 }
 
@@ -362,15 +363,25 @@ Napi::Value GetWindowLongPtrWrapped(const Napi::CallbackInfo& info) {
   auto env = info.Env();
 
   return JS::Try(env, [&]() -> Napi::Value {
-    double arg_0 = info[0].As<Napi::Number>().DoubleValue();
+    HWND hwnd = HwndFromBigInt(info[0]);
     int32_t arg_1 = info[1].As<Napi::Number>().Int32Value();
 
-    auto ptr = static_cast<uintptr_t>(arg_0);
-    HWND hwnd = reinterpret_cast<HWND>(ptr);
     int index = static_cast<int>(arg_1);
     LONG_PTR result = GetWindowLongPtrW(hwnd, index);
 
     return Napi::BigInt::New(env, static_cast<int64_t>(result));
+  });
+}
+
+Napi::Value GetDlgItemWrapped(const Napi::CallbackInfo& info) {
+  auto env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    HWND parentHwnd = HwndFromBigInt(info[0]);
+    int itemId = info[1].As<Napi::Number>().Int32Value();
+    HWND itemHwnd = GetDlgItem(parentHwnd, itemId);
+
+    return HwndToBigInt(env, itemHwnd);
   });
 }
 
@@ -379,8 +390,18 @@ Napi::Value IsWindowEnabledWrapped(const Napi::CallbackInfo& info) {
 
   return JS::Try(env, [&]() -> Napi::Value {
     HWND hwnd = HwndFromBigInt(info[0]);
-    bool isEnabled = IsWindowEnabled(hwnd);
-    return Napi::Boolean::New(env, isEnabled);
+    bool result = IsWindowEnabled(hwnd);
+    return Napi::Boolean::New(env, result);
+  });
+}
+
+Napi::Value IsWindowWrapped(const Napi::CallbackInfo& info) {
+  auto env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    HWND hwnd = HwndFromBigInt(info[0]);
+    bool result = IsWindow(hwnd);
+    return Napi::Boolean::New(env, result);
   });
 }
 
@@ -478,8 +499,14 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
       Napi::String::New(env, "GetWindowLongPtrW"),
       Napi::Function::New(env, GetWindowLongPtrWrapped));
   exports.Set(
+      Napi::String::New(env, "GetDlgItem"),
+      Napi::Function::New(env, GetDlgItemWrapped));
+  exports.Set(
       Napi::String::New(env, "IsWindowEnabled"),
       Napi::Function::New(env, IsWindowEnabledWrapped));
+  exports.Set(
+      Napi::String::New(env, "IsWindow"),
+      Napi::Function::New(env, IsWindowWrapped));
 
   /**
    * Custom API

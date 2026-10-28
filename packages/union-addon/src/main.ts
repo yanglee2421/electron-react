@@ -40,12 +40,43 @@ interface NativeAddon {
   /**
    * Win32 API
    */
-  FindWindowW(className?: string | null, windowName?: string | null): number;
+  /**
+   * Finds a top-level window by class name and/or title. Omit or pass `null`
+   * to ignore either criterion.
+   * @returns The window handle as a `bigint`, or `0n` if no window is found.
+   */
+  FindWindowW(className?: string | null, windowName?: string | null): bigint;
+
+  /**
+   * Brings the specified window to the foreground.
+   * @param hwnd Window handle as a `bigint`.
+   * @returns Whether Windows brought the window to the foreground.
+   */
   SetForegroundWindow(hwnd: bigint): boolean;
+
+  /**
+   * Enumerates the child windows of a parent window.
+   * @param parentHwnd Parent window handle as a `bigint`.
+   * @param callback Called for each child with its handle as a `bigint`.
+   * Return `true` to continue enumeration or `false` to stop.
+   * @returns The result returned by the Win32 enumeration call.
+   */
   EnumChildWindows(
     parentHwnd: bigint,
     callback: (hwnd: bigint) => boolean,
   ): boolean;
+
+  /**
+   * Sends a message to a window and waits up to the timeout for it to respond.
+   * String `lParam` values are passed as UTF-16 text; numeric values are passed
+   * as raw `lParam` values.
+   * @param hwnd Target window handle as a `bigint`.
+   * @param msg Message identifier.
+   * @param wParam Message-specific `wParam` value.
+   * @param lParam Message-specific `lParam` value, either a string or a number.
+   * @param timeout Timeout in milliseconds; defaults to 200.
+   * @returns The message result as a JavaScript number.
+   */
   SendMessageTimeout(
     hwnd: bigint,
     msg: number,
@@ -53,8 +84,36 @@ interface NativeAddon {
     lParam: string | number,
     timeout?: number,
   ): number;
-  GetWindowLongPtrW(hwnd: number, index: number): bigint;
+
+  /**
+   * Retrieves the specified value from the window's extra window memory.
+   * @param hwnd Window handle as a `bigint`.
+   * @param index Window information index, such as a `GWL_*` constant.
+   * @returns The retrieved value as a `bigint`.
+   */
+  GetWindowLongPtrW(hwnd: bigint, index: number): bigint;
+
+  /**
+   * Retrieves the handle of a control in a dialog or other parent window.
+   * @param parentHwnd Parent window handle as a `bigint`.
+   * @param itemId Identifier of the control to retrieve.
+   * @returns The control handle as a `bigint`, or `0n` if no matching control exists.
+   */
+  GetDlgItem(parentHwnd: bigint, itemId: number): bigint;
+
+  /**
+   * Checks whether a window is enabled for user input.
+   * @param hwnd Window handle as a `bigint`.
+   * @returns Whether the window is enabled.
+   */
   IsWindowEnabled(hwnd: bigint): boolean;
+
+  /**
+   * Checks whether the specified window handle identifies an existing window.
+   * @param hwnd Window handle as a `bigint`.
+   * @returns Whether the handle identifies an existing window.
+   */
+  IsWindow(hwnd: bigint): boolean;
 
   /**
    * CustomAPI

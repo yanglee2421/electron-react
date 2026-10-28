@@ -1,13 +1,13 @@
 import { ipcHandle, ipcRemoveHandle } from "#main/ipc";
 import { hydrateSubject } from "#main/utils/hydrate-subject";
-import cppAddon, { WindowsMessages } from "@yanglee2421/cpp-addon";
-import addon from "@yanglee2421/union-addon";
+import addon, { WindowsMessages } from "@yanglee2421/union-addon";
 import { BrowserWindow } from "electron";
-import type { BehaviorSubject, Subscription } from "rxjs";
+import type { Subscription } from "rxjs";
 import {
+  BehaviorSubject,
+  catchError,
   concat,
   concatMap,
-  delay,
   distinctUntilChanged,
   EMPTY,
   filter,
@@ -19,67 +19,71 @@ import {
   take,
   takeWhile,
   tap,
-  timer,
+  timeout,
   using,
 } from "rxjs";
 import { z } from "zod";
 import type { AppCradle } from "../types";
 
-const findOptions$ = interval(1000).pipe(
-  tap(() => {
-    const handle = cppAddon.findWindow(null, "车轴检测 . 现车轮");
-    console.log("车轴检测 . 现车轮", handle);
-
-    if (handle) {
-      cppAddon.SendMouseMove(BigInt(handle), 1670, 508);
-    }
-  }),
-  map(() => cppAddon.findWindow(null, "操作选项")),
-  filter((handle) => !!handle),
-  delay(100),
+const findWork$ = interval(1000).pipe(
+  map(() => addon.FindWindowW(null, "车轴检测 . 现车轮")),
+  filter((handle) => addon.IsWindow(handle)),
+  take(1),
   tap((handle) => {
-    console.log("操作选项", handle);
-
-    cppAddon.enumChildWindows(handle, (childHandle) => {
-      const controlId = cppAddon.getWindowLongPtrW(childHandle, -12);
-      console.log("enumChildWindows", controlId);
-
-      if (controlId !== 0x000000000000064fn) {
-        return true;
-      }
-
-      setInterval(() => {
-        const result = cppAddon.sendMessage(
-          childHandle,
-          WindowsMessages.BM_CLICK,
-          0,
-          0,
-        );
-        console.log(result);
-      }, 1000);
-
-      return false;
-    });
+    addon.SendMouseMove(handle, 1670, 508);
   }),
-  takeWhile((value) => !value),
+);
+
+const findOptions$ = findWork$.pipe(
+  switchMap(() => {
+    return interval(1000).pipe(
+      map(() => addon.FindWindowW(null, "操作选项")),
+      filter((handle) => addon.IsWindow(handle)),
+      take(1),
+    );
+  }),
+);
+
+const findStart$ = findOptions$.pipe(
+  switchMap((handle) => {
+    const controlID = 0x000000000000064f;
+
+    return interval(1000).pipe(
+      map(() => addon.GetDlgItem(handle, controlID)),
+      filter((handle) => addon.IsWindow(handle)),
+      take(1),
+    );
+  }),
+);
+
+const clickStart$ = findStart$.pipe(
+  switchMap((handle) => {
+    return interval(1000).pipe(
+      tap(() => {
+        addon.SendMessageTimeout(handle, WindowsMessages.BM_CLICK, 0, 0);
+      }),
+      map(() => addon.IsWindowEnabled(handle)),
+      takeWhile((i) => i),
+    );
+  }),
 );
 
 const findTips$ = interval(1000 * 10).pipe(
-  map(() => cppAddon.findWindow(null, "探测结果")),
-  filter((handle) => !!handle),
+  map(() => addon.FindWindowW(null, "探测结果")),
+  filter((handle) => addon.IsWindow(handle)),
+  take(1),
   tap((handle) => {
-    cppAddon.sendMessage(handle, WindowsMessages.WM_CLOSE, 0, 0);
+    addon.SendMessageTimeout(handle, WindowsMessages.WM_CLOSE, 0, 0);
   }),
-  takeWhile((value) => !value),
 );
 
 const findResult$ = interval(1000 * 10).pipe(
-  map(() => cppAddon.findWindow(null, "探伤结果主窗口")),
-  filter((handle) => !!handle),
+  map(() => addon.FindWindowW(null, "探伤结果主窗口")),
+  filter((handle) => addon.IsWindow(handle)),
+  take(1),
   tap((handle) => {
-    cppAddon.sendMessage(handle, WindowsMessages.WM_CLOSE, 0, 0);
+    addon.SendMessageTimeout(handle, WindowsMessages.WM_CLOSE, 0, 0);
   }),
-  takeWhile((value) => !value),
 );
 
 const defaultValue = () => {
@@ -129,9 +133,10 @@ type CHANNEL_INPUTS = z.infer<typeof channelInputSchema>;
 export class Cmd {
   private state$: BehaviorSubject<CHANNEL_INPUTS>;
   private subscriptions: Subscription[];
+  private enabledAutoScript$ = new BehaviorSubject(false);
 
   constructor({ kv }: AppCradle) {
-    ipcHandle("cmd/click-start", () => this.clickStart());
+    ipcHandle("cmd/click-start", (_, value) => this.setAutoScript(value));
 
     const [state$, subscription1] = hydrateSubject(
       kv,
@@ -208,7 +213,33 @@ export class Cmd {
       )
       .subscribe();
 
-    this.subscriptions = [subscription1, subscription2];
+    const subscription3 = this.enabledAutoScript$
+      .pipe(
+        switchMap((enabled) => {
+          if (!enabled) {
+            return EMPTY;
+          }
+
+          return interval(1000 * 60 * 3).pipe(
+            startWith(0),
+            concatMap(() => {
+              return concat(
+                clickStart$,
+                race(findTips$, findResult$).pipe(timeout(1000 * 60 * 3)),
+              ).pipe(
+                catchError((error) => {
+                  console.error(error);
+
+                  return EMPTY;
+                }),
+              );
+            }),
+          );
+        }),
+      )
+      .subscribe();
+
+    this.subscriptions = [subscription1, subscription2, subscription3];
   }
 
   dispose() {
@@ -223,20 +254,7 @@ export class Cmd {
     return this.state$.asObservable();
   }
 
-  clickStart() {
-    console.log("clickstart");
-
-    interval(1000 * 60 * 4)
-      .pipe(
-        startWith(0),
-        concatMap(() => {
-          return concat(
-            findOptions$,
-            race(findTips$, findResult$, timer(1000 * 60 * 4)),
-          );
-        }),
-        take(2),
-      )
-      .subscribe();
+  setAutoScript(value: boolean) {
+    this.enabledAutoScript$.next(value);
   }
 }
