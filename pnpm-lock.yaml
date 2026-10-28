@@ -368,18 +368,6 @@ importers:
         specifier: ^8.2.2
         version: 8.2.2(@types/node@25.9.9)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0)
 
-  packages/win-addon:
-    devDependencies:
-      node-addon-api:
-        specifier: ^8.9.2
-        version: 8.9.2
-      node-api-headers:
-        specifier: ^1.9.0
-        version: 1.9.0
-      tsdown:
-        specifier: 0.23.0
-        version: 0.23.0(typescript@7.0.2)
-
 packages:
 
   '@babel/code-frame@7.29.0':
