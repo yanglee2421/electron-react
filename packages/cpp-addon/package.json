@@ -8,8 +8,7 @@
     "import": "./dist/main.mjs"
   },
   "scripts": {
-    "prepare": "tsdown",
-    "build": "node-gyp rebuild && tsdown"
+    "prepare": "tsdown"
   },
   "devDependencies": {
     "node-addon-api": "^8.9.2",

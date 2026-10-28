@@ -67,31 +67,6 @@ static BOOL CALLBACK EnumChildProc(HWND hwnd, LPARAM lParam) {
   return TRUE;
 }
 
-bool AutoInputToVC(
-    const std::u16string& zx,
-    const std::u16string& zh,
-    const std::u16string& czzzdw,
-    const std::u16string& sczzdw,
-    const std::u16string& mczzdw,
-    const std::u16string& czzzrq,
-    const std::u16string& sczzrq,
-    const std::u16string& mczzrq,
-    int ztx,
-    int ytx,
-    std::string& outError) {
-  std::u16string appTitle = u"信息录入 . 现车轮";
-  HWND hwnd = FindWindowW(NULL, (LPCWSTR)appTitle.c_str());
-  if (!hwnd) {
-    outError = "未打开探伤机程序或配置错误!";
-    return false;
-  }
-  SetForegroundWindow(hwnd);
-  AutoInputParams params{
-      zx, zh, czzzdw, sczzdw, mczzdw, czzzrq, sczzrq, mczzrq, ztx, ytx};
-  EnumChildWindows(hwnd, EnumChildProc, (LPARAM)&params);
-  return true;
-}
-
 Napi::Value IsRunAsAdminWrapped(const Napi::CallbackInfo& info) {
   auto env = info.Env();
 
@@ -140,8 +115,15 @@ class AutoInputWorker : public Napi::AsyncWorker {
             return;
           }
 
-          std::string err;
-          bool ok = AutoInputToVC(
+          std::string err = "";
+          std::u16string appTitle = u"信息录入 . 现车轮";
+          HWND hwnd = FindWindowW(NULL, (LPCWSTR)appTitle.c_str());
+
+          if (!hwnd) {
+            err = "未打开探伤机程序或配置错误!";
+          }
+
+          AutoInputParams params{
               zx_,
               zh_,
               czzzdw_,
@@ -151,10 +133,12 @@ class AutoInputWorker : public Napi::AsyncWorker {
               sczzrq_,
               mczzrq_,
               ztx_,
-              ytx_,
-              err);
+              ytx_};
 
-          if (!ok) {
+          SetForegroundWindow(hwnd);
+          EnumChildWindows(hwnd, EnumChildProc, (LPARAM)&params);
+
+          if (!err.empty()) {
             SetError(err);
           }
         },
@@ -197,201 +181,6 @@ Napi::Value AutoInputToVCWrapped(const Napi::CallbackInfo& info) {
   });
 }
 
-Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
-  auto env = info.Env();
-
-  return JS::Try(env, [&]() -> Napi::Value {
-    if (info.Length() < 2) {
-      Napi::TypeError::New(env, "expected 2 arguments: className, windowName")
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    LPCWSTR pClassName = NULL;
-    std::u16string classNameStr;
-    if (info[0].IsString()) {
-      classNameStr = info[0].As<Napi::String>().Utf16Value();
-      pClassName = (LPCWSTR)classNameStr.c_str();
-    }
-
-    LPCWSTR pWindowName = NULL;
-    std::u16string windowNameStr;
-    if (info[1].IsString()) {
-      windowNameStr = info[1].As<Napi::String>().Utf16Value();
-      pWindowName = (LPCWSTR)windowNameStr.c_str();
-    }
-
-    HWND hwnd = FindWindowW(pClassName, pWindowName);
-    return Napi::Number::New(
-        env, static_cast<double>(reinterpret_cast<uintptr_t>(hwnd)));
-  });
-}
-
-Napi::Value SetForegroundWindowWrapped(const Napi::CallbackInfo& info) {
-  auto env = info.Env();
-
-  return JS::Try(env, [&]() -> Napi::Value {
-    if (info.Length() < 1 || !info[0].IsNumber()) {
-      Napi::TypeError::New(env, "expected 1 argument: hwnd (number)")
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    HWND hwnd = reinterpret_cast<HWND>(
-        static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
-    BOOL result = SetForegroundWindow(hwnd);
-    return Napi::Boolean::New(env, result);
-  });
-}
-
-struct EnumChildWindowsContext {
-  Napi::Env env;
-  Napi::Function callback;
-};
-
-static BOOL CALLBACK EnumChildWindowsCallbackProc(HWND hwnd, LPARAM lParam) {
-  EnumChildWindowsContext* ctx =
-      reinterpret_cast<EnumChildWindowsContext*>(lParam);
-
-  try {
-    Napi::Env env = ctx->env;
-    Napi::HandleScope scope(env);
-    double hwndDouble = static_cast<double>(reinterpret_cast<uintptr_t>(hwnd));
-    Napi::Value hwndObj = Napi::Number::New(env, hwndDouble);
-    Napi::Value result = ctx->callback.Call({hwndObj});
-
-    if (env.IsExceptionPending()) {
-      return FALSE;
-    }
-
-    return result.ToBoolean().Value();
-  } catch (...) {
-    return FALSE;
-  }
-}
-
-Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {
-  auto env = info.Env();
-
-  return JS::Try(env, [&]() -> Napi::Value {
-    if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsFunction()) {
-      Napi::TypeError::New(
-          env, "expected 2 arguments: parentHwnd (number), callback (function)")
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    HWND parentHwnd = reinterpret_cast<HWND>(
-        static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
-
-    Napi::Function callback = info[1].As<Napi::Function>();
-    EnumChildWindowsContext ctx{env, callback};
-
-    BOOL result = EnumChildWindows(
-        parentHwnd,
-        EnumChildWindowsCallbackProc,
-        reinterpret_cast<LPARAM>(&ctx));
-
-    return Napi::Boolean::New(env, result);
-  });
-}
-
-Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
-  auto env = info.Env();
-
-  return JS::Try(env, [&]() -> Napi::Value {
-    if (info.Length() < 4 || !info[0].IsNumber() || !info[1].IsNumber() ||
-        !info[2].IsNumber()) {
-      Napi::TypeError::New(
-          env,
-          "expected at least 4 arguments: hwnd (number), msg (number), wParam (number), lParam (number|string)")
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    HWND hwnd = reinterpret_cast<HWND>(
-        static_cast<uintptr_t>(info[0].As<Napi::Number>().DoubleValue()));
-    UINT msg = static_cast<UINT>(info[1].As<Napi::Number>().Uint32Value());
-    WPARAM wParam =
-        static_cast<WPARAM>(info[2].As<Napi::Number>().Int64Value());
-
-    UINT timeout = 200;
-    if (info.Length() >= 5 && info[4].IsNumber()) {
-      timeout = static_cast<UINT>(info[4].As<Napi::Number>().Uint32Value());
-    }
-
-    DWORD_PTR dwResult = 0;
-    if (info[3].IsString()) {
-      std::u16string lParamStr = info[3].As<Napi::String>().Utf16Value();
-      SendMessageTimeoutW(
-          hwnd,
-          msg,
-          wParam,
-          reinterpret_cast<LPARAM>(lParamStr.c_str()),
-          SMTO_ABORTIFHUNG,
-          timeout,
-          &dwResult);
-    } else if (info[3].IsNumber()) {
-      LPARAM lParam =
-          static_cast<LPARAM>(info[3].As<Napi::Number>().Int64Value());
-      SendMessageTimeoutW(
-          hwnd, msg, wParam, lParam, SMTO_ABORTIFHUNG, timeout, &dwResult);
-    } else {
-      Napi::TypeError::New(env, "lParam must be string or number")
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    return Napi::Number::New(env, static_cast<double>(dwResult));
-  });
-}
-
-Napi::Value GetWindowLongPtrWrapped(const Napi::CallbackInfo& info) {
-  auto env = info.Env();
-
-  return JS::Try(env, [&]() -> Napi::Value {
-    double args1 = info[0].As<Napi::Number>().DoubleValue();
-    int32_t args2 = info[1].As<Napi::Number>().Int32Value();
-
-    HWND hwnd = reinterpret_cast<HWND>(static_cast<uintptr_t>(args1));
-    int index = static_cast<int>(args2);
-    LONG_PTR result = GetWindowLongPtrW(hwnd, index);
-
-    return Napi::BigInt::New(env, static_cast<int64_t>(result));
-  });
-}
-
-static HWND HwndFromBigInt(const Napi::Value& val) {
-  if (!val.IsBigInt()) {
-    throw Napi::TypeError::New(val.Env(), "hwnd must be a BigInt");
-  }
-  bool lossless = false;
-  int64_t raw = val.As<Napi::BigInt>().Int64Value(&lossless);
-
-  return reinterpret_cast<HWND>(static_cast<ULONG_PTR>(raw));
-}
-
-static Napi::BigInt HwndToBigInt(Napi::Env env, HWND h) {
-  return Napi::BigInt::New(
-      env, static_cast<uint64_t>(reinterpret_cast<ULONG_PTR>(h)));
-}
-
-Napi::Value SendMouseMove(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
-
-  return JS::Try(env, [&]() -> Napi::Value {
-    HWND hwnd = HwndFromBigInt(info[0]);
-    int x = info[1].As<Napi::Number>().Int32Value();
-    int y = info[2].As<Napi::Number>().Int32Value();
-
-    // 客户区坐标打包进 lParam：低16位 x，高16位 y
-    LPARAM lParam = MAKELPARAM(x, y);
-    SendMessageW(hwnd, WM_MOUSEMOVE, 0, lParam);
-
-    return env.Undefined();
-  });
-}
-
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set(
       Napi::String::New(env, "isRunAsAdmin"),
@@ -399,24 +188,6 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set(
       Napi::String::New(env, "autoInputToVC"),
       Napi::Function::New(env, AutoInputToVCWrapped));
-  exports.Set(
-      Napi::String::New(env, "findWindow"),
-      Napi::Function::New(env, FindWindowWrapped));
-  exports.Set(
-      Napi::String::New(env, "setForegroundWindow"),
-      Napi::Function::New(env, SetForegroundWindowWrapped));
-  exports.Set(
-      Napi::String::New(env, "enumChildWindows"),
-      Napi::Function::New(env, EnumChildWindowsWrapped));
-  exports.Set(
-      Napi::String::New(env, "sendMessage"),
-      Napi::Function::New(env, SendMessageWrapped));
-  exports.Set(
-      Napi::String::New(env, "getWindowLongPtrW"),
-      Napi::Function::New(env, GetWindowLongPtrWrapped));
-  exports.Set(
-      Napi::String::New(env, "SendMouseMove"),
-      Napi::Function::New(env, SendMouseMove));
 
   return exports;
 }

@@ -20,15 +20,9 @@ importers:
 
   apps/dsb:
     dependencies:
-      '@yanglee2421/cpp-addon':
-        specifier: workspace:*
-        version: link:../../packages/cpp-addon
       '@yanglee2421/union-addon':
         specifier: workspace:*
         version: link:../../packages/union-addon
-      swiper:
-        specifier: ^14.3.0
-        version: 14.3.0
     devDependencies:
       '@babel/core':
         specifier: ^7.29.0
@@ -102,6 +96,9 @@ importers:
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
+      swiper:
+        specifier: ^14.3.0
+        version: 14.3.0
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
@@ -370,6 +367,18 @@ importers:
       vite:
         specifier: ^8.2.2
         version: 8.2.2(@types/node@25.9.9)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0)
+
+  packages/win-addon:
+    devDependencies:
+      node-addon-api:
+        specifier: ^8.9.2
+        version: 8.9.2
+      node-api-headers:
+        specifier: ^1.9.0
+        version: 1.9.0
+      tsdown:
+        specifier: 0.23.0
+        version: 0.23.0(typescript@7.0.2)
 
 packages:
 

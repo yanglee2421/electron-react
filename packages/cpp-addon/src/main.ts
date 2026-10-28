@@ -19,47 +19,10 @@ interface NativeAddon {
     mczzrq: string,
     ztx: number,
     ytx: number,
-  ): Promise<boolean>;
-
-  // Windows API for nodejs
-  // Win32 API: https://learn.microsoft.com/en-us/windows/win32/apiindex/windows-api-list
-  findWindow(className: string | null, windowName: string | null): number;
-  setForegroundWindow(hwnd: number): boolean;
-  enumChildWindows(
-    parentHwnd: number,
-    callback: (hwnd: number) => boolean | void,
-  ): boolean;
-  sendMessage(
-    hwnd: number,
-    msg: number,
-    wParam: number,
-    lParam: number | string,
-    timeoutMs?: number,
-  ): number;
-  getWindowLongPtrW(handle: number, index: number): bigint;
-  SendMouseMove(handle: bigint, x: number, y: number): void;
+  ): Promise<void>;
 }
 
 const addon: NativeAddon = require(
   path.resolve(__dirname, "../build/Release/cpp_addon.node"),
 );
 export default addon;
-
-export const WindowsMessages = Object.freeze({
-  WM_SETTEXT: 0x000c,
-  WM_GETTEXT: 0x000d,
-  WM_GETTEXTLENGTH: 0x000e,
-  WM_COMMAND: 0x0111,
-  WM_LBUTTONDOWN: 0x0201,
-  WM_LBUTTONUP: 0x0202,
-  WM_CLOSE: 0x0010,
-  WM_MOUSEMOVE: 0x0200,
-
-  BM_SETCHECK: 0x00f1,
-  BM_GETCHECK: 0x00f0,
-  BM_CLICK: 0x00f5,
-
-  CB_SELECTSTRING: 0x014d,
-  CB_SETCURSEL: 0x014e,
-  CB_GETCURSEL: 0x0147,
-});

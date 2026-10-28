@@ -5,6 +5,9 @@
 #include "TOFDPort.h"
 #include "js_util.h"
 
+/**
+ * TOFD API
+ */
 Napi::Value TOFD_PORT_OpenDeviceWrapped(const Napi::CallbackInfo& info) {
   auto env = info.Env();
 
@@ -76,6 +79,9 @@ Napi::Value ITS_IsOpenWrapped(const Napi::CallbackInfo& info) {
   });
 }
 
+/**
+ * ITS API
+ */
 Napi::Value ITS_SetChWrapped(const Napi::CallbackInfo& info) {
   auto env = info.Env();
 
@@ -211,6 +217,192 @@ Napi::Value ITS_StartWrapped(const Napi::CallbackInfo& info) {
   });
 }
 
+/**
+ * Win32 API
+ */
+struct EnumChildWindowsContext {
+  Napi::Env env;
+  Napi::Function callback;
+};
+
+static HWND HwndFromBigInt(const Napi::Value& val) {
+  if (!val.IsBigInt()) {
+    throw Napi::TypeError::New(val.Env(), "hwnd must be a BigInt");
+  }
+
+  bool lossless = false;
+  int64_t raw = val.As<Napi::BigInt>().Int64Value(&lossless);
+  auto ptr = static_cast<ULONG_PTR>(raw);
+  auto hwnd = reinterpret_cast<HWND>(ptr);
+
+  return hwnd;
+}
+static Napi::BigInt HwndToBigInt(Napi::Env env, HWND h) {
+  auto ptr = reinterpret_cast<ULONG_PTR>(h);
+  auto num = static_cast<uint64_t>(ptr);
+
+  return Napi::BigInt::New(env, num);
+}
+
+Napi::Value FindWindowWrapped(const Napi::CallbackInfo& info) {
+  auto env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    LPCWSTR pClassName = NULL;
+    std::u16string classNameStr;
+    if (info[0].IsString()) {
+      classNameStr = info[0].As<Napi::String>().Utf16Value();
+      pClassName = (LPCWSTR)classNameStr.c_str();
+    }
+
+    LPCWSTR pWindowName = NULL;
+    std::u16string windowNameStr;
+    if (info[1].IsString()) {
+      windowNameStr = info[1].As<Napi::String>().Utf16Value();
+      pWindowName = (LPCWSTR)windowNameStr.c_str();
+    }
+
+    HWND hwnd = FindWindowW(pClassName, pWindowName);
+    return Napi::Number::New(
+        env, static_cast<double>(reinterpret_cast<uintptr_t>(hwnd)));
+  });
+}
+
+Napi::Value SetForegroundWindowWrapped(const Napi::CallbackInfo& info) {
+  auto env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    HWND hwnd = HwndFromBigInt(info[0]);
+    BOOL result = SetForegroundWindow(hwnd);
+    return Napi::Boolean::New(env, result);
+  });
+}
+
+static BOOL CALLBACK EnumChildWindowsCallbackProc(HWND hwnd, LPARAM lParam) {
+  EnumChildWindowsContext* ctx =
+      reinterpret_cast<EnumChildWindowsContext*>(lParam);
+
+  try {
+    Napi::Env env = ctx->env;
+    Napi::HandleScope scope(env);
+    Napi::Value hwndObj = HwndToBigInt(env, hwnd);
+    Napi::Value result = ctx->callback.Call({hwndObj});
+
+    if (env.IsExceptionPending()) {
+      return FALSE;
+    }
+
+    return result.ToBoolean().Value();
+  } catch (...) {
+    return FALSE;
+  }
+}
+
+Napi::Value EnumChildWindowsWrapped(const Napi::CallbackInfo& info) {
+  auto env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    HWND parentHwnd = HwndFromBigInt(info[0]);
+    Napi::Function callback = info[1].As<Napi::Function>();
+
+    EnumChildWindowsContext ctx{env, callback};
+
+    BOOL result = EnumChildWindows(
+        parentHwnd,
+        EnumChildWindowsCallbackProc,
+        reinterpret_cast<LPARAM>(&ctx));
+
+    return Napi::Boolean::New(env, result);
+  });
+}
+
+Napi::Value SendMessageWrapped(const Napi::CallbackInfo& info) {
+  auto env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    HWND hwnd = HwndFromBigInt(info[0]);
+    auto js_msg = info[1].As<Napi::Number>().Uint32Value();
+    auto js_param = info[2].As<Napi::Number>().Int64Value();
+
+    UINT msg = static_cast<UINT>(js_msg);
+    WPARAM wParam = static_cast<WPARAM>(js_param);
+
+    UINT timeout = 200;
+    if (info.Length() >= 5 && info[4].IsNumber()) {
+      timeout = static_cast<UINT>(info[4].As<Napi::Number>().Uint32Value());
+    }
+
+    DWORD_PTR dwResult = 0;
+    if (info[3].IsString()) {
+      std::u16string lParamStr = info[3].As<Napi::String>().Utf16Value();
+      SendMessageTimeoutW(
+          hwnd,
+          msg,
+          wParam,
+          reinterpret_cast<LPARAM>(lParamStr.c_str()),
+          SMTO_ABORTIFHUNG,
+          timeout,
+          &dwResult);
+    } else if (info[3].IsNumber()) {
+      LPARAM lParam =
+          static_cast<LPARAM>(info[3].As<Napi::Number>().Int64Value());
+      SendMessageTimeoutW(
+          hwnd, msg, wParam, lParam, SMTO_ABORTIFHUNG, timeout, &dwResult);
+    } else {
+      Napi::TypeError::New(env, "lParam must be string or number")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+
+    return Napi::Number::New(env, static_cast<double>(dwResult));
+  });
+}
+
+Napi::Value GetWindowLongPtrWrapped(const Napi::CallbackInfo& info) {
+  auto env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    double arg_0 = info[0].As<Napi::Number>().DoubleValue();
+    int32_t arg_1 = info[1].As<Napi::Number>().Int32Value();
+
+    auto ptr = static_cast<uintptr_t>(arg_0);
+    HWND hwnd = reinterpret_cast<HWND>(ptr);
+    int index = static_cast<int>(arg_1);
+    LONG_PTR result = GetWindowLongPtrW(hwnd, index);
+
+    return Napi::BigInt::New(env, static_cast<int64_t>(result));
+  });
+}
+
+Napi::Value IsWindowEnabledWrapped(const Napi::CallbackInfo& info) {
+  auto env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    HWND hwnd = HwndFromBigInt(info[0]);
+    bool isEnabled = IsWindowEnabled(hwnd);
+    return Napi::Boolean::New(env, isEnabled);
+  });
+}
+
+/**
+ * Custom API
+ */
+Napi::Value SendMouseMove(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+
+  return JS::Try(env, [&]() -> Napi::Value {
+    HWND hwnd = HwndFromBigInt(info[0]);
+    int x = info[1].As<Napi::Number>().Int32Value();
+    int y = info[2].As<Napi::Number>().Int32Value();
+
+    // 客户区坐标打包进 lParam：低16位 x，高16位 y
+    LPARAM lParam = MAKELPARAM(x, y);
+    SendMessageW(hwnd, WM_MOUSEMOVE, 0, lParam);
+
+    return env.Undefined();
+  });
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
   // TOFDPort functions
   exports.Set(
@@ -266,6 +458,35 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set(
       Napi::String::New(env, "ITS_Start"),
       Napi::Function::New(env, ITS_StartWrapped));
+
+  /**
+   * Win32 API
+   */
+  exports.Set(
+      Napi::String::New(env, "FindWindowW"),
+      Napi::Function::New(env, FindWindowWrapped));
+  exports.Set(
+      Napi::String::New(env, "SetForegroundWindow"),
+      Napi::Function::New(env, SetForegroundWindowWrapped));
+  exports.Set(
+      Napi::String::New(env, "EnumChildWindows"),
+      Napi::Function::New(env, EnumChildWindowsWrapped));
+  exports.Set(
+      Napi::String::New(env, "SendMessageTimeout"),
+      Napi::Function::New(env, SendMessageWrapped));
+  exports.Set(
+      Napi::String::New(env, "GetWindowLongPtrW"),
+      Napi::Function::New(env, GetWindowLongPtrWrapped));
+  exports.Set(
+      Napi::String::New(env, "IsWindowEnabled"),
+      Napi::Function::New(env, IsWindowEnabledWrapped));
+
+  /**
+   * Custom API
+   */
+  exports.Set(
+      Napi::String::New(env, "SendMouseMove"),
+      Napi::Function::New(env, SendMouseMove));
 
   return exports;
 }

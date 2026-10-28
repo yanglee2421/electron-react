@@ -9,8 +9,8 @@ import {
 // 自动录入功能
 export const useAutoInputToVC = () => {
   return useMutation({
-    mutationFn: async (params: AutoInputToVCParams) => {
-      return await ipc.invoke("WIN/autoInputToVC", params);
+    mutationFn: (params: AutoInputToVCParams) => {
+      return ipc.invoke("WIN/autoInputToVC", params);
     },
   });
 };
