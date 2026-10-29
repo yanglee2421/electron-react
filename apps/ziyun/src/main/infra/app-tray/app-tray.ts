@@ -27,7 +27,7 @@ export class AppTray {
           }
 
           return new Observable<Tray>((sub) => {
-            const iconPath = path.join(app.getAppPath(), "resources/icon.png");
+            const iconPath = path.join(app.getAppPath(), "resources/icon.ico");
             const tray = new Tray(nativeImage.createFromPath(iconPath));
             const contextMenu = Menu.buildFromTemplate([
               {

@@ -26,6 +26,7 @@ export default {
     artifactName: "${productName}-Mac-${version}-Installer.${ext}",
   },
   win: {
+    icon: "resources/icon.ico",
     target: [{ target: "nsis", arch: [] }],
     artifactName: "${productName}_${version}_${arch}-Setup.${ext}",
   },

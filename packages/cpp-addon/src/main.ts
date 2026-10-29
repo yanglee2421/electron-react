@@ -19,7 +19,7 @@ interface NativeAddon {
     mczzrq: string,
     ztx: number,
     ytx: number,
-  ): Promise<void>;
+  ): Promise<boolean>;
 }
 
 const addon: NativeAddon = require(
