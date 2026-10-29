@@ -1,7 +1,7 @@
 import { ipcHandle, ipcRemoveHandle } from "#main/ipc";
 import { hydrateSubject } from "#main/utils/hydrate-subject";
 import addon, { WindowsMessages } from "@yanglee2421/union-addon";
-import { BrowserWindow } from "electron";
+import { BrowserWindow, powerSaveBlocker } from "electron";
 import type { Subscription } from "rxjs";
 import {
   BehaviorSubject,
@@ -220,7 +220,18 @@ export class Cmd {
             return EMPTY;
           }
 
-          return interval(1000 * 60 * 3).pipe(
+          return using(
+            () => {
+              const id = powerSaveBlocker.start("prevent-app-suspension");
+
+              return {
+                unsubscribe: () => {
+                  powerSaveBlocker.stop(id);
+                },
+              };
+            },
+            () => interval(1000 * 60 * 3),
+          ).pipe(
             startWith(0),
             concatMap(() => {
               return concat(
