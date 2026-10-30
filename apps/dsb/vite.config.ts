@@ -5,8 +5,9 @@ import { electron } from "@yanglee2421/vite-plugin";
 import { createRequire } from "node:module";
 import path from "node:path";
 import url from "node:url";
-import { defineConfig, normalizePath } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
+import type { Plugin } from "vite-plus";
+import { defineConfig, normalizePath } from "vite-plus";
 
 const require = createRequire(import.meta.url);
 const __filename = url.fileURLToPath(import.meta.url);
@@ -21,12 +22,37 @@ const alias = {
 const pdfjsDistPath = path.dirname(require.resolve("pdfjs-dist/package.json"));
 const cMapsDir = normalizePath(path.join(pdfjsDistPath, "cmaps"));
 
-// https://vite.dev/config/
+const electronPlugin = (): Plugin[] => {
+  return [
+    {
+      name: "electron:dev",
+      apply: "serve",
+      config() {
+        return {
+          server: {
+            watch: {
+              ignored: [
+                "**/out/**",
+                "**/release/**",
+                "**/src/main/**",
+                "**/src/preload/**",
+              ],
+            },
+          },
+        };
+      },
+      configResolved() {},
+      configureServer() {},
+      closeServer() {},
+    },
+  ];
+};
+
 export default defineConfig({
   plugins: [
-    react(),
-    babel({ presets: [reactCompilerPreset()] }),
-    tailwindcss(),
+    react() as unknown as Plugin,
+    babel({ presets: [reactCompilerPreset()] }) as unknown as Plugin,
+    tailwindcss() as unknown as Plugin,
     viteStaticCopy({
       targets: [
         {
@@ -35,8 +61,9 @@ export default defineConfig({
           rename: { stripBase: true },
         },
       ],
-    }),
-    electron(),
+    }) as unknown as Plugin,
+    electron() as unknown as Plugin,
+    electronPlugin(),
   ],
   resolve: { alias },
 });
