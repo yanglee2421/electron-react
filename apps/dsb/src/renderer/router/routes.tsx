@@ -1,3 +1,4 @@
+import { Layout } from "#renderer/router/layout";
 import { Navigate, type RouteObject } from "react-router";
 import { RootHydrateFallback } from "./root";
 
@@ -22,6 +23,7 @@ export const createRoutes = (): RouteObject[] => {
           lazy: () => import("#renderer/pages/lab/component"),
         },
       ],
+      Component: Layout,
       HydrateFallback: RootHydrateFallback,
     },
   ];
