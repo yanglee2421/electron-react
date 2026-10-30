@@ -26,7 +26,7 @@ export default {
     artifactName: "${productName}-Mac-${version}-Installer.${ext}",
   },
   win: {
-    icon: "resources/icon.ico",
+    icon: "resources/favicon.ico",
     target: [{ target: "nsis", arch: [] }],
     artifactName: "${productName}_${version}_${arch}-Setup.${ext}",
   },
@@ -38,6 +38,7 @@ export default {
     allowElevation: true,
   },
   linux: {
+    icon: "resources/icons",
     target: ["deb"],
     artifactName: "${productName}-Linux-${version}.${ext}",
     category: "Utility",

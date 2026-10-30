@@ -1,4 +1,5 @@
 import type { AppCradle } from "#main/features/types";
+import { platform } from "@electron-toolkit/utils";
 import { app, Menu, nativeImage, Tray } from "electron";
 import path from "node:path";
 import type { Subscription } from "rxjs";
@@ -10,6 +11,18 @@ import {
   switchMap,
   tap,
 } from "rxjs";
+
+const calcTrayIconPath = () => {
+  if (platform.isWindows) {
+    return path.join(app.getAppPath(), "resources/favicon.ico");
+  }
+
+  if (platform.isLinux) {
+    return path.join(app.getAppPath(), "resources/icons/32x32.png");
+  }
+
+  return "";
+};
 
 export class AppTray {
   private subscription: Subscription;
@@ -27,7 +40,7 @@ export class AppTray {
           }
 
           return new Observable<Tray>((sub) => {
-            const iconPath = path.join(app.getAppPath(), "resources/icon.ico");
+            const iconPath = calcTrayIconPath();
             const tray = new Tray(nativeImage.createFromPath(iconPath));
             const contextMenu = Menu.buildFromTemplate([
               {
