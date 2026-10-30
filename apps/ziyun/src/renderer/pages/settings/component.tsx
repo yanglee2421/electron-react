@@ -545,7 +545,7 @@ export const Component = () => {
               />
             }
           >
-            <ListItemText primary={"显示康华HMIS菜单"} />
+            <ListItemText primary={"显示安康菜单"} />
           </ListItem>
           <ListItem
             secondaryAction={

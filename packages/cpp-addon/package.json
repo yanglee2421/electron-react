@@ -8,11 +8,10 @@
     "import": "./dist/main.mjs"
   },
   "scripts": {
-    "prepare": "tsdown"
+    "prepare": "vp pack"
   },
   "devDependencies": {
     "node-addon-api": "^8.9.2",
-    "node-api-headers": "^1.9.0",
-    "tsdown": "0.23.0"
+    "node-api-headers": "^1.9.0"
   }
 }

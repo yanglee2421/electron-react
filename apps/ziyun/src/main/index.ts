@@ -23,7 +23,6 @@ import {
   merge,
   mergeMap,
   Observable,
-  of,
   partition,
   switchMap,
   take,
@@ -197,8 +196,27 @@ const closeWindowToQuit$ = windowAllClosed$.pipe(
   tap(() => app.quit()),
 );
 
-const lock = app.requestSingleInstanceLock();
-const lock$ = of(lock);
+const lock$ = new Observable<boolean>((sub) => {
+  /**
+   * Avoid single instance in development version & production version
+   */
+  if (is.dev) {
+    const USER_DATA_PATH_DEV = path.resolve(
+      app.getPath("appData"),
+      `./${app.getName()}-dev`,
+    );
+    app.setPath("userData", USER_DATA_PATH_DEV);
+  }
+
+  // Must be executed after userData changed
+  const lock = app.requestSingleInstanceLock();
+
+  sub.next(lock);
+
+  return () => {
+    app.releaseSingleInstanceLock();
+  };
+});
 const [lockOk$, lockFailed$] = partition(lock$, (i) => i);
 
 lockFailed$.subscribe(() => {
@@ -209,17 +227,6 @@ lockFailed$.subscribe(() => {
 lockOk$
   .pipe(
     tap(() => {
-      /**
-       * Avoid single instance in development version & production version
-       */
-      if (is.dev) {
-        const USER_DATA_PATH_DEV = path.resolve(
-          app.getPath("appData"),
-          `./${app.getName()}-dev`,
-        );
-        app.setPath("userData", USER_DATA_PATH_DEV);
-      }
-
       if (is.dev) {
         app.setAsDefaultProtocolClient("app-ziyun", process.execPath, [
           path.resolve(process.argv[1]),

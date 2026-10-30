@@ -21,7 +21,7 @@ const createSegmentAlias = () => {
     ["jtv_guangzhoubei", "广州北"],
     ["jtv_guangzhoujibaoduan", "广州机保段"],
     ["guangzhoucheliang", "广州车辆厂"],
-    ["kh", "康华"],
+    ["kh", "安康"],
     ["verifies", "日常校验"],
     ["verify", "日常校验"],
     ["quartor", "季度校验"],

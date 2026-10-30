@@ -54,6 +54,15 @@ import type {
   QXDataParams,
 } from "./types";
 
+interface FTPImage {
+  lxhFtpPath: string;
+  rxhFtpPath: string;
+  llzFtpPath: string;
+  rlzFtpPath: string;
+  lctFtpPath: string;
+  rctFtpPath: string;
+}
+
 const emit = createEmit("api_set");
 const checkChannel = (flawNumber: number, ch?: ChannelData) => {
   if (!ch) {
@@ -607,7 +616,8 @@ export class KH {
     return result;
   }
   async handleUploadCHR501(id: string) {
-    const chr501Params = await this.resolveCHR501InputParams(id);
+    const images = await this.upload501ImagesByFtp(id);
+    const chr501Params = await this.resolveCHR501InputParams(id, images);
 
     return this.sendCHR501ToServer(chr501Params);
   }
@@ -627,7 +637,10 @@ export class KH {
     return this.sendCHR52AToServer(params);
   }
 
-  async resolveCHR501InputParams(id: string): Promise<I501Record> {
+  async resolveCHR501InputParams(
+    id: string,
+    images: FTPImage,
+  ): Promise<I501Record> {
     const { rows } = await this.mdb.root().verifies().equal("szIDs", id);
     const firstRecord = rows.at(0);
 
@@ -646,7 +659,7 @@ export class KH {
       .equal("opid", firstRecord.szIDs);
 
     const corporation = await this.mdb.app().corporation();
-    const images = await this.upload501ImagesByFtp(firstRecord.szIDs);
+
     const channelHelper = resolveCHR501Flaws(datas, detectors);
     const lct = channelHelper.get("0-0");
     const la1 = channelHelper.get("0-1");
@@ -2711,7 +2724,7 @@ export class KH {
       ysy: this.state.tsysy,
     };
   }
-  async upload501ImagesByFtp(id: string) {
+  async upload501ImagesByFtp(id: string): Promise<FTPImage> {
     const rootPath = await this.mdb.rootFolder();
     const lxhImage = this.mdb.imagePath(rootPath, `${id}.LXH.bmp`);
     const rxhImage = this.mdb.imagePath(rootPath, `${id}.RXH.bmp`);
@@ -2935,11 +2948,28 @@ export class KH {
       .orderBy("tmNow", "desc");
     const verifiy = verifies.rows.at(0);
     const verifyResult = await this.calcVerifyResult(verifiy);
+    let selftest = "";
+
+    if (verifiy) {
+      const images: FTPImage = {
+        lxhFtpPath: "",
+        rxhFtpPath: "",
+        llzFtpPath: "",
+        rlzFtpPath: "",
+        lctFtpPath: "",
+        rctFtpPath: "",
+      };
+      const data501 = await this.resolveCHR501InputParams(
+        verifiy.szIDs,
+        images,
+      );
+      selftest = JSON.stringify(data501);
+    }
 
     const input: DeviceUploadBody = {
       sbllid,
       createtime: dayjs().format("YYYY-MM-DD HH:mm:ss"),
-      selftest: verifiy ? `日常校验,${verifiy.szWHModel}` : "",
+      selftest,
       selftesttime: verifiy
         ? dayjs(verifiy.tmNow).format("YYYY-MM-DD HH:mm:ss")
         : "",
