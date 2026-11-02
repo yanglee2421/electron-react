@@ -155,7 +155,7 @@ export const Sidebar = (props: SidebarProps) => {
         className="scroll-container"
       >
         <div ref={scrollRef}></div>
-        {showHmis && (
+        <React.Activity mode={showHmis ? "visible" : "hidden"}>
           <NavGroup title="HMIS">
             <React.Activity mode={showHxzyHmisMenu ? "visible" : "hidden"}>
               <NavCollapse label="成都北车辆段">
@@ -297,21 +297,7 @@ export const Sidebar = (props: SidebarProps) => {
               </NavCollapse>
             </React.Activity>
           </NavGroup>
-        )}
-        <NavGroup title="常规12通道软件">
-          <NavButton path="/detection" label="现车作业" icon={<Train />} />
-          <NavButton path="/verify" label="日常校验" icon={<TodayRounded />} />
-          <NavButton
-            path="/quartors"
-            label="季度校验"
-            icon={<CalendarMonthRounded />}
-          />
-          <NavButton
-            path="/anniversary"
-            label="年度校验"
-            icon={<CalendarTodayRounded />}
-          />
-        </NavGroup>
+        </React.Activity>
 
         {/* QT */}
         <React.Activity mode={showQT ? "visible" : "hidden"}>
@@ -340,6 +326,22 @@ export const Sidebar = (props: SidebarProps) => {
             />
           </NavGroup>
         </React.Activity>
+
+        {/* Common */}
+        <NavGroup title="常规12通道软件">
+          <NavButton path="/detection" label="现车作业" icon={<Train />} />
+          <NavButton path="/verify" label="日常校验" icon={<TodayRounded />} />
+          <NavButton
+            path="/quartors"
+            label="季度校验"
+            icon={<CalendarMonthRounded />}
+          />
+          <NavButton
+            path="/anniversary"
+            label="年度校验"
+            icon={<CalendarTodayRounded />}
+          />
+        </NavGroup>
 
         {/* Else */}
         <NavGroup title="其它">

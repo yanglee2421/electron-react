@@ -564,20 +564,6 @@ export const Component = () => {
           <ListItem
             secondaryAction={
               <Switch
-                checked={showPLCMenu}
-                onChange={(_, checked) => {
-                  useProfileStore.setState((d) => {
-                    d.showPLCMenu = checked;
-                  });
-                }}
-              />
-            }
-          >
-            <ListItemText primary={"显示PLC菜单"} />
-          </ListItem>
-          <ListItem
-            secondaryAction={
-              <Switch
                 checked={showQT}
                 onChange={(_, checked) => {
                   useProfileStore.setState((d) => {
@@ -588,6 +574,20 @@ export const Component = () => {
             }
           >
             <ListItemText primary={"显示信创功能菜单"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showPLCMenu}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showPLCMenu = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示PLC菜单"} />
           </ListItem>
         </List>
       </Card>
