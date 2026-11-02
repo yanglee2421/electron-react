@@ -36,6 +36,8 @@ import {
 import { normalizePathname } from "@yotulee/run";
 import React from "react";
 import { Link, useLocation } from "react-router";
+import { animationFrameScheduler, auditTime, Observable } from "rxjs";
+import "./sidebar.css";
 
 const StyledLink = styled(Link)(({ theme }) => {
   return {
@@ -57,14 +59,26 @@ const useIntersection = () => {
 
     if (!el) return;
 
-    const observer = new IntersectionObserver(([entry]) => {
-      setIsIntersecting(entry.isIntersecting);
+    const intersection$ = new Observable<boolean>((sub) => {
+      const observer = new IntersectionObserver(([entry]) => {
+        sub.next(entry.isIntersecting);
+      });
+      observer.observe(el);
+
+      return () => {
+        observer.unobserve(el);
+        observer.disconnect();
+      };
     });
-    observer.observe(el);
+
+    const sub = intersection$
+      .pipe(auditTime(0, animationFrameScheduler))
+      .subscribe((value) => {
+        setIsIntersecting(value);
+      });
 
     return () => {
-      observer.unobserve(el);
-      observer.disconnect();
+      sub.unsubscribe();
     };
   }, []);
 
@@ -76,23 +90,33 @@ interface SidebarProps {
 }
 
 export const Sidebar = (props: SidebarProps) => {
-  const [isIntersecting, scrollRef] = useIntersection();
   const theme = useTheme();
-  const showHxzyHmisMenu = useProfileStore((s) => s.showHxzyHmisMenu);
-  const showJtvHmisMenu = useProfileStore((s) => s.showJtvHmisMenu);
-  const showGuangzhoubeiHmisMenu = useProfileStore(
-    (s) => s.showGuangzhoubeiHmisMenu,
+  const [isIntersecting, scrollRef] = useIntersection();
+  const showHxzyHmisMenu = React.useDeferredValue(
+    useProfileStore((s) => s.showHxzyHmisMenu),
   );
-  const showGuangzhoujibaoduanHmisMenu = useProfileStore(
-    (s) => s.showGuangzhoujibaoduanHmisMenu,
+  const showJtvHmisMenu = React.useDeferredValue(
+    useProfileStore((s) => s.showJtvHmisMenu),
   );
-  const showGuangzhoucheliangMenu = useProfileStore(
-    (s) => s.showGuangzhoucheliangMenu,
+  const showGuangzhoubeiHmisMenu = React.useDeferredValue(
+    useProfileStore((s) => s.showGuangzhoubeiHmisMenu),
   );
-  const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
-  const showFuzhoudong = useProfileStore((s) => s.showFuzhoudong);
-  const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
-  const showQT = useProfileStore((s) => s.showQT);
+  const showGuangzhoujibaoduanHmisMenu = React.useDeferredValue(
+    useProfileStore((s) => s.showGuangzhoujibaoduanHmisMenu),
+  );
+  const showGuangzhoucheliangMenu = React.useDeferredValue(
+    useProfileStore((s) => s.showGuangzhoucheliangMenu),
+  );
+  const showKhHmisMenu = React.useDeferredValue(
+    useProfileStore((s) => s.showKhHmisMenu),
+  );
+  const showFuzhoudong = React.useDeferredValue(
+    useProfileStore((s) => s.showFuzhoudong),
+  );
+  const showPLCMenu = React.useDeferredValue(
+    useProfileStore((s) => s.showPLCMenu),
+  );
+  const showQT = React.useDeferredValue(useProfileStore((s) => s.showQT));
   const showHmis =
     showHxzyHmisMenu ||
     showJtvHmisMenu ||
@@ -128,102 +152,93 @@ export const Sidebar = (props: SidebarProps) => {
           flexBasis: 0,
           overflow: "auto",
         }}
+        className="scroll-container"
       >
         <div ref={scrollRef}></div>
         {showHmis && (
           <NavGroup title="HMIS">
             <React.Activity mode={showHxzyHmisMenu ? "visible" : "hidden"}>
-              <React.ViewTransition>
-                <NavCollapse label="成都北车辆段">
-                  <NavButton
-                    path="/hxzy"
-                    label="HMIS"
-                    icon={<QrCodeScannerRounded />}
-                  />
-                  <NavButton
-                    path="/hxzy/verifies"
-                    label="日常校验"
-                    icon={<CalendarTodayRounded />}
-                  />
-                  <NavButton
-                    path="/hxzy/setting"
-                    label="设置"
-                    icon={<TuneRounded />}
-                  />
-                </NavCollapse>
-              </React.ViewTransition>
+              <NavCollapse label="成都北车辆段">
+                <NavButton
+                  path="/hxzy"
+                  label="HMIS"
+                  icon={<QrCodeScannerRounded />}
+                />
+                <NavButton
+                  path="/hxzy/verifies"
+                  label="日常校验"
+                  icon={<CalendarTodayRounded />}
+                />
+                <NavButton
+                  path="/hxzy/setting"
+                  label="设置"
+                  icon={<TuneRounded />}
+                />
+              </NavCollapse>
             </React.Activity>
             <React.Activity mode={showJtvHmisMenu ? "visible" : "hidden"}>
-              <React.ViewTransition>
-                <NavCollapse label="京天威统型">
-                  <NavButton
-                    path="/jtv"
-                    label="HMIS"
-                    icon={<QrCodeScannerRounded />}
-                  />
-                  <NavButton
-                    path="/jtv/setting"
-                    label="设置"
-                    icon={<TuneRounded />}
-                  />
-                </NavCollapse>
-              </React.ViewTransition>
+              <NavCollapse label="京天威统型">
+                <NavButton
+                  path="/jtv"
+                  label="HMIS"
+                  icon={<QrCodeScannerRounded />}
+                />
+                <NavButton
+                  path="/jtv/setting"
+                  label="设置"
+                  icon={<TuneRounded />}
+                />
+              </NavCollapse>
             </React.Activity>
             <React.Activity
               mode={showGuangzhoubeiHmisMenu ? "visible" : "hidden"}
             >
-              <React.ViewTransition>
-                <NavCollapse label="广州北车辆段">
-                  <NavButton
-                    path="/jtv_guangzhoubei"
-                    label="HMIS"
-                    icon={<QrCodeScannerRounded />}
-                  />
-                  <NavButton
-                    path="/jtv_guangzhoubei/setting"
-                    label="设置"
-                    icon={<TuneRounded />}
-                  />
-                </NavCollapse>
-              </React.ViewTransition>
+              <NavCollapse label="广州北车辆段">
+                <NavButton
+                  path="/jtv_guangzhoubei"
+                  label="HMIS"
+                  icon={<QrCodeScannerRounded />}
+                />
+                <NavButton
+                  path="/jtv_guangzhoubei/setting"
+                  label="设置"
+                  icon={<TuneRounded />}
+                />
+              </NavCollapse>
             </React.Activity>
             <React.Activity
               mode={showGuangzhoujibaoduanHmisMenu ? "visible" : "hidden"}
             >
-              <React.ViewTransition>
-                <NavCollapse label={"广州机保段"}>
-                  <NavButton
-                    path="/jtv_guangzhoujibaoduan"
-                    label="HMIS"
-                    icon={<QrCodeScannerRounded />}
-                  />
-                  <NavButton
-                    path="/jtv_guangzhoujibaoduan/setting"
-                    label="设置"
-                    icon={<TuneRounded />}
-                  />
-                </NavCollapse>
-              </React.ViewTransition>
+              <NavCollapse label={"广州机保段"}>
+                <NavButton
+                  path="/jtv_guangzhoujibaoduan"
+                  label="HMIS"
+                  icon={<QrCodeScannerRounded />}
+                />
+                <NavButton
+                  path="/jtv_guangzhoujibaoduan/setting"
+                  label="设置"
+                  icon={<TuneRounded />}
+                />
+              </NavCollapse>
             </React.Activity>
             <React.Activity
               mode={showGuangzhoucheliangMenu ? "visible" : "hidden"}
             >
-              <React.ViewTransition>
-                <NavCollapse label={"广州车辆厂"}>
-                  <NavButton
-                    path="/guangzhoucheliang"
-                    label="HMIS"
-                    icon={<QrCodeScannerRounded />}
-                  />
-                  <NavButton
-                    path="/guangzhoucheliang/setting"
-                    label="设置"
-                    icon={<TuneRounded />}
-                  />
-                </NavCollapse>
-              </React.ViewTransition>
+              <NavCollapse label={"广州车辆厂"}>
+                <NavButton
+                  path="/guangzhoucheliang"
+                  label="HMIS"
+                  icon={<QrCodeScannerRounded />}
+                />
+                <NavButton
+                  path="/guangzhoucheliang/setting"
+                  label="设置"
+                  icon={<TuneRounded />}
+                />
+              </NavCollapse>
             </React.Activity>
-            {showKhHmisMenu && (
+            <React.Activity mode={showKhHmisMenu ? "visible" : "hidden"}>
               <NavCollapse label={"安康车辆段"}>
                 <NavButton
                   path="/kh"
@@ -256,8 +271,8 @@ export const Sidebar = (props: SidebarProps) => {
                   icon={<TuneRounded />}
                 />
               </NavCollapse>
-            )}
-            {showFuzhoudong && (
+            </React.Activity>
+            <React.Activity mode={showFuzhoudong ? "visible" : "hidden"}>
               <NavCollapse label={"福州车辆段"}>
                 <NavButton
                   path="/fuzhoudong/verify"
@@ -280,7 +295,7 @@ export const Sidebar = (props: SidebarProps) => {
                   icon={<TuneRounded />}
                 />
               </NavCollapse>
-            )}
+            </React.Activity>
           </NavGroup>
         )}
         <NavGroup title="常规12通道软件">
@@ -300,50 +315,45 @@ export const Sidebar = (props: SidebarProps) => {
 
         {/* QT */}
         <React.Activity mode={showQT ? "visible" : "hidden"}>
-          <React.ViewTransition>
-            <NavGroup title="信创版软件相关">
-              <NavButton path="/qt" label="信创版软件" icon={<Commit />} />
-              <NavButton
-                path="/qt/detections"
-                label="现车作业"
-                icon={<Train />}
-              />
-              <NavButton
-                path="/qt/verifies"
-                label="日常校验"
-                icon={<Today />}
-              />
-              <NavButton
-                path="/qt/quartors"
-                label="季度校验"
-                icon={<CalendarMonth />}
-              />
-              <NavButton
-                path="/qt/anniversary"
-                label="年度校验"
-                icon={<CalendarToday />}
-              />
-              <NavButton
-                path="/qt/dynamic"
-                label="动态信噪比"
-                icon={<SsidChart />}
-              />
-            </NavGroup>
-          </React.ViewTransition>
+          <NavGroup title="信创版软件相关">
+            <NavButton path="/qt" label="信创版软件" icon={<Commit />} />
+            <NavButton
+              path="/qt/detections"
+              label="现车作业"
+              icon={<Train />}
+            />
+            <NavButton path="/qt/verifies" label="日常校验" icon={<Today />} />
+            <NavButton
+              path="/qt/quartors"
+              label="季度校验"
+              icon={<CalendarMonth />}
+            />
+            <NavButton
+              path="/qt/anniversary"
+              label="年度校验"
+              icon={<CalendarToday />}
+            />
+            <NavButton
+              path="/qt/dynamic"
+              label="动态信噪比"
+              icon={<SsidChart />}
+            />
+          </NavGroup>
         </React.Activity>
 
         {/* Else */}
         <NavGroup title="其它">
           <NavButton path="/log" label="日志" icon={<Info />} />
           <NavButton path="/settings" label="设置" icon={<Settings />} />
-          {showPLCMenu && (
+          <React.Activity mode={showPLCMenu ? "visible" : "hidden"}>
             <NavButton label="PLC" icon={<Memory />} path="/plc" />
-          )}
+          </React.Activity>
           {import.meta.env.DEV && (
             <NavButton label="实验室" icon={<Science />} path="/lab" />
           )}
         </NavGroup>
       </Box>
+
       {/* <Divider />
       <Toolbar></Toolbar> */}
     </>
@@ -361,14 +371,16 @@ const NavButton = (props: NavButtonProps) => {
   const location = useLocation();
 
   return (
-    <ListItemButton
-      component={Link}
-      to={{ pathname: path }}
-      selected={Object.is(normalizePathname(location.pathname), path)}
-    >
-      <ListItemIcon>{icon}</ListItemIcon>
-      <ListItemText primary={label} />
-    </ListItemButton>
+    <React.ViewTransition>
+      <ListItemButton
+        component={Link}
+        to={{ pathname: path }}
+        selected={Object.is(normalizePathname(location.pathname), path)}
+      >
+        <ListItemIcon>{icon}</ListItemIcon>
+        <ListItemText primary={label} />
+      </ListItemButton>
+    </React.ViewTransition>
   );
 };
 
@@ -379,15 +391,17 @@ interface NavGroupProps {
 
 const NavGroup = (props: NavGroupProps) => {
   return (
-    <List
-      subheader={
-        <ListSubheader disableSticky sx={{ backgroundColor: "transparent" }}>
-          {props.title}
-        </ListSubheader>
-      }
-    >
-      {props.children}
-    </List>
+    <React.ViewTransition>
+      <List
+        subheader={
+          <ListSubheader disableSticky sx={{ backgroundColor: "transparent" }}>
+            {props.title}
+          </ListSubheader>
+        }
+      >
+        {props.children}
+      </List>
+    </React.ViewTransition>
   );
 };
 
@@ -402,7 +416,7 @@ const NavCollapse = (props: NavCollapseProps) => {
   const theme = useTheme();
 
   return (
-    <>
+    <React.ViewTransition>
       <ListItemButton
         onClick={() => {
           setShow((p) => !p);
@@ -429,6 +443,6 @@ const NavCollapse = (props: NavCollapseProps) => {
           {props.children}
         </List>
       </Collapse>
-    </>
+    </React.ViewTransition>
   );
 };

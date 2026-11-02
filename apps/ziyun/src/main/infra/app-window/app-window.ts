@@ -1,6 +1,8 @@
 import type { Profile } from "#main/features/profile";
 import type { AppCradle } from "#main/features/types";
-import { BrowserWindow, app } from "electron";
+import { calcIconPath } from "#main/utils/icon-path";
+import { is } from "@electron-toolkit/utils";
+import { BrowserWindow, app, nativeImage } from "electron";
 import path from "node:path";
 import url from "node:url";
 import type { Subscription } from "rxjs";
@@ -59,6 +61,7 @@ export class AppWindow {
       width: 1024,
       height: 768,
       minWidth: 430,
+      icon: is.dev ? nativeImage.createFromPath(calcIconPath()) : void 0,
     });
 
     win.menuBarVisible = true;

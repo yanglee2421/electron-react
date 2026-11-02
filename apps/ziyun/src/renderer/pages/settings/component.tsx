@@ -475,7 +475,7 @@ export const Component = () => {
               />
             }
           >
-            <ListItemText primary={"显示华兴致远HMIS菜单"} />
+            <ListItemText primary={"显示成都北车辆段菜单"} />
           </ListItem>
           <ListItem
             secondaryAction={
@@ -503,7 +503,7 @@ export const Component = () => {
               />
             }
           >
-            <ListItemText primary={"显示广州北HMIS菜单"} />
+            <ListItemText primary={"显示广州北车辆段菜单"} />
           </ListItem>
           <ListItem
             secondaryAction={
@@ -517,7 +517,7 @@ export const Component = () => {
               />
             }
           >
-            <ListItemText primary={"显示广州机保段HMIS菜单"} />
+            <ListItemText primary={"显示广州机保段菜单"} />
           </ListItem>
           <ListItem
             secondaryAction={
@@ -531,7 +531,7 @@ export const Component = () => {
               />
             }
           >
-            <ListItemText primary={"显示广州车辆厂HMIS菜单"} />
+            <ListItemText primary={"显示广州车辆厂菜单"} />
           </ListItem>
           <ListItem
             secondaryAction={
@@ -545,7 +545,7 @@ export const Component = () => {
               />
             }
           >
-            <ListItemText primary={"显示安康菜单"} />
+            <ListItemText primary={"显示安康车辆段菜单"} />
           </ListItem>
           <ListItem
             secondaryAction={
@@ -559,7 +559,7 @@ export const Component = () => {
               />
             }
           >
-            <ListItemText primary={"显示福州东HMIS菜单"} />
+            <ListItemText primary={"显示福州东车辆段菜单"} />
           </ListItem>
           <ListItem
             secondaryAction={

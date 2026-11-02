@@ -1,0 +1,8 @@
+.scroll-container {
+  view-transition-name: scroller;
+  view-transition-group: contain;
+}
+
+::view-transition-group(scroller) {
+  overflow: clip;
+}
