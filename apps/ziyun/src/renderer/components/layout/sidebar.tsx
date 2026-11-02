@@ -76,19 +76,8 @@ interface SidebarProps {
 }
 
 export const Sidebar = (props: SidebarProps) => {
-  const [hxzyOpen, setHxzyOpen] = React.useState(true);
-  const [jtvOpen, setJtvOpen] = React.useState(true);
-  const [guangzhoubeiOpen, setGuangzhoubeiOpen] = React.useState(true);
-  const [guangzhoujibaoduanOpen, setGuangzhoujibaoduanOpen] =
-    React.useState(true);
-  const [guangzhoucheliangOpen, setGuangzhoucheliangOpen] =
-    React.useState(true);
-  const [khOpen, setKhOpen] = React.useState(true);
-  const [fuzhoudongOpen, setFuzhoudongOpen] = React.useState(true);
-
   const [isIntersecting, scrollRef] = useIntersection();
   const theme = useTheme();
-  const location = useLocation();
   const showHxzyHmisMenu = useProfileStore((s) => s.showHxzyHmisMenu);
   const showJtvHmisMenu = useProfileStore((s) => s.showJtvHmisMenu);
   const showGuangzhoubeiHmisMenu = useProfileStore(
@@ -142,624 +131,218 @@ export const Sidebar = (props: SidebarProps) => {
       >
         <div ref={scrollRef}></div>
         {showHmis && (
-          <List
-            subheader={
-              <ListSubheader
-                disableSticky
-                sx={{ backgroundColor: "transparent" }}
-              >
-                HMIS
-              </ListSubheader>
-            }
-          >
-            {showHxzyHmisMenu && (
-              <>
-                <ListItemButton
-                  onClick={() => {
-                    setHxzyOpen((p) => !p);
-                  }}
-                >
-                  <ListItemIcon>
-                    <PrecisionManufacturing />
-                  </ListItemIcon>
-                  <ListItemText primary={"成都北车辆段"} />
-                  <ExpandMore
-                    sx={{
-                      rotate: hxzyOpen ? 0 : "-90deg",
-                      transition: theme.transitions.create("rotate"),
-                    }}
+          <NavGroup title="HMIS">
+            <React.Activity mode={showHxzyHmisMenu ? "visible" : "hidden"}>
+              <React.ViewTransition>
+                <NavCollapse label="成都北车辆段">
+                  <NavButton
+                    path="/hxzy"
+                    label="HMIS"
+                    icon={<QrCodeScannerRounded />}
                   />
-                </ListItemButton>
-                <Collapse in={hxzyOpen} unmountOnExit>
-                  <List disablePadding>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/hxzy" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/hxzy",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <QrCodeScannerRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"HMIS"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/hxzy/verifies" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/hxzy/verifies",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <CalendarTodayRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"日常校验"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/hxzy/setting" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/hxzy/setting",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <TuneRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"设置"} />
-                    </ListItemButton>
-                  </List>
-                </Collapse>
-              </>
-            )}
-            {showJtvHmisMenu && (
-              <>
-                <ListItemButton
-                  onClick={() => {
-                    setJtvOpen((p) => !p);
-                  }}
-                >
-                  <ListItemIcon>
-                    <PrecisionManufacturing />
-                  </ListItemIcon>
-                  <ListItemText primary={"京天威统型"} />
-                  <ExpandMore
-                    sx={{
-                      rotate: jtvOpen ? 0 : "-90deg",
-                      transition: theme.transitions.create("rotate"),
-                    }}
+                  <NavButton
+                    path="/hxzy/verifies"
+                    label="日常校验"
+                    icon={<CalendarTodayRounded />}
                   />
-                </ListItemButton>
-                <Collapse in={jtvOpen} unmountOnExit>
-                  <List disablePadding>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/jtv" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/jtv",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <QrCodeScannerRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"HMIS"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/jtv/setting" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/jtv/setting",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <TuneRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"设置"} />
-                    </ListItemButton>
-                  </List>
-                </Collapse>
-              </>
-            )}
-            {showGuangzhoubeiHmisMenu && (
-              <>
-                <ListItemButton
-                  onClick={() => {
-                    setGuangzhoubeiOpen((p) => !p);
-                  }}
-                >
-                  <ListItemIcon>
-                    <PrecisionManufacturing />
-                  </ListItemIcon>
-                  <ListItemText primary={"广州北车辆段"} />
-                  <ExpandMore
-                    sx={{
-                      rotate: guangzhoubeiOpen ? 0 : "-90deg",
-                      transition: theme.transitions.create("rotate"),
-                    }}
+                  <NavButton
+                    path="/hxzy/setting"
+                    label="设置"
+                    icon={<TuneRounded />}
                   />
-                </ListItemButton>
-                <Collapse in={guangzhoubeiOpen} unmountOnExit>
-                  <List disablePadding>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/jtv_guangzhoubei" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/jtv_guangzhoubei",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <QrCodeScannerRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"HMIS"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/jtv_guangzhoubei/setting" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/jtv_guangzhoubei/setting",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <TuneRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"设置"} />
-                    </ListItemButton>
-                  </List>
-                </Collapse>
-              </>
-            )}
-            {showGuangzhoujibaoduanHmisMenu && (
-              <>
-                <ListItemButton
-                  onClick={() => {
-                    setGuangzhoujibaoduanOpen((p) => !p);
-                  }}
-                >
-                  <ListItemIcon>
-                    <PrecisionManufacturing />
-                  </ListItemIcon>
-                  <ListItemText primary={"广州机保段"} />
-                  <ExpandMore
-                    sx={{
-                      rotate: guangzhoujibaoduanOpen ? 0 : "-90deg",
-                      transition: theme.transitions.create("rotate"),
-                    }}
+                </NavCollapse>
+              </React.ViewTransition>
+            </React.Activity>
+            <React.Activity mode={showJtvHmisMenu ? "visible" : "hidden"}>
+              <React.ViewTransition>
+                <NavCollapse label="京天威统型">
+                  <NavButton
+                    path="/jtv"
+                    label="HMIS"
+                    icon={<QrCodeScannerRounded />}
                   />
-                </ListItemButton>
-                <Collapse in={guangzhoujibaoduanOpen} unmountOnExit>
-                  <List disablePadding>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/jtv_guangzhoujibaoduan" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/jtv_guangzhoujibaoduan",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <QrCodeScannerRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"HMIS"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/jtv_guangzhoujibaoduan/setting" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/jtv_guangzhoujibaoduan/setting",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <TuneRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"设置"} />
-                    </ListItemButton>
-                  </List>
-                </Collapse>
-              </>
-            )}
-            {showGuangzhoucheliangMenu && (
-              <>
-                <ListItemButton
-                  onClick={() => {
-                    setGuangzhoucheliangOpen((p) => !p);
-                  }}
-                >
-                  <ListItemIcon>
-                    <PrecisionManufacturing />
-                  </ListItemIcon>
-                  <ListItemText primary={"广州车辆厂"} />
-                  <ExpandMore
-                    sx={{
-                      rotate: guangzhoucheliangOpen ? 0 : "-90deg",
-                      transition: theme.transitions.create("rotate"),
-                    }}
+                  <NavButton
+                    path="/jtv/setting"
+                    label="设置"
+                    icon={<TuneRounded />}
                   />
-                </ListItemButton>
-                <Collapse in={guangzhoucheliangOpen} unmountOnExit>
-                  <List disablePadding>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/guangzhoucheliang" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/guangzhoucheliang",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <QrCodeScannerRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"HMIS"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/guangzhoucheliang/setting" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/guangzhoucheliang/setting",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <TuneRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"设置"} />
-                    </ListItemButton>
-                  </List>
-                </Collapse>
-              </>
-            )}
+                </NavCollapse>
+              </React.ViewTransition>
+            </React.Activity>
+            <React.Activity
+              mode={showGuangzhoubeiHmisMenu ? "visible" : "hidden"}
+            >
+              <React.ViewTransition>
+                <NavCollapse label="广州北车辆段">
+                  <NavButton
+                    path="/jtv_guangzhoubei"
+                    label="HMIS"
+                    icon={<QrCodeScannerRounded />}
+                  />
+                  <NavButton
+                    path="/jtv_guangzhoubei/setting"
+                    label="设置"
+                    icon={<TuneRounded />}
+                  />
+                </NavCollapse>
+              </React.ViewTransition>
+            </React.Activity>
+            <React.Activity
+              mode={showGuangzhoujibaoduanHmisMenu ? "visible" : "hidden"}
+            >
+              <React.ViewTransition>
+                <NavCollapse label={"广州机保段"}>
+                  <NavButton
+                    path="/jtv_guangzhoujibaoduan"
+                    label="HMIS"
+                    icon={<QrCodeScannerRounded />}
+                  />
+                  <NavButton
+                    path="/jtv_guangzhoujibaoduan/setting"
+                    label="设置"
+                    icon={<TuneRounded />}
+                  />
+                </NavCollapse>
+              </React.ViewTransition>
+            </React.Activity>
+            <React.Activity
+              mode={showGuangzhoucheliangMenu ? "visible" : "hidden"}
+            >
+              <React.ViewTransition>
+                <NavCollapse label={"广州车辆厂"}>
+                  <NavButton
+                    path="/guangzhoucheliang"
+                    label="HMIS"
+                    icon={<QrCodeScannerRounded />}
+                  />
+                  <NavButton
+                    path="/guangzhoucheliang/setting"
+                    label="设置"
+                    icon={<TuneRounded />}
+                  />
+                </NavCollapse>
+              </React.ViewTransition>
+            </React.Activity>
             {showKhHmisMenu && (
-              <>
-                <ListItemButton
-                  onClick={() => {
-                    setKhOpen((p) => !p);
-                  }}
-                >
-                  <ListItemIcon>
-                    <PrecisionManufacturing />
-                  </ListItemIcon>
-                  <ListItemText primary={"安康车辆段"} />
-                  <ExpandMore
-                    sx={{
-                      rotate: khOpen ? 0 : "-90deg",
-                      transition: theme.transitions.create("rotate"),
-                    }}
-                  />
-                </ListItemButton>
-                <Collapse in={khOpen} unmountOnExit>
-                  <List disablePadding>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/kh" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/kh",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <QrCodeScannerRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"HMIS"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/kh/detections" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/kh/detections",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <Train />
-                      </ListItemIcon>
-                      <ListItemText primary={"现车作业"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/kh/verify" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/kh/verify",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <CalendarTodayRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"日常校验"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/kh/quartor" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/kh/quartor",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <CalendarMonthRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"季度校验"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/kh/annual" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/kh/annual",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <CalendarTodayRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"年度校验"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/kh/setting" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/kh/setting",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <TuneRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"设置"} />
-                    </ListItemButton>
-                  </List>
-                </Collapse>
-              </>
+              <NavCollapse label={"安康车辆段"}>
+                <NavButton
+                  path="/kh"
+                  label="HMIS"
+                  icon={<QrCodeScannerRounded />}
+                />
+                <NavButton
+                  path="/kh/detections"
+                  label="现车作业"
+                  icon={<Train />}
+                />
+                <NavButton
+                  path="/kh/verify"
+                  label="日常校验"
+                  icon={<CalendarTodayRounded />}
+                />
+                <NavButton
+                  path="/kh/quartor"
+                  label="季度校验"
+                  icon={<CalendarMonthRounded />}
+                />
+                <NavButton
+                  path="/kh/annual"
+                  label="年度校验"
+                  icon={<CalendarTodayRounded />}
+                />
+                <NavButton
+                  path="/kh/setting"
+                  label="设置"
+                  icon={<TuneRounded />}
+                />
+              </NavCollapse>
             )}
             {showFuzhoudong && (
-              <>
-                <ListItemButton
-                  onClick={() => {
-                    setFuzhoudongOpen((p) => !p);
-                  }}
-                >
-                  <ListItemIcon>
-                    <PrecisionManufacturing />
-                  </ListItemIcon>
-                  <ListItemText primary={"福州车辆段"} />
-                  <ExpandMore
-                    sx={{
-                      rotate: fuzhoudongOpen ? 0 : "-90deg",
-                      transition: theme.transitions.create("rotate"),
-                    }}
-                  />
-                </ListItemButton>
-                <Collapse in={fuzhoudongOpen} unmountOnExit>
-                  <List disablePadding>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/fuzhoudong/verify" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/fuzhoudong/verify",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <CalendarTodayRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"日常校验"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/fuzhoudong/quartor" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/fuzhoudong/quartor",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <CalendarMonthRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"季度校验"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/fuzhoudong/annual" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/fuzhoudong/annual",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <CalendarTodayRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"年度校验"} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={Link}
-                      to={{ pathname: "/fuzhoudong/setting" }}
-                      selected={Object.is(
-                        normalizePathname(location.pathname),
-                        "/fuzhoudong/setting",
-                      )}
-                      sx={{ paddingInlineStart: 4 }}
-                    >
-                      <ListItemIcon>
-                        <TuneRounded />
-                      </ListItemIcon>
-                      <ListItemText primary={"设置"} />
-                    </ListItemButton>
-                  </List>
-                </Collapse>
-              </>
+              <NavCollapse label={"福州车辆段"}>
+                <NavButton
+                  path="/fuzhoudong/verify"
+                  label="日常校验"
+                  icon={<CalendarTodayRounded />}
+                />
+                <NavButton
+                  path="/fuzhoudong/quartor"
+                  label="季度校验"
+                  icon={<CalendarMonthRounded />}
+                />
+                <NavButton
+                  path="/fuzhoudong/annual"
+                  label="年度校验"
+                  icon={<CalendarTodayRounded />}
+                />
+                <NavButton
+                  path="/fuzhoudong/setting"
+                  label="设置"
+                  icon={<TuneRounded />}
+                />
+              </NavCollapse>
             )}
-          </List>
+          </NavGroup>
         )}
-        <List
-          subheader={
-            <ListSubheader
-              disableSticky
-              sx={{ backgroundColor: "transparent" }}
-            >
-              常规12通道软件
-            </ListSubheader>
-          }
-        >
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/detection" }}
-            selected={Object.is(
-              normalizePathname(location.pathname),
-              "/detection",
-            )}
-          >
-            <ListItemIcon>
-              <Train />
-            </ListItemIcon>
-            <ListItemText primary={"现车作业"} />
-          </ListItemButton>
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/verify" }}
-            selected={Object.is(
-              normalizePathname(location.pathname),
-              "/verify",
-            )}
-          >
-            <ListItemIcon>
-              <TodayRounded />
-            </ListItemIcon>
-            <ListItemText primary={"日常校验"} />
-          </ListItemButton>
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/quartors" }}
-            selected={Object.is(
-              normalizePathname(location.pathname),
-              "/quartors",
-            )}
-          >
-            <ListItemIcon>
-              <CalendarMonthRounded />
-            </ListItemIcon>
-            <ListItemText primary={"季度校验"} />
-          </ListItemButton>
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/anniversary" }}
-            selected={Object.is(
-              normalizePathname(location.pathname),
-              "/anniversary",
-            )}
-          >
-            <ListItemIcon>
-              <CalendarTodayRounded />
-            </ListItemIcon>
-            <ListItemText primary={"年度校验"} />
-          </ListItemButton>
-        </List>
+        <NavGroup title="常规12通道软件">
+          <NavButton path="/detection" label="现车作业" icon={<Train />} />
+          <NavButton path="/verify" label="日常校验" icon={<TodayRounded />} />
+          <NavButton
+            path="/quartors"
+            label="季度校验"
+            icon={<CalendarMonthRounded />}
+          />
+          <NavButton
+            path="/anniversary"
+            label="年度校验"
+            icon={<CalendarTodayRounded />}
+          />
+        </NavGroup>
 
         {/* QT */}
-        {showQT && (
-          <List
-            subheader={
-              <ListSubheader
-                disableSticky
-                sx={{ backgroundColor: "transparent" }}
-              >
-                信创版软件相关
-              </ListSubheader>
-            }
-          >
-            <NavButton path="/qt" label="信创版软件" icon={<Commit />} />
-            <NavButton
-              path="/qt/detections"
-              label="现车作业"
-              icon={<Train />}
-            />
-            <NavButton path="/qt/verifies" label="日常校验" icon={<Today />} />
-            <NavButton
-              path="/qt/quartors"
-              label="季度校验"
-              icon={<CalendarMonth />}
-            />
-            <NavButton
-              path="/qt/anniversary"
-              label="年度校验"
-              icon={<CalendarToday />}
-            />
-            <NavButton
-              path="/qt/dynamic"
-              label="动态信噪比"
-              icon={<SsidChart />}
-            />
-          </List>
-        )}
+        <React.Activity mode={showQT ? "visible" : "hidden"}>
+          <React.ViewTransition>
+            <NavGroup title="信创版软件相关">
+              <NavButton path="/qt" label="信创版软件" icon={<Commit />} />
+              <NavButton
+                path="/qt/detections"
+                label="现车作业"
+                icon={<Train />}
+              />
+              <NavButton
+                path="/qt/verifies"
+                label="日常校验"
+                icon={<Today />}
+              />
+              <NavButton
+                path="/qt/quartors"
+                label="季度校验"
+                icon={<CalendarMonth />}
+              />
+              <NavButton
+                path="/qt/anniversary"
+                label="年度校验"
+                icon={<CalendarToday />}
+              />
+              <NavButton
+                path="/qt/dynamic"
+                label="动态信噪比"
+                icon={<SsidChart />}
+              />
+            </NavGroup>
+          </React.ViewTransition>
+        </React.Activity>
 
         {/* Else */}
-        <List
-          subheader={
-            <ListSubheader
-              disableSticky
-              sx={{ backgroundColor: "transparent" }}
-            >
-              其它
-            </ListSubheader>
-          }
-        >
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/log" }}
-            selected={Object.is(normalizePathname(location.pathname), "/log")}
-          >
-            <ListItemIcon>
-              <Info />
-            </ListItemIcon>
-            <ListItemText primary={"日志"} />
-          </ListItemButton>
-          <ListItemButton
-            component={Link}
-            to={{ pathname: "/settings" }}
-            selected={Object.is(
-              normalizePathname(location.pathname),
-              "/settings",
-            )}
-          >
-            <ListItemIcon>
-              <Settings />
-            </ListItemIcon>
-            <ListItemText primary={"设置"} />
-          </ListItemButton>
+        <NavGroup title="其它">
+          <NavButton path="/log" label="日志" icon={<Info />} />
+          <NavButton path="/settings" label="设置" icon={<Settings />} />
           {showPLCMenu && (
             <NavButton label="PLC" icon={<Memory />} path="/plc" />
           )}
           {import.meta.env.DEV && (
-            <>
-              <NavButton label="实验室" icon={<Science />} path="/lab" />
-            </>
+            <NavButton label="实验室" icon={<Science />} path="/lab" />
           )}
-        </List>
+        </NavGroup>
       </Box>
       {/* <Divider />
       <Toolbar></Toolbar> */}
@@ -786,5 +369,66 @@ const NavButton = (props: NavButtonProps) => {
       <ListItemIcon>{icon}</ListItemIcon>
       <ListItemText primary={label} />
     </ListItemButton>
+  );
+};
+
+interface NavGroupProps {
+  children: React.ReactNode;
+  title: React.ReactNode;
+}
+
+const NavGroup = (props: NavGroupProps) => {
+  return (
+    <List
+      subheader={
+        <ListSubheader disableSticky sx={{ backgroundColor: "transparent" }}>
+          {props.title}
+        </ListSubheader>
+      }
+    >
+      {props.children}
+    </List>
+  );
+};
+
+interface NavCollapseProps {
+  children: React.ReactNode;
+  label: React.ReactNode;
+}
+
+const NavCollapse = (props: NavCollapseProps) => {
+  const [show, setShow] = React.useState(true);
+
+  const theme = useTheme();
+
+  return (
+    <>
+      <ListItemButton
+        onClick={() => {
+          setShow((p) => !p);
+        }}
+      >
+        <ListItemIcon>
+          <PrecisionManufacturing />
+        </ListItemIcon>
+        <ListItemText primary={props.label} />
+        <ExpandMore
+          sx={{
+            rotate: show ? 0 : "-90deg",
+            transition: theme.transitions.create("rotate"),
+          }}
+        />
+      </ListItemButton>
+      <Collapse in={show} unmountOnExit>
+        <List
+          disablePadding
+          sx={{
+            "& .MuiListItemButton-root": { paddingInlineStart: 4 },
+          }}
+        >
+          {props.children}
+        </List>
+      </Collapse>
+    </>
   );
 };
