@@ -367,6 +367,25 @@ export const routes: RouteObject[] = [
                       },
                     ],
                   },
+                  {
+                    path: "dynamic",
+                    children: [
+                      {
+                        index: true,
+                      },
+                      {
+                        path: ":id",
+                        children: [
+                          {
+                            index: true,
+                          },
+                          {
+                            path: "print",
+                          },
+                        ],
+                      },
+                    ],
+                  },
                 ],
               },
             ],

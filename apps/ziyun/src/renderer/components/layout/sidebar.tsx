@@ -1,16 +1,20 @@
 import { useProfileStore } from "#renderer/hooks/stores/useProfileStore";
 import {
+  CalendarMonth,
   CalendarMonthRounded,
+  CalendarToday,
   CalendarTodayRounded,
   Commit,
   ExpandMore,
   Info,
   KeyboardCommandKey,
-  MemoryRounded,
+  Memory,
   PrecisionManufacturing,
   QrCodeScannerRounded,
   Science,
   Settings,
+  SsidChart,
+  Today,
   TodayRounded,
   Train,
   TuneRounded,
@@ -688,68 +692,28 @@ export const Sidebar = (props: SidebarProps) => {
               </ListSubheader>
             }
           >
-            <ListItemButton
-              component={Link}
-              to={{ pathname: "/qt" }}
-              selected={Object.is(normalizePathname(location.pathname), "/qt")}
-            >
-              <ListItemIcon>
-                <Commit />
-              </ListItemIcon>
-              <ListItemText primary={"信创版软件"} />
-            </ListItemButton>
-            <ListItemButton
-              component={Link}
-              to={{ pathname: "/qt/detections" }}
-              selected={Object.is(
-                normalizePathname(location.pathname),
-                "/qt/detections",
-              )}
-            >
-              <ListItemIcon>
-                <Train />
-              </ListItemIcon>
-              <ListItemText primary={"现车作业"} />
-            </ListItemButton>
-            <ListItemButton
-              component={Link}
-              to={{ pathname: "/qt/verifies" }}
-              selected={Object.is(
-                normalizePathname(location.pathname),
-                "/qt/verifies",
-              )}
-            >
-              <ListItemIcon>
-                <TodayRounded />
-              </ListItemIcon>
-              <ListItemText primary={"日常校验"} />
-            </ListItemButton>
-            <ListItemButton
-              component={Link}
-              to={{ pathname: "/qt/quartors" }}
-              selected={Object.is(
-                normalizePathname(location.pathname),
-                "/qt/quartors",
-              )}
-            >
-              <ListItemIcon>
-                <CalendarMonthRounded />
-              </ListItemIcon>
-              <ListItemText primary={"季度校验"} />
-            </ListItemButton>
-            <ListItemButton
-              component={Link}
-              to={{ pathname: "/qt/anniversary" }}
-              selected={Object.is(
-                normalizePathname(location.pathname),
-                "/qt/anniversary",
-              )}
-            >
-              <ListItemIcon>
-                <CalendarTodayRounded />
-              </ListItemIcon>
-              <ListItemText primary={"年度校验"} />
-            </ListItemButton>
+            <NavButton path="/qt" label="信创版软件" icon={<Commit />} />
+            <NavButton
+              path="/qt/detections"
+              label="现车作业"
+              icon={<Train />}
+            />
+            <NavButton path="/qt/verifies" label="日常校验" icon={<Today />} />
+            <NavButton
+              path="/qt/quartors"
+              label="季度校验"
+              icon={<CalendarMonth />}
+            />
+            <NavButton
+              path="/qt/anniversary"
+              label="年度校验"
+              icon={<CalendarToday />}
+            />
+            <NavButton
+              path="/qt/dynamic"
+              label="动态信噪比"
+              icon={<SsidChart />}
+            />
           </List>
         )}
 
@@ -788,32 +752,11 @@ export const Sidebar = (props: SidebarProps) => {
             <ListItemText primary={"设置"} />
           </ListItemButton>
           {showPLCMenu && (
-            <ListItemButton
-              component={Link}
-              to={{ pathname: "/plc" }}
-              selected={Object.is(normalizePathname(location.pathname), "/plc")}
-            >
-              <ListItemIcon>
-                <MemoryRounded />
-              </ListItemIcon>
-              <ListItemText primary={"PLC"} />
-            </ListItemButton>
+            <NavButton label="PLC" icon={<Memory />} path="/plc" />
           )}
           {import.meta.env.DEV && (
             <>
-              <ListItemButton
-                component={Link}
-                to={{ pathname: "/lab" }}
-                selected={Object.is(
-                  normalizePathname(location.pathname),
-                  "/lab",
-                )}
-              >
-                <ListItemIcon>
-                  <Science />
-                </ListItemIcon>
-                <ListItemText primary={"实验室"} />
-              </ListItemButton>
+              <NavButton label="实验室" icon={<Science />} path="/lab" />
             </>
           )}
         </List>
@@ -821,5 +764,27 @@ export const Sidebar = (props: SidebarProps) => {
       {/* <Divider />
       <Toolbar></Toolbar> */}
     </>
+  );
+};
+
+interface NavButtonProps {
+  path: string;
+  label: React.ReactNode;
+  icon: React.ReactNode;
+}
+
+const NavButton = (props: NavButtonProps) => {
+  const { icon, path, label } = props;
+  const location = useLocation();
+
+  return (
+    <ListItemButton
+      component={Link}
+      to={{ pathname: path }}
+      selected={Object.is(normalizePathname(location.pathname), path)}
+    >
+      <ListItemIcon>{icon}</ListItemIcon>
+      <ListItemText primary={label} />
+    </ListItemButton>
   );
 };
