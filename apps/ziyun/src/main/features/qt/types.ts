@@ -190,4 +190,12 @@ export interface IPC {
     args: [number];
     return: ReturnType<QT["setDeviceConfigFlag"]>;
   };
+  "qt/dynamic/list": {
+    args: [];
+    return: ReturnType<QT["getDynamicList"]>;
+  };
+  "qt/dynamic/id": {
+    args: [number];
+    return: ReturnType<QT["getDynamicById"]>;
+  };
 }

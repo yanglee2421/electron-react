@@ -59,15 +59,17 @@ export const routes: RouteObject[] = [
                   },
                   {
                     path: "chr52a",
-                    lazy: () =>
-                      import("#renderer/pages/detection_chr52a/component"),
+                    lazy: () => {
+                      return import("#renderer/pages/detection_chr52a/component");
+                    },
                   },
                 ],
               },
               {
                 path: "chr53a",
-                lazy: () =>
-                  import("#renderer/pages/detection_chr53a/component"),
+                lazy: () => {
+                  return import("#renderer/pages/detection_chr53a/component");
+                },
               },
             ],
           },
@@ -109,8 +111,9 @@ export const routes: RouteObject[] = [
                   },
                   {
                     path: "chr501",
-                    lazy: () =>
-                      import("#renderer/pages/quartors_501/component"),
+                    lazy: () => {
+                      return import("#renderer/pages/quartors_501/component");
+                    },
                   },
                 ],
               },
@@ -132,13 +135,15 @@ export const routes: RouteObject[] = [
                 children: [
                   {
                     index: true,
-                    lazy: () =>
-                      import("#renderer/pages/anniversary_show/component"),
+                    lazy: () => {
+                      return import("#renderer/pages/anniversary_show/component");
+                    },
                   },
                   {
                     path: "chr503",
-                    lazy: () =>
-                      import("#renderer/pages/anniversary_503/component"),
+                    lazy: () => {
+                      return import("#renderer/pages/anniversary_503/component");
+                    },
                   },
                 ],
               },
@@ -153,8 +158,9 @@ export const routes: RouteObject[] = [
               },
               {
                 path: "setting",
-                lazy: () =>
-                  import("#renderer/pages/hxzy_hmis_setting/component"),
+                lazy: () => {
+                  return import("#renderer/pages/hxzy_hmis_setting/component");
+                },
               },
               {
                 path: "verifies",
@@ -171,8 +177,9 @@ export const routes: RouteObject[] = [
               },
               {
                 path: "setting",
-                lazy: () =>
-                  import("#renderer/pages/jtv_hmis_setting/component"),
+                lazy: () => {
+                  return import("#renderer/pages/jtv_hmis_setting/component");
+                },
               },
             ],
           },
@@ -185,8 +192,9 @@ export const routes: RouteObject[] = [
               },
               {
                 path: "setting",
-                lazy: () =>
-                  import("#renderer/pages/guangzhoubei_setting/component"),
+                lazy: () => {
+                  return import("#renderer/pages/guangzhoubei_setting/component");
+                },
               },
             ],
           },
@@ -195,13 +203,15 @@ export const routes: RouteObject[] = [
             children: [
               {
                 index: true,
-                lazy: () =>
-                  import("#renderer/pages/jtv_hmis_guangzhoujibaoduan/component"),
+                lazy: () => {
+                  return import("#renderer/pages/jtv_hmis_guangzhoujibaoduan/component");
+                },
               },
               {
                 path: "setting",
-                lazy: () =>
-                  import("#renderer/pages/jtv_hmis_guangzhoujibaoduan_setting/component"),
+                lazy: () => {
+                  return import("#renderer/pages/jtv_hmis_guangzhoujibaoduan_setting/component");
+                },
               },
             ],
           },
@@ -210,13 +220,15 @@ export const routes: RouteObject[] = [
             children: [
               {
                 index: true,
-                lazy: () =>
-                  import("#renderer/pages/guangzhoucheliang/component"),
+                lazy: () => {
+                  return import("#renderer/pages/guangzhoucheliang/component");
+                },
               },
               {
                 path: "setting",
-                lazy: () =>
-                  import("#renderer/pages/guangzhoucheliang_setting/component"),
+                lazy: () => {
+                  return import("#renderer/pages/guangzhoucheliang_setting/component");
+                },
               },
             ],
           },
@@ -254,23 +266,27 @@ export const routes: RouteObject[] = [
             children: [
               {
                 path: "verify",
-                lazy: () =>
-                  import("#renderer/pages/fuzhoudong_verify/component"),
+                lazy: () => {
+                  return import("#renderer/pages/fuzhoudong_verify/component");
+                },
               },
               {
                 path: "quartor",
-                lazy: () =>
-                  import("#renderer/pages/fuzhoudong_quartor/component"),
+                lazy: () => {
+                  return import("#renderer/pages/fuzhoudong_quartor/component");
+                },
               },
               {
                 path: "annual",
-                lazy: () =>
-                  import("#renderer/pages/fuzhoudong_annual/component"),
+                lazy: () => {
+                  return import("#renderer/pages/fuzhoudong_annual/component");
+                },
               },
               {
                 path: "setting",
-                lazy: () =>
-                  import("#renderer/pages/fuzhoudong_setting/component"),
+                lazy: () => {
+                  return import("#renderer/pages/fuzhoudong_setting/component");
+                },
               },
             ],
           },
@@ -288,21 +304,24 @@ export const routes: RouteObject[] = [
                     children: [
                       {
                         index: true,
-                        lazy: () =>
-                          import("#renderer/pages/qt-anniversary/component"),
+                        lazy: () => {
+                          return import("#renderer/pages/qt-anniversary/component");
+                        },
                       },
                       {
                         path: ":id",
                         children: [
                           {
                             index: true,
-                            lazy: () =>
-                              import("#renderer/pages/qt-anniversary-show/component"),
+                            lazy: () => {
+                              return import("#renderer/pages/qt-anniversary-show/component");
+                            },
                           },
                           {
                             path: "503",
-                            lazy: () =>
-                              import("#renderer/pages/qt-503/component"),
+                            lazy: () => {
+                              return import("#renderer/pages/qt-503/component");
+                            },
                           },
                         ],
                       },
@@ -313,16 +332,18 @@ export const routes: RouteObject[] = [
                     children: [
                       {
                         index: true,
-                        lazy: () =>
-                          import("#renderer/pages/qt-verifies/component"),
+                        lazy: () => {
+                          return import("#renderer/pages/qt-verifies/component");
+                        },
                       },
                       {
                         path: ":id",
                         children: [
                           {
                             path: "501",
-                            lazy: () =>
-                              import("#renderer/pages/qt-501/component"),
+                            lazy: () => {
+                              return import("#renderer/pages/qt-501/component");
+                            },
                           },
                         ],
                       },
@@ -333,8 +354,9 @@ export const routes: RouteObject[] = [
                     children: [
                       {
                         index: true,
-                        lazy: () =>
-                          import("#renderer/pages/qt-quartors/component"),
+                        lazy: () => {
+                          return import("#renderer/pages/qt-quartors/component");
+                        },
                       },
                       {},
                       {
@@ -348,16 +370,18 @@ export const routes: RouteObject[] = [
                     children: [
                       {
                         index: true,
-                        lazy: () =>
-                          import("#renderer/pages/qt-detections/component"),
+                        lazy: () => {
+                          return import("#renderer/pages/qt-detections/component");
+                        },
                       },
                       {
                         path: ":id",
                         children: [
                           {
                             path: "52a",
-                            lazy: () =>
-                              import("#renderer/pages/qt-52a/component"),
+                            lazy: () => {
+                              return import("#renderer/pages/qt-52a/component");
+                            },
                           },
                         ],
                       },
@@ -372,15 +396,24 @@ export const routes: RouteObject[] = [
                     children: [
                       {
                         index: true,
+                        lazy: () => {
+                          return import("#renderer/pages/qt_dynamic/component");
+                        },
                       },
                       {
                         path: ":id",
                         children: [
                           {
                             index: true,
+                            lazy: () => {
+                              return import("#renderer/pages/qt_dynamic_id/component");
+                            },
                           },
                           {
                             path: "print",
+                            lazy: () => {
+                              return import("#renderer/pages/qt_dynamic_print/component");
+                            },
                           },
                         ],
                       },

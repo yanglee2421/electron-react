@@ -31,6 +31,8 @@ export const registerIPCHandlers = (qt: QT) => {
   ipcHandle("qt/yiqiConfig/list", () => qt.deviceConfigList());
   ipcHandle("qt/yiqiConfig/lib", (_, p) => qt.setDeviceConfigLib(p));
   ipcHandle("qt/yiqiConfig/flag", (_, p) => qt.setDeviceConfigFlag(p));
+  ipcHandle("qt/dynamic/list", () => qt.getDynamicList());
+  ipcHandle("qt/dynamic/id", (_, id) => qt.getDynamicById(id));
 
   return () => {
     ipcRemoveHandle("qt/migrate-db");
@@ -62,5 +64,7 @@ export const registerIPCHandlers = (qt: QT) => {
     ipcRemoveHandle("qt/yiqiConfig/list");
     ipcRemoveHandle("qt/yiqiConfig/lib");
     ipcRemoveHandle("qt/yiqiConfig/flag");
+    ipcRemoveHandle("qt/dynamic/list");
+    ipcRemoveHandle("qt/dynamic/id");
   };
 };

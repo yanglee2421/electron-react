@@ -329,3 +329,21 @@ export const useSetQTConfig = () => {
     },
   });
 };
+
+export const fetchDynamicList = () => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/dynamic/list"],
+    queryFn: () => {
+      return ipc.invoke("qt/dynamic/list");
+    },
+  });
+};
+
+export const fetchDynamicById = (id: number) => {
+  return queryOptions({
+    queryKey: [QUERY_KEY, "qt/dynamic/id", id],
+    queryFn: () => {
+      return ipc.invoke("qt/dynamic/id", id);
+    },
+  });
+};

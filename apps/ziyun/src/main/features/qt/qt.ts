@@ -1177,4 +1177,36 @@ export class QT {
 
     return { result, running: this.running };
   }
+
+  async getDynamicList() {
+    const query = this.db.select().from(schema.dynamic);
+    // .where(and(ne(schema.dynamic.bIsEnable, 0)));
+    const [{ count }] = await this.db
+      .select({ count: sqlCount() })
+      .from(query.as("count"));
+    const rows = await this.db
+      .select()
+      .from(query.as("rows"))
+      .offset(0)
+      .limit(20);
+
+    return { rows, count };
+  }
+  async getDynamicById(id: number) {
+    const [record] = await this.db
+      .select()
+      .from(schema.dynamic)
+      .where(eq(schema.dynamic.recId, id));
+
+    if (!record) {
+      throw new Error(`#${id}不存在`);
+    }
+
+    const datas = await this.db
+      .select()
+      .from(schema.dynamicData)
+      .where(eq(schema.dynamicData.szIds, record.szIds || ""));
+
+    return { record, datas };
+  }
 }
