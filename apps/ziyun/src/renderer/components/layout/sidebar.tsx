@@ -373,16 +373,15 @@ const NavButton = (props: NavButtonProps) => {
   const location = useLocation();
 
   return (
-    <React.ViewTransition>
-      <ListItemButton
-        component={Link}
-        to={{ pathname: path }}
-        selected={Object.is(normalizePathname(location.pathname), path)}
-      >
-        <ListItemIcon>{icon}</ListItemIcon>
-        <ListItemText primary={label} />
-      </ListItemButton>
-    </React.ViewTransition>
+    <ListItemButton
+      component={Link}
+      to={{ pathname: path }}
+      selected={Object.is(normalizePathname(location.pathname), path)}
+      viewTransition={false}
+    >
+      <ListItemIcon>{icon}</ListItemIcon>
+      <ListItemText primary={label} />
+    </ListItemButton>
   );
 };
 
@@ -393,17 +392,15 @@ interface NavGroupProps {
 
 const NavGroup = (props: NavGroupProps) => {
   return (
-    <React.ViewTransition>
-      <List
-        subheader={
-          <ListSubheader disableSticky sx={{ backgroundColor: "transparent" }}>
-            {props.title}
-          </ListSubheader>
-        }
-      >
-        {props.children}
-      </List>
-    </React.ViewTransition>
+    <List
+      subheader={
+        <ListSubheader disableSticky sx={{ backgroundColor: "transparent" }}>
+          {props.title}
+        </ListSubheader>
+      }
+    >
+      {props.children}
+    </List>
   );
 };
 
@@ -418,7 +415,7 @@ const NavCollapse = (props: NavCollapseProps) => {
   const theme = useTheme();
 
   return (
-    <React.ViewTransition>
+    <>
       <ListItemButton
         onClick={() => {
           setShow((p) => !p);
@@ -445,6 +442,6 @@ const NavCollapse = (props: NavCollapseProps) => {
           {props.children}
         </List>
       </Collapse>
-    </React.ViewTransition>
+    </>
   );
 };
