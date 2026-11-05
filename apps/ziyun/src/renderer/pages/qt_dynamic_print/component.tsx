@@ -7,7 +7,7 @@ import { useParams } from "react-router";
 export const Component = () => {
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const query = useQuery(fetchDynamicById(Number(id)));
+  useQuery(fetchDynamicById(Number(id)));
 
   return (
     <PDFViewer
