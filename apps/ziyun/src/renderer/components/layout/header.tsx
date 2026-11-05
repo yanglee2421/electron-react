@@ -45,6 +45,8 @@ const createSegmentAlias = () => {
     ["plc", "PLC助手"],
     ["qt", "信创版软件"],
     ["fuzhoudong", "福州东车辆段"],
+    ["dynamic", "动态信噪比"],
+    ["print", "打印"],
   ]);
 
   return segmentAlias;
