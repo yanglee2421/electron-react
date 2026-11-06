@@ -37,7 +37,7 @@ import { normalizePathname } from "@yotulee/run";
 import React from "react";
 import { Link, useLocation } from "react-router";
 import { animationFrameScheduler, auditTime, Observable } from "rxjs";
-import "./sidebar.css";
+// import "./sidebar.css";
 
 const StyledLink = styled(Link)(({ theme }) => {
   return {
