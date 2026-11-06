@@ -155,9 +155,9 @@ export const Sidebar = (props: SidebarProps) => {
         className="scroll-container"
       >
         <div ref={scrollRef}></div>
-        <React.Activity mode={showHmis ? "visible" : "hidden"}>
+        <Collapse in={showHmis}>
           <NavGroup title="HMIS">
-            <React.Activity mode={showHxzyHmisMenu ? "visible" : "hidden"}>
+            <Collapse in={showHmis ? showHxzyHmisMenu : true}>
               <NavCollapse label="成都北车辆段">
                 <NavButton
                   path="/hxzy"
@@ -175,8 +175,8 @@ export const Sidebar = (props: SidebarProps) => {
                   icon={<TuneRounded />}
                 />
               </NavCollapse>
-            </React.Activity>
-            <React.Activity mode={showJtvHmisMenu ? "visible" : "hidden"}>
+            </Collapse>
+            <Collapse in={showHmis ? showJtvHmisMenu : true}>
               <NavCollapse label="京天威统型">
                 <NavButton
                   path="/jtv"
@@ -189,10 +189,8 @@ export const Sidebar = (props: SidebarProps) => {
                   icon={<TuneRounded />}
                 />
               </NavCollapse>
-            </React.Activity>
-            <React.Activity
-              mode={showGuangzhoubeiHmisMenu ? "visible" : "hidden"}
-            >
+            </Collapse>
+            <Collapse in={showHmis ? showGuangzhoubeiHmisMenu : true}>
               <NavCollapse label="广州北车辆段">
                 <NavButton
                   path="/jtv_guangzhoubei"
@@ -205,10 +203,8 @@ export const Sidebar = (props: SidebarProps) => {
                   icon={<TuneRounded />}
                 />
               </NavCollapse>
-            </React.Activity>
-            <React.Activity
-              mode={showGuangzhoujibaoduanHmisMenu ? "visible" : "hidden"}
-            >
+            </Collapse>
+            <Collapse in={showHmis ? showGuangzhoujibaoduanHmisMenu : true}>
               <NavCollapse label={"广州机保段"}>
                 <NavButton
                   path="/jtv_guangzhoujibaoduan"
@@ -221,10 +217,8 @@ export const Sidebar = (props: SidebarProps) => {
                   icon={<TuneRounded />}
                 />
               </NavCollapse>
-            </React.Activity>
-            <React.Activity
-              mode={showGuangzhoucheliangMenu ? "visible" : "hidden"}
-            >
+            </Collapse>
+            <Collapse in={showHmis ? showGuangzhoucheliangMenu : true}>
               <NavCollapse label={"广州车辆厂"}>
                 <NavButton
                   path="/guangzhoucheliang"
@@ -237,8 +231,8 @@ export const Sidebar = (props: SidebarProps) => {
                   icon={<TuneRounded />}
                 />
               </NavCollapse>
-            </React.Activity>
-            <React.Activity mode={showKhHmisMenu ? "visible" : "hidden"}>
+            </Collapse>
+            <Collapse in={showHmis ? showKhHmisMenu : true}>
               <NavCollapse label={"安康车辆段"}>
                 <NavButton
                   path="/kh"
@@ -271,8 +265,8 @@ export const Sidebar = (props: SidebarProps) => {
                   icon={<TuneRounded />}
                 />
               </NavCollapse>
-            </React.Activity>
-            <React.Activity mode={showFuzhoudong ? "visible" : "hidden"}>
+            </Collapse>
+            <Collapse in={showHmis ? showFuzhoudong : true}>
               <NavCollapse label={"福州车辆段"}>
                 <NavButton
                   path="/fuzhoudong/verify"
@@ -295,12 +289,12 @@ export const Sidebar = (props: SidebarProps) => {
                   icon={<TuneRounded />}
                 />
               </NavCollapse>
-            </React.Activity>
+            </Collapse>
           </NavGroup>
-        </React.Activity>
+        </Collapse>
 
         {/* QT */}
-        <React.Activity mode={showQT ? "visible" : "hidden"}>
+        <Collapse in={showHmis ? showQT : true}>
           <NavGroup title="信创版软件相关">
             <NavButton path="/qt" label="信创版软件" icon={<Commit />} />
             <NavButton
@@ -345,7 +339,7 @@ export const Sidebar = (props: SidebarProps) => {
               icon={<SsidChart />}
             />
           </NavGroup>
-        </React.Activity>
+        </Collapse>
 
         {/* Common */}
         <NavGroup title="常规12通道软件">
@@ -367,9 +361,9 @@ export const Sidebar = (props: SidebarProps) => {
         <NavGroup title="其它">
           <NavButton path="/log" label="日志" icon={<Info />} />
           <NavButton path="/settings" label="设置" icon={<Settings />} />
-          <React.Activity mode={showPLCMenu ? "visible" : "hidden"}>
+          <Collapse in={showPLCMenu}>
             <NavButton label="PLC" icon={<Memory />} path="/plc" />
-          </React.Activity>
+          </Collapse>
           {import.meta.env.DEV && (
             <NavButton label="实验室" icon={<Science />} path="/lab" />
           )}
