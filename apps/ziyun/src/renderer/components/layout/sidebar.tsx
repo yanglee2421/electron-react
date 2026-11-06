@@ -324,6 +324,26 @@ export const Sidebar = (props: SidebarProps) => {
               label="动态信噪比"
               icon={<SsidChart />}
             />
+            <NavButton
+              path="/qt/repetitiveness/print"
+              label="重复性检测"
+              icon={<SsidChart />}
+            />
+            <NavButton
+              path="/qt/missed_rate/print"
+              label="漏检率"
+              icon={<SsidChart />}
+            />
+            <NavButton
+              path="/qt/false_positive/print"
+              label="误判率"
+              icon={<SsidChart />}
+            />
+            <NavButton
+              path="/qt/db_consistency/print"
+              label="灵敏度一致性"
+              icon={<SsidChart />}
+            />
           </NavGroup>
         </React.Activity>
 

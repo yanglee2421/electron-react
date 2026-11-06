@@ -419,6 +419,50 @@ export const routes: RouteObject[] = [
                       },
                     ],
                   },
+                  {
+                    path: "db_consistency",
+                    children: [
+                      {
+                        path: "print",
+                        lazy: () => {
+                          return import("#renderer/pages/qt_db_consistency_print/component");
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    path: "false_positive",
+                    children: [
+                      {
+                        path: "print",
+                        lazy: () => {
+                          return import("#renderer/pages/qt_false_positive_print/component");
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    path: "missed_rate",
+                    children: [
+                      {
+                        path: "print",
+                        lazy: () => {
+                          return import("#renderer/pages/qt_missed_rate_print/component");
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    path: "repetitiveness",
+                    children: [
+                      {
+                        path: "print",
+                        lazy: () => {
+                          return import("#renderer/pages/qt_repetitiveness_print/component");
+                        },
+                      },
+                    ],
+                  },
                 ],
               },
             ],
