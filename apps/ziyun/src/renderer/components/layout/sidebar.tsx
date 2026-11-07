@@ -92,31 +92,21 @@ interface SidebarProps {
 export const Sidebar = (props: SidebarProps) => {
   const theme = useTheme();
   const [isIntersecting, scrollRef] = useIntersection();
-  const showHxzyHmisMenu = React.useDeferredValue(
-    useProfileStore((s) => s.showHxzyHmisMenu),
+  const showHxzyHmisMenu = useProfileStore((s) => s.showHxzyHmisMenu);
+  const showJtvHmisMenu = useProfileStore((s) => s.showJtvHmisMenu);
+  const showGuangzhoubeiHmisMenu = useProfileStore(
+    (s) => s.showGuangzhoubeiHmisMenu,
   );
-  const showJtvHmisMenu = React.useDeferredValue(
-    useProfileStore((s) => s.showJtvHmisMenu),
+  const showGuangzhoujibaoduanHmisMenu = useProfileStore(
+    (s) => s.showGuangzhoujibaoduanHmisMenu,
   );
-  const showGuangzhoubeiHmisMenu = React.useDeferredValue(
-    useProfileStore((s) => s.showGuangzhoubeiHmisMenu),
+  const showGuangzhoucheliangMenu = useProfileStore(
+    (s) => s.showGuangzhoucheliangMenu,
   );
-  const showGuangzhoujibaoduanHmisMenu = React.useDeferredValue(
-    useProfileStore((s) => s.showGuangzhoujibaoduanHmisMenu),
-  );
-  const showGuangzhoucheliangMenu = React.useDeferredValue(
-    useProfileStore((s) => s.showGuangzhoucheliangMenu),
-  );
-  const showKhHmisMenu = React.useDeferredValue(
-    useProfileStore((s) => s.showKhHmisMenu),
-  );
-  const showFuzhoudong = React.useDeferredValue(
-    useProfileStore((s) => s.showFuzhoudong),
-  );
-  const showPLCMenu = React.useDeferredValue(
-    useProfileStore((s) => s.showPLCMenu),
-  );
-  const showQT = React.useDeferredValue(useProfileStore((s) => s.showQT));
+  const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
+  const showFuzhoudong = useProfileStore((s) => s.showFuzhoudong);
+  const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
+  const showQT = useProfileStore((s) => s.showQT);
   const showHmis =
     showHxzyHmisMenu ||
     showJtvHmisMenu ||
@@ -152,12 +142,11 @@ export const Sidebar = (props: SidebarProps) => {
           flexBasis: 0,
           overflow: "auto",
         }}
-        className="scroll-container"
       >
         <div ref={scrollRef}></div>
         <Collapse in={showHmis}>
           <NavGroup title="HMIS">
-            <Collapse in={showHmis ? showHxzyHmisMenu : true}>
+            <Collapse in={showHxzyHmisMenu}>
               <NavCollapse label="成都北车辆段">
                 <NavButton
                   path="/hxzy"
@@ -176,7 +165,7 @@ export const Sidebar = (props: SidebarProps) => {
                 />
               </NavCollapse>
             </Collapse>
-            <Collapse in={showHmis ? showJtvHmisMenu : true}>
+            <Collapse in={showJtvHmisMenu}>
               <NavCollapse label="京天威统型">
                 <NavButton
                   path="/jtv"
@@ -190,7 +179,7 @@ export const Sidebar = (props: SidebarProps) => {
                 />
               </NavCollapse>
             </Collapse>
-            <Collapse in={showHmis ? showGuangzhoubeiHmisMenu : true}>
+            <Collapse in={showGuangzhoubeiHmisMenu}>
               <NavCollapse label="广州北车辆段">
                 <NavButton
                   path="/jtv_guangzhoubei"
@@ -204,7 +193,7 @@ export const Sidebar = (props: SidebarProps) => {
                 />
               </NavCollapse>
             </Collapse>
-            <Collapse in={showHmis ? showGuangzhoujibaoduanHmisMenu : true}>
+            <Collapse in={showGuangzhoujibaoduanHmisMenu}>
               <NavCollapse label={"广州机保段"}>
                 <NavButton
                   path="/jtv_guangzhoujibaoduan"
@@ -218,7 +207,7 @@ export const Sidebar = (props: SidebarProps) => {
                 />
               </NavCollapse>
             </Collapse>
-            <Collapse in={showHmis ? showGuangzhoucheliangMenu : true}>
+            <Collapse in={showGuangzhoucheliangMenu}>
               <NavCollapse label={"广州车辆厂"}>
                 <NavButton
                   path="/guangzhoucheliang"
@@ -232,7 +221,7 @@ export const Sidebar = (props: SidebarProps) => {
                 />
               </NavCollapse>
             </Collapse>
-            <Collapse in={showHmis ? showKhHmisMenu : true}>
+            <Collapse in={showKhHmisMenu}>
               <NavCollapse label={"安康车辆段"}>
                 <NavButton
                   path="/kh"
@@ -266,7 +255,7 @@ export const Sidebar = (props: SidebarProps) => {
                 />
               </NavCollapse>
             </Collapse>
-            <Collapse in={showHmis ? showFuzhoudong : true}>
+            <Collapse in={showFuzhoudong}>
               <NavCollapse label={"福州车辆段"}>
                 <NavButton
                   path="/fuzhoudong/verify"
@@ -294,7 +283,7 @@ export const Sidebar = (props: SidebarProps) => {
         </Collapse>
 
         {/* QT */}
-        <Collapse in={showHmis ? showQT : true}>
+        <Collapse in={showQT}>
           <NavGroup title="信创版软件相关">
             <NavButton path="/qt" label="信创版软件" icon={<Commit />} />
             <NavButton
@@ -446,7 +435,7 @@ const NavCollapse = (props: NavCollapseProps) => {
           }}
         />
       </ListItemButton>
-      <Collapse in={show} unmountOnExit>
+      <Collapse in={show}>
         <List
           disablePadding
           sx={{
