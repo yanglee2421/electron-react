@@ -70,7 +70,7 @@ const columns = [
       />
     ),
   }),
-  columnHelper.accessor("szIds", {
+  columnHelper.accessor("szIDs", {
     header: "ID",
     cell: ({ getValue }) => {
       const value = getValue();
@@ -85,34 +85,34 @@ const columns = [
       );
     },
   }),
-  columnHelper.accessor("szZh", {
+  columnHelper.accessor("szZH", {
     header: "轴号",
   }),
-  columnHelper.accessor("szWhModel", {
+  columnHelper.accessor("szWHModel", {
     header: "轴型",
   }),
-  columnHelper.accessor("szIdsMake", {
+  columnHelper.accessor("szIDsMake", {
     header: "制造单位",
   }),
-  columnHelper.accessor("szTmMake", {
+  columnHelper.accessor("szTMMake", {
     header: "制造时间",
   }),
-  columnHelper.accessor("szIdsFirst", {
+  columnHelper.accessor("szIDsFirst", {
     header: "首装单位",
   }),
-  columnHelper.accessor("szTmFirst", {
+  columnHelper.accessor("szTMFirst", {
     header: "首装时间",
   }),
   columnHelper.accessor("szUsername", {
     header: "检测员",
   }),
-  columnHelper.accessor("bWheelLs", {
+  columnHelper.accessor("bWheelLS", {
     header: "左轴承",
     cell: ({ getValue }) => {
       return <CheckBoxCell value={!!getValue()} />;
     },
   }),
-  columnHelper.accessor("bWheelRs", {
+  columnHelper.accessor("bWheelRS", {
     header: "右轴承",
     cell: ({ getValue }) => {
       return <CheckBoxCell value={!!getValue()} />;
@@ -200,7 +200,7 @@ export const Component = () => {
     getCoreRowModel: getCoreRowModel(),
     columns,
     data,
-    getRowId: (r) => r.recId.toString(10),
+    getRowId: (r) => r.recID.toString(10),
     manualPagination: true,
   });
 
@@ -346,7 +346,7 @@ export const Component = () => {
               useSessionStore.setState((draft) => {
                 draft.qt53aIds = table
                   .getSelectedRowModel()
-                  .flatRows.map((row) => row.original.recId);
+                  .flatRows.map((row) => row.original.recID);
               });
 
               navigate("/qt/detections/53a");

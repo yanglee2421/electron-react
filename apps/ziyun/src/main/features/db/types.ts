@@ -3,7 +3,7 @@ import type { DatabaseSync } from "node:sqlite";
 import type { relations } from "./relations";
 import type * as schema from "./schema";
 
-export type DBClient = NodeSQLiteDatabase<typeof schema, typeof relations> & {
+export type DBClient = NodeSQLiteDatabase<typeof relations> & {
   $client: DatabaseSync;
 };
 

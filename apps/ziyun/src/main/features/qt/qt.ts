@@ -88,7 +88,7 @@ export class QT {
 
         return new Observable<DBClient>((sub) => {
           const client = new DatabaseSync(dbPath);
-          const db = drizzle({ client, schema, relations });
+          const db = drizzle({ client, relations });
           sub.next(db);
 
           return () => {
@@ -263,13 +263,9 @@ export class QT {
   migrateDB({ source, target }: QTMigrateDBInput) {
     const sourceDB = drizzle({
       client: new DatabaseSync(source),
-      schema,
-      relations,
     });
     const targetDB = drizzle({
       client: new DatabaseSync(target),
-      schema,
-      relations,
     });
 
     try {
@@ -281,10 +277,10 @@ export class QT {
             target: schema.alxInfo.alxid,
             set: {
               alxname: sql`excluded.ALXNAME`,
-              yblCt: sql`excluded.YBL_CT`,
-              yblXhc: sql`excluded.YBL_XHC`,
-              yblLz: sql`excluded.YBL_LZ`,
-              halfAlxlen: sql`excluded.HALF_ALXLEN`,
+              yblCT: sql`excluded.YBL_CT`,
+              yblXHC: sql`excluded.YBL_XHC`,
+              yblLZ: sql`excluded.YBL_LZ`,
+              halfALXLEN: sql`excluded.HALF_ALXLEN`,
               ftradius: sql`excluded.FTRADIUS`,
               ftradius0: sql`excluded.FTRADIUS0`,
               ftradius1: sql`excluded.FTRADIUS1`,
@@ -306,7 +302,7 @@ export class QT {
         tx.insert(schema.channels)
           .values(channels)
           .onConflictDoUpdate({
-            target: schema.channels.recId,
+            target: schema.channels.recID,
             set: {
               nBoardIndex: sql`excluded.nBoardIndex`,
               nChannelIndex: sql`excluded.nChannelIndex`,
@@ -320,9 +316,9 @@ export class QT {
               nPluse: sql`excluded.nPluse`,
               nDelay: sql`excluded.nDelay`,
               nAtten: sql`excluded.nAtten`,
-              nDbSub: sql`excluded.nDbSub`,
+              nDBSub: sql`excluded.nDBSub`,
               nWangle: sql`excluded.nWangle`,
-              nZsize: sql`excluded.nZsize`,
+              nZSize: sql`excluded.nZSize`,
               ftDistance: sql`excluded.ftDistance`,
               bActive: sql`excluded.bActive`,
             },
@@ -332,22 +328,22 @@ export class QT {
         tx.insert(schema.gates)
           .values(gates)
           .onConflictDoUpdate({
-            target: schema.gates.recId,
+            target: schema.gates.recID,
             set: {
               nBoardIndex: sql`excluded.nBoardIndex`,
               nChannelIndex: sql`excluded.nChannelIndex`,
               nChannelRectId: sql`excluded.nChannelRectId`,
               szGateName: sql`excluded.szGateName`,
-              nGateId: sql`excluded.nGateId`,
-              nSubGateId: sql`excluded.nSubGateId`,
+              nGateID: sql`excluded.nGateID`,
+              nSubGateID: sql`excluded.nSubGateID`,
               szColor: sql`excluded.szColor`,
               bActive: sql`excluded.bActive`,
               nLeft: sql`excluded.nLeft`,
               nWidth: sql`excluded.nWidth`,
               nTop: sql`excluded.nTop`,
-              nBleft: sql`excluded.nBleft`,
-              nBwidth: sql`excluded.nBwidth`,
-              nBtop: sql`excluded.nBtop`,
+              nBLeft: sql`excluded.nBLeft`,
+              nBWidth: sql`excluded.nBWidth`,
+              nBTop: sql`excluded.nBTop`,
               nB1Count: sql`excluded.nB1Count`,
               nB1Width: sql`excluded.nB1Width`,
               nB1Height: sql`excluded.nB1Height`,
@@ -371,7 +367,7 @@ export class QT {
         tx.insert(schema.quartorChannel)
           .values(quartorChannels)
           .onConflictDoUpdate({
-            target: schema.quartorChannel.recId,
+            target: schema.quartorChannel.recID,
             set: {
               nBoardIndex: sql`excluded.nBoardIndex`,
               nChannelIndex: sql`excluded.nChannelIndex`,
@@ -385,9 +381,9 @@ export class QT {
               nPluse: sql`excluded.nPluse`,
               nDelay: sql`excluded.nDelay`,
               nAtten: sql`excluded.nAtten`,
-              nDbSub: sql`excluded.nDbSub`,
+              nDBSub: sql`excluded.nDBSub`,
               nWangle: sql`excluded.nWangle`,
-              nZsize: sql`nZsize`,
+              nZSize: sql`excluded.nZSize`,
               ftDistance: sql`excluded.ftDistance`,
               bActive: sql`excluded.bActive`,
             },
@@ -397,22 +393,22 @@ export class QT {
         tx.insert(schema.quartorGates)
           .values(quartorGates)
           .onConflictDoUpdate({
-            target: schema.quartorGates.recId,
+            target: schema.quartorGates.recID,
             set: {
               nBoardIndex: sql`excluded.nBoardIndex`,
               nChannelIndex: sql`excluded.nChannelIndex`,
               nChannelRectId: sql`excluded.nChannelRectId`,
               szGateName: sql`excluded.szGateName`,
-              nGateId: sql`excluded.nGateId`,
-              nSubGateId: sql`excluded.nSubGateId`,
+              nGateID: sql`excluded.nGateID`,
+              nSubGateID: sql`excluded.nSubGateID`,
               szColor: sql`excluded.szColor`,
               bActive: sql`excluded.bActive`,
               nLeft: sql`excluded.nLeft`,
               nWidth: sql`excluded.nWidth`,
               nTop: sql`excluded.nTop`,
-              nBleft: sql`excluded.nBleft`,
-              nBwidth: sql`excluded.nBwidth`,
-              nBtop: sql`excluded.nBtop`,
+              nBLeft: sql`excluded.nBLeft`,
+              nBWidth: sql`excluded.nBWidth`,
+              nBTop: sql`excluded.nBTop`,
               nB1Count: sql`excluded.nB1Count`,
               nB1Width: sql`excluded.nB1Width`,
               nB1Height: sql`excluded.nB1Height`,
@@ -436,11 +432,11 @@ export class QT {
         tx.insert(schema.quartorRecordInfo)
           .values(quartorRecordInfos)
           .onConflictDoUpdate({
-            target: schema.quartorRecordInfo.recId,
+            target: schema.quartorRecordInfo.recID,
             set: {
               szUserName: sql`excluded.szUserName`,
               tmNow: sql`excluded.tmNow`,
-              szIds: sql`excluded.szIds`,
+              szIDs: sql`excluded.szIDs`,
               nBoardIndex: sql`excluded.nBoardIndex`,
               nChannelIndex: sql`excluded.nChannelIndex`,
               bResult: sql`excluded.bResult`,
@@ -452,12 +448,12 @@ export class QT {
               fHorB3: sql`excluded.fHor_B3`,
               fHorB4: sql`excluded.fHor_B4`,
               fHorB5: sql`excluded.fHor_B5`,
-              fHorB0Llz: sql`excluded.fHor_B0_LLZ`,
-              fHorB1Llz: sql`excluded.fHor_B1_LLZ`,
-              fHorB2Llz: sql`excluded.fHor_B2_LLZ`,
-              fHorB3Llz: sql`excluded.fHor_B3_LLZ`,
-              fHorB4Llz: sql`excluded.fHor_B4_LLZ`,
-              fHorB5Llz: sql`excluded.fHor_B5_LLZ`,
+              fHorB0LLZ: sql`excluded.fHor_B0_LLZ`,
+              fHorB1LLZ: sql`excluded.fHor_B1_LLZ`,
+              fHorB2LLZ: sql`excluded.fHor_B2_LLZ`,
+              fHorB3LLZ: sql`excluded.fHor_B3_LLZ`,
+              fHorB4LLZ: sql`excluded.fHor_B4_LLZ`,
+              fHorB5LLZ: sql`excluded.fHor_B5_LLZ`,
               fHorResult: sql`excluded.fHorResult`,
               bDesResult: sql`excluded.bDesResult`,
               nDesAttenH: sql`excluded.nDesAtten_H`,
@@ -498,7 +494,7 @@ export class QT {
               fVerTgMaxB13: sql`excluded.fVerTgMax_B13`,
               nDynS1: sql`excluded.nDyn_S1`,
               nDynS2: sql`excluded.nDyn_S2`,
-              nDynMax: sql`excluded.nDyn_MAX`,
+              nDynMAX: sql`excluded.nDyn_MAX`,
             },
           })
           .run();
@@ -506,7 +502,7 @@ export class QT {
         tx.insert(schema.sysConfig)
           .values(sysConfigs)
           .onConflictDoUpdate({
-            target: schema.sysConfig.recId,
+            target: schema.sysConfig.recID,
             set: {
               typeName: sql`excluded.TypeName`,
               configKey: sql`excluded.ConfigKey`,
@@ -521,7 +517,7 @@ export class QT {
         tx.insert(schema.userManager)
           .values(users)
           .onConflictDoUpdate({
-            target: schema.userManager.recId,
+            target: schema.userManager.recID,
             set: {
               userName: sql`excluded.UserName`,
               pwd: sql`excluded.Pwd`,
@@ -535,7 +531,7 @@ export class QT {
         tx.insert(schema.yqConfig)
           .values(yqConfigs)
           .onConflictDoUpdate({
-            target: schema.yqConfig.recId,
+            target: schema.yqConfig.recID,
             set: {
               factoryName: sql`excluded.FactoryName`,
               yqName: sql`excluded.YQName`,
@@ -546,6 +542,8 @@ export class QT {
               commMode: sql`excluded.CommMode`,
               commParam: sql`excluded.CommParam`,
               commParamBack: sql`excluded.CommParamBack`,
+              encoderType: sql`excluded.encoderType`,
+              isPubChannel: sql`excluded.IsPubChannel`,
               dllPath: sql`excluded.DllPath`,
               usedFlag: sql`excluded.UsedFlag`,
               funCode: sql`excluded.FunCode`,
@@ -584,7 +582,7 @@ export class QT {
     const [record] = await this.db
       .select()
       .from(schema.verifies)
-      .where(eq(schema.verifies.szIds, id))
+      .where(eq(schema.verifies.szIDs, id))
       .limit(1);
 
     if (!record) {
@@ -596,7 +594,7 @@ export class QT {
       .from(schema.verifiesData)
       .where(
         and(
-          eq(schema.verifiesData.precId, record.recId),
+          eq(schema.verifiesData.pRecID, record.recID),
           ne(schema.verifiesData.bDeleted, 1),
         ),
       );
@@ -624,13 +622,13 @@ export class QT {
 
     const dataDirectroy = this.getDataDirectory();
     const imageDirectory = path.resolve(dataDirectroy, "./verifies", id);
-    const { szIds, szWhModel } = record;
-    const lct = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LCT.png`);
-    const llz = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LLZ.png`);
-    const lxh = path.resolve(imageDirectory, `${szIds}.${szWhModel}.LXH.png`);
-    const rct = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RCT.png`);
-    const rlz = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RLZ.png`);
-    const rxh = path.resolve(imageDirectory, `${szIds}.${szWhModel}.RXH.png`);
+    const { szIDs, szWHModel } = record;
+    const lct = path.resolve(imageDirectory, `${szIDs}.${szWHModel}.LCT.png`);
+    const llz = path.resolve(imageDirectory, `${szIDs}.${szWHModel}.LLZ.png`);
+    const lxh = path.resolve(imageDirectory, `${szIDs}.${szWHModel}.LXH.png`);
+    const rct = path.resolve(imageDirectory, `${szIDs}.${szWHModel}.RCT.png`);
+    const rlz = path.resolve(imageDirectory, `${szIDs}.${szWHModel}.RLZ.png`);
+    const rxh = path.resolve(imageDirectory, `${szIDs}.${szWHModel}.RXH.png`);
 
     const jpegs: ChannelImage = {
       lct,
@@ -646,7 +644,7 @@ export class QT {
       .from(schema.channels)
       .where(
         and(
-          eq(schema.channels.szWheelName, szWhModel || ""),
+          eq(schema.channels.szWheelName, szWHModel || ""),
           ne(schema.channels.bActive, 0),
         ),
       );
@@ -672,7 +670,7 @@ export class QT {
       rows = await this.db
         .select()
         .from(schema.quartors)
-        .where(inArray(schema.quartors.recId, idList))
+        .where(inArray(schema.quartors.recID, idList))
         .orderBy(asc(schema.quartors.tmNow));
     } else {
       const day = dayjs(date);
@@ -687,7 +685,7 @@ export class QT {
               day.endOf("day").toISOString(),
             ),
             like(schema.quartors.szUsername, `%${user}%`),
-            like(schema.quartors.szWhModel, `%${zx}%`),
+            like(schema.quartors.szWHModel, `%${zx}%`),
           ),
         );
     }
@@ -702,14 +700,14 @@ export class QT {
       throw new Error("系统异常, 数据库中的第一条数据为Falsy");
     }
 
-    const szWhModel = firstRow.szWhModel || "";
+    const szWhModel = firstRow.szWHModel || "";
 
     const previousRows = await this.db
       .select()
       .from(schema.quartors)
       .where(
         and(
-          eq(schema.quartors.szWhModel, szWhModel),
+          eq(schema.quartors.szWHModel, szWhModel),
           lt(schema.quartors.tmNow, firstRow.tmNow || ""),
         ),
       )
@@ -724,8 +722,8 @@ export class QT {
       .where(
         and(
           inArray(
-            schema.quartorsData.precId,
-            rows.map((r) => r.recId),
+            schema.quartorsData.pRecID,
+            rows.map((r) => r.recID),
           ),
           ne(schema.quartorsData.bDeleted, 1),
         ),
@@ -777,7 +775,7 @@ export class QT {
     const rows = await this.db
       .select()
       .from(schema.quartorRecordInfo)
-      .where(eq(schema.quartorRecordInfo.szIds, szIds));
+      .where(eq(schema.quartorRecordInfo.szIDs, szIds));
 
     const [FACTORY_CLD] = await this.db
       .select({ value: schema.sysConfig.configValue })
@@ -818,17 +816,17 @@ export class QT {
     const [record] = await this.db
       .select()
       .from(schema.detectors)
-      .where(eq(schema.detectors.szIds, szIds));
+      .where(eq(schema.detectors.szIDs, szIds));
 
     const datas = await this.db
       .select()
       .from(schema.detectionsData)
-      .where(eq(schema.detectionsData.szIds, szIds));
+      .where(eq(schema.detectionsData.szIDs, szIds));
 
     const flagFile = path.resolve(this.profile.state.qtAppPath, "../FlagFile");
     const dataDirectory = fs.readFileSync(flagFile, "utf8").trim();
     const imgDir = path.resolve(dataDirectory, "./detectors", szIds);
-    const szWhModel = record.szWhModel || "";
+    const szWhModel = record.szWHModel || "";
     const lct = path.resolve(imgDir, `${szIds}.${szWhModel}.LCT.png`);
     const llz = path.resolve(imgDir, `${szIds}.${szWhModel}.LLZ.png`);
     const lxh = path.resolve(imgDir, `${szIds}.${szWhModel}.LXH.png`);
@@ -876,7 +874,7 @@ export class QT {
       const rows = await this.db
         .select()
         .from(schema.detectors)
-        .where(inArray(schema.detectors.recId, idList));
+        .where(inArray(schema.detectors.recID, idList));
 
       return {
         rows,
@@ -958,7 +956,7 @@ export class QT {
       return tx
         .update(schema.yqConfig)
         .set({ usedFlag: 1 })
-        .where(eq(schema.yqConfig.recId, id))
+        .where(eq(schema.yqConfig.recID, id))
         .returning()
         .get();
     });
@@ -970,7 +968,7 @@ export class QT {
     const result = await this.db
       .update(schema.yqConfig)
       .set({ dllPath: lib })
-      .where(eq(schema.yqConfig.recId, id))
+      .where(eq(schema.yqConfig.recID, id))
       .returning();
 
     return { result, running: this.running };
@@ -994,8 +992,8 @@ export class QT {
               )
             : void 0,
           user ? like(schema.detectors.szUsername, `%${user}%`) : void 0,
-          zx ? like(schema.detectors.szWhModel, `%${zx}%`) : void 0,
-          zh ? like(schema.detectors.szZh, `%${zh}%`) : void 0,
+          zx ? like(schema.detectors.szWHModel, `%${zx}%`) : void 0,
+          zh ? like(schema.detectors.szZH, `%${zh}%`) : void 0,
           result ? like(schema.detectors.szResult, `%${result}%`) : void 0,
         ),
       )
@@ -1027,7 +1025,7 @@ export class QT {
               )
             : void 0,
           user ? like(schema.verifies.szUsername, `%${user}%`) : void 0,
-          zx ? like(schema.verifies.szWhModel, `%${zx}%`) : void 0,
+          zx ? like(schema.verifies.szWHModel, `%${zx}%`) : void 0,
         ),
       )
       .orderBy(desc(schema.verifies.tmNow));
@@ -1058,7 +1056,7 @@ export class QT {
               )
             : void 0,
           user ? like(schema.quartors.szUsername, `%${user}%`) : void 0,
-          zx ? like(schema.quartors.szWhModel, `%${zx}%`) : void 0,
+          zx ? like(schema.quartors.szWHModel, `%${zx}%`) : void 0,
         ),
       )
       .orderBy(desc(schema.quartors.tmNow));
@@ -1076,11 +1074,11 @@ export class QT {
 
     const sqlCommand = this.db
       .select({
-        recId: schema.quartorRecordInfo.szIds,
+        recId: schema.quartorRecordInfo.szIDs,
         date: schema.quartorRecordInfo.tmNow,
       })
       .from(schema.quartorRecordInfo)
-      .groupBy(schema.quartorRecordInfo.szIds)
+      .groupBy(schema.quartorRecordInfo.szIDs)
       .orderBy(desc(schema.quartorRecordInfo.tmNow));
 
     const [{ count }] = await this.db
@@ -1096,7 +1094,7 @@ export class QT {
     const rows = await this.db
       .select()
       .from(schema.quartorRecordInfo)
-      .where(eq(schema.quartorRecordInfo.szIds, szIds));
+      .where(eq(schema.quartorRecordInfo.szIDs, szIds));
 
     return { rows };
   }
@@ -1104,7 +1102,7 @@ export class QT {
   async fetchUsers() {
     const rows = await this.db
       .select({
-        recId: schema.userManager.recId,
+        recID: schema.userManager.recID,
         userName: schema.userManager.userName,
         name: schema.userManager.name,
         power: schema.userManager.power,
@@ -1120,7 +1118,7 @@ export class QT {
     const rows = await this.db
       .insert(schema.userManager)
       .values({
-        recId,
+        recID: recId,
         name,
         userName: name,
         pwd,
@@ -1128,7 +1126,7 @@ export class QT {
         regTime: dayjs().format("YYYY-MM-DD HH:mm:ss"),
       })
       .onConflictDoUpdate({
-        target: schema.userManager.recId,
+        target: schema.userManager.recID,
         set: { name, pwd, power },
       })
       .returning();
@@ -1138,7 +1136,7 @@ export class QT {
   async deleteUsers(id: number) {
     const row = await this.db
       .delete(schema.userManager)
-      .where(eq(schema.userManager.recId, id))
+      .where(eq(schema.userManager.recID, id))
       .returning();
 
     return { row, running: this.running };
@@ -1146,7 +1144,7 @@ export class QT {
   async getConfig() {
     const rows = await this.db
       .select({
-        id: schema.sysConfig.recId,
+        id: schema.sysConfig.recID,
         key: schema.sysConfig.configKey,
         value: schema.sysConfig.configValue,
         description: schema.sysConfig.remark,
@@ -1196,7 +1194,7 @@ export class QT {
     const [record] = await this.db
       .select()
       .from(schema.dynamic)
-      .where(eq(schema.dynamic.recId, id));
+      .where(eq(schema.dynamic.recID, id));
 
     if (!record) {
       throw new Error(`#${id}不存在`);
@@ -1205,7 +1203,7 @@ export class QT {
     const datas = await this.db
       .select()
       .from(schema.dynamicData)
-      .where(eq(schema.dynamicData.szIds, record.szIds || ""));
+      .where(eq(schema.dynamicData.szIDs, record.szIDs || ""));
 
     return { record, datas };
   }

@@ -28,8 +28,8 @@
     "awilix": "^13.0.3",
     "babel-plugin-react-compiler": "^1.0.0",
     "dayjs": "^1.11.20",
-    "drizzle-kit": "1.0.0-beta.22",
-    "drizzle-orm": "1.0.0-beta.22",
+    "drizzle-kit": "1.0.0-rc.5",
+    "drizzle-orm": "1.0.0-rc.5",
     "electron": "^40.10.6",
     "electron-builder": "^26.15.3",
     "immer": "^11.1.8",
@@ -42,6 +42,7 @@
     "swiper": "^14.3.0",
     "tailwindcss": "^4.3.3",
     "use-immer": "^0.11.0",
+    "vite": "^8.2.2",
     "vite-plugin-static-copy": "^4.1.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.13"

@@ -42,7 +42,7 @@ const resolveFlaws = (
 
     const zsj =
       typeof flaw.nWangle === "number" ? divide10(flaw.nWangle, 1) : "";
-    const bc = typeof flaw.nDbSub === "number" ? divide10(flaw.nDbSub, 1) : "";
+    const bc = typeof flaw.nDBSub === "number" ? divide10(flaw.nDBSub, 1) : "";
     const jy = typeof flaw.nAtten === "number" ? divide10(flaw.nAtten, 1) : "";
 
     const data: ChannelData = {
@@ -112,8 +112,8 @@ export const Component = () => {
 
     return (
       <CHR501
-        zh={record.szZh || ""}
-        zx={record.szWhModel || ""}
+        zh={record.szZH || ""}
+        zx={record.szWHModel || ""}
         factoryName={FACTORY_CLD || ""}
         validateAt={record.tmNow || ""}
         equipmentModel={FACTORY_SBXH || ""}

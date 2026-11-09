@@ -42,7 +42,7 @@ type Row = typeof schema.verifies.$inferSelect;
 
 const columnHelper = createColumnHelper<Row>();
 const columns = [
-  columnHelper.accessor("szIds", {
+  columnHelper.accessor("szIDs", {
     header: "ID",
     cell: ({ getValue }) => {
       const value = getValue();
@@ -57,7 +57,7 @@ const columns = [
       );
     },
   }),
-  columnHelper.accessor("szWhModel", {
+  columnHelper.accessor("szWHModel", {
     header: "轴型",
   }),
   columnHelper.accessor("szUsername", {
@@ -85,7 +85,7 @@ export const Component = () => {
     getCoreRowModel: getCoreRowModel(),
     columns,
     data,
-    getRowId: (r) => r.recId.toString(10),
+    getRowId: (r) => r.recID.toString(10),
     manualPagination: true,
   });
 

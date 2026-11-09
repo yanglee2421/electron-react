@@ -35,18 +35,18 @@ type Row = typeof schema.dynamic.$inferSelect;
 
 const columnHelper = createColumnHelper<Row>();
 const columns = [
-  columnHelper.accessor("recId", { header: "ID" }),
-  columnHelper.accessor("szIds", {
+  columnHelper.accessor("recID", { header: "ID" }),
+  columnHelper.accessor("szIDs", {
     header: "ID",
     cell: ({ row }) => {
       return (
-        <Link component={RouterLink} to={`/qt/dynamic/${row.original.recId}`}>
-          {row.original.szIds}
+        <Link component={RouterLink} to={`/qt/dynamic/${row.original.recID}`}>
+          {row.original.szIDs}
         </Link>
       );
     },
   }),
-  columnHelper.accessor("szWhModel", { header: "轴型" }),
+  columnHelper.accessor("szWHModel", { header: "轴型" }),
   columnHelper.accessor("szUsername", { header: "用户" }),
   columnHelper.accessor("startTime", { header: "开始时间" }),
 ];

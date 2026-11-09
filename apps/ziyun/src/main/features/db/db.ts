@@ -4,7 +4,6 @@ import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import fs from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { relations } from "./relations";
-import * as schema from "./schema";
 import type { DBClient } from "./types";
 
 export class DB {
@@ -14,7 +13,7 @@ export class DB {
   constructor({ dbPath }: AppCradle) {
     this.dbPath = dbPath;
     const client = new DatabaseSync(dbPath);
-    this.client = drizzle({ client, schema, relations });
+    this.client = drizzle({ client, relations });
   }
 
   migrate(migrationsFolder: string) {

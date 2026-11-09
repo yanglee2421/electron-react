@@ -42,15 +42,15 @@ export const Component = () => {
     return (
       <CHR53A
         records={rows.map((row) => ({
-          szIDs: row.szIds || "",
-          szIDsWheel: row.szZh,
+          szIDs: row.szIDs || "",
+          szIDsWheel: row.szZH,
           szMemo: row.szMemo,
-          szIDsFirst: row.szIdsFirst,
-          szTMFirst: row.szTmFirst,
+          szIDsFirst: row.szIDsFirst,
+          szTMFirst: row.szTMFirst,
           szResult: row.szResult,
-          szWHModel: row.szWhModel,
-          bWheelLS: !!row.bWheelLs,
-          bWheelRS: !!row.bWheelRs,
+          szWHModel: row.szWHModel,
+          bWheelLS: !!row.bWheelLS,
+          bWheelRS: !!row.bWheelRS,
         }))}
         factory={FACTORY_CLD || ""}
         user={firstRow.szUsername || ""}

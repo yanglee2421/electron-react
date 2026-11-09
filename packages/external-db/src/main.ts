@@ -5,6 +5,6 @@ import * as schema from "./schema";
 
 export { relations, schema };
 
-export type DBClient = NodeSQLiteDatabase<typeof schema, typeof relations> & {
+export type DBClient = NodeSQLiteDatabase<typeof relations> & {
   $client: DatabaseSync;
 };

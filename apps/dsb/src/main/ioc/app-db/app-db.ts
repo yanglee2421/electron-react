@@ -6,12 +6,11 @@ import { DatabaseSync } from "node:sqlite";
 import url from "node:url";
 import type { AppCradle } from "../types";
 import { relations } from "./relations";
-import * as schema from "./schema";
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export type DBClient = NodeSQLiteDatabase<typeof schema, typeof relations> & {
+export type DBClient = NodeSQLiteDatabase<typeof relations> & {
   $client: DatabaseSync;
 };
 
@@ -22,7 +21,7 @@ export class AppDB {
     const client = new DatabaseSync(DB_PATH);
     const migrationsFolder = path.resolve(__dirname, "../../drizzle");
 
-    this.client = drizzle({ client, relations, schema });
+    this.client = drizzle({ client, relations });
     migrate(this.client, { migrationsFolder });
   }
 

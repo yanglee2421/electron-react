@@ -126,7 +126,7 @@ export const Component = () => {
 
     const groups = rows.map((row) => {
       const rowFlaws = datas.filter((data) => {
-        return Object.is(data.precId, row.recId);
+        return Object.is(data.pRecID, row.recID);
       });
       const flawMap = mapGroupBy(
         rowFlaws,
@@ -146,7 +146,7 @@ export const Component = () => {
     return (
       <CHR502
         factory={FACTORY_CLD || ""}
-        zx={firstRow?.szWhModel || ""}
+        zx={firstRow?.szWHModel || ""}
         validateAt={firstRow?.tmNow || ""}
         equipmentNo={FACTORY_SBBH || ""}
         manufactureDate={FACTORY_SYRQ || ""}

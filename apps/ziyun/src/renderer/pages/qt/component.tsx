@@ -330,7 +330,7 @@ const YiqiList = (props: YiqiListProps) => {
     return yiqiConfig.data.rows.map((row) => {
       return (
         <ListItem
-          key={row.recId}
+          key={row.recID}
           secondaryAction={
             <IconButton
               edge="end"
@@ -348,7 +348,7 @@ const YiqiList = (props: YiqiListProps) => {
                 if (!libPath) return;
 
                 const result = await yiqiLib.mutateAsync({
-                  id: row.recId,
+                  id: row.recID,
                   lib: libPath,
                 });
 
@@ -364,7 +364,7 @@ const YiqiList = (props: YiqiListProps) => {
         >
           <ListItemButton
             onClick={async () => {
-              const result = await yiqiFlag.mutateAsync(row.recId);
+              const result = await yiqiFlag.mutateAsync(row.recID);
 
               if (!result.running) return;
 
@@ -725,7 +725,7 @@ const ConfigForm = (props: YiqiListProps) => {
 type Row = Omit<typeof schema.userManager.$inferSelect, "pwd">;
 const columnHelper = createColumnHelper<Row>();
 const columns = [
-  columnHelper.accessor("recId", {
+  columnHelper.accessor("recID", {
     header: "ID",
   }),
   columnHelper.accessor("name", {
@@ -753,7 +753,7 @@ const columns = [
     cell: ({ row }) => {
       return (
         <ActionCell
-          rowId={row.original.recId}
+          rowId={row.original.recID}
           user={row.original.name || ""}
           power={row.original.power || ""}
         />
@@ -1063,7 +1063,7 @@ const UsersTable = (props: YiqiListProps) => {
     getCoreRowModel: getCoreRowModel(),
     columns,
     data,
-    getRowId: (r) => r.recId.toString(),
+    getRowId: (r) => r.recID.toString(),
   });
 
   const renderRow = () => {

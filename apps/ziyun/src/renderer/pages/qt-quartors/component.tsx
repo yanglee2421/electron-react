@@ -67,11 +67,11 @@ const columns = [
       />
     ),
   }),
-  columnHelper.accessor("szIds", {
+  columnHelper.accessor("szIDs", {
     header: "ID",
     cell: ({ getValue }) => getValue()?.slice(-6),
   }),
-  columnHelper.accessor("szWhModel", {
+  columnHelper.accessor("szWHModel", {
     header: "轴型",
   }),
   columnHelper.accessor("szUsername", {
@@ -99,7 +99,7 @@ const calcPrintCheck = (...args: Row[]): TT => {
   for (const row of args) {
     date ||= dayjs(row.tmNow).format("YYYY-MM-DD");
     user ||= row.szUsername || "";
-    zx ||= row.szWhModel || "";
+    zx ||= row.szWHModel || "";
 
     const isSameDate = dayjs(row.tmNow).format("YYYY-MM-DD") === date;
 
@@ -119,7 +119,7 @@ const calcPrintCheck = (...args: Row[]): TT => {
       };
     }
 
-    const isSameZX = row.szWhModel === zx;
+    const isSameZX = row.szWHModel === zx;
 
     if (!isSameZX) {
       return {
@@ -153,7 +153,7 @@ export const Component = () => {
     getCoreRowModel: getCoreRowModel(),
     columns,
     data,
-    getRowId: (r) => r.recId.toString(10),
+    getRowId: (r) => r.recID.toString(10),
     manualPagination: true,
   });
 
