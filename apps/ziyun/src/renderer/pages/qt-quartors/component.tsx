@@ -8,6 +8,7 @@ import {
   Alert,
   AlertTitle,
   Autocomplete,
+  Box,
   Button,
   Card,
   CardContent,
@@ -271,25 +272,90 @@ export const Component = () => {
         </CardContent>
         <Divider />
         <CardContent>
-          <Button
-            disabled={printCheck.disabledPrint}
-            startIcon={<Print />}
-            variant="outlined"
-            onClick={() => {
-              const search = new URLSearchParams();
-
-              table.getSelectedRowModel().flatRows.forEach((row) => {
-                search.append("row", row.id);
-              });
-
-              navigate({
-                pathname: "/qt/quartors/502",
-                search: "?" + search.toString(),
-              });
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              flexDirection: { xs: "column", sm: "row" },
             }}
           >
-            打印
-          </Button>
+            <Button
+              disabled={printCheck.disabledPrint}
+              startIcon={<Print />}
+              variant="outlined"
+              onClick={() => {
+                const search = new URLSearchParams();
+
+                table.getSelectedRowModel().flatRows.forEach((row) => {
+                  search.append("row", row.id);
+                });
+
+                navigate({
+                  pathname: "/qt/quartors/502",
+                  search: "?" + search.toString(),
+                });
+              }}
+            >
+              打印
+            </Button>
+            <Button
+              disabled={printCheck.disabledPrint}
+              startIcon={<Print />}
+              variant="outlined"
+              onClick={() => {
+                const search = new URLSearchParams();
+
+                table.getSelectedRowModel().flatRows.forEach((row) => {
+                  search.append("row", row.id);
+                });
+
+                navigate({
+                  pathname: "/qt/quartors/repetitiveness",
+                  search: "?" + search.toString(),
+                });
+              }}
+            >
+              重复性检测
+            </Button>
+            <Button
+              disabled={printCheck.disabledPrint}
+              startIcon={<Print />}
+              variant="outlined"
+              onClick={() => {
+                const search = new URLSearchParams();
+
+                table.getSelectedRowModel().flatRows.forEach((row) => {
+                  search.append("row", row.id);
+                });
+
+                navigate({
+                  pathname: "/qt/quartors/missed_rate",
+                  search: "?" + search.toString(),
+                });
+              }}
+            >
+              检测漏检率
+            </Button>
+            <Button
+              disabled={printCheck.disabledPrint}
+              startIcon={<Print />}
+              variant="outlined"
+              onClick={() => {
+                const search = new URLSearchParams();
+
+                table.getSelectedRowModel().flatRows.forEach((row) => {
+                  search.append("row", row.id);
+                });
+
+                navigate({
+                  pathname: "/qt/quartors/false_positive",
+                  search: "?" + search.toString(),
+                });
+              }}
+            >
+              误判率
+            </Button>
+          </Box>
         </CardContent>
         {query.isFetching && <LinearProgress />}
         <TableContainer>

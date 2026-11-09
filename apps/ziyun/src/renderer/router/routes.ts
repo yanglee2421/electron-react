@@ -358,10 +358,27 @@ export const routes: RouteObject[] = [
                           return import("#renderer/pages/qt-quartors/component");
                         },
                       },
-                      {},
                       {
                         path: "502",
                         lazy: () => import("#renderer/pages/qt-502/component"),
+                      },
+                      {
+                        path: "false_positive",
+                        lazy: () => {
+                          return import("#renderer/pages/qt_false_positive_print/component");
+                        },
+                      },
+                      {
+                        path: "missed_rate",
+                        lazy: () => {
+                          return import("#renderer/pages/qt_missed_rate_print/component");
+                        },
+                      },
+                      {
+                        path: "repetitiveness",
+                        lazy: () => {
+                          return import("#renderer/pages/qt_repetitiveness_print/component");
+                        },
                       },
                     ],
                   },
@@ -426,39 +443,6 @@ export const routes: RouteObject[] = [
                         path: "print",
                         lazy: () => {
                           return import("#renderer/pages/qt_db_consistency_print/component");
-                        },
-                      },
-                    ],
-                  },
-                  {
-                    path: "false_positive",
-                    children: [
-                      {
-                        path: "print",
-                        lazy: () => {
-                          return import("#renderer/pages/qt_false_positive_print/component");
-                        },
-                      },
-                    ],
-                  },
-                  {
-                    path: "missed_rate",
-                    children: [
-                      {
-                        path: "print",
-                        lazy: () => {
-                          return import("#renderer/pages/qt_missed_rate_print/component");
-                        },
-                      },
-                    ],
-                  },
-                  {
-                    path: "repetitiveness",
-                    children: [
-                      {
-                        path: "print",
-                        lazy: () => {
-                          return import("#renderer/pages/qt_repetitiveness_print/component");
                         },
                       },
                     ],

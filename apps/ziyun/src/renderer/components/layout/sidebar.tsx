@@ -37,7 +37,6 @@ import { normalizePathname } from "@yotulee/run";
 import React from "react";
 import { Link, useLocation } from "react-router";
 import { animationFrameScheduler, auditTime, Observable } from "rxjs";
-// import "./sidebar.css";
 
 const StyledLink = styled(Link)(({ theme }) => {
   return {
@@ -311,21 +310,6 @@ export const Sidebar = (props: SidebarProps) => {
             <NavButton
               path="/qt/dynamic"
               label="动态信噪比"
-              icon={<SsidChart />}
-            />
-            <NavButton
-              path="/qt/repetitiveness/print"
-              label="重复性检测"
-              icon={<SsidChart />}
-            />
-            <NavButton
-              path="/qt/missed_rate/print"
-              label="漏检率"
-              icon={<SsidChart />}
-            />
-            <NavButton
-              path="/qt/false_positive/print"
-              label="误判率"
               icon={<SsidChart />}
             />
             <NavButton

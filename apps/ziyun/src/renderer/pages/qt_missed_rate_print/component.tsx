@@ -1,4 +1,5 @@
-import { fetchDynamicById } from "#renderer/api/qt";
+import { fetchQT502 } from "#renderer/api/qt";
+import { Loading } from "#renderer/components/Loading";
 import {
   Cell,
   Col,
@@ -8,17 +9,53 @@ import {
 } from "#renderer/components/pdf";
 import { of } from "#shared/functions/array";
 import { CellHeightContext, styles } from "#shared/instances/styles";
+import { Home } from "@mui/icons-material";
+import { Alert, AlertTitle, Button } from "@mui/material";
 import { Document, Page, PDFViewer, View } from "@react-pdf/renderer";
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import { useParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
 export const Component = () => {
-  const params = useParams<{ id: string }>();
-  const id = params.id;
-  useQuery(fetchDynamicById(Number(id)));
-
   const RowHeight = React.use(CellHeightContext);
+
+  const [search] = useSearchParams();
+  const user = search.get("user");
+  const zx = search.get("zx");
+  const date = search.get("date");
+  const ids = search.getAll("row");
+  const query = useQuery(
+    fetchQT502({
+      ids,
+      user: user || "",
+      zx: zx || "",
+      date: date || "",
+    }),
+  );
+
+  if (query.isPending) {
+    return <Loading />;
+  }
+
+  if (query.isError) {
+    return (
+      <Alert>
+        <AlertTitle>错误</AlertTitle>
+        {query.error.message}
+        <div></div>
+        <Button
+          component={Link}
+          to={{ pathname: "/" }}
+          variant="contained"
+          color="error"
+          sx={{ mt: 1 }}
+          startIcon={<Home />}
+        >
+          回到首页
+        </Button>
+      </Alert>
+    );
+  }
 
   return (
     <PDFViewer
