@@ -16,12 +16,12 @@ import { ModeToggle } from "../theme";
 
 const createSegmentAlias = () => {
   const segmentAlias = new Map([
-    ["hxzy", "华兴致远"],
+    ["hxzy", "成都北车辆段"],
     ["jtv", "京天威统型"],
-    ["jtv_guangzhoubei", "广州北"],
+    ["jtv_guangzhoubei", "广州北车辆段"],
     ["jtv_guangzhoujibaoduan", "广州机保段"],
     ["guangzhoucheliang", "广州车辆厂"],
-    ["kh", "安康"],
+    ["kh", "安康车辆段"],
     ["verifies", "日常校验"],
     ["verify", "日常校验"],
     ["quartor", "季度校验"],
@@ -47,6 +47,9 @@ const createSegmentAlias = () => {
     ["fuzhoudong", "福州东车辆段"],
     ["dynamic", "动态信噪比"],
     ["print", "打印"],
+    ["missed_rate", "检测漏检率"],
+    ["repetitiveness", "重复性检测"],
+    ["false_positive", "误判率"],
   ]);
 
   return segmentAlias;
