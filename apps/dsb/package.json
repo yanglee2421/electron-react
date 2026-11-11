@@ -1,7 +1,7 @@
 {
   "name": "app-dsb",
-  "private": true,
   "version": "0.1.1",
+  "private": true,
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
@@ -13,6 +13,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@yanglee2421/union-addon": "workspace:*"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
@@ -42,12 +45,9 @@
     "swiper": "^14.3.0",
     "tailwindcss": "^4.3.3",
     "use-immer": "^0.11.0",
-    "vite": "^8.2.2",
+    "vite": "catalog:",
     "vite-plugin-static-copy": "^4.1.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.13"
-  },
-  "dependencies": {
-    "@yanglee2421/union-addon": "workspace:*"
   }
 }

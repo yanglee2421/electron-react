@@ -3,7 +3,7 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { electron, reactDevtools } from "@yanglee2421/vite-plugin";
 import path from "node:path";
 import url from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig } from "vite-plus";
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

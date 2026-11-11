@@ -1,7 +1,7 @@
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { electron } from "@yanglee2421/vite-plugin";
+import { electronPlugin } from "@yanglee2421/vite-plugin";
 import { createRequire } from "node:module";
 import path from "node:path";
 import url from "node:url";
@@ -22,32 +22,6 @@ const alias = {
 const pdfjsDistPath = path.dirname(require.resolve("pdfjs-dist/package.json"));
 const cMapsDir = normalizePath(path.join(pdfjsDistPath, "cmaps"));
 
-const electronPlugin = (): Plugin[] => {
-  return [
-    {
-      name: "electron:dev",
-      apply: "serve",
-      config() {
-        return {
-          server: {
-            watch: {
-              ignored: [
-                "**/out/**",
-                "**/release/**",
-                "**/src/main/**",
-                "**/src/preload/**",
-              ],
-            },
-          },
-        };
-      },
-      configResolved() {},
-      configureServer() {},
-      closeServer() {},
-    },
-  ];
-};
-
 export default defineConfig({
   plugins: [
     react() as unknown as Plugin,
@@ -62,7 +36,6 @@ export default defineConfig({
         },
       ],
     }) as unknown as Plugin,
-    electron() as unknown as Plugin,
     electronPlugin(),
   ],
   resolve: { alias },

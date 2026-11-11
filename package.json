@@ -11,13 +11,13 @@
     "react",
     "typescript"
   ],
-  "author": "yanglee2421",
-  "license": "MIT",
   "homepage": "https://github.com/yanglee2421/electron-react/blob/main/README.md",
   "bugs": {
     "url": "https://github.com/yanglee2421/electron-react/issues",
     "email": "yanglee2421@outlook.com"
   },
+  "license": "MIT",
+  "author": "yanglee2421",
   "repository": {
     "type": "git",
     "url": "https://github.com/yanglee2421/electron-react.git",
@@ -34,7 +34,7 @@
   "devDependencies": {
     "@types/node": "^25.3.0",
     "typescript": "^7.0.2",
-    "vite-plus": "^1.4.0"
+    "vite-plus": "catalog:"
   },
   "packageManager": "pnpm@11.21.0+sha512.521705bce689924eac72f5a3587122f362689ef6571e55ba80076fd637c11132ecffada26fad4ea79c485bfddbfd3d5a2a5b05805a77e893de71ec8a6cca3bb1"
 }
