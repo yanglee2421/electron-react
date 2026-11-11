@@ -96,7 +96,7 @@ const createPreloadInput = (): BuildOptions => {
         __filename: [shimFile, "__filename"],
       },
     },
-    plugins: [resources({ external: excludes })],
+    plugins: [],
   };
 };
 
@@ -105,8 +105,8 @@ const createMainInput = (isDev: boolean): BuildOptions => {
     input: "src/main/index.ts",
     output: {
       format: "esm",
+      dir: "out/main",
       codeSplitting: false,
-      file: "out/main/index.js",
     },
     platform: "node",
     external: calcExternal(isDev),
@@ -116,7 +116,7 @@ const createMainInput = (isDev: boolean): BuildOptions => {
         __filename: [shimFile, "__filename"],
       },
     },
-    plugins: [resources({ external: excludes })],
+    plugins: [resources()],
   };
 };
 
