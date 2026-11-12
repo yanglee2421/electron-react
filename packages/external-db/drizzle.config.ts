@@ -5,6 +5,6 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "sqlite",
   dbCredentials: {
-    url: "D:\\qtapp\\debug\\local.db",
+    url: "D:\\qtapp\\data2\\local.db",
   },
 });

@@ -49,12 +49,13 @@ import * as qtIPC from "./features/qt/ipc";
 import * as xmlIPC from "./features/xml/ipc";
 import * as infraIPC from "./infra/ipc";
 
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const resource$ = new Observable((sub) => {
   const APP_DB_PATH = path.resolve(app.getPath("userData"), "db.db");
   container.register({ dbPath: asValue(APP_DB_PATH) });
 
   const { db } = container.cradle;
-  const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
   const migrationsFolder = path.resolve(__dirname, "../../drizzle/db");
   db.migrate(migrationsFolder);
 

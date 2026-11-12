@@ -92,6 +92,24 @@ class FlawHelper {
   get rightA3() {
     return this.sortedFlaws.filter((f) => f.nBoard === 1 && f.nChannel === 1);
   }
+  get leftLz() {
+    const outter = this.leftLzOutter;
+    const inner = this.leftLzInner;
+
+    return [
+      ...outter.slice(0, 6),
+      ...inner.slice(inner.length - 5, inner.length),
+    ];
+  }
+  get rightLz() {
+    const outter = this.rightLzOutter;
+    const inner = this.rightLzInner;
+
+    return [
+      ...outter.slice(0, 6),
+      ...inner.slice(inner.length - 5, inner.length),
+    ];
+  }
 
   private static toX(flaw: Flaw) {
     return flaw.fltValueX || 0;
@@ -223,10 +241,10 @@ export const Component = () => {
                   <Cell>部位</Cell>
                   <Cell>左穿透</Cell>
                   <Cell height={RowHeight * 3}>{"左\n卸\n荷\n槽"}</Cell>
-                  <Cell height={RowHeight * 9}>{"左\n轮\n座"}</Cell>
+                  <Cell height={RowHeight * 11}>{"左\n轮\n座"}</Cell>
                   <Cell>右穿透</Cell>
                   <Cell height={RowHeight * 3}>{"左\n卸\n荷\n槽"}</Cell>
-                  <Cell height={RowHeight * 9}>{"左\n轮\n座"}</Cell>
+                  <Cell height={RowHeight * 11}>{"左\n轮\n座"}</Cell>
                 </Col>
                 <Col>
                   <Cell>编号</Cell>
@@ -234,32 +252,64 @@ export const Component = () => {
                   {of(3).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
-                  {of(9).map((i) => {
+                  {of(11).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
                   <Cell>1</Cell>
                   {of(3).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
-                  {of(9).map((i) => {
+                  {of(11).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
                 </Col>
                 <Col>
                   <Cell>端面</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
+                  <Cell>
+                    {helperMap
+                      .get(rows[0].szIDs)
+                      ?.leftCt?.fltValueX?.toFixed(0)}
+                  </Cell>
+                  {of(3).map((i, index) => {
+                    return (
+                      <Cell key={i}>
+                        {helperMap
+                          .get(rows[0].szIDs)
+                          ?.leftXhc[index]?.fltValueX?.toFixed(0)}
+                      </Cell>
+                    );
                   })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
+                  {of(11).map((i, index) => {
+                    return (
+                      <Cell key={i}>
+                        {helperMap
+                          .get(rows[0].szIDs)
+                          ?.leftLz[index]?.fltValueX?.toFixed(0)}
+                      </Cell>
+                    );
                   })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
+                  <Cell>
+                    {helperMap
+                      .get(rows[0].szIDs)
+                      ?.rightCt?.fltValueX?.toFixed(0)}
+                  </Cell>
+                  {of(3).map((i, index) => {
+                    return (
+                      <Cell key={i}>
+                        {helperMap
+                          .get(rows[0].szIDs)
+                          ?.rightXhc[index]?.fltValueX?.toFixed(0)}
+                      </Cell>
+                    );
                   })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
+                  {of(11).map((i, index) => {
+                    return (
+                      <Cell key={i}>
+                        {helperMap
+                          .get(rows[0].szIDs)
+                          ?.rightLz[index]?.fltValueX?.toFixed(0)}
+                      </Cell>
+                    );
                   })}
                 </Col>
                 <Col>
@@ -268,201 +318,107 @@ export const Component = () => {
                   {of(3).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
-                  {of(9).map((i) => {
+                  {of(11).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
                   <Cell>1</Cell>
                   {of(3).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
-                  {of(9).map((i) => {
+                  {of(11).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
                 </Col>
+                {rows.map((row, index) => {
+                  return (
+                    <React.Fragment key={row.recID}>
+                      <Col>
+                        <Cell>{`A${index + 1}`}</Cell>
+                        <Cell>
+                          {helperMap.get(rows[index].szIDs)?.leftCt?.fFWValue}
+                        </Cell>
+                        {of(3).map((i, flawIndex) => {
+                          return (
+                            <Cell key={i}>
+                              {
+                                helperMap.get(rows[index].szIDs)?.leftXhc[
+                                  flawIndex
+                                ]?.fFWValue
+                              }
+                            </Cell>
+                          );
+                        })}
+                        {of(11).map((i, flawIndex) => {
+                          return (
+                            <Cell key={i}>
+                              {
+                                helperMap.get(rows[index].szIDs)?.leftLz[
+                                  flawIndex
+                                ]?.fFWValue
+                              }
+                            </Cell>
+                          );
+                        })}
+                        <Cell>
+                          {helperMap.get(rows[index].szIDs)?.rightCt?.fFWValue}
+                        </Cell>
+                        {of(3).map((i, flawIndex) => {
+                          return (
+                            <Cell key={i}>
+                              {
+                                helperMap.get(rows[index].szIDs)?.rightXhc[
+                                  flawIndex
+                                ]?.fFWValue
+                              }
+                            </Cell>
+                          );
+                        })}
+                        {of(11).map((i, flawIndex) => {
+                          return (
+                            <Cell key={i}>
+                              {
+                                helperMap.get(rows[index].szIDs)?.rightLz[
+                                  flawIndex
+                                ]?.fFWValue
+                              }
+                            </Cell>
+                          );
+                        })}
+                      </Col>
+                      <Col>
+                        <Cell>{`ΔA${index + 1}`}</Cell>
+                        <Cell>1</Cell>
+                        {of(3).map((i) => {
+                          return <Cell key={i}>{i}</Cell>;
+                        })}
+                        {of(11).map((i) => {
+                          return <Cell key={i}>{i}</Cell>;
+                        })}
+                        <Cell>1</Cell>
+                        {of(3).map((i) => {
+                          return <Cell key={i}>{i}</Cell>;
+                        })}
+                        {of(11).map((i) => {
+                          return <Cell key={i}>{i}</Cell>;
+                        })}
+                      </Col>
+                    </React.Fragment>
+                  );
+                })}
                 <Col>
-                  <Cell>A1</Cell>
+                  <Cell>Δ</Cell>
                   <Cell>1</Cell>
                   {of(3).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                </Col>
-                <Col>
-                  <Cell>A1</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
+                  {of(11).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
                   <Cell>1</Cell>
                   {of(3).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                </Col>
-                <Col>
-                  <Cell>A2</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                </Col>
-                <Col>
-                  <Cell>A2</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                </Col>
-                <Col>
-                  <Cell>A2</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                </Col>
-                <Col>
-                  <Cell>A2</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                </Col>
-                <Col>
-                  <Cell>A2</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                </Col>
-                <Col>
-                  <Cell>A2</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                </Col>
-                <Col>
-                  <Cell>A2</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                </Col>
-                <Col>
-                  <Cell>A2</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                </Col>
-                <Col>
-                  <Cell>A</Cell>
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  <Cell>1</Cell>
-                  {of(3).map((i) => {
-                    return <Cell key={i}>{i}</Cell>;
-                  })}
-                  {of(9).map((i) => {
+                  {of(11).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
                 </Col>
@@ -472,14 +428,14 @@ export const Component = () => {
                   {of(3).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
-                  {of(9).map((i) => {
+                  {of(11).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
                   <Cell>1</Cell>
                   {of(3).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
-                  {of(9).map((i) => {
+                  {of(11).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
                 </Col>
@@ -489,14 +445,14 @@ export const Component = () => {
                   {of(3).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
-                  {of(9).map((i) => {
+                  {of(11).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
                   <Cell>1</Cell>
                   {of(3).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
-                  {of(9).map((i) => {
+                  {of(11).map((i) => {
                     return <Cell key={i}>{i}</Cell>;
                   })}
                 </Col>

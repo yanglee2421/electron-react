@@ -1,13 +1,13 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { electronPlugin, reactDevtoolsPlugin } from "@yanglee2421/vp-plugin";
-import { createRequire } from "node:module";
+import module from "node:module";
 import path from "node:path";
 import url from "node:url";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import { defineConfig, normalizePath } from "vite-plus";
 
-const require = createRequire(import.meta.url);
+const require = module.createRequire(import.meta.url);
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const alias = {
