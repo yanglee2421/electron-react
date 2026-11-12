@@ -31,53 +31,59 @@ const __dirname = path.dirname(__filename);
 const shimFile = path.resolve(__dirname, "esm-shims.ts");
 const packageJsonPath = path.resolve(process.cwd(), "./package.json");
 const packageJson = fs.readFileSync(packageJsonPath, "utf-8");
-const { dependencies } = JSON.parse(packageJson);
+const { dependencies = {} } = JSON.parse(packageJson);
 const excludes = ["electron", ...Object.keys(dependencies)];
 const includes = ["@yanglee2421/external-db"];
+
+const matchesPackage = (id: string, name: string) => {
+  return Object.is(id, name) || id.startsWith(`${name}/`);
+};
+
+const handleUnresovled = (id: string, isDev: boolean) => {
+  const shouldExcludes = excludes.some((pkg) => matchesPackage(id, pkg));
+  const shouldIncludes = includes.some((pkg) => matchesPackage(id, pkg));
+
+  if (shouldExcludes && shouldIncludes) {
+    console.warn(
+      `[external] Conflicting packages in includes and excludes: ${id}. Excludes takes precedence.`,
+    );
+  }
+
+  // Excludes
+  if (shouldExcludes) {
+    return true;
+  }
+
+  // Includes
+  if (shouldIncludes) {
+    return false;
+  }
+
+  // Relative path
+  if (id.startsWith(".")) {
+    return false;
+  }
+
+  // Alias path
+  if (id.startsWith("#")) {
+    return false;
+  }
+
+  // Other node_modules
+  return isDev;
+};
+
+const handleResolved = (id: string, isDev: boolean) => {
+  if (isDev) {
+    return id.includes("node_modules");
+  }
+
+  return false;
+};
+
 const calcExternal = (isDev: boolean): ExternalOption => {
   return (id, _parentId, isResolved) => {
-    if (!isResolved) {
-      // Excludes
-      if (
-        excludes.some((pkg) => {
-          const reg = new RegExp(`^${pkg}/?`);
-
-          return reg.test(id);
-        })
-      ) {
-        return true;
-      }
-
-      // Includes
-      if (
-        includes.some((pkg) => {
-          const reg = new RegExp(`^${pkg}/?`);
-
-          return reg.test(id);
-        })
-      ) {
-        return false;
-      }
-
-      // Relative path
-      if (id.startsWith(".")) {
-        return false;
-      }
-
-      // Alias path
-      if (id.startsWith("#")) {
-        return false;
-      }
-
-      // node_modules
-      return isDev;
-    } else {
-      if (isDev) {
-        return id.includes("node_modules");
-      }
-
-      return false;
-    }
+    return isResolved ? handleResolved(id, isDev) : handleUnresovled(id, isDev);
   };
 };
 
