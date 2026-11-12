@@ -101,18 +101,12 @@ const createPreloadInput = (): BuildOptions => {
     external: ["electron"],
 
     output: {
-      format: "cjs",
-      file: "out/preload/index.cjs",
       cleanDir: true,
       codeSplitting: false,
+      format: "cjs",
+      file: "out/preload/index.cjs",
     },
     platform: "node",
-    transform: {
-      inject: {
-        __dirname: [shimFile, "__dirname"],
-        __filename: [shimFile, "__filename"],
-      },
-    },
   };
 };
 
@@ -122,10 +116,10 @@ const createMainInput = (isDev: boolean): BuildOptions => {
     external: calcExternal(isDev),
 
     output: {
+      cleanDir: true,
+      codeSplitting: true,
       format: "esm",
       dir: "out/main",
-      cleanDir: true,
-      // codeSplitting: false,
     },
     platform: "node",
     transform: {
