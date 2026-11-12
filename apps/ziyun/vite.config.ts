@@ -1,6 +1,6 @@
 import babel from "@rolldown/plugin-babel";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { electron, reactDevtools } from "@yanglee2421/vite-plugin";
+import { electronPlugin, reactDevtoolsPlugin } from "@yanglee2421/vp-plugin";
 import path from "node:path";
 import url from "node:url";
 import { defineConfig } from "vite-plus";
@@ -20,8 +20,8 @@ export default defineConfig({
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] }),
-    electron(),
-    reactDevtools(),
+    electronPlugin(),
+    reactDevtoolsPlugin(),
   ],
   resolve: { alias },
 });

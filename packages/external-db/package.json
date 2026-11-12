@@ -11,9 +11,6 @@
     "migrate": "drizzle-kit migrate",
     "studio": "drizzle-kit studio"
   },
-  "peerDependencies": {
-    "drizzle-orm": "1.0.0-beta.22"
-  },
   "devDependencies": {
     "drizzle-kit": "1.0.0-rc.5",
     "drizzle-orm": "1.0.0-rc.5"

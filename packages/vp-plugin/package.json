@@ -1,0 +1,12 @@
+{
+  "name": "@yanglee2421/vp-plugin",
+  "type": "module",
+  "exports": {
+    "import": "./src/index.ts"
+  },
+  "devDependencies": {
+    "electron": "^40.10.6",
+    "rxjs": "^7.8.2",
+    "vite": "catalog:"
+  }
+}

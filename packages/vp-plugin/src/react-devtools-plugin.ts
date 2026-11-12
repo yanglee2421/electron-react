@@ -1,10 +1,10 @@
-import type { Plugin } from "vite";
+import type { Plugin } from "vite-plus";
 
-export const reactDevtools = (enabled?: boolean): Plugin => {
+export const reactDevtoolsPlugin = (enabled?: boolean): Plugin => {
   return {
     name: "vite-plugin-react-devtools-injector",
     apply: "serve",
-    transformIndexHtml: () => {
+    transformIndexHtml() {
       if (!enabled) return;
 
       return [

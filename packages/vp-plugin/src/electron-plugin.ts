@@ -4,8 +4,6 @@ import module from "node:module";
 import path from "node:path";
 import process from "node:process";
 import url from "node:url";
-import type { BuildOptions, ExternalOption } from "rolldown";
-import { build, watch } from "rolldown";
 import type { Subscription } from "rxjs";
 import {
   EMPTY,
@@ -21,8 +19,11 @@ import {
   takeUntil,
   tap,
 } from "rxjs";
-import type { Logger, Plugin, ViteDevServer } from "vite";
-import { resources } from "./resources.ts";
+import type { Logger, Plugin, ViteDevServer } from "vite-plus";
+import type { BuildOptions, ExternalOption } from "vite/rolldown";
+import { build, watch } from "vite/rolldown";
+import { assetsPlugin } from "./assets-plugin.ts";
+import { workerPlugin } from "./worker-plugin.ts";
 
 const require = module.createRequire(import.meta.url);
 const __filename = url.fileURLToPath(import.meta.url);
@@ -83,40 +84,44 @@ const calcExternal = (isDev: boolean): ExternalOption => {
 const createPreloadInput = (): BuildOptions => {
   return {
     input: "src/preload/index.ts",
+    external: ["electron"],
+
     output: {
       format: "cjs",
-      codeSplitting: false,
       file: "out/preload/index.cjs",
+      cleanDir: true,
+      codeSplitting: false,
     },
     platform: "node",
-    external: ["electron"],
     transform: {
       inject: {
         __dirname: [shimFile, "__dirname"],
         __filename: [shimFile, "__filename"],
       },
     },
-    plugins: [],
   };
 };
 
 const createMainInput = (isDev: boolean): BuildOptions => {
   return {
     input: "src/main/index.ts",
+    external: calcExternal(isDev),
+
     output: {
       format: "esm",
       dir: "out/main",
-      codeSplitting: false,
+      cleanDir: true,
+      // codeSplitting: false,
     },
     platform: "node",
-    external: calcExternal(isDev),
     transform: {
       inject: {
         __dirname: [shimFile, "__dirname"],
         __filename: [shimFile, "__filename"],
       },
     },
-    plugins: [resources()],
+
+    plugins: [workerPlugin(), assetsPlugin()],
   };
 };
 
@@ -263,7 +268,7 @@ const dev$ = server$.pipe(switchMap((server) => startDev(server)));
 let subscribtion: Subscription | null = null;
 let logger: Logger | null = null;
 
-export const electron = (): Plugin[] => {
+export const electronPlugin = (): Plugin[] => {
   subscribtion?.unsubscribe();
   subscribtion = dev$.subscribe();
 

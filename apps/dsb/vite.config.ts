@@ -1,7 +1,7 @@
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { electronPlugin } from "@yanglee2421/vite-plugin";
+import { electronPlugin } from "@yanglee2421/vp-plugin";
 import { createRequire } from "node:module";
 import path from "node:path";
 import url from "node:url";

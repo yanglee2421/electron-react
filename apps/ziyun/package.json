@@ -80,7 +80,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.0.3",
     "@yanglee2421/external-db": "workspace:*",
-    "@yanglee2421/vite-plugin": "workspace:*",
+    "@yanglee2421/vp-plugin": "workspace:*",
     "@yotulee/run": "npm:@jsr/yotulee__run@^0.0.15",
     "awilix": "^13.0.3",
     "babel-plugin-react-compiler": "^1.0.0",
