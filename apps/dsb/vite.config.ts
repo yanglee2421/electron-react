@@ -1,12 +1,10 @@
-import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { electronPlugin } from "@yanglee2421/vp-plugin";
+import react from "@vitejs/plugin-react";
+import { electronPlugin, reactDevtoolsPlugin } from "@yanglee2421/vp-plugin";
 import { createRequire } from "node:module";
 import path from "node:path";
 import url from "node:url";
 import { viteStaticCopy } from "vite-plugin-static-copy";
-import type { Plugin } from "vite-plus";
 import { defineConfig, normalizePath } from "vite-plus";
 
 const require = createRequire(import.meta.url);
@@ -24,9 +22,8 @@ const cMapsDir = normalizePath(path.join(pdfjsDistPath, "cmaps"));
 
 export default defineConfig({
   plugins: [
-    react() as unknown as Plugin,
-    babel({ presets: [reactCompilerPreset()] }) as unknown as Plugin,
-    tailwindcss() as unknown as Plugin,
+    react({ compiler: true }),
+    tailwindcss(),
     viteStaticCopy({
       targets: [
         {
@@ -35,7 +32,8 @@ export default defineConfig({
           rename: { stripBase: true },
         },
       ],
-    }) as unknown as Plugin,
+    }),
+    reactDevtoolsPlugin(),
     electronPlugin(),
   ],
   resolve: { alias },
