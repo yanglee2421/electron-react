@@ -35,6 +35,14 @@ const { dependencies = {} } = JSON.parse(packageJson);
 const excludes = ["electron", ...Object.keys(dependencies)];
 const includes = ["@yanglee2421/external-db"];
 
+const errorToString = (error: unknown) => {
+  if (error instanceof Error) {
+    return `${error.message}\n${error.stack || ""}`;
+  }
+
+  return String(error);
+};
+
 const matchesPackage = (id: string, name: string) => {
   return Object.is(id, name) || id.startsWith(`${name}/`);
 };
@@ -44,7 +52,7 @@ const handleUnresovled = (id: string, isDev: boolean) => {
   const shouldIncludes = includes.some((pkg) => matchesPackage(id, pkg));
 
   if (shouldExcludes && shouldIncludes) {
-    console.warn(
+    logger?.warn(
       `[external] Conflicting packages in includes and excludes: ${id}. Excludes takes precedence.`,
     );
   }
@@ -138,7 +146,7 @@ const startWatch = (options: BuildOptions) => {
     watcher.on("event", (e) => {
       switch (e.code) {
         case "ERROR":
-          console.error(e.error);
+          logger?.error(errorToString(e.error));
           break;
         case "BUNDLE_END":
           sub.next(null);
@@ -192,8 +200,6 @@ const startElectron = (server: ViteDevServer) => {
         filter((msg) => msg.length > 0),
       )
       .subscribe((data) => {
-        console.log(data);
-
         logger?.info(`[electron] out` + data);
       });
 
@@ -222,7 +228,7 @@ const startElectron = (server: ViteDevServer) => {
       },
     }),
     catchError((error) => {
-      console.error(error);
+      logger?.error(errorToString(error));
 
       return EMPTY;
     }),
