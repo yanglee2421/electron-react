@@ -104,6 +104,7 @@ export const Sidebar = (props: SidebarProps) => {
   );
   const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
   const showFuzhoudong = useProfileStore((s) => s.showFuzhoudong);
+  const showHangzhoubei = useProfileStore((s) => s.showHangzhoubei);
   const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
   const showQT = useProfileStore((s) => s.showQT);
   const showHmis =
@@ -113,7 +114,8 @@ export const Sidebar = (props: SidebarProps) => {
     showGuangzhoujibaoduanHmisMenu ||
     showGuangzhoucheliangMenu ||
     showKhHmisMenu ||
-    showFuzhoudong;
+    showFuzhoudong ||
+    showHangzhoubei;
 
   return (
     <>
@@ -261,7 +263,7 @@ export const Sidebar = (props: SidebarProps) => {
               </NavCollapse>
             </React.Activity>
             <React.Activity mode={showFuzhoudong ? "visible" : "hidden"}>
-              <NavCollapse label={"福州车辆段"}>
+              <NavCollapse label={"福州东车辆段"}>
                 <NavButton
                   path="/fuzhoudong/verify"
                   label="日常校验"
@@ -279,6 +281,30 @@ export const Sidebar = (props: SidebarProps) => {
                 />
                 <NavButton
                   path="/fuzhoudong/setting"
+                  label="设置"
+                  icon={<TuneRounded />}
+                />
+              </NavCollapse>
+            </React.Activity>
+            <React.Activity mode={showHangzhoubei ? "visible" : "hidden"}>
+              <NavCollapse label={"杭州北车辆段"}>
+                <NavButton
+                  path="/hangzhoubei/verify"
+                  label="日常校验"
+                  icon={<CalendarTodayRounded />}
+                />
+                <NavButton
+                  path="/hangzhoubei/quartor"
+                  label="季度校验"
+                  icon={<CalendarMonthRounded />}
+                />
+                <NavButton
+                  path="/hangzhoubei/annual"
+                  label="年度校验"
+                  icon={<CalendarTodayRounded />}
+                />
+                <NavButton
+                  path="/hangzhoubei/setting"
                   label="设置"
                   icon={<TuneRounded />}
                 />

@@ -36,6 +36,7 @@ import * as fuzhoudongIPC from "./features/fuzhoudong/ipc";
 import * as guangzhoubeiIPC from "./features/guangzhoubei/ipc";
 import * as guangzhoucheliangIPC from "./features/guangzhoucheliang/ipc";
 import * as guangzhoujibaoduanIPC from "./features/guangzhoujibaoduan/ipc";
+import * as hangzhoubeiIPC from "./features/hangzhoubei/ipc";
 import * as hxzyIPC from "./features/hxzy/ipc";
 import * as imageIPC from "./features/image/ipc";
 import * as jtvIPC from "./features/jtv/ipc";
@@ -65,6 +66,7 @@ const resource$ = new Observable((sub) => {
     guangzhoubei,
     guangzhoucheliang,
     guangzhoujibaoduan,
+    hangzhoubei,
     fuzhoudong,
     hxzy,
     image,
@@ -101,6 +103,7 @@ const resource$ = new Observable((sub) => {
   const qtUnIPC = qtIPC.registerIPCHandlers(qt);
   const xmlUnIPC = xmlIPC.registerIPCHandlers();
   const fuzhoudongUnIPC = fuzhoudongIPC.registerIPCHandlers(fuzhoudong);
+  const hangzhoubeiUnIPC = hangzhoubeiIPC.registerIPCHandlers(hangzhoubei);
 
   appProtocol.handle();
   void appTheme;
@@ -130,6 +133,7 @@ const resource$ = new Observable((sub) => {
     printerUnIPC();
     xmlUnIPC();
     fuzhoudongUnIPC();
+    hangzhoubeiUnIPC();
   };
 }).pipe(
   tap(() => {

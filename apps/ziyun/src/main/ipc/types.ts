@@ -4,6 +4,7 @@ import type * as fuzhoudong from "#main/features/fuzhoudong/types";
 import type * as guangzhoubei from "#main/features/guangzhoubei/types";
 import type * as guangzhoucheliang from "#main/features/guangzhoucheliang/types";
 import type * as guangzhoujibaoduan from "#main/features/guangzhoujibaoduan/types";
+import type * as hangzhoubei from "#main/features/hangzhoubei/types";
 import type * as hxzy from "#main/features/hxzy/types";
 import type * as image from "#main/features/image/types";
 import type * as jtv from "#main/features/jtv/types";
@@ -25,6 +26,7 @@ export interface IPCContract
     guangzhoubei.IPCContract,
     guangzhoucheliang.IPC,
     guangzhoujibaoduan.IPCContract,
+    hangzhoubei.IPCContract,
     hxzy.IPCContract,
     image.IPCContract,
     jtv.IPCContract,

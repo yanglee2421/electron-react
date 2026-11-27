@@ -5,6 +5,7 @@ import type { Fuzhoudong } from "./fuzhoudong";
 import type { Guangzhoubei } from "./guangzhoubei";
 import type { Guangzhoucheliang } from "./guangzhoucheliang";
 import type { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
+import type { Hangzhoubei } from "./hangzhoubei";
 import type { Hxzy } from "./hxzy";
 import type { ImageModule } from "./image";
 import type { JTV } from "./jtv";
@@ -25,6 +26,7 @@ export interface AppCradle {
   guangzhoubei: Guangzhoubei;
   guangzhoucheliang: Guangzhoucheliang;
   guangzhoujibaoduan: JTV_HMIS_Guangzhoujibaoduan;
+  hangzhoubei: Hangzhoubei;
   hxzy: Hxzy;
   image: ImageModule;
   jtv: JTV;

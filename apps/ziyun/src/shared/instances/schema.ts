@@ -27,6 +27,7 @@ export const profile = z.object({
   showGuangzhoucheliangMenu: z.boolean().default(false),
   showKhHmisMenu: z.boolean().default(false),
   showFuzhoudong: z.boolean().default(false),
+  showHangzhoubei: z.boolean().default(false),
   showPLCMenu: z.boolean().default(false),
 
   // For QT App
@@ -40,6 +41,13 @@ export const profile = z.object({
 export const fuzhoudong = z.object({
   ip: ipv4Schema,
   port: portSchema,
+});
+
+export const hangzhoubei = z.object({
+  ip: ipv4Schema,
+  port: portSchema,
+  appId: z.string().default(""),
+  appCode: z.string().default(""),
 });
 
 export const kh_hmis = z.object({
@@ -186,3 +194,4 @@ export type GuangzhoucheliangType = z.infer<typeof guangzhoucheliang>;
 export type Guangzhoujibaoduan = z.infer<typeof guangzhoujibaoduan>;
 export type PLCSchema = z.infer<typeof plcSchema>;
 export type FUZHOUDONG = z.infer<typeof fuzhoudong>;
+export type HANGZHOUBEI = z.infer<typeof hangzhoubei>;

@@ -123,6 +123,7 @@ export const Component = () => {
   );
   const showKhHmisMenu = useProfileStore((s) => s.showKhHmisMenu);
   const showFuzhoudong = useProfileStore((s) => s.showFuzhoudong);
+  const showHangzhoubei = useProfileStore((s) => s.showHangzhoubei);
   const showPLCMenu = useProfileStore((s) => s.showPLCMenu);
   const showQT = useProfileStore((s) => s.showQT);
 
@@ -554,6 +555,20 @@ export const Component = () => {
                 onChange={(_, checked) => {
                   useProfileStore.setState((d) => {
                     d.showFuzhoudong = checked;
+                  });
+                }}
+              />
+            }
+          >
+            <ListItemText primary={"显示福州东车辆段菜单"} />
+          </ListItem>
+          <ListItem
+            secondaryAction={
+              <Switch
+                checked={showHangzhoubei}
+                onChange={(_, checked) => {
+                  useProfileStore.setState((d) => {
+                    d.showHangzhoubei = checked;
                   });
                 }}
               />

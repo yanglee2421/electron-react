@@ -291,6 +291,35 @@ export const routes: RouteObject[] = [
             ],
           },
           {
+            path: "hangzhoubei",
+            children: [
+              {
+                path: "verify",
+                lazy: () => {
+                  return import("#renderer/pages/hangzhoubei_verify/component");
+                },
+              },
+              {
+                path: "quartor",
+                lazy: () => {
+                  return import("#renderer/pages/hangzhoubei_quartor/component");
+                },
+              },
+              {
+                path: "annual",
+                lazy: () => {
+                  return import("#renderer/pages/hangzhoubei_annual/component");
+                },
+              },
+              {
+                path: "setting",
+                lazy: () => {
+                  return import("#renderer/pages/hangzhoubei_setting/component");
+                },
+              },
+            ],
+          },
+          {
             path: "qt",
             children: [
               {

@@ -6,6 +6,7 @@ import { Fuzhoudong } from "./fuzhoudong/fuzhoudong";
 import { Guangzhoubei } from "./guangzhoubei";
 import { Guangzhoucheliang } from "./guangzhoucheliang";
 import { JTV_HMIS_Guangzhoujibaoduan } from "./guangzhoujibaoduan";
+import { Hangzhoubei } from "./hangzhoubei";
 import { Hxzy } from "./hxzy/hxzy";
 import { ImageModule } from "./image";
 import { JTV } from "./jtv";
@@ -43,6 +44,9 @@ container.register({
     .disposer((i) => i.dispose()),
   guangzhoujibaoduan: asClass(JTV_HMIS_Guangzhoujibaoduan)
     .scoped()
+    .disposer((i) => i.dispose()),
+  hangzhoubei: asClass(Hangzhoubei)
+    .singleton()
     .disposer((i) => i.dispose()),
   hxzy: asClass(Hxzy)
     .scoped()
